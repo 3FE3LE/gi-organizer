@@ -65,13 +65,18 @@ export async function objectiveViewFor(context: BuildContext): Promise<Objective
       ),
       talents: loadout?.target.talents ?? ASSUMED_TARGET.talents,
     },
-    weaponId: activeBuild?.weaponId ?? target.weaponId,
-    weaponRefinement: activeBuild?.weaponRefinement ?? target.refinement,
+    // What they are already holding, when nobody has said otherwise. A
+    // character wearing a weapon is a character whose plan is that weapon at
+    // ninety until the player replaces it, and opening on "sin arma objetivo"
+    // asked them to re-enter a decision the account had already recorded.
+    weaponId: activeBuild?.weaponId ?? target.weaponId ?? gear.weapon?.weaponId ?? null,
+    weaponRefinement:
+      activeBuild?.weaponRefinement ?? target.refinement ?? gear.weapon?.refinement ?? null,
     equippedWeapon: gear.weapon
       ? `${catalog.weapons.get(gear.weapon.weaponId)?.name ?? `#${gear.weapon.weaponId}`}`
         + ` Nv.${gear.weapon.level} R${gear.weapon.refinement}`
       : null,
-    setIds: activeBuild?.setPlan.flatMap((plan) => plan.setIds) ?? [],
+    setIds: activeBuild?.setPlan.flatMap((plan) => plan.setIds) ?? wornSetPlan(gear),
     mainStats: Object.fromEntries(
       Object.entries(activeBuild?.mainStats ?? {})
         .map(([slot, props]) => [slot, props?.[0] ?? '']),
@@ -110,6 +115,33 @@ export async function objectiveViewFor(context: BuildContext): Promise<Objective
       values.goals, values.current, values.target,
     ]),
   };
+}
+
+/**
+ * The set plan a character is already wearing.
+ *
+ * Four of one set is a four-piece plan; two and two is a 2+2; two of one and
+ * nothing else is somebody halfway to four of it. Anything below that says
+ * nothing, and an empty plan is the honest reading of five unrelated pieces.
+ *
+ * This is a reading of the box, not a suggestion — `suggestedSets` is the one
+ * with an opinion. It exists so that a goal nobody has written opens on what
+ * the account already did rather than on a blank.
+ */
+function wornSetPlan(gear: BuildContext['gear']): number[] {
+  const worn = new Map<number, number>();
+  for (const piece of gear.bySlot.values()) {
+    worn.set(piece.setId, (worn.get(piece.setId) ?? 0) + 1);
+  }
+
+  const ranked = [...worn.entries()]
+    .filter(([, count]) => count >= 2)
+    .sort((a, b) => b[1] - a[1]);
+
+  if (ranked.length === 0) return [];
+  if (ranked[0][1] >= 4) return [ranked[0][0]];
+  if (ranked.length >= 2) return [ranked[0][0], ranked[1][0]];
+  return [ranked[0][0]];
 }
 
 /**

@@ -4,7 +4,8 @@ import { test } from 'node:test';
 import { getCatalog } from '@/lib/data/catalog';
 import { createMemoryDb } from '@/lib/db/client';
 import { setDismissed, upsertCharacter } from '@/lib/player/characters';
-import { getProfileId } from '@/lib/player/db';
+import { getProfileId, persistInventory } from '@/lib/player/db';
+
 
 import { farmingPlan } from './assemble';
 
@@ -16,6 +17,7 @@ import { farmingPlan } from './assemble';
  * row — otherwise the totals keep counting somebody the player said no to.
  */
 const VENTI = 10000022;
+const SKYWARD_HARP = 15502;
 
 async function rosterWith(level: number) {
   const db = createMemoryDb();
@@ -80,4 +82,40 @@ test('dismissing everyone and taking it back are one call each', async () => {
 
   await setDismissed(db, profileId, null, false);
   assert.equal((await farmingPlan(catalog, db)).sources, 1);
+});
+
+/**
+ * The weapon somebody is already holding is the plan until they say otherwise.
+ * Waiting for it to be written down left the ore out of a plan that had
+ * already committed to levelling the character carrying it.
+ */
+test('an equipped weapon is planned for without a goal naming it', async () => {
+  const { db, profileId } = await rosterWith(50);
+  const catalog = await getCatalog('es');
+
+  const before = await farmingPlan(catalog, db);
+  const weaponRows = (plan: Awaited<ReturnType<typeof farmingPlan>>) =>
+    [...plan.schedule.anytime, ...plan.schedule.domains.flatMap((domain) => domain.needs)]
+      .flatMap((need) => need.by)
+      .filter((row) => row.reason === 'weapon');
+
+  assert.equal(weaponRows(before).length, 0, 'nothing is equipped yet');
+
+  await persistInventory(db, profileId, { artifacts: [], weapons: [] }, {
+    artifacts: [],
+    weapons: [{
+      id: 'w0',
+      weaponId: SKYWARD_HARP,
+      level: 20,
+      ascension: 1,
+      refinement: 1,
+      lock: true,
+      source: 'good',
+      equippedTo: VENTI,
+      seenAt: '2026-09-16T00:00:00.000Z',
+    }],
+  });
+
+  const after = await farmingPlan(catalog, db);
+  assert.ok(weaponRows(after).length > 0, 'the weapon it is holding now costs something');
 });

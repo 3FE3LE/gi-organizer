@@ -685,8 +685,10 @@ export async function farmingPlan(
   const assume = filter.includeWithoutTarget ?? true;
 
   const weaponsOwned = new Map<number, number>();
+  const heldBy = new Map<number, number>();
   for (const weapon of (await readInventory(db, profileId)).weapons) {
     weaponsOwned.set(weapon.weaponId, Math.max(weaponsOwned.get(weapon.weaponId) ?? 0, weapon.ascension));
+    if (weapon.equippedTo !== null) heldBy.set(weapon.equippedTo, weapon.weaponId);
   }
 
   // A character is levelled once. The target now lives on the roster row for
@@ -743,6 +745,27 @@ export async function farmingPlan(
         weaponId: build.weaponId,
         characterId: build.characterId,
         buildName: goalLabel(build),
+      });
+    }
+  }
+
+  // The weapon somebody is already holding, when no goal names one.
+  //
+  // Same assumption as the levelling: a character equipped with a weapon is a
+  // character whose plan is that weapon, and waiting for the player to write
+  // that down left the ore and the ascension materials out of a plan that had
+  // already committed to the character. `byCharacter` has been through the
+  // dismissals and the scope filter, so this inherits both.
+  if (counts('weapon')) {
+    for (const source of byCharacter.values()) {
+      const weaponId = heldBy.get(source.characterId);
+      if (weaponId === undefined || plannedWeapons.has(weaponId)) continue;
+      if (!weaponsOwned.has(weaponId)) continue;
+
+      plannedWeapons.set(weaponId, {
+        weaponId,
+        characterId: source.characterId,
+        buildName: source.buildName,
       });
     }
   }
