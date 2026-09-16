@@ -1,8 +1,9 @@
 import 'server-only';
 
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
+
+import { get, list, put } from '@vercel/blob';
 
 import { getDb } from '@/lib/db/client';
 import { transaction } from '@/lib/db/tx';
@@ -36,13 +37,18 @@ import {
 /**
  * Import orchestration: stage, preview, apply.
  *
- * The upload is staged to disk instead of being held in memory between the two
+ * The upload is staged instead of being held in memory between the two
  * requests. That keeps the preview cheap to re-render, survives a restart, and
  * leaves the user with the file that produced a given state — which is the only
  * way to explain an import after the fact.
+ *
+ * Blob and not the filesystem, because there is no writable disk under a
+ * function and the two requests an import takes are not guaranteed to reach the
+ * same instance: a file written to `/tmp` by the preview would not be there for
+ * the apply. Private, because an inventory export is personal data.
  */
 
-const STAGING = path.join(process.cwd(), 'data', 'imports');
+const STAGING = 'imports/';
 
 export type StagedUpload = { token: string; file: string; bytes: number };
 
@@ -51,30 +57,40 @@ export async function stageUpload(bytes: ArrayBuffer, filename: string): Promise
     throw new Error(`upload is ${bytes.byteLength} bytes, over the ${LIMITS.bytes} cap`);
   }
 
-  await mkdir(STAGING, { recursive: true });
-
   const token = randomUUID();
   // The name is only a label; the token is what addresses the file.
   const safe = path.basename(filename).replace(/[^\w.-]/g, '_').slice(-80);
-  const file = path.join(STAGING, `${token}__${safe}`);
 
-  await writeFile(file, Buffer.from(bytes));
-  return { token, file, bytes: bytes.byteLength };
+  const staged = await put(`${STAGING}${token}__${safe}`, Buffer.from(bytes), {
+    access: 'private',
+    // The token is already unique, and a suffix would put the pathname out of
+    // reach of the prefix `stagedPath` looks it up by.
+    addRandomSuffix: false,
+    contentType: 'application/json',
+  });
+
+  return { token, file: staged.pathname, bytes: bytes.byteLength };
 }
 
 async function stagedPath(token: string) {
   if (!/^[0-9a-f-]{36}$/.test(token)) throw new Error('bad staging token');
 
-  const { readdir } = await import('node:fs/promises');
-  const entries = await readdir(STAGING).catch(() => [] as string[]);
-  const match = entries.find((name) => name.startsWith(`${token}__`));
+  const { blobs } = await list({ prefix: `${STAGING}${token}__`, limit: 1 });
+  const match = blobs[0];
   if (!match) throw new Error('staged upload not found');
 
-  return path.join(STAGING, match);
+  return match.pathname;
 }
 
 export async function parseStaged(token: string): Promise<NormalizedImport> {
-  const raw = await readFile(await stagedPath(token), 'utf8');
+  const staged = await get(await stagedPath(token), { access: 'private' });
+  // A read of a pathname that `list` just returned; a 304 needs an etag we did
+  // not send, so anything other than the body is a staged file that went away.
+  if (staged?.statusCode !== 200 || !staged.stream) {
+    throw new Error('staged upload not found');
+  }
+
+  const raw = await new Response(staged.stream).text();
 
   let json: unknown;
   try {
