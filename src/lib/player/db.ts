@@ -3,6 +3,7 @@ import 'server-only';
 import type { InStatement } from '@libsql/client';
 
 import { getDb, type Db } from '@/lib/db/client';
+import { currentProfileId, currentProfileName } from './profile';
 import type { ArtifactSlot } from '@/lib/data/types';
 import type { ImportSource, NormalizedStat } from '@/lib/inventory/model';
 import type { Inventory, OwnedArtifact, OwnedWeapon } from '@/lib/inventory/plan';
@@ -20,16 +21,24 @@ import type { Inventory, OwnedArtifact, OwnedWeapon } from '@/lib/inventory/plan
  * merge logic lives outside the database in the first place.
  */
 
-const PROFILE_ID = 'local';
-
-/** One profile today. The column exists so sharing is a lookup, not a migration. */
+/**
+ * The signed-in player's profile, created on first sight.
+ *
+ * Every query in this module and the ones around it is keyed by what this
+ * returns, so it is the single place where one account's data is separated
+ * from another's. It resolves from the session and never from a default; see
+ * `profile.ts`.
+ */
 export async function getProfileId(db: Db = getDb()) {
-  const existing = await db.prepare('SELECT id FROM profile WHERE id = ?').get(PROFILE_ID);
+  const profileId = await currentProfileId();
+
+  const existing = await db.prepare('SELECT id FROM profile WHERE id = ?').get(profileId);
   if (!existing) {
     await db.prepare('INSERT INTO profile (id, name, created_at) VALUES (?, ?, ?)')
-      .run(PROFILE_ID, 'local', new Date().toISOString());
+      .run(profileId, await currentProfileName(), new Date().toISOString());
   }
-  return PROFILE_ID;
+
+  return profileId;
 }
 
 type ArtifactRow = {

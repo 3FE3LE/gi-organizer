@@ -16,10 +16,11 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "node --import ./scripts/test-loader.mjs --test \"src/**/*.test.ts\"",
+    "test": "GI_TEST_PROFILE=local node --import ./scripts/test-loader.mjs --test \"src/**/*.test.ts\"",
     "e2e": "playwright test"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.9.4",
     "@hookform/resolvers": "^5.9.1",
     "@libsql/client": "^0.18.0",
     "@vercel/blob": "^2.8.0",

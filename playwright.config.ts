@@ -16,6 +16,13 @@ const PORT = 3111;
 const DB = 'e2e/.tmp/test.db';
 const DIST = '.next-e2e';
 
+/**
+ * `GI_TEST_PROFILE` names the profile every row is written under, and tells
+ * the proxy there is nobody to sign in as. Both are ignored under `VERCEL`, so
+ * neither can weaken a deployment.
+ */
+const TEST_ENV = `GI_DB_PATH=${DB} GI_TEST_PROFILE=local`;
+
 export default defineConfig({
   testDir: './e2e',
   // One worker: the app is a single SQLite file and these tests write to it.
@@ -42,9 +49,9 @@ export default defineConfig({
      * lock and its cache. See `distDir` in next.config.ts.
      */
     command:
-      `GI_DB_PATH=${DB} node --import ./scripts/test-loader.mjs e2e/seed.mts` +
+      `${TEST_ENV} node --import ./scripts/test-loader.mjs e2e/seed.mts` +
       ` && NEXT_DIST_DIR=${DIST} pnpm exec next build` +
-      ` && GI_DB_PATH=${DB} NEXT_DIST_DIR=${DIST} pnpm exec next start --port ${PORT}`,
+      ` && ${TEST_ENV} NEXT_DIST_DIR=${DIST} pnpm exec next start --port ${PORT}`,
     url: `http://127.0.0.1:${PORT}/es/characters`,
     reuseExistingServer: false,
     // A production build, so the budget is a build and not a dev boot.

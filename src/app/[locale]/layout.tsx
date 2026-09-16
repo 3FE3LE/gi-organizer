@@ -1,3 +1,4 @@
+import { UserButton } from '@clerk/nextjs';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -42,8 +43,9 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
               Datos
             </Link>
           </nav>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-3">
             <LocaleSwitcher current={locale} />
+            <UserButton />
           </div>
         </div>
       </header>
