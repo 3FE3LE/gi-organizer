@@ -33,6 +33,7 @@ export function FilterInputs({
 }: {
   ownedSets: { setId: number; name: string }[];
   /** Only the main stats the box actually holds for the slot in view. */
+  /** Empty for a slot whose main stat the game fixed, and before one is picked. */
   ownedMains: { prop: string; name: string }[];
 }) {
   const [pending, startTransition] = useTransition();
@@ -90,7 +91,7 @@ export function FilterInputs({
         </div>
       </Field>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className={`grid gap-4 ${ownedMains.length > 0 ? 'sm:grid-cols-2' : ''}`}>
         <Field label="set">
           <Select
             value={filters.set === null ? '' : String(filters.set)}
@@ -106,19 +107,22 @@ export function FilterInputs({
 
         {/* The main stat is how a search is actually phrased — "a mastery
             sands" — and it is the one thing `worth` refuses to score, because
-            which main stat is right is the build's decision and not the box's. */}
-        <Field label="main stat">
-          <Select
-            value={filters.main ?? ''}
-            onChange={(value) => setFilters({ main: value === '' ? null : value })}
-            aria-label="Main stat"
-          >
-            <option value="">cualquiera ({ownedMains.length})</option>
-            {ownedMains.map((main) => (
-              <option key={main.prop} value={main.prop}>{main.name}</option>
-            ))}
-          </Select>
-        </Field>
+            which main stat is right is the build's decision and not the box's.
+            Absent until a slot makes it a question with more than one answer. */}
+        {ownedMains.length > 0 && (
+          <Field label="main stat">
+            <Select
+              value={filters.main ?? ''}
+              onChange={(value) => setFilters({ main: value === '' ? null : value })}
+              aria-label="Main stat"
+            >
+              <option value="">cualquiera ({ownedMains.length})</option>
+              {ownedMains.map((main) => (
+                <option key={main.prop} value={main.prop}>{main.name}</option>
+              ))}
+            </Select>
+          </Field>
+        )}
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ import { getCatalog, statLabel } from '@/lib/data/catalog';
 import { isLocale } from '@/lib/data/locales';
 import { getDb } from '@/lib/db/client';
 import { filterArtifacts, readArtifacts } from '@/lib/player/artifacts';
+import { CHOOSABLE_SLOTS } from '@/lib/rules/piece-score';
 
 import { ArtifactCard } from './artifact-card';
 import { FilterPanel } from './filter-panel';
@@ -67,12 +68,22 @@ export default async function ArtifactsPage({
     .map((setId) => ({ setId, name: catalog.artifacts.get(setId)?.name ?? `#${setId}` }))
     .sort((a, b) => a.name.localeCompare(b.name, locale));
 
-  // Narrowed to the slot in view, because the mains a slot can carry are the
-  // question: a flower is always HP, and offering the other nine is noise.
-  const forSlot = filters.slot ? all.filter((piece) => piece.slot === filters.slot) : all;
-  const ownedMains = [...new Set(forSlot.map((piece) => piece.mainProp))]
-    .map((prop) => ({ prop, name: statLabel(catalog, prop) }))
-    .sort((a, b) => a.name.localeCompare(b.name, locale));
+  /*
+   * Main stats to choose from, which only exist once a slot is chosen.
+   *
+   * A flower is always flat HP and a plume always flat ATK — the game decided,
+   * and a picker offering one option is asking a question with one answer. The
+   * other three slots are where the main stat is a decision, and even there it
+   * is a decision per slot: a goblet's list and a circlet's have nothing in
+   * common, so the union of all of them was mostly options that cannot apply.
+   */
+  const choosable = filters.slot !== null && CHOOSABLE_SLOTS.includes(filters.slot);
+  const ownedMains = choosable
+    ? [...new Set(all.filter((piece) => piece.slot === filters.slot)
+        .map((piece) => piece.mainProp))]
+      .map((prop) => ({ prop, name: statLabel(catalog, prop) }))
+      .sort((a, b) => a.name.localeCompare(b.name, locale))
+    : [];
 
   return (
     <div className="space-y-4">

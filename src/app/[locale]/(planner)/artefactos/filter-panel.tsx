@@ -59,7 +59,7 @@ export function FilterPanel({
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <Segments label="Pieza">
-          <Segment to={href(base, filters, { slot: null })} active={!filters.slot}>
+          <Segment to={href(base, filters, { slot: null, main: null })} active={!filters.slot}>
             todas
           </Segment>
           {ARTIFACT_SLOTS.map((slot) => {
@@ -69,7 +69,7 @@ export function FilterPanel({
             return (
               <Segment
                 key={slot}
-                to={href(base, filters, { slot })}
+                to={href(base, filters, { slot, main: null })}
                 active={filters.slot === slot}
                 title={label}
               >
