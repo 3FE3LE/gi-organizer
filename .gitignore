@@ -39,3 +39,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# player database and imported inventory exports (see src/lib/db/client.ts)
+/data
+
+# a GOOD export is personal inventory data; belt and braces if one lands elsewhere
+*.GOOD
+genshinData_GOOD_*.json
+e2e/.tmp/
+.next-e2e/
+test-results/
+playwright-report/

@@ -1,0 +1,263 @@
+import 'server-only';
+
+import { randomUUID } from 'node:crypto';
+import type { DatabaseSync } from 'node:sqlite';
+
+import { getDb } from '@/lib/db/client';
+import { transaction } from '@/lib/db/tx';
+import type { EndgameMode, TeamRole } from '@/lib/rules/types';
+
+import { getProfileId } from './db';
+
+/**
+ * Teams and the deployments that field them.
+ *
+ * A team references characters only, never gear. A character has one global
+ * build — which is what the game enforces — so adding them to a second team
+ * cannot create a gear conflict, because there is nothing to conflict.
+ *
+ * The role lives on the slot rather than the character, which is the whole
+ * point: Venti is a support in one team and a sub-dps in another, with no
+ * duplication and no "which role is the real one".
+ */
+
+export type TeamSlot = {
+  characterId: number;
+  position: number;
+  roles: TeamRole[];
+  /** Facts the engine cannot derive, e.g. which element this wearer swirls. */
+  declarations: Record<string, string>;
+};
+
+export type Team = {
+  id: string;
+  name: string;
+  mode: EndgameMode;
+  position: number;
+  notes: string | null;
+  /** The mechanic this team is built around, if any. */
+  objective: string | null;
+  slots: TeamSlot[];
+};
+
+export type Deployment = {
+  id: string;
+  name: string;
+  mode: EndgameMode;
+  teamIds: string[];
+  theater: { allowedElements: string[] } | null;
+};
+
+export function readTeams(db: DatabaseSync = getDb()): Team[] {
+  const profileId = getProfileId(db);
+
+  const teams = db
+    .prepare(`SELECT id, name, mode, position, notes, objective FROM team
+              WHERE profile_id = ? ORDER BY position, name`)
+    .all(profileId) as unknown as {
+      id: string; name: string; mode: EndgameMode; position: number;
+      notes: string | null; objective: string | null;
+    }[];
+
+  const slots = db
+    .prepare(`SELECT team_id, character_id, position, roles_json, declarations_json
+              FROM team_slot ORDER BY position`)
+    .all() as unknown as {
+      team_id: string; character_id: number; position: number;
+      roles_json: string; declarations_json: string;
+    }[];
+
+  const byTeam = new Map<string, TeamSlot[]>();
+  for (const row of slots) {
+    byTeam.set(row.team_id, [...(byTeam.get(row.team_id) ?? []), {
+      characterId: row.character_id,
+      position: row.position,
+      roles: JSON.parse(row.roles_json) as TeamRole[],
+      declarations: JSON.parse(row.declarations_json) as Record<string, string>,
+    }]);
+  }
+
+  return teams.map((team) => ({ ...team, slots: byTeam.get(team.id) ?? [] }));
+}
+
+export function createTeam(
+  name: string,
+  mode: EndgameMode,
+  db: DatabaseSync = getDb(),
+): string {
+  const profileId = getProfileId(db);
+  const id = randomUUID();
+
+  const next = db
+    .prepare('SELECT COALESCE(MAX(position), -1) + 1 AS position FROM team WHERE profile_id = ?')
+    .get(profileId) as { position: number };
+
+  db.prepare('INSERT INTO team (id, profile_id, name, mode, position, notes) VALUES (?,?,?,?,?,NULL)')
+    .run(id, profileId, name, mode, next.position);
+
+  return id;
+}
+
+export function deleteTeam(teamId: string, db: DatabaseSync = getDb()) {
+  return db
+    .prepare('DELETE FROM team WHERE id = ? AND profile_id = ?')
+    .run(teamId, getProfileId(db)).changes;
+}
+
+export type SlotResult =
+  | { ok: true }
+  | { ok: false; reason: 'team-full' | 'already-in-team' | 'no-team' }
+  /** Held by another team; `team` names it so the UI can say which. */
+  | { ok: false; reason: 'in-another-team'; team: string };
+
+/**
+ * Places a character in a team. Four slots, and a character cannot occupy two
+ * of them — both enforced by the schema, checked here so the UI gets a reason
+ * rather than a constraint error.
+ *
+ * A character also belongs to one team at a time across the whole profile:
+ * planning the same character into two teams plans them twice, and the account
+ * only has one of them. Freeing them means removing them from the team that
+ * holds them, which is a decision rather than a side effect, so it is refused
+ * here instead of being resolved silently.
+ */
+export function setSlot(
+  teamId: string,
+  characterId: number,
+  position: number | null,
+  db: DatabaseSync = getDb(),
+): SlotResult {
+  const profileId = getProfileId(db);
+
+  return transaction(db, () => {
+    const team = db
+      .prepare('SELECT id FROM team WHERE id = ? AND profile_id = ?')
+      .get(teamId, profileId);
+    if (!team) return { ok: false, reason: 'no-team' } as const;
+
+    const existing = db
+      .prepare('SELECT position FROM team_slot WHERE team_id = ? AND character_id = ?')
+      .get(teamId, characterId);
+    if (existing) return { ok: false, reason: 'already-in-team' } as const;
+
+    const elsewhere = db
+      .prepare(`SELECT t.name FROM team_slot s JOIN team t ON t.id = s.team_id
+                WHERE s.character_id = ? AND t.profile_id = ? AND s.team_id <> ?
+                LIMIT 1`)
+      .get(characterId, profileId, teamId) as { name: string } | undefined;
+    if (elsewhere) {
+      return { ok: false, reason: 'in-another-team', team: elsewhere.name } as const;
+    }
+
+    const taken = db
+      .prepare('SELECT position FROM team_slot WHERE team_id = ?')
+      .all(teamId) as unknown as { position: number }[];
+
+    const used = new Set(taken.map((row) => row.position));
+    const target = position ?? [0, 1, 2, 3].find((slot) => !used.has(slot));
+
+    if (target === undefined || target > 3) return { ok: false, reason: 'team-full' } as const;
+
+    db.prepare(`INSERT INTO team_slot (team_id, character_id, position, roles_json, declarations_json)
+                VALUES (?,?,?,'[]','{}')
+                ON CONFLICT (team_id, position) DO UPDATE SET character_id = excluded.character_id`)
+      .run(teamId, characterId, target);
+
+    return { ok: true } as const;
+  });
+}
+
+export function removeSlot(teamId: string, characterId: number, db: DatabaseSync = getDb()) {
+  return db
+    .prepare('DELETE FROM team_slot WHERE team_id = ? AND character_id = ?')
+    .run(teamId, characterId).changes;
+}
+
+export function setRoles(
+  teamId: string,
+  characterId: number,
+  roles: TeamRole[],
+  db: DatabaseSync = getDb(),
+) {
+  return db
+    .prepare('UPDATE team_slot SET roles_json = ? WHERE team_id = ? AND character_id = ?')
+    .run(JSON.stringify(roles), teamId, characterId).changes;
+}
+
+/**
+ * Records a fact the engine cannot derive. Passing an empty value clears it,
+ * which returns the slot to "unprovable" rather than asserting something false.
+ */
+export function setDeclaration(
+  teamId: string,
+  characterId: number,
+  field: string,
+  value: string,
+  db: DatabaseSync = getDb(),
+) {
+  return transaction(db, () => {
+    const row = db
+      .prepare('SELECT declarations_json FROM team_slot WHERE team_id = ? AND character_id = ?')
+      .get(teamId, characterId) as { declarations_json: string } | undefined;
+    if (!row) return 0;
+
+    const declarations = JSON.parse(row.declarations_json) as Record<string, string>;
+    if (value === '') delete declarations[field];
+    else declarations[field] = value;
+
+    return db
+      .prepare('UPDATE team_slot SET declarations_json = ? WHERE team_id = ? AND character_id = ?')
+      .run(JSON.stringify(declarations), teamId, characterId).changes;
+  });
+}
+
+export function readDeployments(db: DatabaseSync = getDb()): Deployment[] {
+  const rows = db
+    .prepare('SELECT id, name, mode, team_ids_json, theater_json FROM deployment WHERE profile_id = ?')
+    .all(getProfileId(db)) as unknown as {
+      id: string; name: string; mode: EndgameMode;
+      team_ids_json: string; theater_json: string | null;
+    }[];
+
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    mode: row.mode,
+    teamIds: JSON.parse(row.team_ids_json) as string[],
+    theater: row.theater_json
+      ? (JSON.parse(row.theater_json) as { allowedElements: string[] })
+      : null,
+  }));
+}
+
+export function saveDeployment(
+  deployment: Omit<Deployment, 'id'> & { id?: string },
+  db: DatabaseSync = getDb(),
+) {
+  const profileId = getProfileId(db);
+  const id = deployment.id ?? randomUUID();
+
+  db.prepare(`INSERT INTO deployment (id, profile_id, name, mode, team_ids_json, theater_json)
+              VALUES (?,?,?,?,?,?)
+              ON CONFLICT (id) DO UPDATE SET
+                name = excluded.name, mode = excluded.mode,
+                team_ids_json = excluded.team_ids_json, theater_json = excluded.theater_json`)
+    .run(
+      id, profileId, deployment.name, deployment.mode,
+      JSON.stringify(deployment.teamIds),
+      deployment.theater ? JSON.stringify(deployment.theater) : null,
+    );
+
+  return id;
+}
+
+/** Sets or clears what the team is built around. */
+export function setObjective(
+  teamId: string,
+  objective: string | null,
+  db: DatabaseSync = getDb(),
+) {
+  return db
+    .prepare('UPDATE team SET objective = ? WHERE id = ? AND profile_id = ?')
+    .run(objective === '' ? null : objective, teamId, getProfileId(db)).changes;
+}

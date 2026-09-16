@@ -1,0 +1,64 @@
+import { notFound } from 'next/navigation';
+
+import { CharacterSheet } from '@/components/character-sheet';
+import { GameIcon } from '@/components/game-icon';
+import { getCatalog } from '@/lib/data/catalog';
+import { elementColor } from '@/lib/data/elements';
+import { isLocale } from '@/lib/data/locales';
+import { getCoreCharacters } from '@/lib/data/registry';
+
+export async function generateStaticParams() {
+  const core = await getCoreCharacters();
+  return Object.keys(core).map((id) => ({ id }));
+}
+
+export default async function CharacterPage({ params }: PageProps<'/[locale]/characters/[id]'>) {
+  const { locale, id } = await params;
+  if (!isLocale(locale)) notFound();
+
+  const catalog = await getCatalog(locale);
+  const character = catalog.characters.get(Number(id));
+  if (!character) notFound();
+
+  const accent = elementColor(character.elementType);
+
+  return (
+    <article className="space-y-10">
+      <header className="flex flex-wrap items-start gap-6">
+        <GameIcon
+          filename={character.gachaSplash}
+          kind="splash"
+          className="h-40 w-40 rounded-lg border border-edge object-cover object-top"
+          sizes="160px"
+        />
+        <div className="min-w-64 flex-1">
+          <p className="font-mono text-xs uppercase tracking-wide" style={{ color: accent }}>
+            {character.elementText} · {character.weaponText} · {character.rarity}★
+          </p>
+          <h1 className="mt-1 text-2xl font-medium">{character.name}</h1>
+          {character.title && <p className="text-muted">{character.title}</p>}
+          <p className="mt-3 max-w-prose text-sm text-muted">{character.description}</p>
+          <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-1 font-mono text-xs sm:grid-cols-3">
+            <Fact label="Región" value={character.region || '—'} />
+            <Fact label="Afiliación" value={character.affiliation || '—'} />
+            <Fact label="Constelación" value={character.constellation} />
+            <Fact label="Ascenso" value={character.substatText} />
+            <Fact label="Cumpleaños" value={character.birthday || '—'} />
+            <Fact label="Versión" value={character.version} />
+          </dl>
+        </div>
+      </header>
+
+      <CharacterSheet catalog={catalog} character={character} locale={locale} />
+    </article>
+  );
+}
+
+function Fact({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="text-[0.65rem] uppercase text-muted">{label}</dt>
+      <dd>{value}</dd>
+    </div>
+  );
+}

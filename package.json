@@ -2,20 +2,39 @@
   "name": "gi-organizer",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
+    "data:build": "node scripts/build-data.mts",
+    "data:enka": "node scripts/fetch-enka-store.mts",
+    "data:builds": "node scripts/fetch-builds.mts",
+    "data:check-assets": "node scripts/check-assets.mts",
+    "data:check-good": "node scripts/check-good-keys.mts",
+    "data:fixture": "node scripts/make-good-fixture.mts",
     "dev": "next dev",
+    "prebuild": "pnpm data:build",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import ./scripts/test-loader.mjs --test \"src/**/*.test.ts\"",
+    "e2e": "playwright test"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.9.1",
+    "genshin-db": "^5.2.13",
+    "lucide-react": "^1.46.0",
     "next": "16.3.4",
+    "nuqs": "^2.10.1",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "react-hook-form": "^7.88.0",
+    "server-only": "^0.0.1",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/node": "^24.13.4",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

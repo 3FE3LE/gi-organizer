@@ -1,0 +1,1714 @@
+{
+  "format": "GOOD",
+  "version": 2,
+  "source": "Inventory Kamera",
+  "kamera_version": "1.4.5",
+  "characters": [
+    {
+      "key": "Albedo",
+      "level": 90,
+      "constellation": 0,
+      "ascension": 6,
+      "talent": {
+        "auto": 9,
+        "skill": 9,
+        "burst": 9
+      }
+    },
+    {
+      "key": "Alhaitham",
+      "level": 90,
+      "constellation": 0,
+      "ascension": 6,
+      "talent": {
+        "auto": 9,
+        "skill": 9,
+        "burst": 9
+      }
+    },
+    {
+      "key": "Aloy",
+      "level": 90,
+      "constellation": 1,
+      "ascension": 6,
+      "talent": {
+        "auto": 9,
+        "skill": 9,
+        "burst": 9
+      }
+    },
+    {
+      "key": "AratakiItto",
+      "level": 90,
+      "constellation": 0,
+      "ascension": 6,
+      "talent": {
+        "auto": 9,
+        "skill": 9,
+        "burst": 9
+      }
+    },
+    {
+      "key": "Arlecchino",
+      "level": 90,
+      "constellation": 2,
+      "ascension": 6,
+      "talent": {
+        "auto": 9,
+        "skill": 9,
+        "burst": 9
+      }
+    },
+    {
+      "key": "Baizhu",
+      "level": 90,
+      "constellation": 0,
+      "ascension": 6,
+      "talent": {
+        "auto": 9,
+        "skill": 9,
+        "burst": 9
+      }
+    }
+  ],
+  "weapons": [
+    {
+      "key": "FavoniusSword",
+      "level": 90,
+      "ascension": 6,
+      "refinement": 5,
+      "location": "Albedo",
+      "lock": true
+    },
+    {
+      "key": "FavoniusSword",
+      "level": 90,
+      "ascension": 6,
+      "refinement": 5,
+      "location": "Alhaitham",
+      "lock": true
+    },
+    {
+      "key": "FavoniusWarbow",
+      "level": 90,
+      "ascension": 6,
+      "refinement": 5,
+      "location": "Aloy",
+      "lock": true
+    },
+    {
+      "key": "FavoniusGreatsword",
+      "level": 90,
+      "ascension": 6,
+      "refinement": 5,
+      "location": "Arataki Itto",
+      "lock": true
+    },
+    {
+      "key": "DragonsBane",
+      "level": 90,
+      "ascension": 6,
+      "refinement": 4,
+      "location": "Arlecchino",
+      "lock": true
+    },
+    {
+      "key": "FavoniusCodex",
+      "level": 90,
+      "ascension": 6,
+      "refinement": 2,
+      "location": "Baizhu",
+      "lock": true
+    },
+    {
+      "key": "PrizedIsshinBlade",
+      "level": 1,
+      "ascension": 0,
+      "refinement": 1,
+      "location": "",
+      "lock": false
+    }
+  ],
+  "artifacts": [
+    {
+      "setKey": "ADayCarvedFromRisingWinds",
+      "slotKey": "flower",
+      "level": 20,
+      "rarity": 5,
+      "mainStatKey": "hp",
+      "substats": [
+        {
+          "key": "atk",
+          "value": 39
+        },
+        {
+          "key": "critDMG_",
+          "value": 15.3
+        },
+        {
+          "key": "critRate_",
+          "value": 6.9
+        },
+        {
+          "key": "def",
+          "value": 17
+        }
+      ],
+      "location": "Albedo",
+      "lock": true,
+      "id": 1
+    },
+    {
+      "setKey": "ADayCarvedFromRisingWinds",
+      "slotKey": "plume",
+      "level": 20,
+      "rarity": 5,
+      "mainStatKey": "atk",
+      "substats": [
+        {
+          "key": "critRate_",
+          "value": 9.5
+        },
+        {
+          "key": "def",
+          "value": 44
+        },
+        {
+          "key": "def_",
+          "value": 13.6
+        },
+        {
+          "key": "enerRech_",
+          "value": 4.9
+        }
+      ],
+      "location": "Albedo",
+      "lock": true,
+      "id": 2
+    },
+    {
+      "setKey": "ADayCarvedFromRisingWinds",
+      "slotKey": "sands",
+      "level": 20,
+      "rarity": 5,
+      "mainStatKey": "eleMas",
+      "substats": [
+        {
+          "key": "hp_",
+          "value": 14.6
+        },
+        {
+          "key": "critRate_",
+          "value": 5.4
+        },
+        {
+          "key": "hp",
+          "value": 562
+        },
+        {
+          "key": "critDMG_",
+          "value": 6.2
+        }
+      ],
+      "location": "Albedo",
+      "lock": true,
+      "id": 3
+    },
+    {
+      "setKey": "ADayCarvedFromRisingWinds",
+      "slotKey": "goblet",
+      "level": 20,
+      "rarity": 5,
+      "mainStatKey": "geo_dmg_",
+      "substats": [
+        {
+          "key": "hp",
+          "value": 678
+        },
+        {
+          "key": "hp_",
+          "value": 7.9
+        },
+        {
+          "key": "enerRech_",
+          "value": 10.2
+        },
+        {
+          "key": "def_",
+          "value": 5.7
+        }
+      ],
+      "location": "Albedo",
+      "lock": true,
+      "id": 4
+    },
+    {
+      "setKey": "ADayCarvedFromRisingWinds",
+      "slotKey": "circlet",
+      "level": 20,
+      "rarity": 5,
+      "mainStatKey": "eleMas",
+      "substats": [
+        {
+          "key": "hp_",
+          "value": 12.2
+        },
+        {
+          "key": "critDMG_",
+          "value": 12.4
+        },
+        {
+          "key": "def_",
+          "value": 12.1
+        },
+        {
+          "key": "enerRech_",
+          "value": 5
+        }
+      ],
+      "location": "Albedo",
+      "lock": true,
+      "id": 5
+    },
+    {
+      "setKey": "Adventurer",
+      "slotKey": "flower",
+      "level": 20,
+      "rarity": 5,
+      "mainStatKey": "hp",
+      "substats": [
+        {
+          "key": "critDMG_",
+          "value": 16.6
+        },
+        {
+          "key": "enerRech_",
+          "value": 9.1
+        },
+        {
+          "key": "def",
+          "value": 38
+        },
+        {
+          "key": "critRate_",
+          "value": 3.4
+        }
+      ],
+      "location": "Alhaitham",
+      "lock": true,
+      "id": 6
+    },
+    {
+      "setKey": "Adventurer",
+      "slotKey": "plume",
+      "level": 20,
+      "rarity": 5,
+      "mainStatKey": "atk",
+      "substats": [
+        {
+          "key": "critDMG_",
+          "value": 17.1
+        },
+        {
+          "key": "hp",
+          "value": 452
+        },
+        {
+          "key": "atk_",
+          "value": 11.3
+        },
+        {
+          "key": "critRate_",
+          "value": 3.1
+        }
+      ],
+      "location": "Alhaitham",
+      "lock": true,
+      "id": 7
+    },
+    {
+      "setKey": "Adventurer",
+      "slotKey": "sands",
+      "level": 20,
+      "rarity": 5,
+      "mainStatKey": "hp_",
+      "substats": [
+        {
+          "key": "atk_",
+          "value": 17.6
+        },
+        {
+          "key": "def_",
+          "value": 11.5
+        },
+        {
+          "key": "enerRech_",
+          "value": 10.8
+        },
+        {
+          "key": "hp",
+          "value": 298
+        }
+      ],
+      "location": "Alhaitham",
+      "lock": true,
+      "id": 8
+    },
+    {
+      "setKey": "Adventurer",
+      "slotKey": "goblet",
+      "level": 20,
+      "rarity": 5,
+      "mainStatKey": "hydro_dmg_",
+      "substats": [
+        {
+          "key": "hp_",
+          "value": 13.1
+        },
+        {
+          "key": "eleMas",
+          "value": 40
+        },
+        {
+          "key": "atk_",
+          "value": 11.6
+        },
+        {
+          "key": "enerRech_",
+          "value": 5.6
+        }
+      ],
+      "location": "Alhaitham",
+      "lock": true,
+      "id": 9
+    },
+    {
+      "setKey": "Adventurer",
+      "slotKey": "circlet",
+      "level": 20,
+      "rarity": 5,
+      "mainStatKey": "critRate_",
+      "substats": [
+        {
+          "key": "def_",
+          "value": 18.8
+        },
+        {
+          "key": "atk_",
+          "value": 11.2
+        },
+        {
+          "key": "critDMG_",
+          "value": 12.4
+        },
+        {
+          "key": "atk",
+          "value": 14
+        }
+      ],
+      "location": "Alhaitham",
+      "lock": true,
+      "id": 10
+    },
+    {
+      "setKey": "ArchaicPetra",
+      "slotKey": "flower",
+      "level": 20,
+      "rarity": 5,
+      "mainStatKey": "hp",
+      "substats": [
+        {
+          "key": "eleMas",
+          "value": 63.7
+        },
+        {
+          "key": "def",
+          "value": 45
+        },
+        {
+          "key": "critDMG_",
+          "value": 10.8
+        },
+        {
+          "key": "def_",
+          "value": 6.9
+        }
+      ],
+      "location": "Aloy",
+      "lock": true,
+      "id": 11
+    },
+    {
+      "setKey": "ArchaicPetra",
+      "slotKey": "plume",
+      "level": 20,
+      "rarity": 5,
+      "mainStatKey": "atk",
+      "substats": [
+        {
+          "key": "critDMG_",
+          "value": 19.4
+        },
+        {
+          "key": "def_",
+          "value": 11.8
+        },
+        {
+          "key": "eleMas",
+          "value": 36.5
+        },
+        {
+          "key": "critRate_",
+          "value": 3
+        }
+      ],
+      "location": "Aloy",
+      "lock": true,
+      "id": 12
+    },
+    {
+      "setKey": "ArchaicPetra",
+      "slotKey": "sands",
+      "level": 20,
+      "rarity": 5,
+      "mainStatKey": "hp_",
+      "substats": [
+        {
+          "key": "atk",
+          "value": 43
+        },
+        {
+          "key": "eleMas",
+          "value": 39.2
+        },
+        {
+          "key": "critDMG_",
+          "value": 11.1
+        },
+        {
+          "key": "def",
+          "value": 22
+        }
+      ],
+      "location": "Aloy",
+      "lock": true,
+      "id": 13
+    },
+    {
+      "setKey": "ArchaicPetra",
+      "slotKey": "goblet",
+      "level": 20,
+      "rarity": 5,
+      "mainStatKey": "pyro_dmg_",
+      "substats": [
+        {
+          "key": "hp_",
+          "value": 17.4
+        },
+        {
+          "key": "def_",
+          "value": 13.6
+        },
+        {
+          "key": "atk",
+          "value": 34
+        },
+        {
+          "key": "hp",
+          "value": 263
+        }
+      ],
+      "location": "Aloy",
+      "lock": true,
+      "id": 14
+    },
+    {
+      "setKey": "ArchaicPetra",
+      "slotKey": "circlet",
+      "level": 20,
+      "rarity": 5,
+      "mainStatKey": "eleMas",
+      "substats": [
+        {
+          "key": "def",
+          "value": 65
+        },
+        {
+          "key": "enerRech_",
+          "value": 12
+        },
+        {
+          "key": "atk",
+          "value": 28
+        },
+        {
+          "key": "hp",
+          "value": 221
+        }
+      ],
+      "location": "Aloy",
+      "lock": true,
+      "id": 15
+    },
+    {
+      "setKey": "AubadeOfMorningstarAndMoon",
+      "slotKey": "flower",
+      "level": 20,
+      "rarity": 5,
+      "mainStatKey": "hp",
+      "substats": [
+        {
+          "key": "def",
+          "value": 54
+        },
+        {
+          "key": "enerRech_",
+          "value": 13.1
+        },
+        {
+          "key": "hp_",
+          "value": 9.7
+        },
+        {
+          "key": "atk",
+          "value": 14
+        }
+      ],
+      "location": "Arataki Itto",
+      "lock": true,
+      "id": 16
+    },
+    {
+      "setKey": "AubadeOfMorningstarAndMoon",
+      "slotKey": "plume",
+      "level": 20,
+      "rarity": 5,
+      "mainStatKey": "atk",
+      "substats": [
+        {
+          "key": "critRate_",
+          "value": 10.1
+        },
+        {
+          "key": "eleMas",
+          "value": 47
+        },
+        {
+          "key": "critDMG_",
+          "value": 11.7
+        },
+        {
+          "key": "hp_",
+          "value": 5.1
+        }
+      ],
+      "location": "Arataki Itto",
+      "lock": true,
+      "id": 17
+    },
+    {
+      "setKey": "AubadeOfMorningstarAndMoon",
+      "slotKey": "sands",
+      "level": 20,
+      "rarity": 5,
+      "mainStatKey": "def_",
+      "substats": [
+        {
+          "key": "critDMG_",
+          "value": 17
+        },
+        {
+          "key": "eleMas",
+          "value": 38
+        },
+        {
+          "key": "enerRech_",
+          "value": 11.7
+        },
+        {
+          "key": "hp_",
+          "value": 5.2
+        }
+      ],
+      "location": "Arataki Itto",
+      "lock": true,
+      "id": 18
+    },
+    {
+      "setKey": "AubadeOfMorningstarAndMoon",
+      "slotKey": "goblet",
+      "level": 20,
+      "rarity": 5,
+      "mainStatKey": "physical_dmg_",
+      "substats": [
+        {
+          "key": "def_",
+          "value": 15
+        },
+        {
+          "key": "atk_",
+          "value": 9.5
+        },
+        {
+          "key": "hp_",
+          "value": 8.8
+        },
+        {
+          "key": "def",
+          "value": 22
+        }
+      ],
+      "location": "Arataki Itto",
+      "lock": true,
+      "id": 19
+    },
+    {
+      "setKey": "AubadeOfMorningstarAndMoon",
+      "slotKey": "circlet",
+      "level": 20,
+      "rarity": 5,
+      "mainStatKey": "atk_",
+      "substats": [
+        {
+          "key": "eleMas",
+          "value": 50.6
+        },
+        {
+          "key": "def",
+          "value": 40
+        },
+        {
+          "key": "hp_",
+          "value": 10.9
+        },
+        {
+          "key": "def_",
+          "value": 7.1
+        }
+      ],
+      "location": "Arataki Itto",
+      "lock": true,
+      "id": 20
+    },
+    {
+      "setKey": "Berserker",
+      "slotKey": "flower",
+      "level": 20,
+      "rarity": 5,
+      "mainStatKey": "hp",
+      "substats": [
+        {
+          "key": "hp_",
+          "value": 12.3
+        },
+        {
+          "key": "atk_",
+          "value": 9.5
+        },
+        {
+          "key": "def",
+          "value": 45
+        },
+        {
+          "key": "critRate_",
+          "value": 2.7
+        }
+      ],
+      "location": "Arlecchino",
+      "lock": true,
+      "id": 21
+    },
+    {
+      "setKey": "Berserker",
+      "slotKey": "plume",
+      "level": 20,
+      "rarity": 5,
+      "mainStatKey": "atk",
+      "substats": [
+        {
+          "key": "def_",
+          "value": 20.4
+        },
+        {
+          "key": "hp",
+          "value": 445
+        },
+        {
+          "key": "critRate_",
+          "value": 6.3
+        },
+        {
+          "key": "eleMas",
+          "value": 23
+        }
+      ],
+      "location": "Arlecchino",
+      "lock": true,
+      "id": 22
+    },
+    {
+      "setKey": "Berserker",
+      "slotKey": "sands",
+      "level": 20,
+      "rarity": 5,
+      "mainStatKey": "def_",
+      "substats": [
+        {
+          "key": "hp",
+          "value": 851
+        },
+        {
+          "key": "hp_",
+          "value": 11.2
+        },
+        {
+          "key": "critRate_",
+          "value": 5.9
+        },
+        {
+          "key": "atk",
+          "value": 15
+        }
+      ],
+      "location": "Arlecchino",
+      "lock": true,
+      "id": 23
+    },
+    {
+      "setKey": "Berserker",
+      "slotKey": "goblet",
+      "level": 20,
+      "rarity": 5,
+      "mainStatKey": "def_",
+      "substats": [
+        {
+          "key": "atk",
+          "value": 40
+        },
+        {
+          "key": "enerRech_",
+          "value": 11.7
+        },
+        {
+          "key": "atk_",
+          "value": 11.3
+        },
+        {
+          "key": "critDMG_",
+          "value": 5.7
+        }
+      ],
+      "location": "Arlecchino",
+      "lock": true,
+      "id": 24
+    },
+    {
+      "setKey": "Berserker",
+      "slotKey": "circlet",
+      "level": 20,
+      "rarity": 5,
+      "mainStatKey": "def_",
+      "substats": [
+        {
+          "key": "critDMG_",
+          "value": 16.3
+        },
+        {
+          "key": "hp_",
+          "value": 10.4
+        },
+        {
+          "key": "critRate_",
+          "value": 6.5
+        },
+        {
+          "key": "hp",
+          "value": 209
+        }
+      ],
+      "location": "Arlecchino",
+      "lock": true,
+      "id": 25
+    },
+    {
+      "setKey": "BlizzardStrayer",
+      "slotKey": "flower",
+      "level": 20,
+      "rarity": 5,
+      "mainStatKey": "hp",
+      "substats": [
+        {
+          "key": "critRate_",
+          "value": 11.7
+        },
+        {
+          "key": "atk",
+          "value": 26
+        },
+        {
+          "key": "def",
+          "value": 44
+        },
+        {
+          "key": "eleMas",
+          "value": 17.3
+        }
+      ],
+      "location": "Baizhu",
+      "lock": true,
+      "id": 26
+    },
+    {
+      "setKey": "BlizzardStrayer",
+      "slotKey": "plume",
+      "level": 20,
+      "rarity": 5,
+      "mainStatKey": "atk",
+      "substats": [
+        {
+          "key": "def",
+          "value": 53
+        },
+        {
+          "key": "enerRech_",
+          "value": 11.8
+        },
+        {
+          "key": "hp_",
+          "value": 8
+        },
+        {
+          "key": "def_",
+          "value": 7.2
+        }
+      ],
+      "location": "Baizhu",
+      "lock": true,
+      "id": 27
+    },
+    {
+      "setKey": "BlizzardStrayer",
+      "slotKey": "sands",
+      "level": 20,
+      "rarity": 5,
+      "mainStatKey": "hp_",
+      "substats": [
+        {
+          "key": "def",
+          "value": 47
+        },
+        {
+          "key": "hp",
+          "value": 450
+        },
+        {
+          "key": "def_",
+          "value": 11.2
+        },
+        {
+          "key": "enerRech_",
+          "value": 4.7
+        }
+      ],
+      "location": "Baizhu",
+      "lock": true,
+      "id": 28
+    },
+    {
+      "setKey": "BlizzardStrayer",
+      "slotKey": "goblet",
+      "level": 20,
+      "rarity": 5,
+      "mainStatKey": "anemo_dmg_",
+      "substats": [
+        {
+          "key": "hp",
+          "value": 628
+        },
+        {
+          "key": "critRate_",
+          "value": 7
+        },
+        {
+          "key": "critDMG_",
+          "value": 13.6
+        },
+        {
+          "key": "def",
+          "value": 16
+        }
+      ],
+      "location": "Baizhu",
+      "lock": true,
+      "id": 29
+    },
+    {
+      "setKey": "BlizzardStrayer",
+      "slotKey": "circlet",
+      "level": 20,
+      "rarity": 5,
+      "mainStatKey": "hp_",
+      "substats": [
+        {
+          "key": "atk_",
+          "value": 12.1
+        },
+        {
+          "key": "atk",
+          "value": 31
+        },
+        {
+          "key": "enerRech_",
+          "value": 12.4
+        },
+        {
+          "key": "def_",
+          "value": 6.8
+        }
+      ],
+      "location": "Baizhu",
+      "lock": true,
+      "id": 30
+    },
+    {
+      "setKey": "TenacityOfTheMillelith",
+      "slotKey": "flower",
+      "level": 8,
+      "rarity": 5,
+      "mainStatKey": "hp",
+      "substats": [
+        {
+          "key": "def_",
+          "value": 11.5
+        },
+        {
+          "key": "enerRech_",
+          "value": 5.3
+        },
+        {
+          "key": "hp_",
+          "value": 4.3
+        },
+        {
+          "key": "atk_",
+          "value": 4.7
+        }
+      ],
+      "location": "",
+      "lock": false,
+      "id": 31
+    },
+    {
+      "setKey": "CrimsonWitchOfFlames",
+      "slotKey": "circlet",
+      "level": 12,
+      "rarity": 5,
+      "mainStatKey": "atk_",
+      "substats": [
+        {
+          "key": "atk",
+          "value": 38
+        },
+        {
+          "key": "enerRech_",
+          "value": 5.2
+        },
+        {
+          "key": "eleMas",
+          "value": 15.9
+        },
+        {
+          "key": "critDMG_",
+          "value": 5.6
+        }
+      ],
+      "location": "",
+      "lock": false,
+      "id": 32
+    },
+    {
+      "setKey": "NymphsDream",
+      "slotKey": "sands",
+      "level": 16,
+      "rarity": 5,
+      "mainStatKey": "def_",
+      "substats": [
+        {
+          "key": "eleMas",
+          "value": 40.2
+        },
+        {
+          "key": "atk",
+          "value": 13
+        },
+        {
+          "key": "hp_",
+          "value": 4
+        },
+        {
+          "key": "atk_",
+          "value": 4.5
+        }
+      ],
+      "location": "",
+      "lock": false,
+      "id": 33
+    },
+    {
+      "setKey": "OceanHuedClam",
+      "slotKey": "plume",
+      "level": 0,
+      "rarity": 5,
+      "mainStatKey": "atk",
+      "substats": [
+        {
+          "key": "eleMas",
+          "value": 45.2
+        },
+        {
+          "key": "hp",
+          "value": 245
+        },
+        {
+          "key": "enerRech_",
+          "value": 5.7
+        }
+      ],
+      "location": "",
+      "lock": false,
+      "id": 34
+    },
+    {
+      "setKey": "GildedDreams",
+      "slotKey": "goblet",
+      "level": 0,
+      "rarity": 5,
+      "mainStatKey": "electro_dmg_",
+      "substats": [
+        {
+          "key": "def",
+          "value": 35
+        },
+        {
+          "key": "enerRech_",
+          "value": 5.7
+        },
+        {
+          "key": "hp",
+          "value": 277
+        }
+      ],
+      "location": "",
+      "lock": false,
+      "id": 35
+    },
+    {
+      "setKey": "CrimsonWitchOfFlames",
+      "slotKey": "plume",
+      "level": 12,
+      "rarity": 5,
+      "mainStatKey": "atk",
+      "substats": [
+        {
+          "key": "atk_",
+          "value": 9.9
+        },
+        {
+          "key": "def",
+          "value": 18
+        },
+        {
+          "key": "def_",
+          "value": 5.3
+        },
+        {
+          "key": "hp_",
+          "value": 4.9
+        }
+      ],
+      "location": "",
+      "lock": false,
+      "id": 36
+    },
+    {
+      "setKey": "NighttimeWhispersInTheEchoingWoods",
+      "slotKey": "goblet",
+      "level": 8,
+      "rarity": 5,
+      "mainStatKey": "hp_",
+      "substats": [
+        {
+          "key": "def_",
+          "value": 12.1
+        },
+        {
+          "key": "eleMas",
+          "value": 17.4
+        },
+        {
+          "key": "atk",
+          "value": 19
+        },
+        {
+          "key": "critRate_",
+          "value": 2.7
+        }
+      ],
+      "location": "",
+      "lock": false,
+      "id": 37
+    },
+    {
+      "setKey": "MarechausseeHunter",
+      "slotKey": "flower",
+      "level": 0,
+      "rarity": 5,
+      "mainStatKey": "hp",
+      "substats": [
+        {
+          "key": "def",
+          "value": 32
+        },
+        {
+          "key": "hp_",
+          "value": 4.1
+        },
+        {
+          "key": "eleMas",
+          "value": 21.4
+        }
+      ],
+      "location": "",
+      "lock": false,
+      "id": 38
+    },
+    {
+      "setKey": "Berserker",
+      "slotKey": "goblet",
+      "level": 20,
+      "rarity": 5,
+      "mainStatKey": "physical_dmg_",
+      "substats": [
+        {
+          "key": "atk",
+          "value": 38
+        },
+        {
+          "key": "critDMG_",
+          "value": 7.2
+        },
+        {
+          "key": "hp_",
+          "value": 4.8
+        },
+        {
+          "key": "eleMas",
+          "value": 19.1
+        }
+      ],
+      "location": "",
+      "lock": false,
+      "id": 39
+    },
+    {
+      "setKey": "NymphsDream",
+      "slotKey": "sands",
+      "level": 8,
+      "rarity": 5,
+      "mainStatKey": "hp_",
+      "substats": [
+        {
+          "key": "def",
+          "value": 42
+        },
+        {
+          "key": "critDMG_",
+          "value": 7.3
+        },
+        {
+          "key": "hp",
+          "value": 252
+        },
+        {
+          "key": "atk_",
+          "value": 5.8
+        }
+      ],
+      "location": "",
+      "lock": false,
+      "id": 40
+    },
+    {
+      "setKey": "FinaleOfTheDeepGalleries",
+      "slotKey": "plume",
+      "level": 16,
+      "rarity": 5,
+      "mainStatKey": "atk",
+      "substats": [
+        {
+          "key": "critRate_",
+          "value": 7.6
+        },
+        {
+          "key": "enerRech_",
+          "value": 4.9
+        },
+        {
+          "key": "hp_",
+          "value": 5.1
+        },
+        {
+          "key": "hp",
+          "value": 204
+        }
+      ],
+      "location": "",
+      "lock": false,
+      "id": 41
+    },
+    {
+      "setKey": "MartialArtist",
+      "slotKey": "circlet",
+      "level": 4,
+      "rarity": 5,
+      "mainStatKey": "critRate_",
+      "substats": [
+        {
+          "key": "enerRech_",
+          "value": 12.8
+        },
+        {
+          "key": "atk",
+          "value": 17
+        },
+        {
+          "key": "hp_",
+          "value": 5.8
+        },
+        {
+          "key": "def",
+          "value": 21
+        }
+      ],
+      "location": "",
+      "lock": false,
+      "id": 42
+    },
+    {
+      "setKey": "Adventurer",
+      "slotKey": "plume",
+      "level": 16,
+      "rarity": 5,
+      "mainStatKey": "atk",
+      "substats": [
+        {
+          "key": "atk_",
+          "value": 10.9
+        },
+        {
+          "key": "hp_",
+          "value": 4.2
+        },
+        {
+          "key": "def_",
+          "value": 7.3
+        },
+        {
+          "key": "def",
+          "value": 22
+        }
+      ],
+      "location": "",
+      "lock": false,
+      "id": 43
+    },
+    {
+      "setKey": "Gambler",
+      "slotKey": "goblet",
+      "level": 4,
+      "rarity": 5,
+      "mainStatKey": "atk_",
+      "substats": [
+        {
+          "key": "hp_",
+          "value": 9.9
+        },
+        {
+          "key": "critDMG_",
+          "value": 6.2
+        },
+        {
+          "key": "def_",
+          "value": 7
+        },
+        {
+          "key": "critRate_",
+          "value": 2.8
+        }
+      ],
+      "location": "",
+      "lock": false,
+      "id": 44
+    },
+    {
+      "setKey": "CrimsonWitchOfFlames",
+      "slotKey": "goblet",
+      "level": 4,
+      "rarity": 5,
+      "mainStatKey": "hydro_dmg_",
+      "substats": [
+        {
+          "key": "enerRech_",
+          "value": 12.9
+        },
+        {
+          "key": "atk_",
+          "value": 4
+        },
+        {
+          "key": "hp_",
+          "value": 4.6
+        },
+        {
+          "key": "critRate_",
+          "value": 3.9
+        }
+      ],
+      "location": "",
+      "lock": false,
+      "id": 45
+    },
+    {
+      "setKey": "ScrollOfTheHeroOfCinderCity",
+      "slotKey": "circlet",
+      "level": 20,
+      "rarity": 5,
+      "mainStatKey": "heal_",
+      "substats": [
+        {
+          "key": "hp_",
+          "value": 10.3
+        },
+        {
+          "key": "def_",
+          "value": 6.4
+        },
+        {
+          "key": "critDMG_",
+          "value": 7.4
+        },
+        {
+          "key": "critRate_",
+          "value": 3.3
+        }
+      ],
+      "location": "",
+      "lock": false,
+      "id": 46
+    },
+    {
+      "setKey": "RetracingBolide",
+      "slotKey": "circlet",
+      "level": 0,
+      "rarity": 5,
+      "mainStatKey": "eleMas",
+      "substats": [
+        {
+          "key": "critRate_",
+          "value": 6.2
+        },
+        {
+          "key": "atk",
+          "value": 16
+        },
+        {
+          "key": "enerRech_",
+          "value": 4.9
+        }
+      ],
+      "location": "",
+      "lock": false,
+      "id": 47
+    },
+    {
+      "setKey": "ViridescentVenerer",
+      "slotKey": "flower",
+      "level": 0,
+      "rarity": 5,
+      "mainStatKey": "hp",
+      "substats": [
+        {
+          "key": "hp_",
+          "value": 10
+        },
+        {
+          "key": "enerRech_",
+          "value": 5.2
+        },
+        {
+          "key": "def",
+          "value": 17
+        }
+      ],
+      "location": "",
+      "lock": false,
+      "id": 48
+    },
+    {
+      "setKey": "OceanHuedClam",
+      "slotKey": "circlet",
+      "level": 16,
+      "rarity": 5,
+      "mainStatKey": "critDMG_",
+      "substats": [
+        {
+          "key": "def",
+          "value": 42
+        },
+        {
+          "key": "eleMas",
+          "value": 21.4
+        },
+        {
+          "key": "hp",
+          "value": 274
+        },
+        {
+          "key": "hp_",
+          "value": 4.9
+        }
+      ],
+      "location": "",
+      "lock": false,
+      "id": 49
+    },
+    {
+      "setKey": "FinaleOfTheDeepGalleries",
+      "slotKey": "sands",
+      "level": 0,
+      "rarity": 5,
+      "mainStatKey": "eleMas",
+      "substats": [
+        {
+          "key": "enerRech_",
+          "value": 11.7
+        },
+        {
+          "key": "hp_",
+          "value": 5.7
+        },
+        {
+          "key": "critDMG_",
+          "value": 5.4
+        }
+      ],
+      "location": "",
+      "lock": false,
+      "id": 50
+    },
+    {
+      "setKey": "BlizzardStrayer",
+      "slotKey": "plume",
+      "level": 8,
+      "rarity": 5,
+      "mainStatKey": "atk",
+      "substats": [
+        {
+          "key": "critDMG_",
+          "value": 11.2
+        },
+        {
+          "key": "atk_",
+          "value": 5.6
+        },
+        {
+          "key": "eleMas",
+          "value": 16.6
+        },
+        {
+          "key": "def",
+          "value": 20
+        }
+      ],
+      "location": "",
+      "lock": false,
+      "id": 51
+    },
+    {
+      "setKey": "NoblesseOblige",
+      "slotKey": "plume",
+      "level": 0,
+      "rarity": 5,
+      "mainStatKey": "atk",
+      "substats": [
+        {
+          "key": "def",
+          "value": 38
+        },
+        {
+          "key": "critDMG_",
+          "value": 5.4
+        },
+        {
+          "key": "def_",
+          "value": 5.2
+        }
+      ],
+      "location": "",
+      "lock": false,
+      "id": 52
+    },
+    {
+      "setKey": "DefendersWill",
+      "slotKey": "circlet",
+      "level": 12,
+      "rarity": 5,
+      "mainStatKey": "def_",
+      "substats": [
+        {
+          "key": "enerRech_",
+          "value": 10.5
+        },
+        {
+          "key": "critRate_",
+          "value": 2.8
+        },
+        {
+          "key": "atk",
+          "value": 13
+        },
+        {
+          "key": "hp_",
+          "value": 5.5
+        }
+      ],
+      "location": "",
+      "lock": false,
+      "id": 53
+    },
+    {
+      "setKey": "CelestialGift",
+      "slotKey": "sands",
+      "level": 0,
+      "rarity": 5,
+      "mainStatKey": "hp_",
+      "substats": [
+        {
+          "key": "enerRech_",
+          "value": 10.2
+        },
+        {
+          "key": "eleMas",
+          "value": 21.5
+        },
+        {
+          "key": "critRate_",
+          "value": 3.1
+        }
+      ],
+      "location": "",
+      "lock": false,
+      "id": 54
+    },
+    {
+      "setKey": "ADayCarvedFromRisingWinds",
+      "slotKey": "flower",
+      "level": 0,
+      "rarity": 5,
+      "mainStatKey": "hp",
+      "substats": [
+        {
+          "key": "critRate_",
+          "value": 3.5
+        },
+        {
+          "key": "atk_",
+          "value": 5.3
+        },
+        {
+          "key": "eleMas",
+          "value": 21
+        }
+      ],
+      "location": "",
+      "lock": false,
+      "id": 55
+    },
+    {
+      "setKey": "ADayCarvedFromRisingWinds",
+      "slotKey": "flower",
+      "level": 0,
+      "rarity": 5,
+      "mainStatKey": "hp",
+      "substats": [
+        {
+          "key": "critRate_",
+          "value": 3.5
+        },
+        {
+          "key": "atk_",
+          "value": 5.3
+        },
+        {
+          "key": "eleMas",
+          "value": 21
+        }
+      ],
+      "location": "",
+      "lock": false,
+      "id": 56
+    },
+    {
+      "setKey": "ADayCarvedFromRisingWinds",
+      "slotKey": "flower",
+      "level": 16,
+      "rarity": 5,
+      "mainStatKey": "hp",
+      "substats": [
+        {
+          "key": "critRate_",
+          "value": 10.1
+        },
+        {
+          "key": "atk_",
+          "value": 9.9
+        },
+        {
+          "key": "eleMas",
+          "value": 40
+        },
+        {
+          "key": "critDMG_",
+          "value": 13.2
+        }
+      ],
+      "location": "",
+      "lock": false,
+      "id": 57
+    },
+    {
+      "setKey": "SetThatDoesNotExist",
+      "slotKey": "goblet",
+      "level": 20,
+      "rarity": 5,
+      "mainStatKey": "pyro_dmg_",
+      "substats": [
+        {
+          "key": "critRate_",
+          "value": 7
+        },
+        {
+          "key": "",
+          "value": 0
+        }
+      ],
+      "location": "",
+      "lock": false,
+      "id": 60
+    }
+  ],
+  "materials": {
+    "HerosWit": 421,
+    "MysticEnhancementOre": 1180
+  }
+}

@@ -1,0 +1,355 @@
+{
+  "schemaVersion": 1,
+  "gameVersion": "7.0",
+  "genshinDbVersion": "5.2.13",
+  "reviewedAt": "2026-09-09",
+  "_why": "Stackability is not derivable from the effect text. Only 8 of 63 sets carry any stacking language and they skew to recent patches; Deepwood is a non-stacking team debuff with no marker word at all, Gilded Dreams says 'party member' five times while buffing only the wearer, and 'stack' means self-refreshing counters in Nymph's Dream. So it is curated, keyed by set id, and reviewed per entry.",
+  "mechanics": {
+    "hexerei": {
+      "label": "Hexerei",
+      "since": "6.6",
+      "note": "Party state 'Hexerei: Secret Rite' plus a character classification, gated by the Hexenzirkel affiliation. Present in the data only as free text."
+    }
+  },
+  "sets": {
+    "15002": {
+      "stacking": "partitioned",
+      "partitionField": "vvAbsorbedElement",
+      "roles": [
+        "debuffer",
+        "enabler"
+      ],
+      "note": "RES shred does not stack for the same element, but two wearers swirling different elements both do work.",
+      "evidence": "wiki",
+      "reviewedInVersion": "7.0",
+      "bonus2pc": [
+        {
+          "prop": "FIGHT_PROP_WIND_ADD_HURT",
+          "value": 15
+        }
+      ]
+    },
+    "15007": {
+      "stacking": "non-stacking",
+      "roles": [
+        "buffer"
+      ],
+      "note": "Text says so outright: 'This effect cannot stack.'",
+      "evidence": "wiki",
+      "reviewedInVersion": "7.0",
+      "bonus2pc": [
+        {
+          "prop": "FIGHT_PROP_ATTACK_PERCENT",
+          "value": 20
+        }
+      ]
+    },
+    "15025": {
+      "stacking": "non-stacking",
+      "roles": [
+        "debuffer"
+      ],
+      "note": "Team-wide Dendro RES shred with no 'party', 'nearby' or stacking wording anywhere in the text. The case that proves text derivation cannot work.",
+      "evidence": "wiki",
+      "reviewedInVersion": "7.0",
+      "bonus2pc": [
+        {
+          "prop": "FIGHT_PROP_GRASS_ADD_HURT",
+          "value": 15
+        }
+      ]
+    },
+    "10007": {
+      "stacking": "non-stacking",
+      "roles": [
+        "buffer"
+      ],
+      "note": "Party-wide EM aura, no stacking clause in the text.",
+      "evidence": "wiki",
+      "reviewedInVersion": "7.0",
+      "bonus2pc": [
+        {
+          "prop": "FIGHT_PROP_ELEMENT_MASTERY",
+          "value": 80
+        }
+      ]
+    },
+    "15017": {
+      "stacking": "non-stacking",
+      "roles": [
+        "buffer",
+        "shielder"
+      ],
+      "note": "Nearby-party ATK buff, no stacking clause in the text.",
+      "evidence": "wiki",
+      "reviewedInVersion": "7.0",
+      "bonus2pc": [
+        {
+          "prop": "FIGHT_PROP_HP_PERCENT",
+          "value": 20
+        }
+      ]
+    },
+    "10009": {
+      "stacking": "non-stacking",
+      "roles": [
+        "battery"
+      ],
+      "evidence": "wiki",
+      "reviewedInVersion": "7.0",
+      "bonus2pc": [
+        {
+          "prop": "FIGHT_PROP_CHARGE_EFFICIENCY",
+          "value": 20
+        }
+      ]
+    },
+    "15014": {
+      "stacking": "non-stacking",
+      "roles": [
+        "buffer"
+      ],
+      "note": "Only one elemental DMG bonus can be gained this way at a time.",
+      "evidence": "wiki",
+      "reviewedInVersion": "7.0",
+      "bonus2pc": [
+        {
+          "prop": "FIGHT_PROP_ROCK_ADD_HURT",
+          "value": 15
+        }
+      ]
+    },
+    "10012": {
+      "stacking": "non-stacking",
+      "roles": [
+        "battery"
+      ],
+      "note": "Party-wide but conditional on bow and catalyst holders.",
+      "evidence": "wiki",
+      "reviewedInVersion": "7.0",
+      "bonus2pc": [
+        {
+          "prop": "FIGHT_PROP_CHARGE_EFFICIENCY",
+          "value": 20
+        }
+      ]
+    },
+    "15033": {
+      "stacking": "non-stacking",
+      "roles": [
+        "healer",
+        "buffer"
+      ],
+      "note": "Only a single instance of Yearning can exist, though it records healing from several wearers.",
+      "evidence": "wiki",
+      "reviewedInVersion": "7.0",
+      "bonus2pc": [
+        {
+          "prop": "FIGHT_PROP_HEAL_ADD",
+          "value": 15
+        }
+      ]
+    },
+    "15037": {
+      "stacking": "non-stacking",
+      "roles": [
+        "buffer"
+      ],
+      "evidence": "wiki",
+      "reviewedInVersion": "7.0"
+    },
+    "15041": {
+      "stacking": "non-stacking",
+      "roles": [
+        "buffer"
+      ],
+      "evidence": "wiki",
+      "reviewedInVersion": "7.0"
+    },
+    "15042": {
+      "stacking": "non-stacking",
+      "roles": [
+        "buffer"
+      ],
+      "evidence": "wiki",
+      "reviewedInVersion": "7.0"
+    },
+    "15045": {
+      "stacking": "non-stacking",
+      "roles": [
+        "buffer"
+      ],
+      "mechanics": [
+        "hexerei"
+      ],
+      "note": "Upgrades to a party-wide elemental DMG bonus while the party has Hexerei: Secret Rite.",
+      "evidence": "wiki",
+      "reviewedInVersion": "7.0"
+    },
+    "15048": {
+      "stacking": "non-stacking",
+      "roles": [
+        "buffer"
+      ],
+      "note": "The 4pc text carries a typo in the official string, which is one more reason not to parse it.",
+      "evidence": "wiki",
+      "reviewedInVersion": "7.0"
+    },
+    "15026": {
+      "stacking": "wearer-only",
+      "roles": [
+        "sub-dps",
+        "enabler"
+      ],
+      "note": "Says 'party member' five times and buffs only the wearer.",
+      "evidence": "wiki",
+      "reviewedInVersion": "7.0",
+      "bonus2pc": [
+        {
+          "prop": "FIGHT_PROP_ELEMENT_MASTERY",
+          "value": 80
+        }
+      ]
+    },
+    "15029": {
+      "stacking": "wearer-only",
+      "roles": [
+        "main-dps"
+      ],
+      "note": "Its 'stacks' are self-refreshing counters, the opposite of the cross-wearer sense.",
+      "evidence": "wiki",
+      "reviewedInVersion": "7.0",
+      "bonus2pc": [
+        {
+          "prop": "FIGHT_PROP_WATER_ADD_HURT",
+          "value": 15
+        }
+      ]
+    },
+    "15031": {
+      "stacking": "wearer-only",
+      "roles": [
+        "main-dps"
+      ],
+      "evidence": "wiki",
+      "reviewedInVersion": "7.0",
+      "bonus2pc": [
+        {
+          "prop": "FIGHT_PROP_CRITICAL",
+          "value": 12
+        }
+      ]
+    },
+    "15020": {
+      "stacking": "wearer-only",
+      "roles": [
+        "sub-dps",
+        "main-dps"
+      ],
+      "evidence": "wiki",
+      "reviewedInVersion": "7.0",
+      "bonus2pc": [
+        {
+          "prop": "FIGHT_PROP_CHARGE_EFFICIENCY",
+          "value": 20
+        }
+      ]
+    },
+    "15006": {
+      "stacking": "wearer-only",
+      "roles": [
+        "main-dps"
+      ],
+      "evidence": "wiki",
+      "reviewedInVersion": "7.0",
+      "bonus2pc": [
+        {
+          "prop": "FIGHT_PROP_FIRE_ADD_HURT",
+          "value": 15
+        }
+      ]
+    },
+    "15022": {
+      "stacking": "wearer-only",
+      "roles": [
+        "healer"
+      ],
+      "evidence": "wiki",
+      "reviewedInVersion": "7.0",
+      "bonus2pc": [
+        {
+          "prop": "FIGHT_PROP_HEAL_ADD",
+          "value": 15
+        }
+      ]
+    },
+    "15034": {
+      "stacking": "wearer-only",
+      "roles": [
+        "sub-dps"
+      ],
+      "evidence": "wiki",
+      "reviewedInVersion": "7.0",
+      "bonus2pc": [
+        {
+          "prop": "FIGHT_PROP_DEFENSE_PERCENT",
+          "value": 30
+        }
+      ]
+    },
+    "15036": {
+      "stacking": "wearer-only",
+      "roles": [
+        "sub-dps"
+      ],
+      "evidence": "wiki",
+      "reviewedInVersion": "7.0",
+      "bonus2pc": [
+        {
+          "prop": "FIGHT_PROP_ATTACK_PERCENT",
+          "value": 18
+        }
+      ]
+    },
+    "15028": {
+      "stacking": "wearer-only",
+      "roles": [
+        "enabler",
+        "sub-dps"
+      ],
+      "evidence": "wiki",
+      "reviewedInVersion": "7.0",
+      "bonus2pc": [
+        {
+          "prop": "FIGHT_PROP_ELEMENT_MASTERY",
+          "value": 80
+        }
+      ]
+    },
+    "15038": {
+      "stacking": "wearer-only",
+      "roles": [
+        "main-dps"
+      ],
+      "evidence": "wiki",
+      "reviewedInVersion": "7.0",
+      "bonus2pc": [
+        {
+          "prop": "FIGHT_PROP_ATTACK_PERCENT",
+          "value": 18
+        }
+      ]
+    }
+  },
+  "characters": {
+    "10000131": {
+      "mechanics": [
+        "hexerei"
+      ],
+      "note": "Hexenzirkel affiliation. The classification exists only in talent prose.",
+      "reviewedInVersion": "7.0"
+    }
+  },
+  "weapons": {},
+  "_bonus2pc": "Flat two-piece bonuses as a stat vector, so the totals layer can add them. Four-piece effects are deliberately absent: almost all are conditional, and summing them would need a damage model and an uptime assumption."
+}

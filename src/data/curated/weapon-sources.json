@@ -1,0 +1,228 @@
+{
+  "sources": {
+    "11406": {
+      "source": "forge",
+      "name": "Prototype Rancour"
+    },
+    "11407": {
+      "source": "forge",
+      "name": "Iron Sting"
+    },
+    "11408": {
+      "source": "starglitter",
+      "name": "Blackcliff Longsword"
+    },
+    "11409": {
+      "source": "battlepass",
+      "name": "The Black Sword"
+    },
+    "11413": {
+      "source": "event",
+      "name": "Festering Desire"
+    },
+    "11414": {
+      "source": "forge",
+      "name": "Amenoma Kageuchi"
+    },
+    "11415": {
+      "source": "event",
+      "name": "Cinnabar Spindle"
+    },
+    "11417": {
+      "source": "forge",
+      "name": "Sapwood Blade"
+    },
+    "11418": {
+      "source": "event",
+      "name": "Xiphos' Moonlight"
+    },
+    "11422": {
+      "source": "event",
+      "name": "Toukabou Shigure"
+    },
+    "11425": {
+      "source": "forge",
+      "name": "Finale of the Deep"
+    },
+    "11431": {
+      "source": "forge",
+      "name": "Flute of Ezpitzal"
+    },
+    "12406": {
+      "source": "forge",
+      "name": "Prototype Archaic"
+    },
+    "12407": {
+      "source": "forge",
+      "name": "Whiteblind"
+    },
+    "12408": {
+      "source": "starglitter",
+      "name": "Blackcliff Slasher"
+    },
+    "12409": {
+      "source": "battlepass",
+      "name": "Serpent Spine"
+    },
+    "12411": {
+      "source": "forge",
+      "name": "Snow-Tombed Starsilver"
+    },
+    "12412": {
+      "source": "event",
+      "name": "Luxurious Sea-Lord"
+    },
+    "12414": {
+      "source": "forge",
+      "name": "Katsuragikiri Nagamasa"
+    },
+    "12417": {
+      "source": "forge",
+      "name": "Forest Regalia"
+    },
+    "12418": {
+      "source": "event",
+      "name": "Mailed Flower"
+    },
+    "12425": {
+      "source": "forge",
+      "name": "Tidal Shadow"
+    },
+    "12426": {
+      "source": "event",
+      "name": "Ultimate Overlord's Mega Magic Sword"
+    },
+    "13402": {
+      "source": "forge",
+      "name": "Prototype Starglitter"
+    },
+    "13403": {
+      "source": "forge",
+      "name": "Crescent Pike"
+    },
+    "13404": {
+      "source": "starglitter",
+      "name": "Blackcliff Pole"
+    },
+    "13405": {
+      "source": "battlepass",
+      "name": "Deathmatch"
+    },
+    "13409": {
+      "source": "forge",
+      "name": "Dragonspine Spear"
+    },
+    "13414": {
+      "source": "forge",
+      "name": "Kitain Cross Spear"
+    },
+    "13417": {
+      "source": "forge",
+      "name": "Moonpiercer"
+    },
+    "13425": {
+      "source": "forge",
+      "name": "Rightful Reward"
+    },
+    "13430": {
+      "source": "forge",
+      "name": "Mountain-Bracing Bolt"
+    },
+    "13431": {
+      "source": "forge",
+      "name": "Footprint of the Rainbow"
+    },
+    "14405": {
+      "source": "battlepass",
+      "name": "Solar Pearl"
+    },
+    "14406": {
+      "source": "forge",
+      "name": "Prototype Amber"
+    },
+    "14407": {
+      "source": "forge",
+      "name": "Mappa Mare"
+    },
+    "14408": {
+      "source": "starglitter",
+      "name": "Blackcliff Agate"
+    },
+    "14412": {
+      "source": "forge",
+      "name": "Frostbearer"
+    },
+    "14413": {
+      "source": "event",
+      "name": "Dodoco Tales"
+    },
+    "14414": {
+      "source": "forge",
+      "name": "Hakushin Ring"
+    },
+    "14417": {
+      "source": "forge",
+      "name": "Fruit of Fulfillment"
+    },
+    "14424": {
+      "source": "battlepass",
+      "name": "Sacrificial Jade"
+    },
+    "14425": {
+      "source": "forge",
+      "name": "Flowing Purity"
+    },
+    "14426": {
+      "source": "battlepass",
+      "name": "Ballad of the Boundless Blue"
+    },
+    "14430": {
+      "source": "forge",
+      "name": "Waveriding Whirl"
+    },
+    "15406": {
+      "source": "forge",
+      "name": "Prototype Crescent"
+    },
+    "15407": {
+      "source": "forge",
+      "name": "Compound Bow"
+    },
+    "15408": {
+      "source": "starglitter",
+      "name": "Blackcliff Warbow"
+    },
+    "15409": {
+      "source": "battlepass",
+      "name": "The Viridescent Hunt"
+    },
+    "15411": {
+      "source": "event",
+      "name": "Fading Twilight"
+    },
+    "15414": {
+      "source": "forge",
+      "name": "Hamayumi"
+    },
+    "15417": {
+      "source": "forge",
+      "name": "King's Squire"
+    },
+    "15419": {
+      "source": "event",
+      "name": "Ibis Piercer"
+    },
+    "15426": {
+      "source": "battlepass",
+      "name": "Cloudforged"
+    },
+    "15427": {
+      "source": "forge",
+      "name": "Range Gauge"
+    },
+    "15431": {
+      "source": "forge",
+      "name": "Chain Breaker"
+    }
+  }
+}
