@@ -1,0 +1,108 @@
+name: catalog update
+
+# Every Monday, and on request. `genshin-db` publishes about every six weeks,
+# on the game's patch cadence, so a weekly look is cheap and never late by
+# more than a few days.
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Nothing downstream should run when the catalogue has not moved: the
+      # generated output carries a timestamp, so regenerating it always
+      # produces a diff and would open an empty pull request every week.
+      - id: version
+        name: Is there a newer genshin-db?
+        run: |
+          current=$(node -p "require('genshin-db/package.json').version")
+          latest=$(npm view genshin-db version)
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          echo "latest=$latest" >> "$GITHUB_OUTPUT"
+          if [ "$current" = "$latest" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "genshin-db is already at $current."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "genshin-db $current -> $latest."
+          fi
+
+      - if: steps.version.outputs.changed == 'true'
+        run: pnpm add "genshin-db@${{ steps.version.outputs.latest }}"
+
+      - if: steps.version.outputs.changed == 'true'
+        run: pnpm data:build
+
+      # The guards that decide whether this is a pull request or a bug report.
+      # A patch can rename an asset, add an item whose GOOD key collides, or
+      # retire an id the curated priorities still name, and each of those is
+      # invisible until somebody loads the page it breaks.
+      # Reads Genshin Optimizer's own id maps, so an upstream outage fails the
+      # run and no pull request is opened that week. Re-run by hand from the
+      # Actions tab rather than weakening the check.
+      - if: steps.version.outputs.changed == 'true'
+        name: The derived GOOD keys still agree with upstream
+        run: pnpm data:check-good
+
+      # Reports rather than gates: it samples the host, and one 404 is as
+      # likely to be an asset that has not been uploaded yet as a name this
+      # build got wrong. Read it in the run log before merging.
+      - if: steps.version.outputs.changed == 'true'
+        name: Do the icon names resolve on the asset host?
+        run: pnpm data:check-assets
+
+      - if: steps.version.outputs.changed == 'true'
+        run: pnpm typecheck
+
+      - if: steps.version.outputs.changed == 'true'
+        run: pnpm lint
+
+      # Includes the check that every id in the generated build priorities
+      # still exists in the catalogue.
+      - if: steps.version.outputs.changed == 'true'
+        run: pnpm test
+
+      - if: steps.version.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: catalog/genshin-db-${{ steps.version.outputs.latest }}
+          commit-message: |
+            chore: regenerate the catalog from genshin-db ${{ steps.version.outputs.latest }}
+
+            Characters, weapons, artifacts and materials as of this release.
+            The generated output is committed so that `next build` never
+            depends on the shape of a third-party package.
+          title: 'chore: catalog from genshin-db ${{ steps.version.outputs.latest }}'
+          body: |
+            `genshin-db` ${{ steps.version.outputs.current }} → ${{ steps.version.outputs.latest }},
+            with `src/generated/data` rebuilt from it.
+
+            Green here means the GOOD crosswalk still agrees with upstream, the
+            icon names still resolve, and every id the curated build priorities
+            name still exists. What it cannot tell you is whether a new
+            mechanic needs an annotation — the diff below is the place to look
+            for characters and sets this app has no opinion about yet.
+
+            Player data is unaffected: it stores the game's numeric ids, and a
+            patch adds ids rather than repointing them.
+          labels: catalog
+          delete-branch: true
