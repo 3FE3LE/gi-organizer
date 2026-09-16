@@ -38,6 +38,17 @@ export type ApplyResult = {
 export type ApplyOptions = {
   /** Only honored for a `full` import, and only when the user confirmed it. */
   onAbsent?: 'keep' | 'remove';
+  /**
+   * Whether this source may add items the account did not already have.
+   *
+   * The GOOD export is the account's record of itself and says what exists.
+   * A showcase is a window onto eight characters, and what it knows that the
+   * export does not — a constellation's talent bonus, the order a piece's
+   * rolls landed in — is detail about items the export already listed. Letting
+   * it add would make "what do I own" depend on which of two partial answers
+   * ran last.
+   */
+  onNew?: 'add' | 'ignore';
   /** Answers for the plan's ambiguous verdicts, keyed by verdict index. */
   resolutions?: Map<number, Resolution>;
   newId?: () => string;
@@ -64,6 +75,7 @@ export function applyImport(
   const newId = options.newId ?? (() => crypto.randomUUID());
   const resolutions = options.resolutions ?? new Map<number, Resolution>();
   const onAbsent = options.onAbsent ?? 'keep';
+  const onNew = options.onNew ?? 'add';
 
   const artifacts = new Map(inventory.artifacts.map((piece) => [piece.id, piece]));
 
@@ -76,6 +88,7 @@ export function applyImport(
         break;
       }
       case 'added': {
+        if (onNew === 'ignore') break;
         const id = newId();
         artifacts.set(id, adoptArtifact(verdict.incoming, plan, id));
         break;
@@ -85,6 +98,7 @@ export function applyImport(
         if (!resolution || resolution.kind === 'skip') break;
 
         if (resolution.kind === 'keep-both') {
+          if (onNew === 'ignore') break;
           const id = newId();
           artifacts.set(id, adoptArtifact(verdict.incoming, plan, id));
           break;
@@ -101,7 +115,7 @@ export function applyImport(
     for (const id of plan.artifacts.absentIds) artifacts.delete(id);
   }
 
-  const weapons = applyWeapons(inventory.weapons, plan, newId, onAbsent);
+  const weapons = applyWeapons(inventory.weapons, plan, newId, onAbsent, onNew);
 
   let next: Inventory = { artifacts: [...artifacts.values()], weapons };
 
@@ -174,12 +188,14 @@ function applyWeapons(
   plan: ImportPlan,
   newId: () => string,
   onAbsent: 'keep' | 'remove',
+  onNew: 'add' | 'ignore',
 ) {
   const removed = new Set<string>();
   const added: OwnedWeapon[] = [];
 
   for (const verdict of plan.weapons.verdicts) {
     if (verdict.kind === 'added') {
+      if (onNew === 'ignore') continue;
       for (let i = 0; i < verdict.count; i += 1) {
         added.push(adoptWeapon(verdict.incoming, plan, newId()));
       }

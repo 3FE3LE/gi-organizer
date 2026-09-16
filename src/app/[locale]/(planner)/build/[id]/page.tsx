@@ -106,7 +106,7 @@ export default async function BuildPage({
 }
 
 async function ObjectiveTab({ context }: { context: BuildContext }) {
-  const { character } = context;
+  const { character, locale } = context;
   const view = await objectiveViewFor(context);
 
   return (
@@ -117,6 +117,7 @@ async function ObjectiveTab({ context }: { context: BuildContext }) {
 
       <ProgressPanel
         progressKey={view.progressKey}
+        locale={locale}
         values={view.values}
         options={view.options}
       />

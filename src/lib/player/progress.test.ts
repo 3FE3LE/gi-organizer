@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import { createMemoryDb } from '@/lib/db/client';
 
 import { readBuild, readBuildsFor, saveBuild } from './builds';
-import { readRoster } from './characters';
+import { readRoster, upsertCharacter } from './characters';
 import { getProfileId } from './db';
 import { applyProgress, type ProgressInput } from './progress';
 import { readTargets, setTarget } from './targets';
@@ -14,8 +14,24 @@ const VIRIDESCENT = 15002;
 const NOBLESSE = 15007;
 const ELEGY = 15502;
 
+/**
+ * A database where the character exists, because the form no longer puts them
+ * there: the roster is the import's, and a goal is something you set for
+ * somebody you already have.
+ */
 async function db() {
   const database = createMemoryDb();
+
+  await upsertCharacter(database, await getProfileId(database), {
+    characterId: VENTI,
+    travelerElement: null,
+    level: 80,
+    ascension: 5,
+    constellation: 2,
+    talent: { auto: 5, skill: 6, burst: 8 },
+    talentBonus: null,
+  }, { source: 'good', observedAt: '2026-09-16T00:00:00.000Z' });
+
   return database;
 }
 
@@ -23,12 +39,6 @@ function input(overrides: Partial<ProgressInput> = {}): ProgressInput {
   return {
     characterId: VENTI,
     buildId: null,
-    current: {
-      level: 80,
-      ascended: false,
-      constellation: 2,
-      talents: { auto: 5, skill: 6, burst: 8 },
-    },
     target: {
       level: 90,
       ascended: false,
@@ -68,18 +78,29 @@ test('one call writes progress, target and the weapon plan', async () => {
   assert.equal((await readTargets(database)).get(VENTI)?.weaponId, ELEGY);
 });
 
+/**
+ * Eighty is a level you can sit on either side of, and which side decides the
+ * ascension. The form owns this for the target only; where the character is
+ * today comes from the import.
+ */
 test('ascended picks the other side of a breakpoint', async () => {
   const database = await db();
-  await applyProgress(input({
-    current: {
-      level: 80, ascended: true, constellation: 0,
-      talents: { auto: 1, skill: 1, burst: 1 },
-    },
+  const buildId = await applyProgress(input({
+    target: { level: 80, ascended: false, talents: { auto: 9, skill: 9, burst: 9 } },
   }), database);
 
-  const entry = (await readRoster(database, await getProfileId(database)))
+  const before = (await readRoster(database, await getProfileId(database)))
     .find((row) => row.characterId === VENTI);
-  assert.equal(entry?.ascension, 6);
+  assert.equal(before?.target?.ascension, 5);
+
+  await applyProgress(input({
+    buildId,
+    target: { level: 80, ascended: true, talents: { auto: 9, skill: 9, burst: 9 } },
+  }), database);
+
+  const after = (await readRoster(database, await getProfileId(database)))
+    .find((row) => row.characterId === VENTI);
+  assert.equal(after?.target?.ascension, 6);
 });
 
 test('two sets become a 2+2, and a second save edits in place', async () => {

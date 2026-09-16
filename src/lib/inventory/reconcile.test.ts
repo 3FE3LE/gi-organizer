@@ -356,3 +356,33 @@ test('a weapon on a character that cannot hold it is unassigned, not dropped', (
   assert.equal(repairs[0].kind, 'weapon-type-mismatch');
   assert.equal(repairs[0].characterId, 10000075);
 });
+
+/**
+ * A showcase refines what the export listed; only the export decides what
+ * exists. Without this, what the account holds would depend on which of two
+ * partial sources ran last.
+ */
+test('a source that may not add leaves what it has never seen alone', () => {
+  const incoming = importOf([
+    piece({ setId: 15002, slot: 'flower' }),
+    piece({ setId: 15002, slot: 'goblet', mainProp: 'FIGHT_PROP_ATTACK_PERCENT' }),
+  ]);
+
+  const { inventory: seeded } = applyImport(
+    { artifacts: [], weapons: [] },
+    planImport({ artifacts: [], weapons: [] }, importOf([incoming.artifacts[0]])),
+    { newId: () => 'a0' },
+  );
+  assert.equal(seeded.artifacts.length, 1);
+
+  const plan = planImport(seeded, incoming);
+  assert.ok(
+    plan.artifacts.verdicts.some((verdict) => verdict.kind === 'added'),
+    'the fixture has to offer something new',
+  );
+
+  const { inventory } = applyImport(seeded, plan, { onNew: 'ignore' });
+
+  assert.equal(inventory.artifacts.length, 1, 'nothing new was adopted');
+  assert.equal(inventory.artifacts[0].id, 'a0');
+});

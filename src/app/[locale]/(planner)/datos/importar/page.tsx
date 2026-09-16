@@ -1,22 +1,22 @@
 import { notFound } from 'next/navigation';
 
-import { getCatalog } from '@/lib/data/catalog';
 import { isLocale } from '@/lib/data/locales';
 
 import { Backup } from '../backup';
 import { ImportForm } from '../import-form';
-import { ManualForms } from '../manual-forms';
 
 /**
  * Everything that moves data in or out of the account, in the order it is
- * reached: the scan you import, the copy you keep, and the handful of things
- * no scan saw.
+ * reached: the scan you import and the copy you keep.
+ *
+ * Nothing is typed in here. What the account holds is what the last scan said
+ * it holds — a second way to say it was a second answer that drifted from the
+ * first and won until the next import overwrote it.
  */
 export default async function DataIoPage({ params }: PageProps<'/[locale]/datos/importar'>) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
 
-  const catalog = await getCatalog(locale);
 
   return (
     <div className="space-y-8">
@@ -38,30 +38,6 @@ export default async function DataIoPage({ params }: PageProps<'/[locale]/datos/
         </p>
         <div className="mt-4">
           <Backup />
-        </div>
-      </section>
-
-      <section>
-        <h2 className="text-sm font-medium uppercase tracking-wide text-muted">
-          Entrada manual
-        </h2>
-        <p className="mt-2 max-w-prose text-sm text-muted">
-          Para lo que el escáner no vio. Los artefactos no se escriben a mano:
-          vuelve a importar el GOOD.
-        </p>
-        <div className="mt-4">
-          <ManualForms
-            characters={catalog.index.charactersSorted.map((character) => ({
-              id: character.id,
-              name: character.name,
-              detail: `${character.rarity}★ ${character.elementText} · ${character.weaponText}`,
-            }))}
-            weapons={catalog.index.weaponsSorted.map((weapon) => ({
-              id: weapon.id,
-              name: weapon.name,
-              detail: `${weapon.rarity}★ ${weapon.weaponText}`,
-            }))}
-          />
         </div>
       </section>
     </div>

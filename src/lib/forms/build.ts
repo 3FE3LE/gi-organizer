@@ -81,11 +81,14 @@ export const progressSchema = z.object({
   /** Priority order. The position *is* the weight the scorer reads. */
   substats: z.array(z.string()).max(SUBSTAT_POSITIONS.length),
 
-  currentLevel: level,
-  currentAscended: z.boolean(),
-  constellation: z.number().int().min(0).max(6),
-  currentTalents: talents,
-
+  /*
+   * Where the character is today is not here on purpose.
+   *
+   * Level, ascension, constellation and talents are facts about the account,
+   * and the account's record of itself is the GOOD export. Typing them again
+   * created a second answer that drifted from the first and won until the next
+   * import overwrote it. The form owns the goal; the import owns the state.
+   */
   targetLevel: level,
   targetAscended: z.boolean(),
   targetTalents: talents,

@@ -5,7 +5,7 @@ import { ascensionForLevel } from '@/lib/data/stats';
 import type { ArtifactSlot } from '@/lib/data/types';
 
 import { readBuild, saveBuild, type Build, type SetPlan, type StatGoal } from './builds';
-import { setCharacterTarget, upsertCharacter } from './characters';
+import { setCharacterTarget } from './characters';
 import { getProfileId } from './db';
 import { readTargets, setTarget } from './targets';
 
@@ -22,6 +22,17 @@ import { readTargets, setTarget } from './targets';
  * the suggestion list.
  */
 
+/** The account does not have this character, so there is nothing to plan for. */
+export class NotInRoster extends Error {
+  readonly characterId: number;
+
+  constructor(characterId: number) {
+    super(`character ${characterId} is not in the roster`);
+    this.name = 'NotInRoster';
+    this.characterId = characterId;
+  }
+}
+
 export type ProgressInput = {
   characterId: number;
   /** The goal being edited, or `null` to start the character's first one. */
@@ -30,13 +41,6 @@ export type ProgressInput = {
   role?: string | null;
   /** Substat priority, where the position is the weight. */
   substats?: string[];
-  current: {
-    level: number;
-    /** Only meaningful at the six levels the game lets you sit both sides of. */
-    ascended: boolean;
-    constellation: number;
-    talents: { auto: number; skill: number; burst: number };
-  };
   target: {
     level: number;
     ascended: boolean;
@@ -52,18 +56,6 @@ export type ProgressInput = {
 
 export async function applyProgress(input: ProgressInput, db: Db = getDb()) {
   const profileId = await getProfileId(db);
-
-  await upsertCharacter(db, profileId, {
-    characterId: input.characterId,
-    travelerElement: null,
-    level: input.current.level,
-    ascension: ascensionForLevel(input.current.level, input.current.ascended),
-    constellation: input.current.constellation,
-    talent: input.current.talents,
-    // Typed by hand, so the constellation bonus is unknown rather than zero —
-    // an Enka import is what can establish it.
-    talentBonus: null,
-  }, { source: 'manual', observedAt: new Date().toISOString() });
 
   const setPlan: SetPlan[] = input.setIds.length === 1
     ? [{ setIds: [input.setIds[0]], pieces: 4 }]
@@ -98,11 +90,18 @@ export async function applyProgress(input: ProgressInput, db: Db = getDb()) {
   }, db);
 
   // Levelling is the character's, not the goal's: one character, one ascension.
-  await setCharacterTarget(db, profileId, input.characterId, {
+  //
+  // The row it updates is the import's, and there is no longer anything here
+  // that would create one: a target for somebody the account does not own is a
+  // plan for a character you cannot field, and silently writing nothing would
+  // look like a save.
+  const targeted = await setCharacterTarget(db, profileId, input.characterId, {
     level: input.target.level,
     ascension: ascensionForLevel(input.target.level, input.target.ascended),
     talents: input.target.talents,
   });
+
+  if (targeted === 0) throw new NotInRoster(input.characterId);
 
   // Scarcity is planned from `build_target`: four supports pencilled in for one
   // Favonius Lance. The sets on that row used to be a separate "pin" control;

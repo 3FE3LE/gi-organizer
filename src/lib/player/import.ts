@@ -25,7 +25,7 @@ import type { WeaponTypeLookup } from '@/lib/inventory/assignment';
 import type { NormalizedImport } from '@/lib/inventory/model';
 import { type ImportPlan, planImport, summarizePlan } from '@/lib/inventory/plan';
 
-import { upsertCharacter } from './characters';
+import { readOwnedCharacterIds, upsertCharacter } from './characters';
 import { exportNative } from './export';
 import {
   getProfileId,
@@ -126,6 +126,8 @@ export async function previewStaged(token: string): Promise<PreviewResult> {
 export type ApplyOptions = {
   onAbsent?: 'keep' | 'remove';
   resolutions?: Map<number, Resolution>;
+  /** Whether this source may add what the account did not already have. */
+  onNew?: 'add' | 'ignore';
 };
 
 export type ApplyResult = {
@@ -151,7 +153,11 @@ export async function applyShowcase(uid: string): Promise<ApplyResult> {
   if (!result.ok) throw new Error(`${result.code}: ${result.message}`);
 
   const normalized = normalizeEnka(result.payload, { store: await getEnkaStore() });
-  return applyNormalized(normalized, { onAbsent: 'keep' });
+
+  // A showcase is a window onto eight characters, not the account's record of
+  // itself. It refines what the export already listed — the constellation's
+  // talent bonus, the order a piece's rolls landed in — and adds nothing.
+  return applyNormalized(normalized, { onAbsent: 'keep', onNew: 'ignore' });
 }
 
 /**
@@ -177,9 +183,12 @@ export async function applyNormalized(
   // that failed halfway must not be allowed to prune on the user's behalf.
   const effectiveOnAbsent = plan.suspect ? 'keep' : onAbsent;
 
+  const onNew = options.onNew ?? 'add';
+
   const { inventory: after, repairs } = applyImport(before, plan, {
     onAbsent: effectiveOnAbsent,
     resolutions: options.resolutions,
+    onNew,
     types,
   });
 
@@ -202,7 +211,15 @@ export async function applyNormalized(
       db, profileId, normalized.materials, normalized.observedAt,
     );
 
+    // A source that may not add cannot put somebody in the roster either: the
+    // showcase would otherwise be the one place a character appears from, and
+    // the account's own record would never have heard of them.
+    const roster = onNew === 'ignore'
+      ? new Set(await readOwnedCharacterIds(db, profileId))
+      : null;
+
     for (const character of normalized.characters) {
+      if (roster && !roster.has(character.characterId)) continue;
       await upsertCharacter(db, profileId, character, {
         source: normalized.source,
         observedAt: normalized.observedAt,

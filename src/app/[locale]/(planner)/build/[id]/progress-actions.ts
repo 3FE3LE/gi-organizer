@@ -15,7 +15,7 @@ import {
   type ProgressFormValues,
 } from '@/lib/forms/build';
 import type { TeamRole } from '@/lib/rules/types';
-import { applyProgress } from '@/lib/player/progress';
+import { NotInRoster, applyProgress } from '@/lib/player/progress';
 
 /**
  * The form behind "progress and target". Validation only: the write is one
@@ -57,12 +57,6 @@ export async function saveProgressAction(values: ProgressFormValues): Promise<Pr
       buildId: input.buildId || null,
       role: (input.role || null) as TeamRole | null,
       substats: statedSubstats(input.substats),
-      current: {
-        level: input.currentLevel,
-        ascended: input.currentAscended,
-        constellation: input.constellation,
-        talents: input.currentTalents,
-      },
       target: {
         level: input.targetLevel,
         ascended: input.targetAscended,
@@ -75,6 +69,15 @@ export async function saveProgressAction(values: ProgressFormValues): Promise<Pr
       goals: statedGoals(input.goals),
     });
   } catch (error) {
+    // The roster is the import's, so a goal for somebody the account does not
+    // have is a plan that cannot be carried out — and the fix is a re-import,
+    // not a retry.
+    if (error instanceof NotInRoster) {
+      return {
+        status: 'error',
+        message: `${character.name} no está en tu cuenta: reimporta tu GOOD`,
+      };
+    }
     // A character has one goal per role, as a unique index rather than as a
     // rule anybody has to remember. Renaming a goal onto a role that is already
     // taken is the one way to hit it, and it deserves a sentence.

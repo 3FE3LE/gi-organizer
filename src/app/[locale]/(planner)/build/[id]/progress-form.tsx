@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Check,
@@ -144,10 +146,6 @@ function defaultsFrom(values: ProgressValues): ProgressFormValues {
     buildId: values.buildId ?? '',
     role: values.role ?? '',
     substats: SUBSTAT_POSITIONS.map((position) => values.substats[position - 1] ?? ''),
-    currentLevel: values.current.level,
-    currentAscended: values.current.ascended,
-    constellation: values.current.constellation,
-    currentTalents: values.current.talents,
     targetLevel: values.target.level,
     targetAscended: values.target.ascended,
     targetTalents: values.target.talents,
@@ -187,10 +185,12 @@ function defaultsFrom(values: ProgressValues): ProgressFormValues {
  */
 export function ProgressPanel({
   progressKey,
+  locale,
   values,
   options,
 }: {
   progressKey: string;
+  locale: string;
   values: ProgressValues;
   options: ProgressOptions;
 }) {
@@ -199,6 +199,7 @@ export function ProgressPanel({
   return (
     <ProgressForm
       key={progressKey}
+      locale={locale}
       values={values}
       options={options}
       state={state}
@@ -208,11 +209,13 @@ export function ProgressPanel({
 }
 
 function ProgressForm({
+  locale,
   values,
   options,
   state,
   onState: setState,
 }: {
+  locale: string;
   values: ProgressValues;
   options: ProgressOptions;
   state: ProgressState;
@@ -275,14 +278,9 @@ function ProgressForm({
 
   // `useWatch` rather than `form.watch`: the latter hands back a fresh function
   // every render, which makes the React Compiler skip this component entirely.
-  const [
-    currentLevel, targetLevel, constellation, setIds, mainStats, substats, goals,
-  ] = useWatch({
+  const [targetLevel, setIds, mainStats, substats, goals] = useWatch({
     control: form.control,
-    name: [
-      'currentLevel', 'targetLevel', 'constellation',
-      'setIds', 'mainStats', 'substats', 'goals',
-    ],
+    name: ['targetLevel', 'setIds', 'mainStats', 'substats', 'goals'],
   });
 
   const twoPlusTwo = (setIds?.[1] ?? '') !== '';
@@ -336,7 +334,7 @@ function ProgressForm({
         <Panel
           icon={<Gauge size={14} />}
           title="Progreso"
-          summary={`Nv. ${currentLevel} → ${targetLevel} · C${constellation}`}
+          summary={`Nv. ${values.current.level} → ${targetLevel} · C${values.current.constellation}`}
           className="lg:col-span-5"
         >
           {/* One grid for level and the three talents: they are the same
@@ -347,14 +345,9 @@ function ProgressForm({
             <Column>meta</Column>
 
             <RowLabel>Nivel</RowLabel>
-            <LevelCell
-              control={form.control}
-              name="currentLevel"
-              label="nivel actual"
-              level={currentLevel}
-              ascendedField={form.register('currentAscended')}
-              ascendedDefault={defaults.currentAscended}
-            />
+            <Today>
+              {values.current.level}{values.current.ascended && '+'}
+            </Today>
             <LevelCell
               control={form.control}
               name="targetLevel"
@@ -365,36 +358,33 @@ function ProgressForm({
             />
 
             {TALENTS.map((talent) => (
-              <TalentRow key={talent.key} talent={talent} control={form.control} />
+              <TalentRow
+                key={talent.key}
+                talent={talent}
+                today={values.current.talents[talent.key]}
+                control={form.control}
+              />
             ))}
           </div>
 
-          <p className="mb-1.5 mt-4 font-mono text-[0.6rem] uppercase tracking-wide text-muted">
+          <p className="mb-1.5 mt-4 flex items-baseline justify-between gap-2 font-mono text-[0.6rem] uppercase tracking-wide text-muted">
             Constelación
+            <span className="text-sm text-text">C{values.current.constellation}</span>
           </p>
-          <Controller
-            control={form.control}
-            name="constellation"
-            render={({ field }) => (
-              <div className="grid grid-cols-7 overflow-hidden rounded border border-edge">
-                {[0, 1, 2, 3, 4, 5, 6].map((value) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => field.onChange(value)}
-                    aria-pressed={field.value === value}
-                    className={`border-r border-edge py-2 font-mono text-xs transition-colors last:border-r-0 ${
-                      field.value === value
-                        ? 'bg-surface-2 text-accent'
-                        : 'text-muted hover:bg-surface-2/60 hover:text-text'
-                    }`}
-                  >
-                    C{value}
-                  </button>
-                ))}
-              </div>
-            )}
-          />
+
+          {/* Where the character is comes from the account's own record of
+              itself, so there is nothing to type here — only somewhere to go
+              when it is out of date. */}
+          <p className="mt-3 text-[0.7rem] leading-relaxed text-muted">
+            Nivel, constelación y talentos salen del último import.{' '}
+            <Link
+              href={`/${locale}/datos/importar`}
+              className="underline decoration-edge-strong underline-offset-2 hover:text-accent"
+            >
+              Reimporta tu GOOD
+            </Link>{' '}
+            para actualizarlos.
+          </p>
         </Panel>
 
         <Panel
@@ -852,7 +842,7 @@ function LevelCell({
   ascendedDefault,
 }: {
   control: ProgressControl;
-  name: 'currentLevel' | 'targetLevel';
+  name: 'targetLevel';
   label: string;
   level: number;
   ascendedField: UseFormRegisterReturn;
@@ -889,24 +879,36 @@ function LevelCell({
   );
 }
 
+/** A fact from the last import, shown where its stepper used to be. */
+function Today({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="tabular flex items-center justify-center py-1.5 font-mono text-sm text-muted">
+      {children}
+    </span>
+  );
+}
+
 function TalentRow({
   talent,
+  today,
   control,
 }: {
   talent: (typeof TALENTS)[number];
+  today: number;
   control: ProgressControl;
 }) {
   return (
     <>
       <RowLabel>{talent.label}</RowLabel>
-      {(['currentTalents', 'targetTalents'] as const).map((group) => (
+      <Today>{today}</Today>
+      {(['targetTalents'] as const).map((group) => (
         <Controller
           key={group}
           control={control}
           name={`${group}.${talent.key}`}
           render={({ field }) => (
             <Stepper
-              label={`${group === 'targetTalents' ? 'objetivo' : 'actual'}: ${talent.label}`}
+              label={`objetivo: ${talent.label}`}
               value={Number(field.value)}
               onChange={field.onChange}
               onBlur={field.onBlur}
