@@ -36,7 +36,7 @@ export function RosterGate({
   if (named.length === 0) return null;
 
   return (
-    <details className="group rounded-lg border border-edge bg-surface" open={planned.length > 0 && dismissed.length === 0}>
+    <details className="group rounded-lg border border-edge bg-surface">
       <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-xs">
         <span className="font-mono text-[0.65rem] uppercase text-muted">en el plan</span>
         <span>
