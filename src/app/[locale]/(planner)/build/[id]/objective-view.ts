@@ -5,6 +5,7 @@ import { resolveIcon } from '@/lib/data/icon';
 import { formatPropValue } from '@/lib/data/props';
 import { isAscended } from '@/lib/data/stats';
 import { SOURCE_LABELS } from '@/lib/data/weapon-sources';
+import { ASSUMED_TARGET } from '@/lib/rules/materials';
 
 import type { BuildContext } from './context';
 import { editorOptionsFor, goalPropsFor, type EditorOptions, type Option } from './editor-options';
@@ -53,12 +54,16 @@ export async function objectiveViewFor(context: BuildContext): Promise<Objective
       talents: loadout?.talent ?? { auto: 1, skill: 1, burst: 1 },
     },
     target: {
-      // Ninety is where a character is judged, so it is the default rather than
-      // an empty field the player has to discover. It belongs to the character,
-      // not to the goal: there is one of them to ascend.
-      level: loadout?.target.level ?? 90,
-      ascended: isAscended(loadout?.target.level ?? 90, loadout?.target.ascension ?? 6),
-      talents: loadout?.target.talents ?? loadout?.talent ?? { auto: 1, skill: 1, burst: 1 },
+      // The same assumption the planner makes, and for the same reason: a
+      // target nobody wrote down is still one the plan is costing out. Reading
+      // it from anywhere else is how the plan came to ask for sixty-six talent
+      // books while this form showed nothing to do.
+      level: loadout?.target.level ?? ASSUMED_TARGET.level,
+      ascended: isAscended(
+        loadout?.target.level ?? ASSUMED_TARGET.level,
+        loadout?.target.ascension ?? ASSUMED_TARGET.ascension,
+      ),
+      talents: loadout?.target.talents ?? ASSUMED_TARGET.talents,
     },
     weaponId: activeBuild?.weaponId ?? target.weaponId,
     weaponRefinement: activeBuild?.weaponRefinement ?? target.refinement,

@@ -27,6 +27,7 @@ import { readTargets } from '@/lib/player/targets';
 import { evaluate, type CharacterGear, type EvaluationInput } from './evaluate';
 import { type AgendaItem, buildAgenda } from './agenda';
 import {
+  ASSUMED_TARGET,
   type DemandSource,
   type Progress,
   type Reason,
@@ -651,11 +652,6 @@ export type FarmingFilter = {
   includeWithoutTarget?: boolean;
 };
 
-/** Where a character with no stated target is assumed to be going. */
-const CAP: Progress = {
-  level: 90, ascension: 6, talents: { auto: 9, skill: 9, burst: 9 },
-};
-
 /**
  * The farming plan: what every build still needs, and where it drops.
  *
@@ -717,7 +713,7 @@ export async function farmingPlan(
     const here: Progress = {
       level: current.level, ascension: current.ascension, talents: current.talent,
     };
-    const fallback = assume ? CAP : here;
+    const fallback = assume ? ASSUMED_TARGET : here;
 
     byCharacter.set(current.characterId, {
       characterId: current.characterId,

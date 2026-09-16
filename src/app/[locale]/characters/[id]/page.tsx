@@ -1,3 +1,5 @@
+import { Target } from 'lucide-react';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { CharacterSheet } from '@/components/character-sheet';
@@ -38,6 +40,18 @@ export default async function CharacterPage({ params }: PageProps<'/[locale]/cha
           <h1 className="mt-1 text-2xl font-medium">{character.name}</h1>
           {character.title && <p className="text-muted">{character.title}</p>}
           <p className="mt-3 max-w-prose text-sm text-muted">{character.description}</p>
+
+          {/* This page is the catalogue's entry and knows nothing about the
+              account — it is generated for all four hundred and eighty-five of
+              them — so the link is unconditional. The planner is where a goal
+              lives, and it says so itself when the character is not owned. */}
+          <Link
+            href={`/${locale}/build/${character.id}`}
+            className="mt-4 inline-flex items-center gap-2 rounded border border-accent px-3 py-1.5 text-sm text-accent transition-colors hover:bg-surface-2"
+          >
+            <Target size={14} />
+            Objetivo de {character.name}
+          </Link>
           <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-1 font-mono text-xs sm:grid-cols-3">
             <Fact label="Región" value={character.region || '—'} />
             <Fact label="Afiliación" value={character.affiliation || '—'} />

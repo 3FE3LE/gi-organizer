@@ -18,6 +18,24 @@ export type Progress = {
   talents: { auto: number; skill: number; burst: number };
 };
 
+/**
+ * Where a character with nothing written down is taken to be going.
+ *
+ * Read by two things that have to agree: the planner, which counts what it
+ * would cost, and the goal form, which opens on it so the player can change
+ * it. When they disagreed the plan asked for sixty-six talent books and the
+ * form showed a target of "stay where you are", and there was no way to tell
+ * from either screen which one was lying.
+ *
+ * Talents stop at nine because ten costs a Crown of Insight, about one a
+ * patch: a demand no amount of farming moves.
+ */
+export const ASSUMED_TARGET: Progress = {
+  level: 90,
+  ascension: 6,
+  talents: { auto: 9, skill: 9, burst: 9 },
+};
+
 export type DemandSource = {
   characterId: number;
   buildName: string;
