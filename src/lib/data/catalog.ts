@@ -202,6 +202,20 @@ export function propLabel(catalog: Catalog, prop: string) {
 }
 
 /**
+ * `propLabel` with the percent variants told apart.
+ *
+ * The game names flat HP and HP% identically and lets the value carry the
+ * difference — `311` against `46.6%`. That works on a stat line and fails
+ * anywhere the name appears alone: a filter listing its ten substats showed
+ * "Vida", "ATQ" and "DEF" twice each, and those pairs are the difference
+ * between a roll worth having and a wasted one.
+ */
+export function statLabel(catalog: Catalog, prop: string) {
+  const label = propLabel(catalog, prop);
+  return prop.endsWith('_PERCENT') ? `${label}%` : label;
+}
+
+/**
  * Enka's per-character table: skill ordering, talent art and constellation art.
  *
  * Only the Traveler is keyed by skill depot, because only the Traveler's skills

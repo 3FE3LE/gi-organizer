@@ -3,6 +3,7 @@ import 'server-only';
 import { getDb, type Db } from '@/lib/db/client';
 import type { ArtifactSlot } from '@/lib/data/types';
 import { critRating, critValue, pieceQuality, type CritRating, type RollQuality } from '@/lib/rules/rolls';
+import { pieceWorth, type Scaler } from '@/lib/rules/worth';
 
 import { getProfileId } from './db';
 
@@ -64,6 +65,8 @@ export async function readArtifacts(db: Db = getDb()): Promise<OwnedArtifact[]> 
     const substats = JSON.parse(row.substats_json) as { prop: string; value: number }[];
     const piece = { rarity: row.rarity, substats };
 
+    const crit = critValue(substats);
+
     return {
       instanceId: row.id,
       setId: row.set_id,
@@ -75,8 +78,8 @@ export async function readArtifacts(db: Db = getDb()): Promise<OwnedArtifact[]> 
       holderId: row.assigned_character_id,
       locked: row.locked === null ? null : row.locked === 1,
       quality: pieceQuality(piece),
-      critValue: critValue(substats),
-      critRating: critRating(critValue(substats)),
+      critValue: crit,
+      critRating: critRating(crit),
     };
   });
 }
@@ -86,8 +89,8 @@ export type ArtifactFilter = {
   setId?: number | null;
   /** A substat the piece must carry. */
   substat?: string | null;
+  /** The piece's main stat, which is a search axis rather than a score. */
   mainProp?: string | null;
-  rarity?: number | null;
   /** `free` is nobody's, `worn` is on somebody. */
   held?: 'free' | 'worn' | null;
   /** Only pieces with a substat where every roll landed maximum. */
@@ -98,7 +101,7 @@ export type ArtifactFilter = {
   minCritValue?: number | null;
 };
 
-export type ArtifactSort = 'calidad' | 'cv' | 'rolls' | 'nivel' | 'set';
+export type ArtifactSort = 'valor' | 'calidad' | 'cv' | 'rolls' | 'nivel' | 'set';
 
 /**
  * Filtering and ordering, in one place because the page is a list and the list
@@ -108,13 +111,13 @@ export type ArtifactSort = 'calidad' | 'cv' | 'rolls' | 'nivel' | 'set';
 export function filterArtifacts(
   artifacts: OwnedArtifact[],
   filter: ArtifactFilter,
-  sort: ArtifactSort = 'calidad',
+  sort: ArtifactSort = 'valor',
+  scaler: Scaler | null = null,
 ): OwnedArtifact[] {
   const kept = artifacts.filter((piece) => {
     if (filter.slot && piece.slot !== filter.slot) return false;
     if (filter.setId && piece.setId !== filter.setId) return false;
     if (filter.mainProp && piece.mainProp !== filter.mainProp) return false;
-    if (filter.rarity && piece.rarity !== filter.rarity) return false;
     if (filter.held === 'free' && piece.holderId !== null) return false;
     if (filter.held === 'worn' && piece.holderId === null) return false;
     if (filter.perfectOnly && !piece.quality.hasPerfect) return false;
@@ -128,10 +131,26 @@ export function filterArtifacts(
     return true;
   });
 
+  // Worth depends on the scaler, so it is not a property of the piece and is
+  // not cached on it. Computed once per piece here rather than inside the
+  // comparator, which a sort calls a few thousand times for a box this size.
+  if (sort === 'valor') {
+    const value = new Map(kept.map(
+      (piece) => [piece.instanceId, pieceWorth(piece, scaler).value] as const,
+    ));
+
+    return kept.sort((a, b) =>
+      (value.get(b.instanceId) ?? 0) - (value.get(a.instanceId) ?? 0)
+      || b.critValue - a.critValue);
+  }
+
   return kept.sort(comparators[sort]);
 }
 
-const comparators: Record<ArtifactSort, (a: OwnedArtifact, b: OwnedArtifact) => number> = {
+type Comparator = (a: OwnedArtifact, b: OwnedArtifact) => number;
+
+/** `valor` is missing on purpose: it needs the scaler, so it is not a pure pair. */
+const comparators: Record<Exclude<ArtifactSort, 'valor'>, Comparator> = {
   // Quality first, then how much of it there is: a piece that rolled perfectly
   // once is promising, one that rolled well five times is finished.
   calidad: (a, b) =>
