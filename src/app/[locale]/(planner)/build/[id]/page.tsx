@@ -12,7 +12,7 @@ import { CharacterPanel } from './character-panel';
 import { loadBuildContext, type BuildContext } from './context';
 import { objectiveViewFor } from './objective-view';
 import { TABS, loadBuildParams, serializeBuildParams, type Tab } from './params';
-import { ProgressForm } from './progress-form';
+import { ProgressPanel } from './progress-form';
 import { SlotSwaps } from './swaps';
 import { swapPanelsFor } from './swaps-view';
 
@@ -115,7 +115,11 @@ async function ObjectiveTab({ context }: { context: BuildContext }) {
         Dónde está {character.name} hoy y a dónde quieres llevarlo.
       </p>
 
-      <ProgressForm key={view.progressKey} values={view.values} options={view.options} />
+      <ProgressPanel
+        progressKey={view.progressKey}
+        values={view.values}
+        options={view.options}
+      />
     </div>
   );
 }

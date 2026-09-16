@@ -13,11 +13,31 @@ import { expect, test } from '@playwright/test';
 const CHARACTER = 10000022;
 const BUILD = `/es/build/${CHARACTER}?tab=objetivo`;
 
+/**
+ * Opens the set picker and returns its list.
+ *
+ * Scoped through the trigger's `aria-controls` rather than by taking the first
+ * list on the page: the build page has six, and picking buttons out of "the"
+ * list quietly selected a Comparar from the artifact slots instead.
+ *
+ * Addressed by its label and not by its text, because its text is the set it
+ * holds — so a test that ran after one which chose a set could not find it.
+ */
+async function openSetPicker(page: import('@playwright/test').Page) {
+  const trigger = page.getByRole('button', { name: 'primer set del plan' });
+  await trigger.click();
+
+  const id = await trigger.getAttribute('aria-controls');
+  expect(id).toBeTruthy();
+
+  // Index 0 clears the choice, so the sets start at 1.
+  return page.locator(`[id="${id}"]`).getByRole('button');
+}
+
 test('a chosen set survives its own save', async ({ page }) => {
   await page.goto(BUILD);
 
-  await page.getByRole('button', { name: /elige un set/ }).click();
-  const option = page.getByRole('list').getByRole('button').nth(1);
+  const option = (await openSetPicker(page)).nth(1);
   const chosen = (await option.innerText()).split('\n')[0].trim();
   expect(chosen).toBeTruthy();
 
@@ -37,8 +57,7 @@ test('a chosen set survives its own save', async ({ page }) => {
 test('the chosen set shows what its bonus does', async ({ page }) => {
   await page.goto(BUILD);
 
-  await page.getByRole('button', { name: /elige un set/ }).click();
-  await page.getByRole('list').getByRole('button').nth(1).click();
+  await (await openSetPicker(page)).nth(1).click();
 
   // Hovering the picker is what asks for the effects; a 4-piece plan activates both lines.
   await page.getByRole('button', { expanded: false }).first().hover();
@@ -104,9 +123,9 @@ test('a stat goal round-trips with its threshold', async ({ page }) => {
 test('the levelling target reaches the farming plan', async ({ page }) => {
   await page.goto(BUILD);
 
-  // The target level is the second stepper of "Nivel del personaje"; setting it
-  // is what gives the planner a gap to report.
-  await page.locator('input[name="targetTalents.auto"]').fill('9');
+  // The talent steppers are `Controller`-driven and carry no field name, so
+  // they are addressed the way a person addresses them: by their label.
+  await page.getByLabel('objetivo: Normal', { exact: true }).fill('9');
   await page.getByRole('button', { name: 'Guardar objetivo' }).click();
   await expect(page.getByText(/guardado/)).toBeVisible();
 
@@ -121,7 +140,7 @@ test('the goal rows start at three and grow on request', async ({ page }) => {
   const rows = page.locator('select[name^="goals."]');
   await expect(rows).toHaveCount(3);
 
-  await page.getByRole('button', { name: '+ otro objetivo' }).click();
+  await page.getByRole('button', { name: 'otro objetivo' }).click();
   await expect(rows).toHaveCount(4);
 
   await page.getByRole('button', { name: 'Quitar el objetivo 4' }).click();

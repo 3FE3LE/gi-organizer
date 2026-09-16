@@ -172,14 +172,52 @@ function defaultsFrom(values: ProgressValues): ProgressFormValues {
   };
 }
 
-export function ProgressForm({
+/**
+ * Owns the outcome of the last action, and remounts the form around it.
+ *
+ * The key the form is mounted under is built from every value it holds, so
+ * that refilling from a role — which writes on the server — comes back to a
+ * form that can see the new values. A plain save changes those values too, so
+ * the form is remounted by its own success: a status owned inside it would be
+ * destroyed at the exact moment it had something to say, which is how the save
+ * confirmation stopped appearing at all.
+ *
+ * Holding it out here is the whole fix. This component is not keyed, so it
+ * survives the remount it causes.
+ */
+export function ProgressPanel({
+  progressKey,
   values,
   options,
 }: {
+  progressKey: string;
   values: ProgressValues;
   options: ProgressOptions;
 }) {
   const [state, setState] = useState<ProgressState>({ status: 'idle' });
+
+  return (
+    <ProgressForm
+      key={progressKey}
+      values={values}
+      options={options}
+      state={state}
+      onState={setState}
+    />
+  );
+}
+
+function ProgressForm({
+  values,
+  options,
+  state,
+  onState: setState,
+}: {
+  values: ProgressValues;
+  options: ProgressOptions;
+  state: ProgressState;
+  onState: (state: ProgressState) => void;
+}) {
   const [busy, setBusy] = useState<'template' | 'delete' | null>(null);
 
   /*
@@ -312,6 +350,7 @@ export function ProgressForm({
             <LevelCell
               control={form.control}
               name="currentLevel"
+              label="nivel actual"
               level={currentLevel}
               ascendedField={form.register('currentAscended')}
               ascendedDefault={defaults.currentAscended}
@@ -319,6 +358,7 @@ export function ProgressForm({
             <LevelCell
               control={form.control}
               name="targetLevel"
+              label="nivel objetivo"
               level={targetLevel}
               ascendedField={form.register('targetAscended')}
               ascendedDefault={defaults.targetAscended}
@@ -379,6 +419,7 @@ export function ProgressForm({
                   name="weaponRefinement"
                   render={({ field }) => (
                     <Stepper
+                      label="refinamiento del arma objetivo"
                       value={Number(field.value)}
                       onChange={field.onChange}
                       onBlur={field.onBlur}
@@ -425,6 +466,7 @@ export function ProgressForm({
                   name="setIds.0"
                   render={({ field }) => (
                     <SetPicker
+                      label="primer set del plan"
                       options={options.sets}
                       value={field.value}
                       onChange={field.onChange}
@@ -439,6 +481,7 @@ export function ProgressForm({
                     name="setIds.1"
                     render={({ field }) => (
                       <SetPicker
+                        label="segundo set del plan"
                         options={options.sets}
                         value={field.value}
                         onChange={field.onChange}
@@ -803,12 +846,14 @@ function Ranked({
 function LevelCell({
   control,
   name,
+  label,
   level,
   ascendedField,
   ascendedDefault,
 }: {
   control: ProgressControl;
   name: 'currentLevel' | 'targetLevel';
+  label: string;
   level: number;
   ascendedField: UseFormRegisterReturn;
   ascendedDefault: boolean;
@@ -820,6 +865,7 @@ function LevelCell({
         name={name}
         render={({ field }) => (
           <Stepper
+            label={label}
             value={Number(field.value)}
             onChange={field.onChange}
             onBlur={field.onBlur}
@@ -860,6 +906,7 @@ function TalentRow({
           name={`${group}.${talent.key}`}
           render={({ field }) => (
             <Stepper
+              label={`${group === 'targetTalents' ? 'objetivo' : 'actual'}: ${talent.label}`}
               value={Number(field.value)}
               onChange={field.onChange}
               onBlur={field.onBlur}
@@ -880,6 +927,7 @@ function TalentRow({
  * the buttons exist because nobody wants to type a talent level.
  */
 function Stepper({
+  label,
   value,
   onChange,
   onBlur,
@@ -888,6 +936,8 @@ function Stepper({
   prefix,
   className,
 }: {
+  /** What this one counts. Six steppers sit in one grid and only their column and row tell them apart, which is nothing a screen reader or a test can use. */
+  label: string;
   value: number;
   onChange: (value: number) => void;
   onBlur?: () => void;
@@ -907,7 +957,7 @@ function Stepper({
       <button
         type="button"
         onClick={() => set(value - 1)}
-        aria-label="menos"
+        aria-label={`${label}: menos`}
         className="flex shrink-0 items-center px-2 text-muted transition-colors hover:bg-surface-2 hover:text-text disabled:opacity-30"
         disabled={value <= min}
       >
@@ -918,6 +968,7 @@ function Stepper({
         <input
           type="number"
           inputMode="numeric"
+          aria-label={label}
           value={value}
           onChange={(event) => set(Number(event.target.value))}
           onBlur={onBlur}
@@ -929,7 +980,7 @@ function Stepper({
       <button
         type="button"
         onClick={() => set(value + 1)}
-        aria-label="más"
+        aria-label={`${label}: más`}
         className="flex shrink-0 items-center px-2 text-muted transition-colors hover:bg-surface-2 hover:text-text disabled:opacity-30"
         disabled={value >= max}
       >

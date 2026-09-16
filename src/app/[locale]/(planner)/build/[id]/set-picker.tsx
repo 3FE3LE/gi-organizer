@@ -36,6 +36,7 @@ export type SetOption = {
 export type SetOptions = { suggested: SetOption[]; all: SetOption[] };
 
 export function SetPicker({
+  label,
   options,
   value,
   onChange,
@@ -43,6 +44,15 @@ export function SetPicker({
   /** How many pieces of this set the current plan wears: 4, or 2 in a 2+2. */
   activePieces,
 }: {
+  /**
+   * Which of the plan's sets this picks.
+   *
+   * The trigger's text is the chosen set, so it has no stable name of its own:
+   * before a choice it reads the placeholder and after one it reads whatever
+   * was chosen, which leaves nothing for a screen reader to announce or for a
+   * caller to address.
+   */
+  label: string;
   options: SetOptions;
   value: string;
   onChange: (value: string) => void;
@@ -114,6 +124,7 @@ export function SetPicker({
         onMouseLeave={() => setHinting(false)}
         onFocus={() => setHinting(true)}
         onBlur={() => setHinting(false)}
+        aria-label={label}
         aria-expanded={open}
         aria-controls={open ? popupId : undefined}
         aria-describedby={selected && hinting ? `${popupId}-effects` : undefined}

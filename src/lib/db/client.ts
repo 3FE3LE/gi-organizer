@@ -209,8 +209,14 @@ declare global {
  */
 export function getDb(): Db {
   globalThis.__giOrganizerDb ??= createDb(async () => {
-    const url = process.env.TURSO_DATABASE_URL ?? process.env.GI_DB_URL ?? DEFAULT_URL;
-    const authToken = process.env.TURSO_AUTH_TOKEN;
+    // `GI_DB_PATH` wins over everything, and carries no token with it. The
+    // browser suite sets it to a throwaway file, and a run that fell through to
+    // a configured server would seed and mutate the player's real database.
+    const file = process.env.GI_DB_PATH;
+    const url = file
+      ? `file:${file}`
+      : process.env.TURSO_DATABASE_URL ?? process.env.GI_DB_URL ?? DEFAULT_URL;
+    const authToken = file ? undefined : process.env.TURSO_AUTH_TOKEN;
 
     // A local file is the development default, and libSQL will not create the
     // directory it lives in. Never under `src/generated`, which
