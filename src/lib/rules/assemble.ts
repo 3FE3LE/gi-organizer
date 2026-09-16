@@ -640,8 +640,13 @@ export type FarmingFilter = {
   reasons?: ReadonlySet<Reason>;
   /**
    * Count owned characters with no stated target as if they were headed for
-   * the cap. Off by default: the honest answer to "what should I farm" when
-   * nothing is planned is "you have not said".
+   * the cap.
+   *
+   * On by default. Sixty characters with nothing written down still have sixty
+   * characters' worth of demand, and answering "you have not said" made the
+   * planner useless until the player had typed a target sixty times. The
+   * assumption is only defensible because it can be refused: a dismissed
+   * character contributes nothing, whatever this says.
    */
   includeWithoutTarget?: boolean;
 };
@@ -666,8 +671,10 @@ export async function farmingPlan(
 ): Promise<{
   schedule: Schedule;
   sources: number;
-  /** Everyone on the roster, and whether they have a target of their own. */
-  roster: { characterId: number; hasTarget: boolean }[];
+  /** Everyone on the roster, with what the plan is doing about each. */
+  roster: { characterId: number; hasTarget: boolean; dismissed: boolean }[];
+  /** How many the player has said no to, which is the list's own undo. */
+  dismissed: number;
 }> {
   const profileId = await getProfileId(db);
   const builds = await readBuilds(db);
@@ -679,6 +686,7 @@ export async function farmingPlan(
   const wants = (characterId: number) =>
     !filter.characterIds || filter.characterIds.has(characterId);
   const counts = (reason: Reason) => !filter.reasons || filter.reasons.has(reason);
+  const assume = filter.includeWithoutTarget ?? true;
 
   const weaponsOwned = new Map<number, number>();
   for (const weapon of (await readInventory(db, profileId)).weapons) {
@@ -691,9 +699,13 @@ export async function farmingPlan(
   const byCharacter = new Map<number, DemandSource>();
 
   for (const current of roster.values()) {
+    // A refusal outranks both the target and the assumption: somebody who
+    // looked at this character and said no is not asking what to farm for them.
+    if (current.dismissedAt !== null) continue;
+
     const wanted = current.target;
     const stated = wanted.level !== null || wanted.talents !== null;
-    if (!stated && !filter.includeWithoutTarget) continue;
+    if (!stated && !assume) continue;
     if (!wants(current.characterId)) continue;
 
     const character = catalog.characters.get(current.characterId);
@@ -705,7 +717,7 @@ export async function farmingPlan(
     const here: Progress = {
       level: current.level, ascension: current.ascension, talents: current.talent,
     };
-    const fallback = filter.includeWithoutTarget ? CAP : here;
+    const fallback = assume ? CAP : here;
 
     byCharacter.set(current.characterId, {
       characterId: current.characterId,
@@ -775,7 +787,9 @@ export async function farmingPlan(
     roster: [...roster.values()].map((entry) => ({
       characterId: entry.characterId,
       hasTarget: entry.target.level !== null || entry.target.talents !== null,
+      dismissed: entry.dismissedAt !== null,
     })),
+    dismissed: [...roster.values()].filter((entry) => entry.dismissedAt !== null).length,
   };
 }
 

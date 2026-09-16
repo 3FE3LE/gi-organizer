@@ -35,6 +35,15 @@ export type CharacterBuild = {
    * the material planner always had to reconcile it across goals anyway.
    */
   target: CharacterTarget;
+  /**
+   * When the player decided not to invest in them, or null.
+   *
+   * The plan assumes every owned character is headed for the cap, so opting
+   * out is the only thing that makes the first screen readable. A timestamp
+   * rather than a flag: a decision from four patches ago is worth revisiting,
+   * and a boolean cannot say how old it is.
+   */
+  dismissedAt: string | null;
   notes: string | null;
   seenFrom: string;
   seenAt: string;
@@ -50,6 +59,7 @@ type Row = {
   talent_burst: number;
   talent_bonus_json: string | null;
   skill_depot_id: number | null;
+  dismissed_at: string | null;
   target_level: number | null;
   target_ascension: number | null;
   target_talents_json: string | null;
@@ -63,7 +73,7 @@ export async function readRoster(db: Db, profileId: string): Promise<CharacterBu
     .prepare(`SELECT character_id, level, ascension, constellation, talent_auto,
                      talent_skill, talent_burst, talent_bonus_json, skill_depot_id,
                      target_level, target_ascension, target_talents_json,
-                     notes, seen_from, seen_at
+                     dismissed_at, notes, seen_from, seen_at
               FROM character_build WHERE profile_id = ?`)
     .all(profileId)) as unknown as Row[];
 
@@ -84,6 +94,7 @@ export async function readRoster(db: Db, profileId: string): Promise<CharacterBu
         ? (JSON.parse(row.target_talents_json) as CharacterTarget['talents'])
         : null,
     },
+    dismissedAt: row.dismissed_at,
     notes: row.notes,
     seenFrom: row.seen_from,
     seenAt: row.seen_at,
@@ -187,4 +198,39 @@ export async function readOwnedCharacterIds(db: Db, profileId: string) {
     .all(profileId)) as unknown as { character_id: number }[];
 
   return new Set(rows.map((row) => row.character_id));
+}
+
+/**
+ * Says whether the player intends to invest in these characters.
+ *
+ * `null` for the ids means everyone on the roster, which is the only way the
+ * first screen after an import is usable: sixty characters headed for the cap
+ * is every material in the game, and clearing them one at a time is not a
+ * decision anybody makes sixty times.
+ */
+export async function setDismissed(
+  db: Db,
+  profileId: string,
+  characterIds: readonly number[] | null,
+  dismissed: boolean,
+) {
+  const at = dismissed ? new Date().toISOString() : null;
+
+  if (characterIds === null) {
+    return (await db
+      .prepare('UPDATE character_build SET dismissed_at = ? WHERE profile_id = ?')
+      .run(at, profileId)).changes;
+  }
+
+  if (characterIds.length === 0) return 0;
+
+  const update = db.prepare(
+    'UPDATE character_build SET dismissed_at = ? WHERE profile_id = ? AND character_id = ?',
+  );
+
+  const results = await db.batch(
+    characterIds.map((characterId) => update.bind(at, profileId, characterId)),
+  );
+
+  return results.reduce((total, result) => total + result.changes, 0);
 }

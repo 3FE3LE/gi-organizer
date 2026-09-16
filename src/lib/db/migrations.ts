@@ -307,6 +307,20 @@ const MIGRATIONS: string[] = [
     CREATE UNIQUE INDEX ux_build_role
       ON build(profile_id, character_id, IFNULL(role, ''), IFNULL(objective, ''));
   `,
+  /* 8 */ `
+    -- Characters the player has looked at and decided not to invest in.
+    --
+    -- The plan assumes everyone is headed for the cap, because that is the
+    -- only honest default once nobody has stated a target: a roster of sixty
+    -- with no plan has sixty characters' worth of demand whether it is written
+    -- down or not. What that produces on the first screen is every material in
+    -- the game, which is true and useless.
+    --
+    -- So the answer is not a smaller assumption, it is a way to say no. A
+    -- timestamp rather than a flag, because "when did I decide this" is what
+    -- makes a months-old dismissal worth revisiting.
+    ALTER TABLE character_build ADD COLUMN dismissed_at TEXT;
+  `,
 ];
 
 /**
