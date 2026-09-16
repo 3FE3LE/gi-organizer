@@ -1,11 +1,9 @@
 import 'server-only';
 
-import type { DatabaseSync } from 'node:sqlite';
-
 import type { Catalog } from '@/lib/data/catalog';
 import type { Locale } from '@/lib/data/locales';
 import type { CharacterView } from '@/lib/data/types';
-import { getDb } from '@/lib/db/client';
+import { getDb, type Db } from '@/lib/db/client';
 import { readLoadout, type Loadout } from '@/lib/player/loadout';
 import { readGear } from '@/lib/player/queries';
 import { readTargets } from '@/lib/player/targets';
@@ -24,10 +22,10 @@ import { pieceFormatter, type PieceFormatter } from './piece-view';
 export type BuildContext = {
   locale: Locale;
   catalog: Catalog;
-  db: DatabaseSync;
+  db: Db;
   characterId: number;
   character: CharacterView;
-  gear: ReturnType<typeof readGear>;
+  gear: Awaited<ReturnType<typeof readGear>>;
   loadout: Loadout | null;
   suggestions: Suggestions;
   /** The weapon the scarcity pass has pencilled in, which is not the build's. */
@@ -51,15 +49,15 @@ export async function loadBuildContext({
   characterId: number;
   character: CharacterView;
   requestedBuild: string | null;
-  db?: DatabaseSync;
+  db?: Db;
 }): Promise<BuildContext> {
-  const gear = readGear(characterId, db);
+  const gear = await readGear(characterId, db);
   const [loadout, suggestions] = await Promise.all([
     readLoadout(characterId, catalog, db),
     suggestionsFor(characterId, catalog, db, requestedBuild),
   ]);
 
-  const target = readTargets(db).get(characterId) ?? { weaponId: null, refinement: null };
+  const target = (await readTargets(db)).get(characterId) ?? { weaponId: null, refinement: null };
 
   return {
     locale,
@@ -85,7 +83,7 @@ export async function loadBuildContext({
  * would let almost any piece through, which is the same as no rule at all.
  */
 export function plannedSetsOf(
-  gear: ReturnType<typeof readGear>,
+  gear: Awaited<ReturnType<typeof readGear>>,
   suggestions: Suggestions,
 ): Set<number> {
   const planned = new Set(suggestions.build?.setPlan.flatMap((plan) => plan.setIds) ?? []);

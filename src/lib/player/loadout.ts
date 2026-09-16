@@ -1,6 +1,7 @@
 import 'server-only';
 
-import type { DatabaseSync } from 'node:sqlite';
+import type { Db } from '@/lib/db/client';
+
 
 import type { Catalog } from '@/lib/data/catalog';
 import { statsAtLevel } from '@/lib/data/stats';
@@ -79,17 +80,17 @@ const UNKNOWN = { level: 1, ascension: 0, constellation: 0, talent: { auto: 1, s
 export async function readLoadout(
   characterId: number,
   catalog: Catalog,
-  db: DatabaseSync,
+  db: Db,
 ): Promise<Loadout | null> {
   const character = catalog.characters.get(characterId);
   if (!character) return null;
 
-  const entry = readRoster(db, getProfileId(db))
+  const entry = (await readRoster(db, await getProfileId(db)))
     .find((row) => row.characterId === characterId) ?? null;
   const level = entry?.level ?? UNKNOWN.level;
   const ascension = entry?.ascension ?? UNKNOWN.ascension;
 
-  const gear = readGear(characterId, db);
+  const gear = await readGear(characterId, db);
   const equipped = [...gear.bySlot.values()];
 
   const characterStats = statsAtLevel(character.stats, level, ascension);

@@ -1,8 +1,8 @@
 import 'server-only';
 
-import type { DatabaseSync } from 'node:sqlite';
+import type { InStatement } from '@libsql/client';
 
-import { getDb } from '@/lib/db/client';
+import { getDb, type Db } from '@/lib/db/client';
 import type { ArtifactSlot } from '@/lib/data/types';
 import type { ImportSource, NormalizedStat } from '@/lib/inventory/model';
 import type { Inventory, OwnedArtifact, OwnedWeapon } from '@/lib/inventory/plan';
@@ -23,10 +23,10 @@ import type { Inventory, OwnedArtifact, OwnedWeapon } from '@/lib/inventory/plan
 const PROFILE_ID = 'local';
 
 /** One profile today. The column exists so sharing is a lookup, not a migration. */
-export function getProfileId(db: DatabaseSync = getDb()) {
-  const existing = db.prepare('SELECT id FROM profile WHERE id = ?').get(PROFILE_ID);
+export async function getProfileId(db: Db = getDb()) {
+  const existing = await db.prepare('SELECT id FROM profile WHERE id = ?').get(PROFILE_ID);
   if (!existing) {
-    db.prepare('INSERT INTO profile (id, name, created_at) VALUES (?, ?, ?)')
+    await db.prepare('INSERT INTO profile (id, name, created_at) VALUES (?, ?, ?)')
       .run(PROFILE_ID, 'local', new Date().toISOString());
   }
   return PROFILE_ID;
@@ -60,21 +60,21 @@ type WeaponRow = {
   seen_at: string;
 };
 
-export function readInventory(db: DatabaseSync, profileId: string): Inventory {
-  const artifacts = db
+export async function readInventory(db: Db, profileId: string): Promise<Inventory> {
+  const artifacts = (await db
     .prepare(`SELECT id, set_id, slot, rarity, level, main_prop, substats_json,
                      unactivated_json, roll_history_json, locked, source,
                      assigned_character_id, seen_at
               FROM artifact_instance WHERE profile_id = ?
               ORDER BY id`)
-    .all(profileId) as unknown as ArtifactRow[];
+    .all(profileId)) as unknown as ArtifactRow[];
 
-  const weapons = db
+  const weapons = (await db
     .prepare(`SELECT id, weapon_id, level, ascension, refinement, locked, source,
                      assigned_character_id, seen_at
               FROM weapon_instance WHERE profile_id = ?
               ORDER BY id`)
-    .all(profileId) as unknown as WeaponRow[];
+    .all(profileId)) as unknown as WeaponRow[];
 
   return {
     artifacts: artifacts.map(toArtifact),
@@ -131,12 +131,12 @@ export type PersistCounts = {
  * unchanged file to zero writes, which is what makes idempotence observable in
  * the database and not only in the planner.
  */
-export function persistInventory(
-  db: DatabaseSync,
+export async function persistInventory(
+  db: Db,
   profileId: string,
   before: Inventory,
   after: Inventory,
-): PersistCounts {
+): Promise<PersistCounts> {
   const counts: PersistCounts = {
     artifacts: { inserted: 0, updated: 0, deleted: 0 },
     weapons: { inserted: 0, updated: 0, deleted: 0 },
@@ -160,34 +160,6 @@ export function persistInventory(
     'DELETE FROM artifact_instance WHERE id = ? AND profile_id = ?',
   );
 
-  const beforeArtifacts = new Map(before.artifacts.map((piece) => [piece.id, piece]));
-  const now = new Date().toISOString();
-
-  // The partial unique indexes are checked per statement, so moving an
-  // assignment between two rows collides halfway through: for a moment both
-  // claim the same holder. Releasing every changed assignment first keeps the
-  // transaction's intermediate state legal without weakening the constraint.
-  releaseChangedAssignments(db, profileId, before, after);
-
-  for (const piece of after.artifacts) {
-    const previous = beforeArtifacts.get(piece.id);
-    const row = artifactValues(piece);
-
-    if (!previous) {
-      insertArtifact.run(piece.id, profileId, ...row, now);
-      counts.artifacts.inserted += 1;
-    } else if (!sameArtifact(previous, piece)) {
-      updateArtifact.run(...row, piece.id, profileId);
-      counts.artifacts.updated += 1;
-    }
-    beforeArtifacts.delete(piece.id);
-  }
-
-  for (const id of beforeArtifacts.keys()) {
-    deleteArtifact.run(id, profileId);
-    counts.artifacts.deleted += 1;
-  }
-
   const insertWeapon = db.prepare(`
     INSERT INTO weapon_instance
       (id, profile_id, weapon_id, level, ascension, refinement, locked,
@@ -204,6 +176,41 @@ export function persistInventory(
     'DELETE FROM weapon_instance WHERE id = ? AND profile_id = ?',
   );
 
+  const now = new Date().toISOString();
+
+  // Built as one ordered list and sent together. A full inventory is over a
+  // thousand rows, and a remote database charges a round trip for each one, so
+  // writing them one at a time is the difference between an import that
+  // finishes and one that outlives the request.
+  //
+  // The partial unique indexes are checked per statement, so moving an
+  // assignment between two rows collides halfway through: for a moment both
+  // claim the same holder. The releases lead the list — `batch` runs it in
+  // order — which keeps the intermediate state legal without weakening the
+  // constraint.
+  const writes = releasedAssignments(db, profileId, before, after);
+
+  const beforeArtifacts = new Map(before.artifacts.map((piece) => [piece.id, piece]));
+
+  for (const piece of after.artifacts) {
+    const previous = beforeArtifacts.get(piece.id);
+    const row = artifactValues(piece);
+
+    if (!previous) {
+      writes.push(insertArtifact.bind(piece.id, profileId, ...row, now));
+      counts.artifacts.inserted += 1;
+    } else if (!sameArtifact(previous, piece)) {
+      writes.push(updateArtifact.bind(...row, piece.id, profileId));
+      counts.artifacts.updated += 1;
+    }
+    beforeArtifacts.delete(piece.id);
+  }
+
+  for (const id of beforeArtifacts.keys()) {
+    writes.push(deleteArtifact.bind(id, profileId));
+    counts.artifacts.deleted += 1;
+  }
+
   const beforeWeapons = new Map(before.weapons.map((weapon) => [weapon.id, weapon]));
 
   for (const weapon of after.weapons) {
@@ -211,33 +218,35 @@ export function persistInventory(
     const row = weaponValues(weapon);
 
     if (!previous) {
-      insertWeapon.run(weapon.id, profileId, ...row, now);
+      writes.push(insertWeapon.bind(weapon.id, profileId, ...row, now));
       counts.weapons.inserted += 1;
     } else if (!sameWeapon(previous, weapon)) {
-      updateWeapon.run(...row, weapon.id, profileId);
+      writes.push(updateWeapon.bind(...row, weapon.id, profileId));
       counts.weapons.updated += 1;
     }
     beforeWeapons.delete(weapon.id);
   }
 
   for (const id of beforeWeapons.keys()) {
-    deleteWeapon.run(id, profileId);
+    writes.push(deleteWeapon.bind(id, profileId));
     counts.weapons.deleted += 1;
   }
+
+  await db.batch(writes);
 
   return counts;
 }
 
 /**
- * Nulls out `assigned_character_id` on every row whose holder is about to
- * change, so the write pass never has two rows claiming one slot.
+ * Statements that null out `assigned_character_id` on every row whose holder is
+ * about to change, so the write pass never has two rows claiming one slot.
  */
-function releaseChangedAssignments(
-  db: DatabaseSync,
+function releasedAssignments(
+  db: Db,
   profileId: string,
   before: Inventory,
   after: Inventory,
-) {
+): InStatement[] {
   const releaseArtifact = db.prepare(
     'UPDATE artifact_instance SET assigned_character_id = NULL WHERE id = ? AND profile_id = ?',
   );
@@ -245,11 +254,13 @@ function releaseChangedAssignments(
     'UPDATE weapon_instance SET assigned_character_id = NULL WHERE id = ? AND profile_id = ?',
   );
 
+  const writes: InStatement[] = [];
+
   const afterArtifacts = new Map(after.artifacts.map((piece) => [piece.id, piece]));
   for (const piece of before.artifacts) {
     const next = afterArtifacts.get(piece.id);
     if (piece.equippedTo !== null && next?.equippedTo !== piece.equippedTo) {
-      releaseArtifact.run(piece.id, profileId);
+      writes.push(releaseArtifact.bind(piece.id, profileId));
     }
   }
 
@@ -257,9 +268,11 @@ function releaseChangedAssignments(
   for (const weapon of before.weapons) {
     const next = afterWeapons.get(weapon.id);
     if (weapon.equippedTo !== null && next?.equippedTo !== weapon.equippedTo) {
-      releaseWeapon.run(weapon.id, profileId);
+      writes.push(releaseWeapon.bind(weapon.id, profileId));
     }
   }
+
+  return writes;
 }
 
 function artifactValues(piece: OwnedArtifact) {
@@ -326,10 +339,10 @@ function sameWeapon(a: OwnedWeapon, b: OwnedWeapon) {
 
 export type MaterialStock = Map<number, number>;
 
-export function readMaterialStock(db: DatabaseSync, profileId: string): MaterialStock {
-  const rows = db
+export async function readMaterialStock(db: Db, profileId: string): Promise<MaterialStock> {
+  const rows = (await db
     .prepare('SELECT material_id, count FROM material_stock WHERE profile_id = ?')
-    .all(profileId) as unknown as { material_id: number; count: number }[];
+    .all(profileId)) as unknown as { material_id: number; count: number }[];
 
   return new Map(rows.map((row) => [row.material_id, row.count]));
 }
@@ -340,8 +353,8 @@ export function readMaterialStock(db: DatabaseSync, profileId: string): Material
  * Only what the file mentions: a scan that skipped the bag reports nothing, and
  * nothing must not read as zero of everything.
  */
-export function persistMaterialStock(
-  db: DatabaseSync,
+export async function persistMaterialStock(
+  db: Db,
   profileId: string,
   materials: { materialId: number; count: number }[],
   seenAt: string,
@@ -353,9 +366,9 @@ export function persistMaterialStock(
     ON CONFLICT (profile_id, material_id) DO UPDATE SET
       count = excluded.count, seen_at = excluded.seen_at`);
 
-  for (const material of materials) {
-    upsert.run(profileId, material.materialId, material.count, seenAt);
-  }
+  await db.batch(materials.map(
+    (material) => upsert.bind(profileId, material.materialId, material.count, seenAt),
+  ));
 
   return materials.length;
 }

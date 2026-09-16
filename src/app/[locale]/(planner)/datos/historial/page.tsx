@@ -29,7 +29,7 @@ export default async function HistoryPage({ params }: PageProps<'/[locale]/datos
   if (!isLocale(locale)) notFound();
 
   const catalog = await getCatalog(locale);
-  const entries = readHistory(getDb());
+  const entries = await readHistory(getDb());
 
   return (
     <div className="space-y-6">

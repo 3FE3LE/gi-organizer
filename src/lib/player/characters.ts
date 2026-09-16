@@ -1,6 +1,7 @@
 import 'server-only';
 
-import type { DatabaseSync } from 'node:sqlite';
+import type { Db } from '@/lib/db/client';
+
 
 import type { NormalizedCharacter } from '@/lib/inventory/model';
 
@@ -57,14 +58,14 @@ type Row = {
   seen_at: string;
 };
 
-export function readRoster(db: DatabaseSync, profileId: string): CharacterBuild[] {
-  const rows = db
+export async function readRoster(db: Db, profileId: string): Promise<CharacterBuild[]> {
+  const rows = (await db
     .prepare(`SELECT character_id, level, ascension, constellation, talent_auto,
                      talent_skill, talent_burst, talent_bonus_json, skill_depot_id,
                      target_level, target_ascension, target_talents_json,
                      notes, seen_from, seen_at
               FROM character_build WHERE profile_id = ?`)
-    .all(profileId) as unknown as Row[];
+    .all(profileId)) as unknown as Row[];
 
   return rows.map((row) => ({
     characterId: row.character_id,
@@ -101,13 +102,13 @@ export type UpsertOptions = {
  * GOOD cannot express the constellation +3, so a GOOD import must leave a value
  * an Enka import established rather than replacing it with nothing.
  */
-export function upsertCharacter(
-  db: DatabaseSync,
+export async function upsertCharacter(
+  db: Db,
   profileId: string,
   character: NormalizedCharacter,
   options: UpsertOptions,
 ) {
-  db.prepare(`
+  await db.prepare(`
     INSERT INTO character_build
       (profile_id, character_id, level, ascension, constellation,
        talent_auto, talent_skill, talent_burst, talent_bonus_json,
@@ -147,13 +148,13 @@ export function upsertCharacter(
  * character *is* and must never touch what the player decided they should
  * become.
  */
-export function setCharacterTarget(
-  db: DatabaseSync,
+export async function setCharacterTarget(
+  db: Db,
   profileId: string,
   characterId: number,
   target: CharacterTarget,
 ) {
-  return db
+  return (await db
     .prepare(`UPDATE character_build
               SET target_level = ?, target_ascension = ?, target_talents_json = ?
               WHERE profile_id = ? AND character_id = ?`)
@@ -163,13 +164,13 @@ export function setCharacterTarget(
       target.talents ? JSON.stringify(target.talents) : null,
       profileId,
       characterId,
-    ).changes;
+    )).changes;
 }
 
-export function deleteCharacter(db: DatabaseSync, profileId: string, characterId: number) {
-  return db
+export async function deleteCharacter(db: Db, profileId: string, characterId: number) {
+  return (await db
     .prepare('DELETE FROM character_build WHERE profile_id = ? AND character_id = ?')
-    .run(profileId, characterId).changes;
+    .run(profileId, characterId)).changes;
 }
 
 /**
@@ -180,10 +181,10 @@ export function deleteCharacter(db: DatabaseSync, profileId: string, characterId
  * someone is not the same thing — a scan reads the inventory and the character
  * screen separately, so gear can arrive without its owner.
  */
-export function readOwnedCharacterIds(db: DatabaseSync, profileId: string) {
-  const rows = db
+export async function readOwnedCharacterIds(db: Db, profileId: string) {
+  const rows = (await db
     .prepare('SELECT character_id FROM character_build WHERE profile_id = ?')
-    .all(profileId) as unknown as { character_id: number }[];
+    .all(profileId)) as unknown as { character_id: number }[];
 
   return new Set(rows.map((row) => row.character_id));
 }

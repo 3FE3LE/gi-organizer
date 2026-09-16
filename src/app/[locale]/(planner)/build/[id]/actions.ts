@@ -35,7 +35,7 @@ export async function moveGearAction(
   }
 
   const catalog = await getCatalog(DEFAULT_LOCALE);
-  const result = performMove(move, {
+  const result = await performMove(move, {
     expectedHolderId:
       expected === null || expected === '' ? undefined : expected === 'null' ? null : Number(expected),
     weaponTypes: {

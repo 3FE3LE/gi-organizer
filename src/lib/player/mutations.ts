@@ -1,9 +1,8 @@
 import 'server-only';
 
 import { randomUUID } from 'node:crypto';
-import type { DatabaseSync } from 'node:sqlite';
 
-import { getDb } from '@/lib/db/client';
+import { getDb, type Db } from '@/lib/db/client';
 import { transaction } from '@/lib/db/tx';
 import type { ArtifactSlot } from '@/lib/data/types';
 
@@ -63,15 +62,15 @@ export type MoveOptions = {
   log?: boolean;
 };
 
-export function performMove(
+export async function performMove(
   move: Move,
   options: MoveOptions = {},
-  db: DatabaseSync = getDb(),
-): MoveResult {
-  const profileId = getProfileId(db);
+  db: Db = getDb(),
+): Promise<MoveResult> {
+  const profileId = await getProfileId(db);
 
-  return transaction(db, () => {
-    const context = loadContext(db, profileId, move);
+  return transaction(db, async () => {
+    const context = await loadContext(db, profileId, move);
     if (!context) return { ok: false, reason: 'not-found' } as const;
 
     if (options.expectedHolderId !== undefined) {
@@ -96,17 +95,17 @@ export function performMove(
     // Free every slot that is losing its occupant before filling any, or the
     // partial unique indexes reject the intermediate state.
     for (const displacement of outcome.displaced) {
-      release(db, profileId, displacement.kind, displacement.instanceId);
+      await release(db, profileId, displacement.kind, displacement.instanceId);
     }
 
-    writeAssignments(db, profileId, context.state, outcome.state);
+    await writeAssignments(db, profileId, context.state, outcome.state);
 
     // The inverse is written inside the same transaction as the change it
     // reverses. Written separately it could be lost, and an undo stack that
     // sometimes cannot undo is worse than none.
     const seq = options.log === false
       ? 0
-      : logChange(db, profileId, move, outcome.inverse, options.label);
+      : await logChange(db, profileId, move, outcome.inverse, options.label);
 
     return { ok: true, displaced: outcome.displaced, seq } as const;
   });
@@ -123,12 +122,12 @@ type Context = {
  * occupies the destination. Loading the whole inventory to move one goblet
  * would be a thousand rows of waste per drag.
  */
-function loadContext(db: DatabaseSync, profileId: string, move: Move): Context | null {
+async function loadContext(db: Db, profileId: string, move: Move): Promise<Context | null> {
   if (move.kind === 'equip-artifact' || move.kind === 'unequip-artifact') {
-    const piece = db
+    const piece = (await db
       .prepare(`SELECT id, slot, assigned_character_id FROM artifact_instance
                 WHERE id = ? AND profile_id = ?`)
-      .get(move.instanceId, profileId) as
+      .get(move.instanceId, profileId)) as
       | { id: string; slot: string; assigned_character_id: number | null }
       | undefined;
 
@@ -143,10 +142,10 @@ function loadContext(db: DatabaseSync, profileId: string, move: Move): Context |
     const artifacts = [subject];
 
     if (move.kind === 'equip-artifact') {
-      const occupant = db
+      const occupant = (await db
         .prepare(`SELECT id, slot, assigned_character_id FROM artifact_instance
                   WHERE profile_id = ? AND assigned_character_id = ? AND slot = ? AND id != ?`)
-        .get(profileId, move.toCharacterId, piece.slot, piece.id) as
+        .get(profileId, move.toCharacterId, piece.slot, piece.id)) as
         | { id: string; slot: string; assigned_character_id: number | null }
         | undefined;
 
@@ -162,10 +161,10 @@ function loadContext(db: DatabaseSync, profileId: string, move: Move): Context |
     return { state: { artifacts, weapons: [] }, subject };
   }
 
-  const weapon = db
+  const weapon = (await db
     .prepare(`SELECT id, weapon_id, assigned_character_id FROM weapon_instance
               WHERE id = ? AND profile_id = ?`)
-    .get(move.instanceId, profileId) as
+    .get(move.instanceId, profileId)) as
     | { id: string; weapon_id: number; assigned_character_id: number | null }
     | undefined;
 
@@ -175,10 +174,10 @@ function loadContext(db: DatabaseSync, profileId: string, move: Move): Context |
   const weapons = [subject];
 
   if (move.kind === 'equip-weapon') {
-    const occupant = db
+    const occupant = (await db
       .prepare(`SELECT id, assigned_character_id FROM weapon_instance
                 WHERE profile_id = ? AND assigned_character_id = ? AND id != ?`)
-      .get(profileId, move.toCharacterId, weapon.id) as
+      .get(profileId, move.toCharacterId, weapon.id)) as
       | { id: string; assigned_character_id: number | null }
       | undefined;
 
@@ -190,19 +189,19 @@ function loadContext(db: DatabaseSync, profileId: string, move: Move): Context |
   return { state: { artifacts: [], weapons }, subject, weaponId: weapon.weapon_id };
 }
 
-function release(
-  db: DatabaseSync,
+async function release(
+  db: Db,
   profileId: string,
   kind: 'artifact' | 'weapon',
   instanceId: string,
 ) {
   const table = kind === 'artifact' ? 'artifact_instance' : 'weapon_instance';
-  db.prepare(`UPDATE ${table} SET assigned_character_id = NULL WHERE id = ? AND profile_id = ?`)
+  await db.prepare(`UPDATE ${table} SET assigned_character_id = NULL WHERE id = ? AND profile_id = ?`)
     .run(instanceId, profileId);
 }
 
-function writeAssignments(
-  db: DatabaseSync,
+async function writeAssignments(
+  db: Db,
   profileId: string,
   before: MoveState,
   after: MoveState,
@@ -217,30 +216,30 @@ function writeAssignments(
   const previousArtifacts = new Map(before.artifacts.map((piece) => [piece.id, piece.equippedTo]));
   for (const piece of after.artifacts) {
     if (previousArtifacts.get(piece.id) !== piece.equippedTo) {
-      setArtifact.run(piece.equippedTo, piece.id, profileId);
+      await setArtifact.run(piece.equippedTo, piece.id, profileId);
     }
   }
 
   const previousWeapons = new Map(before.weapons.map((weapon) => [weapon.id, weapon.equippedTo]));
   for (const weapon of after.weapons) {
     if (previousWeapons.get(weapon.id) !== weapon.equippedTo) {
-      setWeapon.run(weapon.equippedTo, weapon.id, profileId);
+      await setWeapon.run(weapon.equippedTo, weapon.id, profileId);
     }
   }
 }
 
-function logChange(
-  db: DatabaseSync,
+async function logChange(
+  db: Db,
   profileId: string,
   move: Move,
   inverse: Move[],
   label?: string,
 ) {
   // A forward move discards the redo stack, the way every editor behaves.
-  db.prepare('DELETE FROM change_log WHERE profile_id = ? AND undone_at IS NOT NULL')
+  await db.prepare('DELETE FROM change_log WHERE profile_id = ? AND undone_at IS NOT NULL')
     .run(profileId);
 
-  const result = db
+  const result = await db
     .prepare(`INSERT INTO change_log (profile_id, at, op, summary_json, inverse_json)
               VALUES (?,?,?,?,?)`)
     .run(

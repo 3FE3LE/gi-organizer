@@ -26,7 +26,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    return Response.json({ restored: restoreNative(payload) });
+    return Response.json({ restored: await restoreNative(payload) });
   } catch (error) {
     if (error instanceof RestoreRejected) {
       return Response.json({ error: 'rejected', message: error.detail }, { status: 422 });

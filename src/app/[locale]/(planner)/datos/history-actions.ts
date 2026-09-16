@@ -10,7 +10,7 @@ export type HistoryState =
   | { status: 'error'; message: string };
 
 export async function undoAction(): Promise<HistoryState> {
-  const result = undo();
+  const result = await undo();
   refresh();
 
   if (result.ok) return { status: 'ok', message: `deshecho: ${result.op}` };
@@ -21,7 +21,7 @@ export async function undoAction(): Promise<HistoryState> {
 }
 
 export async function redoAction(): Promise<HistoryState> {
-  const result = redo();
+  const result = await redo();
   refresh();
 
   if (result.ok) return { status: 'ok', message: `rehecho: ${result.op}` };

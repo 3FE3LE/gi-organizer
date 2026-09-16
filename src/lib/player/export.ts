@@ -1,8 +1,8 @@
 import 'server-only';
 
-import type { DatabaseSync } from 'node:sqlite';
+import type { InStatement } from '@libsql/client';
 
-import { getDb } from '@/lib/db/client';
+import { getDb, type Db } from '@/lib/db/client';
 import { GOOD_STAT_BY_PROP } from '@/lib/good/stats';
 import type { GoodCrosswalk } from '@/lib/good/keys';
 import type { ArtifactSlot } from '@/lib/data/types';
@@ -42,12 +42,12 @@ export type NativeExport = {
   rules: { id: string; kind: string; enabled: boolean; severity: string; params: unknown; label: string }[];
 };
 
-export function exportNative(gameVersion: string, db: DatabaseSync = getDb()): NativeExport {
-  const profileId = getProfileId(db);
+export async function exportNative(gameVersion: string, db: Db = getDb()): Promise<NativeExport> {
+  const profileId = await getProfileId(db);
 
-  const rules = db
+  const rules = (await db
     .prepare('SELECT id, kind, enabled, severity, params_json, label FROM rule WHERE profile_id = ?')
-    .all(profileId) as unknown as {
+    .all(profileId)) as unknown as {
       id: string; kind: string; enabled: number; severity: string;
       params_json: string; label: string;
     }[];
@@ -56,11 +56,11 @@ export function exportNative(gameVersion: string, db: DatabaseSync = getDb()): N
     schema: NATIVE_SCHEMA,
     exportedAt: new Date().toISOString(),
     gameVersion,
-    inventory: readInventory(db, profileId),
-    roster: readRoster(db, profileId),
-    teams: readTeams(db),
-    deployments: readDeployments(db),
-    targets: [...readTargets(db).values()],
+    inventory: await readInventory(db, profileId),
+    roster: await readRoster(db, profileId),
+    teams: await readTeams(db),
+    deployments: await readDeployments(db),
+    targets: [...(await readTargets(db)).values()],
     rules: rules.map((row) => ({
       id: row.id,
       kind: row.kind,
@@ -88,13 +88,13 @@ function reverse(table: Record<string, number>) {
   return new Map(Object.entries(table).map(([key, id]) => [id, key]));
 }
 
-export function exportGood(
+export async function exportGood(
   crosswalk: GoodCrosswalk,
-  db: DatabaseSync = getDb(),
-): { good: GoodExport; skipped: string[] } {
-  const profileId = getProfileId(db);
-  const inventory = readInventory(db, profileId);
-  const roster = readRoster(db, profileId);
+  db: Db = getDb(),
+): Promise<{ good: GoodExport; skipped: string[] }> {
+  const profileId = await getProfileId(db);
+  const inventory = await readInventory(db, profileId);
+  const roster = await readRoster(db, profileId);
 
   const characterKey = reverse(crosswalk.characters);
   const weaponKey = reverse(crosswalk.weapons);
@@ -216,10 +216,10 @@ export class RestoreRejected extends Error {
  * previous state — so it runs in one transaction and the caller is expected to
  * have asked first.
  */
-export function restoreNative(
+export async function restoreNative(
   payload: unknown,
-  db: DatabaseSync = getDb(),
-): RestoreResult {
+  db: Db = getDb(),
+): Promise<RestoreResult> {
   const file = payload as Partial<NativeExport>;
 
   if (file?.schema !== NATIVE_SCHEMA) {
@@ -229,24 +229,21 @@ export function restoreNative(
     throw new RestoreRejected('no inventory in the file');
   }
 
-  const profileId = getProfileId(db);
+  const profileId = await getProfileId(db);
 
-  return transaction(db, () => {
+  return transaction(db, async () => {
     // Order matters only for readability; the child tables cascade anyway.
-    for (const table of [
+    await db.batch([
       'artifact_instance', 'weapon_instance', 'character_build',
-      'build_target', 'deployment', 'team',
-    ]) {
-      db.prepare(`DELETE FROM ${table} WHERE profile_id = ?`).run(profileId);
-    }
-    db.prepare('DELETE FROM rule WHERE profile_id = ?').run(profileId);
+      'build_target', 'deployment', 'team', 'rule',
+    ].map((table) => db.prepare(`DELETE FROM ${table} WHERE profile_id = ?`).bind(profileId)));
 
-    persistInventory(db, profileId, { artifacts: [], weapons: [] }, file.inventory!);
+    await persistInventory(db, profileId, { artifacts: [], weapons: [] }, file.inventory!);
 
     const now = new Date().toISOString();
 
     for (const entry of file.roster ?? []) {
-      upsertCharacter(db, profileId, {
+      await upsertCharacter(db, profileId, {
         characterId: entry.characterId,
         travelerElement: null,
         level: entry.level,
@@ -257,46 +254,56 @@ export function restoreNative(
       }, { source: entry.seenFrom ?? 'restore', observedAt: entry.seenAt ?? now });
     }
 
+    const insertTeam = db.prepare(`INSERT INTO team
+        (id, profile_id, name, mode, position, notes, objective)
+        VALUES (?,?,?,?,?,?,?)`);
+    const insertSlot = db.prepare(`INSERT INTO team_slot
+        (team_id, character_id, position, roles_json, declarations_json)
+        VALUES (?,?,?,?,?)`);
+    const insertDeployment = db.prepare(`INSERT INTO deployment
+        (id, profile_id, name, mode, team_ids_json, theater_json)
+        VALUES (?,?,?,?,?,?)`);
+    const insertRule = db.prepare(`INSERT INTO rule
+        (id, profile_id, kind, enabled, severity, params_json, label)
+        VALUES (?,?,?,?,?,?,?)`);
+
+    // One list, in order: a slot references the team it belongs to, and `batch`
+    // runs the statements in the order it is given them.
+    const writes: InStatement[] = [];
+
     for (const team of file.teams ?? []) {
-      db.prepare(`INSERT INTO team (id, profile_id, name, mode, position, notes, objective)
-                  VALUES (?,?,?,?,?,?,?)`)
-        .run(
-          team.id, profileId, team.name, team.mode, team.position,
-          team.notes, team.objective ?? null,
-        );
+      writes.push(insertTeam.bind(
+        team.id, profileId, team.name, team.mode, team.position,
+        team.notes, team.objective ?? null,
+      ));
 
       for (const slot of team.slots) {
-        db.prepare(`INSERT INTO team_slot
-            (team_id, character_id, position, roles_json, declarations_json)
-            VALUES (?,?,?,?,?)`)
-          .run(
-            team.id, slot.characterId, slot.position,
-            JSON.stringify(slot.roles), JSON.stringify(slot.declarations),
-          );
+        writes.push(insertSlot.bind(
+          team.id, slot.characterId, slot.position,
+          JSON.stringify(slot.roles), JSON.stringify(slot.declarations),
+        ));
       }
     }
 
     for (const deployment of file.deployments ?? []) {
-      db.prepare(`INSERT INTO deployment (id, profile_id, name, mode, team_ids_json, theater_json)
-                  VALUES (?,?,?,?,?,?)`)
-        .run(
-          deployment.id, profileId, deployment.name, deployment.mode,
-          JSON.stringify(deployment.teamIds),
-          deployment.theater ? JSON.stringify(deployment.theater) : null,
-        );
-    }
-
-    for (const target of file.targets ?? []) {
-      setTarget(target, db);
+      writes.push(insertDeployment.bind(
+        deployment.id, profileId, deployment.name, deployment.mode,
+        JSON.stringify(deployment.teamIds),
+        deployment.theater ? JSON.stringify(deployment.theater) : null,
+      ));
     }
 
     for (const rule of file.rules ?? []) {
-      db.prepare(`INSERT INTO rule (id, profile_id, kind, enabled, severity, params_json, label)
-                  VALUES (?,?,?,?,?,?,?)`)
-        .run(
-          rule.id, profileId, rule.kind, Number(rule.enabled),
-          rule.severity, JSON.stringify(rule.params), rule.label,
-        );
+      writes.push(insertRule.bind(
+        rule.id, profileId, rule.kind, Number(rule.enabled),
+        rule.severity, JSON.stringify(rule.params), rule.label,
+      ));
+    }
+
+    await db.batch(writes);
+
+    for (const target of file.targets ?? []) {
+      await setTarget(target, db);
     }
 
     return {

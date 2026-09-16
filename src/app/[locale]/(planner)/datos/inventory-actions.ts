@@ -45,9 +45,9 @@ export async function addCharacterAction(
   }
 
   const db = getDb();
-  const profileId = getProfileId(db);
+  const profileId = await getProfileId(db);
 
-  upsertCharacter(db, profileId, {
+  await upsertCharacter(db, profileId, {
     characterId,
     travelerElement: null,
     level: intField(form, 'level', 1, 90, 1),
@@ -73,7 +73,7 @@ export async function removeCharacterAction(
 ): Promise<FormState> {
   const characterId = Number(form.get('characterId'));
   const db = getDb();
-  const removed = deleteCharacter(db, getProfileId(db), characterId);
+  const removed = await deleteCharacter(db, await getProfileId(db), characterId);
 
   refresh();
   return removed > 0
@@ -92,12 +92,12 @@ export async function addWeaponAction(
   if (!weapon) return { status: 'error', message: 'esa arma no está en el catálogo' };
 
   const db = getDb();
-  const profileId = getProfileId(db);
+  const profileId = await getProfileId(db);
   const now = new Date().toISOString();
   const refinement = intField(form, 'refinement', 1, 5, 1);
 
-  transaction(db, () => {
-    db.prepare(`INSERT INTO weapon_instance
+  await transaction(db, async () => {
+    await db.prepare(`INSERT INTO weapon_instance
         (id, profile_id, weapon_id, level, ascension, refinement, locked,
          fingerprint, source, assigned_character_id, seen_at, created_at)
         VALUES (?,?,?,?,?,?,?,?,?,NULL,?,?)`)

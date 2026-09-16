@@ -25,9 +25,9 @@ if (!file) throw new Error('GI_DB_PATH must point at the test database');
 for (const suffix of ['', '-wal', '-shm']) rmSync(`${file}${suffix}`, { force: true });
 
 const db = getDb();
-const profileId = getProfileId(db);
+const profileId = await getProfileId(db);
 
-upsertCharacter(db, profileId, {
+await upsertCharacter(db, profileId, {
   characterId: SEEDED_CHARACTER,
   travelerElement: null,
   level: 80,
@@ -39,7 +39,7 @@ upsertCharacter(db, profileId, {
 
 // One goal, deliberately blank: the tests are about filling it in and having
 // what they filled still be there afterwards.
-saveBuild({
+await saveBuild({
   characterId: SEEDED_CHARACTER,
   role: null,
   objective: null,

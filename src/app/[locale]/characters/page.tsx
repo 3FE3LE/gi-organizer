@@ -26,8 +26,8 @@ export default async function CharactersPage({ params }: PageProps<'/[locale]/ch
 
   const catalog = await getCatalog(locale);
   const db = getDb();
-  const owned = readOwnedCharacterIds(db, getProfileId(db));
-  const gear = holdersWithGear(db);
+  const owned = await readOwnedCharacterIds(db, await getProfileId(db));
+  const gear = await holdersWithGear(db);
 
   const byRelease = [...catalog.characters.values()].sort(
     (a, b) =>

@@ -1,8 +1,6 @@
 import 'server-only';
 
-import type { DatabaseSync } from 'node:sqlite';
-
-import { getDb } from '@/lib/db/client';
+import { getDb, type Db } from '@/lib/db/client';
 
 import { getProfileId } from './db';
 
@@ -24,11 +22,11 @@ export type BuildTarget = {
   notes: string | null;
 };
 
-export function readTargets(db: DatabaseSync = getDb()): Map<number, BuildTarget> {
-  const rows = db
+export async function readTargets(db: Db = getDb()): Promise<Map<number, BuildTarget>> {
+  const rows = (await db
     .prepare(`SELECT character_id, weapon_id, refinement, set_ids_json, notes
               FROM build_target WHERE profile_id = ?`)
-    .all(getProfileId(db)) as unknown as {
+    .all(await getProfileId(db))) as unknown as {
       character_id: number; weapon_id: number | null; refinement: number | null;
       set_ids_json: string; notes: string | null;
     }[];
@@ -42,11 +40,11 @@ export function readTargets(db: DatabaseSync = getDb()): Map<number, BuildTarget
   }]));
 }
 
-export function setTarget(
+export async function setTarget(
   target: BuildTarget,
-  db: DatabaseSync = getDb(),
+  db: Db = getDb(),
 ) {
-  db.prepare(`INSERT INTO build_target
+  await db.prepare(`INSERT INTO build_target
       (profile_id, character_id, weapon_id, refinement, set_ids_json, notes)
       VALUES (?,?,?,?,?,?)
       ON CONFLICT (profile_id, character_id) DO UPDATE SET
@@ -55,13 +53,13 @@ export function setTarget(
         set_ids_json = excluded.set_ids_json,
         notes = excluded.notes`)
     .run(
-      getProfileId(db), target.characterId, target.weaponId, target.refinement,
+      await getProfileId(db), target.characterId, target.weaponId, target.refinement,
       JSON.stringify(target.setIds), target.notes,
     );
 }
 
-export function clearTarget(characterId: number, db: DatabaseSync = getDb()) {
-  return db
+export async function clearTarget(characterId: number, db: Db = getDb()) {
+  return (await db
     .prepare('DELETE FROM build_target WHERE profile_id = ? AND character_id = ?')
-    .run(getProfileId(db), characterId).changes;
+    .run(await getProfileId(db), characterId)).changes;
 }

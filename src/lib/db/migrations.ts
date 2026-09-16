@@ -1,7 +1,7 @@
-import type { DatabaseSync } from 'node:sqlite';
+import type { Client } from '@libsql/client';
 
 /**
- * Schema migrations, applied by `PRAGMA user_version`.
+ * Schema migrations, applied by the `schema_version` table.
  *
  * Append only — never edit a shipped entry. The array index plus one is the
  * version, so a released migration is part of the on-disk contract.
@@ -309,23 +309,66 @@ const MIGRATIONS: string[] = [
   `,
 ];
 
-export function migrate(db: DatabaseSync) {
-  const row = db.prepare('PRAGMA user_version').get() as { user_version: number };
-  const applied = row.user_version;
+/**
+ * The applied version.
+ *
+ * It used to live in `PRAGMA user_version`, which is a property of a local
+ * file and not something a libSQL server exposes to a client. A table says the
+ * same thing over the network, and a database written by the file build is
+ * recognized by its schema so the count is not lost in the move.
+ */
+async function appliedVersion(client: Client): Promise<number> {
+  const found = await client.execute(
+    `SELECT name FROM sqlite_schema
+     WHERE type = 'table' AND name IN ('schema_version', 'profile')`,
+  );
+  const tables = new Set(found.rows.map((row) => row.name as string));
 
-  if (applied >= MIGRATIONS.length) return applied;
+  if (tables.has('schema_version')) {
+    const row = await client.execute('SELECT version FROM schema_version WHERE id = 0');
+    return Number(row.rows[0]?.version ?? 0);
+  }
 
-  db.exec('BEGIN IMMEDIATE');
+  // Written before the version moved out of the pragma. Anything that has the
+  // first migration's table but no version table is at least at version 1.
+  if (tables.has('profile')) {
+    const row = await client.execute('PRAGMA user_version');
+    return Number(row.rows[0]?.user_version ?? 0) || 1;
+  }
+
+  return 0;
+}
+
+const VERSION_TABLE = `
+  CREATE TABLE IF NOT EXISTS schema_version (
+    id      INTEGER PRIMARY KEY CHECK (id = 0),
+    version INTEGER NOT NULL
+  );`;
+
+const RECORD_VERSION = `INSERT INTO schema_version (id, version) VALUES (0, ?)
+  ON CONFLICT (id) DO UPDATE SET version = excluded.version`;
+
+export async function migrate(client: Client): Promise<number> {
+  const applied = await appliedVersion(client);
+
+  // Still recorded in the pragma of a file this build no longer reads from
+  // there. Write it where the next run will look, then stop.
+  if (applied >= MIGRATIONS.length) {
+    await client.executeMultiple(VERSION_TABLE);
+    await client.execute({ sql: RECORD_VERSION, args: [applied] });
+    return applied;
+  }
+
+  const tx = await client.transaction('write');
   try {
     for (let version = applied; version < MIGRATIONS.length; version += 1) {
-      db.exec(MIGRATIONS[version]);
+      await tx.executeMultiple(MIGRATIONS[version]);
     }
-    // PRAGMA does not accept a bound parameter, and the value is a loop bound
-    // rather than input.
-    db.exec(`PRAGMA user_version = ${MIGRATIONS.length}`);
-    db.exec('COMMIT');
+    await tx.executeMultiple(VERSION_TABLE);
+    await tx.execute({ sql: RECORD_VERSION, args: [MIGRATIONS.length] });
+    await tx.commit();
   } catch (error) {
-    db.exec('ROLLBACK');
+    await tx.rollback();
     throw error;
   }
 

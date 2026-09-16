@@ -1,8 +1,6 @@
 import 'server-only';
 
-import type { DatabaseSync } from 'node:sqlite';
-
-import { getDb } from '@/lib/db/client';
+import { getDb, type Db } from '@/lib/db/client';
 import { ascensionForLevel } from '@/lib/data/stats';
 import type { ArtifactSlot } from '@/lib/data/types';
 
@@ -52,10 +50,10 @@ export type ProgressInput = {
   goals: StatGoal[];
 };
 
-export function applyProgress(input: ProgressInput, db: DatabaseSync = getDb()) {
-  const profileId = getProfileId(db);
+export async function applyProgress(input: ProgressInput, db: Db = getDb()) {
+  const profileId = await getProfileId(db);
 
-  upsertCharacter(db, profileId, {
+  await upsertCharacter(db, profileId, {
     characterId: input.characterId,
     travelerElement: null,
     level: input.current.level,
@@ -78,9 +76,9 @@ export function applyProgress(input: ProgressInput, db: DatabaseSync = getDb()) 
     if (prop) mainStats[slot as ArtifactSlot] = [prop];
   }
 
-  const existing = input.buildId ? readBuild(input.buildId, db) : null;
+  const existing = input.buildId ? await readBuild(input.buildId, db) : null;
 
-  const buildId = saveBuild({
+  const buildId = await saveBuild({
     id: existing?.id,
     characterId: input.characterId,
     // `undefined` means the caller does not own the field; `null` means they
@@ -100,7 +98,7 @@ export function applyProgress(input: ProgressInput, db: DatabaseSync = getDb()) 
   }, db);
 
   // Levelling is the character's, not the goal's: one character, one ascension.
-  setCharacterTarget(db, profileId, input.characterId, {
+  await setCharacterTarget(db, profileId, input.characterId, {
     level: input.target.level,
     ascension: ascensionForLevel(input.target.level, input.target.ascended),
     talents: input.target.talents,
@@ -110,8 +108,8 @@ export function applyProgress(input: ProgressInput, db: DatabaseSync = getDb()) 
   // Favonius Lance. The sets on that row used to be a separate "pin" control;
   // the build's own plan says the same thing with more detail, so it is the one
   // that writes them now. Notes on the row belong to nobody here.
-  const target = readTargets(db).get(input.characterId);
-  setTarget({
+  const target = (await readTargets(db)).get(input.characterId);
+  await setTarget({
     characterId: input.characterId,
     weaponId: input.weaponId,
     refinement: input.weaponRefinement,

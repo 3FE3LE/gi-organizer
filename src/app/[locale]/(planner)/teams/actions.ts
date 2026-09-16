@@ -32,7 +32,7 @@ export async function createTeamAction(
 
   if (name.length === 0) return { status: 'error', message: 'ponle un nombre' };
 
-  createTeam(name, mode);
+  await createTeam(name, mode);
   refresh();
   return { status: 'ok', message: `equipo "${name}" creado` };
 }
@@ -41,7 +41,7 @@ export async function deleteTeamAction(
   _previous: TeamActionState,
   form: FormData,
 ): Promise<TeamActionState> {
-  deleteTeam(String(form.get('teamId') ?? ''));
+  await deleteTeam(String(form.get('teamId') ?? ''));
   refresh();
   return { status: 'ok', message: 'equipo borrado' };
 }
@@ -73,8 +73,8 @@ export async function addSlotAction(
   const character = catalog.characters.get(characterId);
   if (!character) return { status: 'error', message: 'ese personaje no existe' };
 
-  const result = setSlot(teamId, characterId, null);
-  if (result.ok) setRoles(teamId, characterId, roles);
+  const result = await setSlot(teamId, characterId, null);
+  if (result.ok) await setRoles(teamId, characterId, roles);
   refresh();
 
   if (result.ok) {
@@ -97,7 +97,7 @@ export async function removeSlotAction(
   _previous: TeamActionState,
   form: FormData,
 ): Promise<TeamActionState> {
-  removeSlot(String(form.get('teamId') ?? ''), Number(form.get('characterId')));
+  await removeSlot(String(form.get('teamId') ?? ''), Number(form.get('characterId')));
   refresh();
   return { status: 'ok', message: 'quitado del equipo' };
 }
@@ -110,7 +110,7 @@ export async function setRolesAction(
     .map(String)
     .filter((role): role is TeamRole => (TEAM_ROLES as string[]).includes(role));
 
-  setRoles(String(form.get('teamId') ?? ''), Number(form.get('characterId')), roles);
+  await setRoles(String(form.get('teamId') ?? ''), Number(form.get('characterId')), roles);
   refresh();
   return { status: 'ok', message: roles.length > 0 ? 'roles guardados' : 'roles vaciados' };
 }
@@ -123,7 +123,7 @@ export async function setDeclarationAction(
   _previous: TeamActionState,
   form: FormData,
 ): Promise<TeamActionState> {
-  setDeclaration(
+  await setDeclaration(
     String(form.get('teamId') ?? ''),
     Number(form.get('characterId')),
     String(form.get('field') ?? ''),
@@ -145,7 +145,7 @@ export async function setObjectiveAction(
   form: FormData,
 ): Promise<TeamActionState> {
   const objective = String(form.get('objective') ?? '');
-  setObjective(String(form.get('teamId') ?? ''), objective === '' ? null : objective);
+  await setObjective(String(form.get('teamId') ?? ''), objective === '' ? null : objective);
   refresh();
 
   return {

@@ -8,7 +8,7 @@ import { exportGood } from '@/lib/player/export';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const { good, skipped } = exportGood(await getGoodCrosswalk());
+  const { good, skipped } = await exportGood(await getGoodCrosswalk());
   const stamp = new Date().toISOString().slice(0, 10);
 
   return new Response(JSON.stringify(good), {

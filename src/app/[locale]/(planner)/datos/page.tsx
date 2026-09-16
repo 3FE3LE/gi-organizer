@@ -28,9 +28,9 @@ export default async function InventoryPage({ params }: PageProps<'/[locale]/dat
 
   const catalog = await getCatalog(locale);
   const db = getDb();
-  const profileId = getProfileId(db);
-  const inventory = readInventory(db, profileId);
-  const roster = readRoster(db, profileId);
+  const profileId = await getProfileId(db);
+  const inventory = await readInventory(db, profileId);
+  const roster = await readRoster(db, profileId);
 
   const rostered = new Set(roster.map((entry) => entry.characterId));
   const holders = new Set(

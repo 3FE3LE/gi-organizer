@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
-import { DatabaseSync } from 'node:sqlite';
 import { test } from 'node:test';
 
-import { migrate } from '@/lib/db/migrations';
+import type { Db } from '@/lib/db/client';
+
+import { createMemoryDb } from '@/lib/db/client';
 
 import { readHistory, redo, undo } from './history';
 import { applyMove, UnknownItem, type MoveState } from './move';
@@ -82,13 +83,11 @@ test('moving an item the state does not contain is an error, not a no-op', () =>
 
 /* ------------------------------------------------ against the database --- */
 
-function seeded() {
-  const db = new DatabaseSync(':memory:');
-  db.exec('PRAGMA foreign_keys = ON');
-  migrate(db);
+async function seeded() {
+  const db = createMemoryDb();
 
   const now = '2026-09-09T00:00:00.000Z';
-  db.prepare('INSERT INTO profile (id, name, created_at) VALUES (?,?,?)')
+  await db.prepare('INSERT INTO profile (id, name, created_at) VALUES (?,?,?)')
     .run('local', 'test', now);
 
   const artifact = db.prepare(`INSERT INTO artifact_instance
@@ -97,48 +96,48 @@ function seeded() {
      assigned_character_id, seen_at, created_at)
     VALUES (?,'local',15001,?,5,20,'FIGHT_PROP_HP','[]','[]',NULL,NULL,'fp','good',?,?,?)`);
 
-  artifact.run('goblet-a', 'goblet', 10000021, now, now);
-  artifact.run('goblet-b', 'goblet', null, now, now);
-  artifact.run('flower-a', 'flower', 10000021, now, now);
+  await artifact.run('goblet-a', 'goblet', 10000021, now, now);
+  await artifact.run('goblet-b', 'goblet', null, now, now);
+  await artifact.run('flower-a', 'flower', 10000021, now, now);
 
   const weapon = db.prepare(`INSERT INTO weapon_instance
     (id, profile_id, weapon_id, level, ascension, refinement, locked, fingerprint,
      source, assigned_character_id, seen_at, created_at)
     VALUES (?,'local',?,90,6,1,NULL,'wfp','good',?,?,?)`);
 
-  weapon.run('bow-a', 15501, 10000021, now, now);
-  weapon.run('bow-b', 15502, null, now, now);
+  await weapon.run('bow-a', 15501, 10000021, now, now);
+  await weapon.run('bow-b', 15502, null, now, now);
 
   return db;
 }
 
-const holderOf = (db: DatabaseSync, table: string, id: string) =>
-  (db.prepare(`SELECT assigned_character_id FROM ${table} WHERE id = ?`).get(id) as
+const holderOf = async (db: Db, table: string, id: string) =>
+  ((await db.prepare(`SELECT assigned_character_id FROM ${table} WHERE id = ?`).get(id)) as
     { assigned_character_id: number | null }).assigned_character_id;
 
-test('a move is one transaction: the displaced piece is freed, not duplicated', () => {
-  const db = seeded();
+test('a move is one transaction: the displaced piece is freed, not duplicated', async () => {
+  const db = await seeded();
 
-  const result = performMove(
+  const result = await performMove(
     { kind: 'equip-artifact', instanceId: 'goblet-b', toCharacterId: 10000021 }, {}, db,
   );
 
   assert.equal(result.ok, true);
-  assert.equal(holderOf(db, 'artifact_instance', 'goblet-b'), 10000021);
-  assert.equal(holderOf(db, 'artifact_instance', 'goblet-a'), null);
+  assert.equal(await holderOf(db, 'artifact_instance', 'goblet-b'), 10000021);
+  assert.equal(await holderOf(db, 'artifact_instance', 'goblet-a'), null);
 
   // The schema is the real guarantee, so assert against it rather than the code.
-  const occupants = db
+  const occupants = (await db
     .prepare(`SELECT COUNT(*) c FROM artifact_instance
               WHERE assigned_character_id = 10000021 AND slot = 'goblet'`)
-    .get() as { c: number };
+    .get()) as { c: number };
   assert.equal(occupants.c, 1);
 });
 
-test('the schema refuses a double assignment even if the mutation layer is bypassed', () => {
-  const db = seeded();
+test('the schema refuses a double assignment even if the mutation layer is bypassed', async () => {
+  const db = await seeded();
 
-  assert.throws(
+  await assert.rejects(
     () => db.prepare(
       'UPDATE artifact_instance SET assigned_character_id = 10000021 WHERE id = ?',
     ).run('goblet-b'),
@@ -146,10 +145,10 @@ test('the schema refuses a double assignment even if the mutation layer is bypas
   );
 });
 
-test('a stale expected holder is a conflict, and nothing is written', () => {
-  const db = seeded();
+test('a stale expected holder is a conflict, and nothing is written', async () => {
+  const db = await seeded();
 
-  const result = performMove(
+  const result = await performMove(
     { kind: 'equip-artifact', instanceId: 'goblet-a', toCharacterId: 10000022 },
     // The UI thought nobody held it; the database says otherwise.
     { expectedHolderId: null },
@@ -162,13 +161,13 @@ test('a stale expected holder is a conflict, and nothing is written', () => {
     result.ok === false && result.reason === 'conflict' ? result.actualHolderId : undefined,
     10000021,
   );
-  assert.equal(holderOf(db, 'artifact_instance', 'goblet-a'), 10000021);
+  assert.equal(await holderOf(db, 'artifact_instance', 'goblet-a'), 10000021);
 });
 
-test('a weapon the character cannot hold is refused before any write', () => {
-  const db = seeded();
+test('a weapon the character cannot hold is refused before any write', async () => {
+  const db = await seeded();
 
-  const result = performMove(
+  const result = await performMove(
     { kind: 'equip-weapon', instanceId: 'bow-b', toCharacterId: 10000002 },
     {
       weaponTypes: {
@@ -181,59 +180,59 @@ test('a weapon the character cannot hold is refused before any write', () => {
 
   assert.equal(result.ok, false);
   assert.equal(result.ok === false ? result.reason : '', 'wrong-weapon-type');
-  assert.equal(holderOf(db, 'weapon_instance', 'bow-b'), null);
+  assert.equal(await holderOf(db, 'weapon_instance', 'bow-b'), null);
 });
 
 /* --------------------------------------------------------- undo, redo --- */
 
-test('undo restores the displaced piece too', () => {
-  const db = seeded();
+test('undo restores the displaced piece too', async () => {
+  const db = await seeded();
 
-  performMove({ kind: 'equip-artifact', instanceId: 'goblet-b', toCharacterId: 10000021 }, {}, db);
-  assert.equal(undo(db).ok, true);
+  await performMove({ kind: 'equip-artifact', instanceId: 'goblet-b', toCharacterId: 10000021 }, {}, db);
+  assert.equal((await undo(db)).ok, true);
 
-  assert.equal(holderOf(db, 'artifact_instance', 'goblet-a'), 10000021);
-  assert.equal(holderOf(db, 'artifact_instance', 'goblet-b'), null);
+  assert.equal(await holderOf(db, 'artifact_instance', 'goblet-a'), 10000021);
+  assert.equal(await holderOf(db, 'artifact_instance', 'goblet-b'), null);
 });
 
-test('undo walks back several moves and redo replays them', () => {
-  const db = seeded();
+test('undo walks back several moves and redo replays them', async () => {
+  const db = await seeded();
 
-  performMove({ kind: 'unequip-artifact', instanceId: 'flower-a' }, {}, db);
-  performMove({ kind: 'equip-artifact', instanceId: 'goblet-b', toCharacterId: 10000021 }, {}, db);
+  await performMove({ kind: 'unequip-artifact', instanceId: 'flower-a' }, {}, db);
+  await performMove({ kind: 'equip-artifact', instanceId: 'goblet-b', toCharacterId: 10000021 }, {}, db);
 
-  assert.equal(undo(db).ok, true);
-  assert.equal(undo(db).ok, true);
-  assert.equal(undo(db).ok, false, 'the stack is empty');
+  assert.equal((await undo(db)).ok, true);
+  assert.equal((await undo(db)).ok, true);
+  assert.equal((await undo(db)).ok, false, 'the stack is empty');
 
-  assert.equal(holderOf(db, 'artifact_instance', 'flower-a'), 10000021);
-  assert.equal(holderOf(db, 'artifact_instance', 'goblet-a'), 10000021);
+  assert.equal(await holderOf(db, 'artifact_instance', 'flower-a'), 10000021);
+  assert.equal(await holderOf(db, 'artifact_instance', 'goblet-a'), 10000021);
 
-  assert.equal(redo(db).ok, true);
-  assert.equal(redo(db).ok, true);
-  assert.equal(holderOf(db, 'artifact_instance', 'flower-a'), null);
-  assert.equal(holderOf(db, 'artifact_instance', 'goblet-b'), 10000021);
+  assert.equal((await redo(db)).ok, true);
+  assert.equal((await redo(db)).ok, true);
+  assert.equal(await holderOf(db, 'artifact_instance', 'flower-a'), null);
+  assert.equal(await holderOf(db, 'artifact_instance', 'goblet-b'), 10000021);
 });
 
-test('a new move discards the redo stack', () => {
-  const db = seeded();
+test('a new move discards the redo stack', async () => {
+  const db = await seeded();
 
-  performMove({ kind: 'unequip-artifact', instanceId: 'flower-a' }, {}, db);
-  undo(db);
-  performMove({ kind: 'unequip-weapon', instanceId: 'bow-a' }, {}, db);
+  await performMove({ kind: 'unequip-artifact', instanceId: 'flower-a' }, {}, db);
+  await undo(db);
+  await performMove({ kind: 'unequip-weapon', instanceId: 'bow-a' }, {}, db);
 
-  assert.equal(redo(db).ok, false);
-  assert.equal(readHistory(db).filter((entry) => entry.undone).length, 0);
+  assert.equal((await redo(db)).ok, false);
+  assert.equal((await readHistory(db)).filter((entry) => entry.undone).length, 0);
 });
 
-test('history records ids, never names', () => {
-  const db = seeded();
-  performMove(
+test('history records ids, never names', async () => {
+  const db = await seeded();
+  await performMove(
     { kind: 'equip-artifact', instanceId: 'goblet-b', toCharacterId: 10000021 },
     { label: 'probe' }, db,
   );
 
-  const [entry] = readHistory(db);
+  const [entry] = await readHistory(db);
   assert.equal(entry.op, 'equip-artifact');
   assert.equal(entry.summary.label, 'probe');
   assert.deepEqual(entry.summary.move, {

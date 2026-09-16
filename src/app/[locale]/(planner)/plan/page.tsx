@@ -30,7 +30,7 @@ export default async function TodayPage({ params, searchParams }: PageProps<'/[l
   const filters = await loadFilters(searchParams);
   const catalog = await getCatalog(locale);
   const db = getDb();
-  const teams = readTeams(db);
+  const teams = await readTeams(db);
 
   const { team, characterIds } = resolveScope(teams, filters);
   const { schedule, sources, roster } = await farmingPlan(

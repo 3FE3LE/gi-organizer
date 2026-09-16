@@ -1,9 +1,8 @@
 import 'server-only';
 
 import { randomUUID } from 'node:crypto';
-import type { DatabaseSync } from 'node:sqlite';
 
-import { getDb } from '@/lib/db/client';
+import { getDb, type Db } from '@/lib/db/client';
 import { transaction } from '@/lib/db/tx';
 import type { EndgameMode, TeamRole } from '@/lib/rules/types';
 
@@ -48,21 +47,21 @@ export type Deployment = {
   theater: { allowedElements: string[] } | null;
 };
 
-export function readTeams(db: DatabaseSync = getDb()): Team[] {
-  const profileId = getProfileId(db);
+export async function readTeams(db: Db = getDb()): Promise<Team[]> {
+  const profileId = await getProfileId(db);
 
-  const teams = db
+  const teams = (await db
     .prepare(`SELECT id, name, mode, position, notes, objective FROM team
               WHERE profile_id = ? ORDER BY position, name`)
-    .all(profileId) as unknown as {
+    .all(profileId)) as unknown as {
       id: string; name: string; mode: EndgameMode; position: number;
       notes: string | null; objective: string | null;
     }[];
 
-  const slots = db
+  const slots = (await db
     .prepare(`SELECT team_id, character_id, position, roles_json, declarations_json
               FROM team_slot ORDER BY position`)
-    .all() as unknown as {
+    .all()) as unknown as {
       team_id: string; character_id: number; position: number;
       roles_json: string; declarations_json: string;
     }[];
@@ -80,28 +79,28 @@ export function readTeams(db: DatabaseSync = getDb()): Team[] {
   return teams.map((team) => ({ ...team, slots: byTeam.get(team.id) ?? [] }));
 }
 
-export function createTeam(
+export async function createTeam(
   name: string,
   mode: EndgameMode,
-  db: DatabaseSync = getDb(),
-): string {
-  const profileId = getProfileId(db);
+  db: Db = getDb(),
+): Promise<string> {
+  const profileId = await getProfileId(db);
   const id = randomUUID();
 
-  const next = db
+  const next = (await db
     .prepare('SELECT COALESCE(MAX(position), -1) + 1 AS position FROM team WHERE profile_id = ?')
-    .get(profileId) as { position: number };
+    .get(profileId)) as { position: number };
 
-  db.prepare('INSERT INTO team (id, profile_id, name, mode, position, notes) VALUES (?,?,?,?,?,NULL)')
+  await db.prepare('INSERT INTO team (id, profile_id, name, mode, position, notes) VALUES (?,?,?,?,?,NULL)')
     .run(id, profileId, name, mode, next.position);
 
   return id;
 }
 
-export function deleteTeam(teamId: string, db: DatabaseSync = getDb()) {
-  return db
+export async function deleteTeam(teamId: string, db: Db = getDb()) {
+  return (await db
     .prepare('DELETE FROM team WHERE id = ? AND profile_id = ?')
-    .run(teamId, getProfileId(db)).changes;
+    .run(teamId, await getProfileId(db))).changes;
 }
 
 export type SlotResult =
@@ -121,44 +120,44 @@ export type SlotResult =
  * holds them, which is a decision rather than a side effect, so it is refused
  * here instead of being resolved silently.
  */
-export function setSlot(
+export async function setSlot(
   teamId: string,
   characterId: number,
   position: number | null,
-  db: DatabaseSync = getDb(),
-): SlotResult {
-  const profileId = getProfileId(db);
+  db: Db = getDb(),
+): Promise<SlotResult> {
+  const profileId = await getProfileId(db);
 
-  return transaction(db, () => {
-    const team = db
+  return transaction(db, async () => {
+    const team = await db
       .prepare('SELECT id FROM team WHERE id = ? AND profile_id = ?')
       .get(teamId, profileId);
     if (!team) return { ok: false, reason: 'no-team' } as const;
 
-    const existing = db
+    const existing = await db
       .prepare('SELECT position FROM team_slot WHERE team_id = ? AND character_id = ?')
       .get(teamId, characterId);
     if (existing) return { ok: false, reason: 'already-in-team' } as const;
 
-    const elsewhere = db
+    const elsewhere = (await db
       .prepare(`SELECT t.name FROM team_slot s JOIN team t ON t.id = s.team_id
                 WHERE s.character_id = ? AND t.profile_id = ? AND s.team_id <> ?
                 LIMIT 1`)
-      .get(characterId, profileId, teamId) as { name: string } | undefined;
+      .get(characterId, profileId, teamId)) as { name: string } | undefined;
     if (elsewhere) {
       return { ok: false, reason: 'in-another-team', team: elsewhere.name } as const;
     }
 
-    const taken = db
+    const taken = (await db
       .prepare('SELECT position FROM team_slot WHERE team_id = ?')
-      .all(teamId) as unknown as { position: number }[];
+      .all(teamId)) as unknown as { position: number }[];
 
     const used = new Set(taken.map((row) => row.position));
     const target = position ?? [0, 1, 2, 3].find((slot) => !used.has(slot));
 
     if (target === undefined || target > 3) return { ok: false, reason: 'team-full' } as const;
 
-    db.prepare(`INSERT INTO team_slot (team_id, character_id, position, roles_json, declarations_json)
+    await db.prepare(`INSERT INTO team_slot (team_id, character_id, position, roles_json, declarations_json)
                 VALUES (?,?,?,'[]','{}')
                 ON CONFLICT (team_id, position) DO UPDATE SET character_id = excluded.character_id`)
       .run(teamId, characterId, target);
@@ -167,54 +166,54 @@ export function setSlot(
   });
 }
 
-export function removeSlot(teamId: string, characterId: number, db: DatabaseSync = getDb()) {
-  return db
+export async function removeSlot(teamId: string, characterId: number, db: Db = getDb()) {
+  return (await db
     .prepare('DELETE FROM team_slot WHERE team_id = ? AND character_id = ?')
-    .run(teamId, characterId).changes;
+    .run(teamId, characterId)).changes;
 }
 
-export function setRoles(
+export async function setRoles(
   teamId: string,
   characterId: number,
   roles: TeamRole[],
-  db: DatabaseSync = getDb(),
+  db: Db = getDb(),
 ) {
-  return db
+  return (await db
     .prepare('UPDATE team_slot SET roles_json = ? WHERE team_id = ? AND character_id = ?')
-    .run(JSON.stringify(roles), teamId, characterId).changes;
+    .run(JSON.stringify(roles), teamId, characterId)).changes;
 }
 
 /**
  * Records a fact the engine cannot derive. Passing an empty value clears it,
  * which returns the slot to "unprovable" rather than asserting something false.
  */
-export function setDeclaration(
+export async function setDeclaration(
   teamId: string,
   characterId: number,
   field: string,
   value: string,
-  db: DatabaseSync = getDb(),
+  db: Db = getDb(),
 ) {
-  return transaction(db, () => {
-    const row = db
+  return transaction(db, async () => {
+    const row = (await db
       .prepare('SELECT declarations_json FROM team_slot WHERE team_id = ? AND character_id = ?')
-      .get(teamId, characterId) as { declarations_json: string } | undefined;
+      .get(teamId, characterId)) as { declarations_json: string } | undefined;
     if (!row) return 0;
 
     const declarations = JSON.parse(row.declarations_json) as Record<string, string>;
     if (value === '') delete declarations[field];
     else declarations[field] = value;
 
-    return db
+    return (await db
       .prepare('UPDATE team_slot SET declarations_json = ? WHERE team_id = ? AND character_id = ?')
-      .run(JSON.stringify(declarations), teamId, characterId).changes;
+      .run(JSON.stringify(declarations), teamId, characterId)).changes;
   });
 }
 
-export function readDeployments(db: DatabaseSync = getDb()): Deployment[] {
-  const rows = db
+export async function readDeployments(db: Db = getDb()): Promise<Deployment[]> {
+  const rows = (await db
     .prepare('SELECT id, name, mode, team_ids_json, theater_json FROM deployment WHERE profile_id = ?')
-    .all(getProfileId(db)) as unknown as {
+    .all(await getProfileId(db))) as unknown as {
       id: string; name: string; mode: EndgameMode;
       team_ids_json: string; theater_json: string | null;
     }[];
@@ -230,14 +229,14 @@ export function readDeployments(db: DatabaseSync = getDb()): Deployment[] {
   }));
 }
 
-export function saveDeployment(
+export async function saveDeployment(
   deployment: Omit<Deployment, 'id'> & { id?: string },
-  db: DatabaseSync = getDb(),
+  db: Db = getDb(),
 ) {
-  const profileId = getProfileId(db);
+  const profileId = await getProfileId(db);
   const id = deployment.id ?? randomUUID();
 
-  db.prepare(`INSERT INTO deployment (id, profile_id, name, mode, team_ids_json, theater_json)
+  await db.prepare(`INSERT INTO deployment (id, profile_id, name, mode, team_ids_json, theater_json)
               VALUES (?,?,?,?,?,?)
               ON CONFLICT (id) DO UPDATE SET
                 name = excluded.name, mode = excluded.mode,
@@ -252,12 +251,12 @@ export function saveDeployment(
 }
 
 /** Sets or clears what the team is built around. */
-export function setObjective(
+export async function setObjective(
   teamId: string,
   objective: string | null,
-  db: DatabaseSync = getDb(),
+  db: Db = getDb(),
 ) {
-  return db
+  return (await db
     .prepare('UPDATE team SET objective = ? WHERE id = ? AND profile_id = ?')
-    .run(objective === '' ? null : objective, teamId, getProfileId(db)).changes;
+    .run(objective === '' ? null : objective, teamId, await getProfileId(db))).changes;
 }

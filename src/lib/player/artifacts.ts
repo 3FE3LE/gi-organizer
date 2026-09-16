@@ -1,8 +1,6 @@
 import 'server-only';
 
-import type { DatabaseSync } from 'node:sqlite';
-
-import { getDb } from '@/lib/db/client';
+import { getDb, type Db } from '@/lib/db/client';
 import type { ArtifactSlot } from '@/lib/data/types';
 import { critRating, critValue, pieceQuality, type CritRating, type RollQuality } from '@/lib/rules/rolls';
 
@@ -55,12 +53,12 @@ type Row = {
   assigned_character_id: number | null;
 };
 
-export function readArtifacts(db: DatabaseSync = getDb()): OwnedArtifact[] {
-  const rows = db
+export async function readArtifacts(db: Db = getDb()): Promise<OwnedArtifact[]> {
+  const rows = (await db
     .prepare(`SELECT id, set_id, slot, rarity, level, main_prop, substats_json,
                      locked, assigned_character_id
               FROM artifact_instance WHERE profile_id = ?`)
-    .all(getProfileId(db)) as unknown as Row[];
+    .all(await getProfileId(db))) as unknown as Row[];
 
   return rows.map((row) => {
     const substats = JSON.parse(row.substats_json) as { prop: string; value: number }[];

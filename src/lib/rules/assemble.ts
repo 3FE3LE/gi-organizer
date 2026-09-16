@@ -2,9 +2,8 @@ import 'server-only';
 
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import type { DatabaseSync } from 'node:sqlite';
 
-import { getDb } from '@/lib/db/client';
+import { getDb, type Db } from '@/lib/db/client';
 import type { Catalog } from '@/lib/data/catalog';
 import type { ArtifactSlot } from '@/lib/data/types';
 import type { MechanicIndex } from '@/lib/data/mechanics';
@@ -89,10 +88,10 @@ export function getBuildPriorities() {
   return buildFile;
 }
 
-export function readUserRules(db: DatabaseSync): { rules: Rule[]; disabledSeeds: Set<string> } {
-  const rows = db
+export async function readUserRules(db: Db): Promise<{ rules: Rule[]; disabledSeeds: Set<string> }> {
+  const rows = (await db
     .prepare('SELECT id, kind, enabled, severity, params_json, label FROM rule WHERE profile_id IS NOT NULL OR profile_id = ?')
-    .all(getProfileId(db)) as unknown as {
+    .all(await getProfileId(db))) as unknown as {
       id: string; kind: string; enabled: number; severity: string;
       params_json: string; label: string;
     }[];
@@ -121,16 +120,16 @@ export function readUserRules(db: DatabaseSync): { rules: Rule[]; disabledSeeds:
   return { rules, disabledSeeds };
 }
 
-export async function assemble(catalog: Catalog, db: DatabaseSync = getDb()) {
-  const profileId = getProfileId(db);
+export async function assemble(catalog: Catalog, db: Db = getDb()) {
+  const profileId = await getProfileId(db);
   const annotations = await getAnnotations(catalog);
-  const { rules: userRules, disabledSeeds } = readUserRules(db);
+  const { rules: userRules, disabledSeeds } = await readUserRules(db);
 
-  const teams = readTeams(db);
-  const deployments = readDeployments(db);
+  const teams = await readTeams(db);
+  const deployments = await readDeployments(db);
 
-  const gear = readGearByCharacter(db, profileId);
-  const stock = readWeaponStock(db, profileId);
+  const gear = await readGearByCharacter(db, profileId);
+  const stock = await readWeaponStock(db, profileId);
 
   const input: EvaluationInput = {
     teams: teams.map((team) => ({
@@ -152,7 +151,7 @@ export async function assemble(catalog: Catalog, db: DatabaseSync = getDb()) {
     gear,
     stock,
     targets: new Map(
-      [...readTargets(db)].map(([characterId, target]) => [
+      [...await readTargets(db)].map(([characterId, target]) => [
         characterId, { weaponId: target.weaponId, refinement: target.refinement },
       ]),
     ),
@@ -172,19 +171,19 @@ export async function assemble(catalog: Catalog, db: DatabaseSync = getDb()) {
   return { input, annotations, teams, deployments, result: evaluate(input) };
 }
 
-function readGearByCharacter(db: DatabaseSync, profileId: string) {
-  const artifacts = db
+async function readGearByCharacter(db: Db, profileId: string) {
+  const artifacts = (await db
     .prepare(`SELECT assigned_character_id AS characterId, slot, set_id AS setId
               FROM artifact_instance
               WHERE profile_id = ? AND assigned_character_id IS NOT NULL`)
-    .all(profileId) as unknown as { characterId: number; slot: string; setId: number }[];
+    .all(profileId)) as unknown as { characterId: number; slot: string; setId: number }[];
 
-  const weapons = db
+  const weapons = (await db
     .prepare(`SELECT assigned_character_id AS characterId, id AS instanceId,
                      weapon_id AS weaponId, refinement
               FROM weapon_instance
               WHERE profile_id = ? AND assigned_character_id IS NOT NULL`)
-    .all(profileId) as unknown as {
+    .all(profileId)) as unknown as {
       characterId: number; instanceId: string; weaponId: number; refinement: number;
     }[];
 
@@ -207,12 +206,12 @@ function readGearByCharacter(db: DatabaseSync, profileId: string) {
   return gear;
 }
 
-function readWeaponStock(db: DatabaseSync, profileId: string) {
-  const rows = db
+async function readWeaponStock(db: Db, profileId: string) {
+  const rows = (await db
     .prepare(`SELECT weapon_id AS weaponId, refinement, COUNT(*) AS count
               FROM weapon_instance WHERE profile_id = ?
               GROUP BY weapon_id, refinement`)
-    .all(profileId) as unknown as { weaponId: number; refinement: number; count: number }[];
+    .all(profileId)) as unknown as { weaponId: number; refinement: number; count: number }[];
 
   return new Map(
     rows.map((row) => [`${row.weaponId}|${row.refinement}`, row]),
@@ -253,18 +252,18 @@ export type Suggestions = {
  * a constraint the set suggestions handle; this answers the other half — given
  * this slot, which of the pieces in the box actually serves the build.
  */
-function scoreOwnedPieces(
-  db: DatabaseSync,
+async function scoreOwnedPieces(
+  db: Db,
   profileId: string,
   characterId: number,
   stats: BuildStats,
 ) {
-  const rows = db
+  const rows = (await db
     .prepare(`SELECT id, slot, rarity, level, main_prop, substats_json
               FROM artifact_instance
               WHERE profile_id = ?
                 AND (assigned_character_id IS NULL OR assigned_character_id = ?)`)
-    .all(profileId, characterId) as unknown as {
+    .all(profileId, characterId)) as unknown as {
       id: string; slot: string; rarity: number; level: number;
       main_prop: string; substats_json: string;
     }[];
@@ -298,7 +297,7 @@ function scoreOwnedPieces(
 export async function suggestionsFor(
   characterId: number,
   catalog: Catalog,
-  db: DatabaseSync = getDb(),
+  db: Db = getDb(),
   /**
    * Which of the character's builds to measure against. The build screen lets
    * the player pick; everywhere else the team slot's role decides, which is
@@ -306,18 +305,18 @@ export async function suggestionsFor(
    */
   buildId: string | null = null,
 ): Promise<Suggestions> {
-  const profileId = getProfileId(db);
+  const profileId = await getProfileId(db);
   const [annotations, priorities, weaponSources] = await Promise.all([
     getAnnotations(catalog),
     getBuildPriorities(),
     getWeaponSources(),
   ]);
 
-  const { rules: userRules, disabledSeeds } = readUserRules(db);
+  const { rules: userRules, disabledSeeds } = await readUserRules(db);
   const rules = [...seedRules(annotations, disabledSeeds), ...userRules];
   const mechanics = await getMechanics();
 
-  const teams = readTeams(db).filter((team) =>
+  const teams = (await readTeams(db)).filter((team) =>
     team.slots.some((slot) => slot.characterId === characterId));
 
   // One objective per character: if they are in two teams with different
@@ -336,14 +335,14 @@ export async function suggestionsFor(
   // The player's own statement about this character in this team, which
   // outranks any external ordering.
   const declaredRoles = roles.get(characterId) ?? [];
-  const targets = readTargets(db);
+  const targets = await readTargets(db);
   const pinnedSetIds = targets.get(characterId)?.setIds ?? [];
 
   const freeSlotsBySet = new Map<number, Set<ArtifactSlot>>();
-  const freeRows = db
+  const freeRows = (await db
     .prepare(`SELECT DISTINCT set_id, slot FROM artifact_instance
               WHERE profile_id = ? AND assigned_character_id IS NULL`)
-    .all(profileId) as unknown as { set_id: number; slot: string }[];
+    .all(profileId)) as unknown as { set_id: number; slot: string }[];
 
   for (const row of freeRows) {
     const slots = freeSlotsBySet.get(row.set_id) ?? new Set<ArtifactSlot>();
@@ -352,7 +351,7 @@ export async function suggestionsFor(
   }
 
   const stock = new Map<string, number>();
-  for (const [key, entry] of readWeaponStock(db, profileId)) stock.set(key, entry.count);
+  for (const [key, entry] of await readWeaponStock(db, profileId)) stock.set(key, entry.count);
 
   // A copy another build is planning on is not spare, even if it is unequipped.
   const claimedByOthers = new Map<number, number>();
@@ -364,7 +363,7 @@ export async function suggestionsFor(
   for (const [otherId, target] of targets) {
     if (otherId !== characterId) claim(target.weaponId);
   }
-  for (const other of readBuilds(db)) {
+  for (const other of await readBuilds(db)) {
     if (other.characterId !== characterId) claim(other.weaponId);
   }
 
@@ -372,11 +371,11 @@ export async function suggestionsFor(
   // only fills in for a character nobody has planned yet — measuring against a
   // stranger's priorities when the player stated their own would answer the
   // wrong question.
-  const builds = readBuildsFor(characterId, db);
-  const chosen = buildId ? readBuild(buildId, db) : null;
+  const builds = await readBuildsFor(characterId, db);
+  const chosen = buildId ? await readBuild(buildId, db) : null;
   const build = chosen?.characterId === characterId
     ? chosen
-    : resolveBuildForSlot(characterId, declaredRoles, null, db);
+    : await resolveBuildForSlot(characterId, declaredRoles, null, db);
 
   const stats: BuildStats = build
     ? {
@@ -390,7 +389,7 @@ export async function suggestionsFor(
   // A build's set plan is a statement of intent, so it pins like a pin.
   const planned = build?.setPlan.flatMap((plan) => plan.setIds) ?? [];
 
-  const { comparisons, goals, holderOf } = compareEverySlot({
+  const { comparisons, goals, holderOf } = await compareEverySlot({
     db, profileId, characterId, catalog, annotations, build, stats,
   });
 
@@ -401,7 +400,7 @@ export async function suggestionsFor(
     comparisons,
     goals,
     holderOf,
-    pieces: scoreOwnedPieces(db, profileId, characterId, stats),
+    pieces: await scoreOwnedPieces(db, profileId, characterId, stats),
     sets: suggestSets({
       characterId,
       teamMembers,
@@ -409,7 +408,7 @@ export async function suggestionsFor(
       pinnedSetIds: [...new Set([...pinnedSetIds, ...planned])],
       allSetIds: [...catalog.artifacts.keys()],
       priorities,
-      gear: readGearByCharacter(db, profileId),
+      gear: await readGearByCharacter(db, profileId),
       freeSlotsBySet,
       rules,
       roles,
@@ -457,8 +456,8 @@ const toComparable = (row: PieceRow): ComparablePiece => ({
  * the row says whose it is — and hiding them would quietly narrow the answer to
  * whatever happens to be spare.
  */
-function compareEverySlot(context: {
-  db: DatabaseSync;
+async function compareEverySlot(context: {
+  db: Db;
   profileId: string;
   characterId: number;
   catalog: Catalog;
@@ -468,11 +467,11 @@ function compareEverySlot(context: {
 }) {
   const { db, profileId, characterId, catalog, annotations, build, stats } = context;
 
-  const rows = db
+  const rows = (await db
     .prepare(`SELECT id, set_id, slot, rarity, level, main_prop, substats_json,
                      assigned_character_id
               FROM artifact_instance WHERE profile_id = ?`)
-    .all(profileId) as unknown as PieceRow[];
+    .all(profileId)) as unknown as PieceRow[];
 
   const holderOf = new Map(rows.map((row) => [row.id, row.assigned_character_id]));
   const equippedBySlot = new Map<ArtifactSlot, ComparablePiece>();
@@ -563,13 +562,13 @@ function compareEverySlot(context: {
  */
 export async function accountAgenda(
   catalog: Catalog,
-  db: DatabaseSync = getDb(),
+  db: Db = getDb(),
 ): Promise<AgendaItem[]> {
-  const profileId = getProfileId(db);
-  const builds = readBuilds(db);
+  const profileId = await getProfileId(db);
+  const builds = await readBuilds(db);
   if (builds.length === 0) return [];
 
-  const stock = readWeaponStock(db, profileId);
+  const stock = await readWeaponStock(db, profileId);
   const holderOf = new Map<string, number | null>();
 
   const entries = await Promise.all(
@@ -662,7 +661,7 @@ const CAP: Progress = {
  */
 export async function farmingPlan(
   catalog: Catalog,
-  db: DatabaseSync = getDb(),
+  db: Db = getDb(),
   filter: FarmingFilter = {},
 ): Promise<{
   schedule: Schedule;
@@ -670,19 +669,19 @@ export async function farmingPlan(
   /** Everyone on the roster, and whether they have a target of their own. */
   roster: { characterId: number; hasTarget: boolean }[];
 }> {
-  const profileId = getProfileId(db);
-  const builds = readBuilds(db);
+  const profileId = await getProfileId(db);
+  const builds = await readBuilds(db);
   const roster = new Map(
-    readRoster(db, profileId).map((entry) => [entry.characterId, entry]),
+    (await readRoster(db, profileId)).map((entry) => [entry.characterId, entry]),
   );
-  const stock = readMaterialStock(db, profileId);
+  const stock = await readMaterialStock(db, profileId);
 
   const wants = (characterId: number) =>
     !filter.characterIds || filter.characterIds.has(characterId);
   const counts = (reason: Reason) => !filter.reasons || filter.reasons.has(reason);
 
   const weaponsOwned = new Map<number, number>();
-  for (const weapon of readInventory(db, profileId).weapons) {
+  for (const weapon of (await readInventory(db, profileId)).weapons) {
     weaponsOwned.set(weapon.weaponId, Math.max(weaponsOwned.get(weapon.weaponId) ?? 0, weapon.ascension));
   }
 
@@ -789,10 +788,10 @@ export async function farmingPlan(
  */
 export async function accountCascade(
   catalog: Catalog,
-  db: DatabaseSync = getDb(),
+  db: Db = getDb(),
 ): Promise<CascadePlan> {
-  const profileId = getProfileId(db);
-  const builds = readBuilds(db);
+  const profileId = await getProfileId(db);
+  const builds = await readBuilds(db);
 
   const empty: CascadePlan = { moves: [], byBuild: [], netGain: 0, truncated: false };
   if (builds.length === 0) return empty;
@@ -822,11 +821,11 @@ export async function accountCascade(
     plannedSets: build.setPlan,
   }));
 
-  const rows = db
+  const rows = (await db
     .prepare(`SELECT id, set_id, slot, rarity, level, main_prop, substats_json,
                      assigned_character_id
               FROM artifact_instance WHERE profile_id = ?`)
-    .all(profileId) as unknown as {
+    .all(profileId)) as unknown as {
       id: string; set_id: number; slot: string; rarity: number; level: number;
       main_prop: string; substats_json: string; assigned_character_id: number | null;
     }[];

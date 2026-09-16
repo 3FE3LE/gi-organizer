@@ -1,8 +1,6 @@
 import 'server-only';
 
-import type { DatabaseSync } from 'node:sqlite';
-
-import { getDb } from '@/lib/db/client';
+import { getDb, type Db } from '@/lib/db/client';
 import type { ArtifactSlot } from '@/lib/data/types';
 import type { NormalizedStat } from '@/lib/inventory/model';
 
@@ -78,18 +76,18 @@ function toWeapon(row: WeaponRow): GearWeapon {
   };
 }
 
-export function readGear(characterId: number, db: DatabaseSync = getDb()) {
-  const profileId = getProfileId(db);
+export async function readGear(characterId: number, db: Db = getDb()) {
+  const profileId = await getProfileId(db);
 
-  const artifacts = db
+  const artifacts = (await db
     .prepare(`SELECT ${ARTIFACT_FIELDS} FROM artifact_instance
               WHERE profile_id = ? AND assigned_character_id = ?`)
-    .all(profileId, characterId) as unknown as ArtifactRow[];
+    .all(profileId, characterId)) as unknown as ArtifactRow[];
 
-  const weapon = db
+  const weapon = (await db
     .prepare(`SELECT ${WEAPON_FIELDS} FROM weapon_instance
               WHERE profile_id = ? AND assigned_character_id = ?`)
-    .get(profileId, characterId) as WeaponRow | undefined;
+    .get(profileId, characterId)) as WeaponRow | undefined;
 
   const bySlot = new Map<ArtifactSlot, GearPiece>();
   for (const row of artifacts) {
@@ -108,12 +106,12 @@ export type CandidateFilter = {
   limit?: number;
 };
 
-export function artifactCandidates(
+export async function artifactCandidates(
   slot: ArtifactSlot,
   filter: CandidateFilter = {},
-  db: DatabaseSync = getDb(),
-): GearPiece[] {
-  const profileId = getProfileId(db);
+  db: Db = getDb(),
+): Promise<GearPiece[]> {
+  const profileId = await getProfileId(db);
   const clauses = ['profile_id = ?', 'slot = ?'];
   const values: (string | number)[] = [profileId, slot];
 
@@ -127,12 +125,12 @@ export function artifactCandidates(
     values.push(filter.mainProp);
   }
 
-  const rows = db
+  const rows = (await db
     .prepare(`SELECT ${ARTIFACT_FIELDS} FROM artifact_instance
               WHERE ${clauses.join(' AND ')}
               ORDER BY rarity DESC, level DESC
               LIMIT ?`)
-    .all(...values, filter.limit ?? 60) as unknown as ArtifactRow[];
+    .all(...values, filter.limit ?? 60)) as unknown as ArtifactRow[];
 
   return rows.map(toPiece);
 }
@@ -141,25 +139,25 @@ export function artifactCandidates(
  * Weapon candidates are restricted to the ids the character can hold — the
  * catalog fact the schema cannot express, so the caller supplies it.
  */
-export function weaponCandidates(
+export async function weaponCandidates(
   weaponIds: number[],
   filter: CandidateFilter = {},
-  db: DatabaseSync = getDb(),
-): GearWeapon[] {
+  db: Db = getDb(),
+): Promise<GearWeapon[]> {
   if (weaponIds.length === 0) return [];
 
-  const profileId = getProfileId(db);
+  const profileId = await getProfileId(db);
   const clauses = ['profile_id = ?', `weapon_id IN (${weaponIds.map(() => '?').join(',')})`];
   const values: (string | number)[] = [profileId, ...weaponIds];
 
   if (!filter.includeAssigned) clauses.push('assigned_character_id IS NULL');
 
-  const rows = db
+  const rows = (await db
     .prepare(`SELECT ${WEAPON_FIELDS} FROM weapon_instance
               WHERE ${clauses.join(' AND ')}
               ORDER BY refinement DESC, level DESC
               LIMIT ?`)
-    .all(...values, filter.limit ?? 60) as unknown as WeaponRow[];
+    .all(...values, filter.limit ?? 60)) as unknown as WeaponRow[];
 
   return rows.map(toWeapon);
 }
@@ -176,26 +174,26 @@ export type EquipPreview = {
  * A pure read that answers "what happens if I do this", so the dialog can say
  * *this goblet is on Xiangling — move it?* before anything is written.
  */
-export function previewEquipArtifact(
+export async function previewEquipArtifact(
   instanceId: string,
   toCharacterId: number,
-  db: DatabaseSync = getDb(),
-): EquipPreview {
-  const profileId = getProfileId(db);
+  db: Db = getDb(),
+): Promise<EquipPreview> {
+  const profileId = await getProfileId(db);
 
-  const piece = db
+  const piece = (await db
     .prepare(`SELECT slot, assigned_character_id FROM artifact_instance
               WHERE id = ? AND profile_id = ?`)
-    .get(instanceId, profileId) as
+    .get(instanceId, profileId)) as
     | { slot: string; assigned_character_id: number | null }
     | undefined;
 
   if (!piece) return { currentHolder: null, displaces: null, blocked: 'not-found' };
 
-  const occupant = db
+  const occupant = (await db
     .prepare(`SELECT id FROM artifact_instance
               WHERE profile_id = ? AND assigned_character_id = ? AND slot = ? AND id != ?`)
-    .get(profileId, toCharacterId, piece.slot, instanceId) as { id: string } | undefined;
+    .get(profileId, toCharacterId, piece.slot, instanceId)) as { id: string } | undefined;
 
   return {
     currentHolder: piece.assigned_character_id,
@@ -206,23 +204,23 @@ export function previewEquipArtifact(
   };
 }
 
-export function previewEquipWeapon(
+export async function previewEquipWeapon(
   instanceId: string,
   toCharacterId: number,
-  db: DatabaseSync = getDb(),
-): EquipPreview {
-  const profileId = getProfileId(db);
+  db: Db = getDb(),
+): Promise<EquipPreview> {
+  const profileId = await getProfileId(db);
 
-  const weapon = db
+  const weapon = (await db
     .prepare('SELECT assigned_character_id FROM weapon_instance WHERE id = ? AND profile_id = ?')
-    .get(instanceId, profileId) as { assigned_character_id: number | null } | undefined;
+    .get(instanceId, profileId)) as { assigned_character_id: number | null } | undefined;
 
   if (!weapon) return { currentHolder: null, displaces: null, blocked: 'not-found' };
 
-  const occupant = db
+  const occupant = (await db
     .prepare(`SELECT id FROM weapon_instance
               WHERE profile_id = ? AND assigned_character_id = ? AND id != ?`)
-    .get(profileId, toCharacterId, instanceId) as { id: string } | undefined;
+    .get(profileId, toCharacterId, instanceId)) as { id: string } | undefined;
 
   return {
     currentHolder: weapon.assigned_character_id,
@@ -234,15 +232,15 @@ export function previewEquipWeapon(
 }
 
 /** Characters that hold gear, for the roster view. */
-export function holdersWithGear(db: DatabaseSync = getDb()) {
-  const profileId = getProfileId(db);
+export async function holdersWithGear(db: Db = getDb()) {
+  const profileId = await getProfileId(db);
 
-  const rows = db
+  const rows = (await db
     .prepare(`SELECT assigned_character_id AS id, COUNT(*) AS pieces
               FROM artifact_instance
               WHERE profile_id = ? AND assigned_character_id IS NOT NULL
               GROUP BY assigned_character_id`)
-    .all(profileId) as unknown as { id: number; pieces: number }[];
+    .all(profileId)) as unknown as { id: number; pieces: number }[];
 
   return new Map(rows.map((row) => [row.id, row.pieces]));
 }

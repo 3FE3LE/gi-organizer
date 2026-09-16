@@ -32,7 +32,7 @@ export default async function FarmingPage({
   const filters = await loadFilters(searchParams);
   const catalog = await getCatalog(locale);
   const db = getDb();
-  const teams = readTeams(db);
+  const teams = await readTeams(db);
 
   const { characterIds } = resolveScope(teams, filters);
   const { schedule, sources, roster } = await farmingPlan(

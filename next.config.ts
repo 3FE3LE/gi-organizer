@@ -11,6 +11,12 @@ const nextConfig: NextConfig = {
    */
   distDir: process.env.NEXT_DIST_DIR || '.next',
 
+  /**
+   * `libsql` carries a native binding, which the bundler cannot inline. Left to
+   * be traced and copied instead, so the function ships the `.node` file.
+   */
+  serverExternalPackages: ['@libsql/client', 'libsql'],
+
   images: {
     // Kept in sync with `ASSET_HOSTS` in src/lib/data/assets.ts, which documents
     // why two hosts are needed.

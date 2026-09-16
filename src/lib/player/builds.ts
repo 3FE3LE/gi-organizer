@@ -1,9 +1,8 @@
 import 'server-only';
 
 import { randomUUID } from 'node:crypto';
-import type { DatabaseSync } from 'node:sqlite';
 
-import { getDb } from '@/lib/db/client';
+import { getDb, type Db } from '@/lib/db/client';
 import type { ArtifactSlot } from '@/lib/data/types';
 import type { TeamRole } from '@/lib/rules/types';
 
@@ -72,28 +71,28 @@ function toBuild(row: Row): Build {
   };
 }
 
-export function readBuilds(db: DatabaseSync = getDb()): Build[] {
-  const rows = db
+export async function readBuilds(db: Db = getDb()): Promise<Build[]> {
+  const rows = (await db
     .prepare(`SELECT ${FIELDS} FROM build WHERE profile_id = ?
               ORDER BY character_id, role IS NULL, role`)
-    .all(getProfileId(db)) as unknown as Row[];
+    .all(await getProfileId(db))) as unknown as Row[];
 
   return rows.map(toBuild);
 }
 
-export function readBuildsFor(characterId: number, db: DatabaseSync = getDb()): Build[] {
-  const rows = db
+export async function readBuildsFor(characterId: number, db: Db = getDb()): Promise<Build[]> {
+  const rows = (await db
     .prepare(`SELECT ${FIELDS} FROM build WHERE profile_id = ? AND character_id = ?
               ORDER BY role IS NULL, role`)
-    .all(getProfileId(db), characterId) as unknown as Row[];
+    .all(await getProfileId(db), characterId)) as unknown as Row[];
 
   return rows.map(toBuild);
 }
 
-export function readBuild(buildId: string, db: DatabaseSync = getDb()): Build | null {
-  const row = db
+export async function readBuild(buildId: string, db: Db = getDb()): Promise<Build | null> {
+  const row = (await db
     .prepare(`SELECT ${FIELDS} FROM build WHERE id = ? AND profile_id = ?`)
-    .get(buildId, getProfileId(db)) as Row | undefined;
+    .get(buildId, await getProfileId(db))) as Row | undefined;
 
   return row ? toBuild(row) : null;
 }
@@ -106,13 +105,13 @@ export function readBuild(buildId: string, db: DatabaseSync = getDb()): Build | 
  * should not be measured against a sub-dps target just because it was authored
  * first.
  */
-export function resolveBuildForSlot(
+export async function resolveBuildForSlot(
   characterId: number,
   declaredRoles: TeamRole[],
   explicitBuildId: string | null,
-  db: DatabaseSync = getDb(),
-): Build | null {
-  const builds = readBuildsFor(characterId, db);
+  db: Db = getDb(),
+): Promise<Build | null> {
+  const builds = await readBuildsFor(characterId, db);
   if (builds.length === 0) return null;
 
   if (explicitBuildId) {
@@ -136,11 +135,11 @@ export function goalLabel(build: Pick<Build, 'role' | 'objective'>) {
   return build.role ?? 'objetivo';
 }
 
-export function saveBuild(build: BuildInput, db: DatabaseSync = getDb()) {
-  const profileId = getProfileId(db);
+export async function saveBuild(build: BuildInput, db: Db = getDb()) {
+  const profileId = await getProfileId(db);
   const id = build.id ?? randomUUID();
 
-  db.prepare(`INSERT INTO build
+  await db.prepare(`INSERT INTO build
       (id, profile_id, character_id, role, objective, weapon_id, weapon_refinement,
        set_plan_json, main_stats_json, substats_json, goals_json, notes, created_at)
       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
@@ -161,8 +160,8 @@ export function saveBuild(build: BuildInput, db: DatabaseSync = getDb()) {
   return id;
 }
 
-export function deleteBuild(buildId: string, db: DatabaseSync = getDb()) {
-  return db
+export async function deleteBuild(buildId: string, db: Db = getDb()) {
+  return (await db
     .prepare('DELETE FROM build WHERE id = ? AND profile_id = ?')
-    .run(buildId, getProfileId(db)).changes;
+    .run(buildId, await getProfileId(db))).changes;
 }

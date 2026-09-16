@@ -52,7 +52,7 @@ export default async function ArtifactsPage({
   const catalog = await getCatalog(locale);
   const db = getDb();
 
-  const all = readArtifacts(db);
+  const all = await readArtifacts(db);
   const shown = filterArtifacts(
     all,
     {

@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   const meta = await getMeta();
-  const payload = exportNative(meta.gameVersion);
+  const payload = await exportNative(meta.gameVersion);
   const stamp = payload.exportedAt.slice(0, 10);
 
   return new Response(JSON.stringify(payload, null, 2), {

@@ -52,7 +52,7 @@ export async function saveProgressAction(values: ProgressFormValues): Promise<Pr
   }
 
   try {
-    applyProgress({
+    await applyProgress({
       characterId: input.characterId,
       buildId: input.buildId || null,
       role: (input.role || null) as TeamRole | null,

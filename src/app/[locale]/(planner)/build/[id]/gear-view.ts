@@ -97,8 +97,8 @@ async function artifactSlot(
   const { pieceView } = candidateViews(context);
 
   const equipped = gear.bySlot.get(slot) ?? null;
-  const free = artifactCandidates(slot, { limit: 40 }, db);
-  const taken = artifactCandidates(slot, { includeAssigned: true, limit: 60 }, db)
+  const free = await artifactCandidates(slot, { limit: 40 }, db);
+  const taken = (await artifactCandidates(slot, { includeAssigned: true, limit: 60 }, db))
     .filter((piece) => piece.equippedTo !== null && piece.equippedTo !== characterId);
 
   const worthTaking = taken.filter((piece) => plannedSetIds.has(piece.setId));
@@ -122,8 +122,8 @@ async function weaponSlot(context: BuildContext): Promise<SlotView> {
   const usableWeaponIds = (catalog.index.weaponsByType.get(character.weaponType) ?? [])
     .map((weapon) => weapon.id);
 
-  const free = weaponCandidates(usableWeaponIds, { limit: 40 }, db);
-  const taken = weaponCandidates(usableWeaponIds, { includeAssigned: true, limit: 60 }, db)
+  const free = await weaponCandidates(usableWeaponIds, { limit: 40 }, db);
+  const taken = (await weaponCandidates(usableWeaponIds, { includeAssigned: true, limit: 60 }, db))
     .filter((weapon) => weapon.equippedTo !== null && weapon.equippedTo !== characterId);
 
   // Same rule as artifacts: taking a weapon off someone else only earns a place

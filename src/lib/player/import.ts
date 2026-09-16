@@ -99,10 +99,10 @@ export type PreviewResult = {
 
 export async function previewStaged(token: string): Promise<PreviewResult> {
   const db = getDb();
-  const profileId = getProfileId(db);
+  const profileId = await getProfileId(db);
   const normalized = await parseStaged(token);
   // Preview never prunes: the destructive option is a choice made at apply.
-  const plan = planImport(readInventory(db, profileId), normalized, { onAbsent: 'keep' });
+  const plan = planImport(await readInventory(db, profileId), normalized, { onAbsent: 'keep' });
 
   return { plan, summary: summarizePlan(plan) };
 }
@@ -114,7 +114,7 @@ export type ApplyOptions = {
 
 export type ApplyResult = {
   summary: ReturnType<typeof summarizePlan>;
-  persisted: ReturnType<typeof persistInventory>;
+  persisted: Awaited<ReturnType<typeof persistInventory>>;
   /** Assignments the game cannot hold, dropped rather than obeyed. */
   repairs: Repair[];
   charactersUpserted: number;
@@ -143,10 +143,10 @@ async function applyNormalized(
   options: ApplyOptions,
 ): Promise<ApplyResult> {
   const db = getDb();
-  const profileId = getProfileId(db);
+  const profileId = await getProfileId(db);
   const [meta, types] = await Promise.all([getMeta(), weaponTypes()]);
 
-  const before = readInventory(db, profileId);
+  const before = await readInventory(db, profileId);
   const onAbsent = options.onAbsent ?? 'keep';
   const plan = planImport(before, normalized, { onAbsent });
 
@@ -162,31 +162,31 @@ async function applyNormalized(
 
   const snapshotId = randomUUID();
 
-  return transaction(db, () => {
+  return transaction(db, async () => {
     // Taken before the write, so the state that produced the plan is
     // recoverable even if the plan turns out to have been wrong. It is the
     // native export verbatim — one serializer, two uses, so a snapshot can be
     // restored by the same code path a backup is.
-    db.prepare('INSERT INTO snapshot (id, profile_id, at, label, data_json) VALUES (?,?,?,?,?)')
+    await db.prepare('INSERT INTO snapshot (id, profile_id, at, label, data_json) VALUES (?,?,?,?,?)')
       .run(
         snapshotId, profileId, new Date().toISOString(),
         `before ${normalized.source} import`,
-        JSON.stringify(exportNative(meta.gameVersion, db)),
+        JSON.stringify(await exportNative(meta.gameVersion, db)),
       );
 
-    const persisted = persistInventory(db, profileId, before, after);
-    const materials = persistMaterialStock(
+    const persisted = await persistInventory(db, profileId, before, after);
+    const materials = await persistMaterialStock(
       db, profileId, normalized.materials, normalized.observedAt,
     );
 
     for (const character of normalized.characters) {
-      upsertCharacter(db, profileId, character, {
+      await upsertCharacter(db, profileId, character, {
         source: normalized.source,
         observedAt: normalized.observedAt,
       });
     }
 
-    db.prepare(`INSERT INTO import_run
+    await db.prepare(`INSERT INTO import_run
         (id, profile_id, at, source, origin, game_version, counts_json)
         VALUES (?,?,?,?,?,?,?)`)
       .run(
@@ -197,7 +197,7 @@ async function applyNormalized(
         }),
       );
 
-    db.prepare('UPDATE profile SET last_seen_game_version = ? WHERE id = ?')
+    await db.prepare('UPDATE profile SET last_seen_game_version = ? WHERE id = ?')
       .run(meta.gameVersion, profileId);
 
     return {

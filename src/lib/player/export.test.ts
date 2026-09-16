@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
-import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 
-import { migrate } from '@/lib/db/migrations';
+import { createMemoryDb } from '@/lib/db/client';
 import { createKeyResolver, type GoodCrosswalk } from '@/lib/good/keys';
 import { parseGood } from '@/lib/good/parse';
 import { planImport, summarizePlan, type Inventory } from '@/lib/inventory/plan';
@@ -30,12 +29,10 @@ const SKYWARD_HARP = 15501;
 
 const NOW = '2026-09-09T00:00:00.000Z';
 
-function seeded() {
-  const db = new DatabaseSync(':memory:');
-  db.exec('PRAGMA foreign_keys = ON');
-  migrate(db);
+async function seeded() {
+  const db = createMemoryDb();
 
-  const profileId = getProfileId(db);
+  const profileId = await getProfileId(db);
 
   const inventory: Inventory = {
     artifacts: (['flower', 'plume', 'sands', 'goblet', 'circlet'] as const).map((slot, index) => ({
@@ -64,21 +61,21 @@ function seeded() {
     }],
   };
 
-  persistInventory(db, profileId, { artifacts: [], weapons: [] }, inventory);
+  await persistInventory(db, profileId, { artifacts: [], weapons: [] }, inventory);
 
   for (const characterId of [VENTI, SUCROSE]) {
-    upsertCharacter(db, profileId, {
+    await upsertCharacter(db, profileId, {
       characterId, travelerElement: null, level: 90, ascension: 6, constellation: 2,
       talent: { auto: 9, skill: 9, burst: 9 }, talentBonus: null,
     }, { source: 'manual', observedAt: NOW });
   }
 
-  const teamId = createTeam('Prueba', 'abyss', db);
-  setSlot(teamId, VENTI, 0, db);
-  setSlot(teamId, SUCROSE, 1, db);
-  setRoles(teamId, VENTI, ['sub-dps'], db);
+  const teamId = await createTeam('Prueba', 'abyss', db);
+  await setSlot(teamId, VENTI, 0, db);
+  await setSlot(teamId, SUCROSE, 1, db);
+  await setRoles(teamId, VENTI, ['sub-dps'], db);
 
-  setTarget({
+  await setTarget({
     characterId: VENTI, weaponId: SKYWARD_HARP, refinement: 1,
     setIds: [VIRIDESCENT], notes: null,
   }, db);
@@ -87,73 +84,73 @@ function seeded() {
 }
 
 /** Timestamps move; everything else must not. */
-const stable = (payload: ReturnType<typeof exportNative>) =>
+const stable = (payload: Awaited<ReturnType<typeof exportNative>>) =>
   JSON.stringify({ ...payload, exportedAt: null });
 
-test('a native export restores to exactly the same state', () => {
-  const db = seeded();
-  const before = exportNative('7.0', db);
+test('a native export restores to exactly the same state', async () => {
+  const db = await seeded();
+  const before = await exportNative('7.0', db);
 
-  const result = restoreNative(JSON.parse(JSON.stringify(before)), db);
+  const result = await restoreNative(JSON.parse(JSON.stringify(before)), db);
   assert.equal(result.artifacts, 5);
   assert.equal(result.weapons, 1);
   assert.equal(result.roster, 2);
   assert.equal(result.teams, 1);
   assert.equal(result.targets, 1);
 
-  assert.equal(stable(exportNative('7.0', db)), stable(before));
+  assert.equal(stable(await exportNative('7.0', db)), stable(before));
 });
 
-test('restoring into a dirty database replaces rather than merges', () => {
-  const db = seeded();
-  const backup = JSON.parse(JSON.stringify(exportNative('7.0', db)));
+test('restoring into a dirty database replaces rather than merges', async () => {
+  const db = await seeded();
+  const backup = JSON.parse(JSON.stringify(await exportNative('7.0', db)));
 
   // Drift: another team, another character, a piece removed.
-  createTeam('Sobrante', 'other', db);
-  db.prepare('DELETE FROM artifact_instance WHERE id = ?').run('a0');
+  await createTeam('Sobrante', 'other', db);
+  await db.prepare('DELETE FROM artifact_instance WHERE id = ?').run('a0');
 
-  restoreNative(backup, db);
+  await restoreNative(backup, db);
 
-  const after = exportNative('7.0', db);
+  const after = await exportNative('7.0', db);
   assert.equal(after.teams.length, 1);
   assert.equal(after.inventory.artifacts.length, 5);
 });
 
-test('assignments survive a restore', () => {
-  const db = seeded();
-  const backup = JSON.parse(JSON.stringify(exportNative('7.0', db)));
+test('assignments survive a restore', async () => {
+  const db = await seeded();
+  const backup = JSON.parse(JSON.stringify(await exportNative('7.0', db)));
 
-  restoreNative(backup, db);
+  await restoreNative(backup, db);
 
-  const inventory = readInventory(db, getProfileId(db));
+  const inventory = await readInventory(db, await getProfileId(db));
   assert.equal(inventory.artifacts.filter((piece) => piece.equippedTo === VENTI).length, 5);
   assert.equal(inventory.weapons[0].equippedTo, VENTI);
 });
 
-test('a lock nobody observed stays unobserved through a round trip', () => {
-  const db = seeded();
-  restoreNative(JSON.parse(JSON.stringify(exportNative('7.0', db))), db);
+test('a lock nobody observed stays unobserved through a round trip', async () => {
+  const db = await seeded();
+  await restoreNative(JSON.parse(JSON.stringify(await exportNative('7.0', db))), db);
 
-  const inventory = readInventory(db, getProfileId(db));
+  const inventory = await readInventory(db, await getProfileId(db));
   assert.equal(inventory.artifacts.find((piece) => piece.id === 'a0')?.lock, true);
   assert.equal(inventory.artifacts.find((piece) => piece.id === 'a1')?.lock, null);
 });
 
-test('a file from another schema is refused, not half-applied', () => {
-  const db = seeded();
-  const before = stable(exportNative('7.0', db));
+test('a file from another schema is refused, not half-applied', async () => {
+  const db = await seeded();
+  const before = stable(await exportNative('7.0', db));
 
-  assert.throws(() => restoreNative({ schema: 99, inventory: { artifacts: [] } }, db), RestoreRejected);
-  assert.throws(() => restoreNative({ schema: 1 }, db), RestoreRejected);
+  await assert.rejects(() => restoreNative({ schema: 99, inventory: { artifacts: [] } }, db), RestoreRejected);
+  await assert.rejects(() => restoreNative({ schema: 1 }, db), RestoreRejected);
 
-  assert.equal(stable(exportNative('7.0', db)), before, 'nothing was touched');
+  assert.equal(stable(await exportNative('7.0', db)), before, 'nothing was touched');
 });
 
 /* --------------------------------------------------------- GOOD out --- */
 
-test('a GOOD export re-imports through our own parser as unchanged', () => {
-  const db = seeded();
-  const { good, skipped } = exportGood(crosswalk, db);
+test('a GOOD export re-imports through our own parser as unchanged', async () => {
+  const db = await seeded();
+  const { good, skipped } = await exportGood(crosswalk, db);
 
   assert.deepEqual(skipped, []);
   assert.equal(good.format, 'GOOD');
@@ -167,7 +164,7 @@ test('a GOOD export re-imports through our own parser as unchanged', () => {
   assert.equal(parsed.ok, true);
   assert.deepEqual(parsed.value.issues, []);
 
-  const plan = planImport(readInventory(db, getProfileId(db)), parsed.value);
+  const plan = planImport(await readInventory(db, await getProfileId(db)), parsed.value);
   const counts = summarizePlan(plan);
 
   assert.equal(counts.artifacts.unchanged, 5);
@@ -178,37 +175,37 @@ test('a GOOD export re-imports through our own parser as unchanged', () => {
   );
 });
 
-test('GOOD export writes the holder as a character key', () => {
-  const db = seeded();
-  const { good } = exportGood(crosswalk, db);
+test('GOOD export writes the holder as a character key', async () => {
+  const db = await seeded();
+  const { good } = await exportGood(crosswalk, db);
 
   const holders = new Set((good.artifacts as { location: string }[]).map((a) => a.location));
   assert.deepEqual([...holders], ['Venti']);
 });
 
-test('an unknown lock exports as false, since GOOD has no third state', () => {
-  const db = seeded();
-  const { good } = exportGood(crosswalk, db);
+test('an unknown lock exports as false, since GOOD has no third state', async () => {
+  const db = await seeded();
+  const { good } = await exportGood(crosswalk, db);
   const locks = (good.artifacts as { lock: boolean }[]).map((a) => a.lock);
 
   assert.equal(locks.filter(Boolean).length, 1, 'only the observed lock survives');
   assert.equal(locks.length, 5);
 });
 
-test('two exports of the same state are byte-identical', () => {
-  const db = seeded();
+test('two exports of the same state are byte-identical', async () => {
+  const db = await seeded();
 
   // Only then does diffing two backups mean anything.
-  assert.equal(stable(exportNative('7.0', db)), stable(exportNative('7.0', db)));
+  assert.equal(stable(await exportNative('7.0', db)), stable(await exportNative('7.0', db)));
   assert.equal(
-    JSON.stringify(exportGood(crosswalk, db).good),
-    JSON.stringify(exportGood(crosswalk, db).good),
+    JSON.stringify((await exportGood(crosswalk, db)).good),
+    JSON.stringify((await exportGood(crosswalk, db)).good),
   );
 });
 
-test('the not-yet-activated substat survives a GOOD round trip', () => {
-  const db = seeded();
-  const { good } = exportGood(crosswalk, db);
+test('the not-yet-activated substat survives a GOOD round trip', async () => {
+  const db = await seeded();
+  const { good } = await exportGood(crosswalk, db);
 
   const parsed = parseGood(good, { resolver: createKeyResolver(crosswalk) });
   assert.equal(parsed.ok, true);

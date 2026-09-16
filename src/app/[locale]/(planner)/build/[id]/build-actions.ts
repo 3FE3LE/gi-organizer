@@ -37,13 +37,13 @@ export async function createBuildAction(
   // A goal with no role is the character's plain target; declaring a role is
   // what makes a second one. The first roleless goal is therefore the only one
   // this can create, and creating a second would violate `ux_build_role`.
-  const existing = readBuildsFor(characterId);
+  const existing = await readBuildsFor(characterId);
   const roleless = existing.find((build) => build.role === null);
   if (roleless) {
     return { status: 'error', message: 'ya hay un objetivo sin rol — dale uno primero' };
   }
 
-  const buildId = saveBuild({
+  const buildId = await saveBuild({
     characterId,
     role: null,
     objective: null,
@@ -73,7 +73,7 @@ export async function createBuildAction(
 }
 
 export async function deleteBuildAction(buildId: string): Promise<BuildFormState> {
-  const removed = deleteBuild(buildId);
+  const removed = await deleteBuild(buildId);
   refresh();
 
   return removed > 0
@@ -101,7 +101,7 @@ export async function applyTemplateAction(
   const character = catalog.characters.get(characterId);
   if (!character) return { status: 'error', message: 'ese personaje no existe' };
 
-  const existing = buildId ? readBuild(buildId, getDb()) : null;
+  const existing = buildId ? await readBuild(buildId, getDb()) : null;
   if (!existing) return { status: 'error', message: 'abre un objetivo primero' };
 
   // The role on screen wins over the one on disk, so picking a role and
@@ -126,7 +126,7 @@ export async function applyTemplateAction(
     if (prop) mainStats[slot as ArtifactSlot] = [prop];
   }
 
-  saveBuild({
+  await saveBuild({
     ...existing,
     id: existing.id,
     weaponId: weapon?.weaponId ?? existing.weaponId,

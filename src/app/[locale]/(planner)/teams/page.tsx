@@ -89,10 +89,10 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
   );
 
   /** Everything a slot needs beyond its diagnostics: build, gear, thresholds. */
-  const slotDetail = (characterId: number, roles: SlotView['roles']) => {
+  const slotDetail = async (characterId: number, roles: SlotView['roles']) => {
     const character = catalog.characters.get(characterId);
-    const build = resolveBuildForSlot(characterId, roles, null, db);
-    const gear = readGear(characterId, db);
+    const build = await resolveBuildForSlot(characterId, roles, null, db);
+    const gear = await readGear(characterId, db);
     const pieces = [...gear.bySlot.values()];
 
     const counts = new Map<number, number>();
@@ -208,7 +208,7 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
           providers.some((provider) => (worn.get(provider.setId) ?? 0) >= provider.pieces))
         .map(([field]) => ({ field, options: elementOptions }));
 
-      const detail = slotDetail(slot.characterId, slot.roles);
+      const detail = await slotDetail(slot.characterId, slot.roles);
 
       return {
         characterId: slot.characterId,
@@ -246,7 +246,7 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
     }
   }
 
-  const roster = readRoster(db, getProfileId(db))
+  const roster = (await readRoster(db, await getProfileId(db)))
     .map((entry) => catalog.characters.get(entry.characterId))
     .filter((character) => character !== undefined)
     .map((character) => ({

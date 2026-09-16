@@ -1,52 +1,62 @@
-import type { DatabaseSync } from 'node:sqlite';
+import 'server-only';
+
+import type { Transaction } from '@libsql/client';
+
+import { internalsOf, type Db } from './client';
 
 /**
  * Runs `body` in a write transaction and rolls back on any throw.
  *
- * `BEGIN IMMEDIATE` takes the write lock up front rather than on the first
- * write. Every mutation here is a read-then-write — read the piece, check who
- * holds it, move it — and a deferred transaction would let two of those
+ * A libSQL write transaction takes the write lock up front rather than on the
+ * first write. Every mutation here is a read-then-write — read the piece, check
+ * who holds it, move it — and a deferred transaction would let two of those
  * interleave their reads before either writes.
  *
  * Reentrant, because composed operations exist: undo replays a move through the
  * same function that performs one, and SQLite rejects a nested `BEGIN`. An
  * inner call becomes a savepoint, so it still rolls back its own work on a
  * throw without committing the outer one.
+ *
+ * The open transaction is not passed to `body`: it is held in a task-local, and
+ * every statement made from `db` inside `body` finds it there. That is what
+ * lets a query deep in the call tree join the transaction its caller opened
+ * without the handle being threaded through each signature.
  */
-export function transaction<T>(db: DatabaseSync, body: () => T): T {
-  if (depth.get(db)) return savepoint(db, body);
+export async function transaction<T>(db: Db, body: () => Promise<T>): Promise<T> {
+  const { connect, current } = internalsOf(db);
 
-  db.exec('BEGIN IMMEDIATE');
-  depth.set(db, 1);
+  const open = current.getStore();
+  if (open) return savepoint(open, body);
+
+  const client = await connect();
+  const tx = await client.transaction('write');
   try {
-    const result = body();
-    db.exec('COMMIT');
+    const result = await current.run(tx, body);
+    await tx.commit();
     return result;
   } catch (error) {
-    db.exec('ROLLBACK');
+    await tx.rollback();
     throw error;
-  } finally {
-    depth.set(db, 0);
   }
 }
 
-const depth = new WeakMap<DatabaseSync, number>();
+const depth = new WeakMap<Transaction, number>();
 
-function savepoint<T>(db: DatabaseSync, body: () => T): T {
-  const level = (depth.get(db) ?? 0) + 1;
+async function savepoint<T>(tx: Transaction, body: () => Promise<T>): Promise<T> {
+  const level = (depth.get(tx) ?? 0) + 1;
   const name = `sp_${level}`;
 
-  db.exec(`SAVEPOINT ${name}`);
-  depth.set(db, level);
+  await tx.execute(`SAVEPOINT ${name}`);
+  depth.set(tx, level);
   try {
-    const result = body();
-    db.exec(`RELEASE ${name}`);
+    const result = await body();
+    await tx.execute(`RELEASE ${name}`);
     return result;
   } catch (error) {
-    db.exec(`ROLLBACK TO ${name}`);
-    db.exec(`RELEASE ${name}`);
+    await tx.execute(`ROLLBACK TO ${name}`);
+    await tx.execute(`RELEASE ${name}`);
     throw error;
   } finally {
-    depth.set(db, level - 1);
+    depth.set(tx, level - 1);
   }
 }

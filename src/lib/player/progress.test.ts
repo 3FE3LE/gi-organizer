@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
-import { DatabaseSync } from 'node:sqlite';
 import { test } from 'node:test';
 
-import { migrate } from '@/lib/db/migrations';
+import { createMemoryDb } from '@/lib/db/client';
 
 import { readBuild, readBuildsFor, saveBuild } from './builds';
 import { readRoster } from './characters';
@@ -15,10 +14,8 @@ const VIRIDESCENT = 15002;
 const NOBLESSE = 15007;
 const ELEGY = 15502;
 
-function db() {
-  const database = new DatabaseSync(':memory:');
-  database.exec('PRAGMA foreign_keys = ON');
-  migrate(database);
+async function db() {
+  const database = createMemoryDb();
   return database;
 }
 
@@ -46,11 +43,11 @@ function input(overrides: Partial<ProgressInput> = {}): ProgressInput {
   };
 }
 
-test('one call writes progress, target and the weapon plan', () => {
-  const database = db();
-  applyProgress(input(), database);
+test('one call writes progress, target and the weapon plan', async () => {
+  const database = await db();
+  await applyProgress(input(), database);
 
-  const entry = readRoster(database, getProfileId(database))
+  const entry = (await readRoster(database, await getProfileId(database)))
     .find((row) => row.characterId === VENTI);
   assert.equal(entry?.level, 80);
   // Level 80 unascended is phase 5; the checkbox is what makes it 6.
@@ -63,46 +60,46 @@ test('one call writes progress, target and the weapon plan', () => {
   assert.equal(entry?.target.ascension, 6);
   assert.deepEqual(entry?.target.talents, { auto: 9, skill: 9, burst: 9 });
 
-  const build = readBuildsFor(VENTI, database)[0];
+  const build = (await readBuildsFor(VENTI, database))[0];
   assert.deepEqual(build.setPlan, [{ setIds: [VIRIDESCENT], pieces: 4 }]);
   assert.deepEqual(build.goals, [{ prop: 'FIGHT_PROP_CHARGE_EFFICIENCY', min: 200 }]);
   assert.deepEqual(build.mainStats.sands, ['FIGHT_PROP_CHARGE_EFFICIENCY']);
 
-  assert.equal(readTargets(database).get(VENTI)?.weaponId, ELEGY);
+  assert.equal((await readTargets(database)).get(VENTI)?.weaponId, ELEGY);
 });
 
-test('ascended picks the other side of a breakpoint', () => {
-  const database = db();
-  applyProgress(input({
+test('ascended picks the other side of a breakpoint', async () => {
+  const database = await db();
+  await applyProgress(input({
     current: {
       level: 80, ascended: true, constellation: 0,
       talents: { auto: 1, skill: 1, burst: 1 },
     },
   }), database);
 
-  const entry = readRoster(database, getProfileId(database))
+  const entry = (await readRoster(database, await getProfileId(database)))
     .find((row) => row.characterId === VENTI);
   assert.equal(entry?.ascension, 6);
 });
 
-test('two sets become a 2+2, and a second save edits in place', () => {
-  const database = db();
-  const buildId = applyProgress(input(), database);
+test('two sets become a 2+2, and a second save edits in place', async () => {
+  const database = await db();
+  const buildId = await applyProgress(input(), database);
 
-  applyProgress(input({ buildId, setIds: [VIRIDESCENT, NOBLESSE] }), database);
+  await applyProgress(input({ buildId, setIds: [VIRIDESCENT, NOBLESSE] }), database);
 
-  const builds = readBuildsFor(VENTI, database);
+  const builds = await readBuildsFor(VENTI, database);
   assert.equal(builds.length, 1, 'edited rather than duplicated');
   assert.deepEqual(builds[0].setPlan, [{ setIds: [VIRIDESCENT, NOBLESSE], pieces: 2 }]);
 });
 
-test('fields the build editor owns survive a save from this form', () => {
-  const database = db();
-  const buildId = applyProgress(input(), database);
+test('fields the build editor owns survive a save from this form', async () => {
+  const database = await db();
+  const buildId = await applyProgress(input(), database);
 
   // Stand in for the build editor having set the parts this form never shows.
-  const existing = readBuild(buildId, database)!;
-  saveBuild({
+  const existing = (await readBuild(buildId, database))!;
+  await saveBuild({
     ...existing,
     id: buildId,
     role: 'buffer',
@@ -110,25 +107,25 @@ test('fields the build editor owns survive a save from this form', () => {
     notes: 'buffer de la rotación',
   }, database);
 
-  applyProgress(input({ buildId, goals: [] }), database);
+  await applyProgress(input({ buildId, goals: [] }), database);
 
-  const build = readBuildsFor(VENTI, database)[0];
+  const build = (await readBuildsFor(VENTI, database))[0];
   assert.equal(build.role, 'buffer');
   assert.deepEqual(build.substats, ['FIGHT_PROP_CHARGE_EFFICIENCY']);
   assert.equal(build.notes, 'buffer de la rotación');
   assert.deepEqual(build.goals, []);
 });
 
-test('the plan is what the scarcity row records, notes and all', () => {
-  const database = db();
-  setTarget({
+test('the plan is what the scarcity row records, notes and all', async () => {
+  const database = await db();
+  await setTarget({
     characterId: VENTI, weaponId: null, refinement: null,
     setIds: [NOBLESSE], notes: 'escrita a mano',
   }, database);
 
-  applyProgress(input(), database);
+  await applyProgress(input(), database);
 
-  const target = readTargets(database).get(VENTI);
+  const target = (await readTargets(database)).get(VENTI);
   // The build's set plan replaces whatever the old pin control left behind:
   // two places saying which sets this character wants was the redundancy.
   assert.deepEqual(target?.setIds, [VIRIDESCENT]);
