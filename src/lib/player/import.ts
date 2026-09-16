@@ -154,9 +154,16 @@ export async function applyShowcase(uid: string): Promise<ApplyResult> {
   return applyNormalized(normalized, { onAbsent: 'keep' });
 }
 
-async function applyNormalized(
+/**
+ * The write, once something has been parsed into the shape the merge speaks.
+ *
+ * Exported because staging is one way in and a showcase is another, and a
+ * script seeding a development database is a third: they differ in where the
+ * bytes came from and in nothing after that.
+ */
+export async function applyNormalized(
   normalized: NormalizedImport,
-  options: ApplyOptions,
+  options: ApplyOptions = {},
 ): Promise<ApplyResult> {
   const db = getDb();
   const profileId = await getProfileId(db);
