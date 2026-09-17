@@ -1,4 +1,5 @@
 import { Target } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -22,6 +23,7 @@ export default async function CharacterPage({ params }: PageProps<'/[locale]/cha
   const character = catalog.characters.get(Number(id));
   if (!character) notFound();
 
+  const t = await getTranslations('characters.detail');
   const accent = elementColor(character.elementType);
 
   return (
@@ -50,15 +52,15 @@ export default async function CharacterPage({ params }: PageProps<'/[locale]/cha
             className="mt-4 inline-flex items-center gap-2 rounded border border-accent px-3 py-1.5 text-sm text-accent transition-colors hover:bg-surface-2"
           >
             <Target size={14} />
-            Objetivo de {character.name}
+            {t('objectiveOf', { name: character.name })}
           </Link>
           <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-1 font-mono text-xs sm:grid-cols-3">
-            <Fact label="Región" value={character.region || '—'} />
-            <Fact label="Afiliación" value={character.affiliation || '—'} />
-            <Fact label="Constelación" value={character.constellation} />
-            <Fact label="Ascenso" value={character.substatText} />
-            <Fact label="Cumpleaños" value={character.birthday || '—'} />
-            <Fact label="Versión" value={character.version} />
+            <Fact label={t('region')} value={character.region || '—'} />
+            <Fact label={t('affiliation')} value={character.affiliation || '—'} />
+            <Fact label={t('constellation')} value={character.constellation} />
+            <Fact label={t('ascension')} value={character.substatText} />
+            <Fact label={t('birthday')} value={character.birthday || '—'} />
+            <Fact label={t('version')} value={character.version} />
           </dl>
         </div>
       </header>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 
 /**
@@ -10,6 +11,7 @@ import { useState, useTransition } from 'react';
  * current state.
  */
 export function Backup() {
+  const t = useTranslations('data.backup');
   const [message, setMessage] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const [busy, start] = useTransition();
@@ -25,16 +27,18 @@ export function Backup() {
 
       if (!response.ok) {
         setFailed(true);
-        setMessage(body.message ?? body.error ?? 'no se pudo restaurar');
+        setMessage(body.message ?? body.error ?? t('restoreFailed'));
         return;
       }
 
       const { restored } = body as { restored: Record<string, number> };
       setConfirming(false);
-      setMessage(
-        `restaurado: ${restored.artifacts} artefactos · ${restored.weapons} armas · ` +
-        `${restored.roster} personajes · ${restored.teams} equipos`,
-      );
+      setMessage(t('restoredMessage', {
+        artifacts: restored.artifacts,
+        weapons: restored.weapons,
+        roster: restored.roster,
+        teams: restored.teams,
+      }));
       // The page is server-rendered from the database; a reload is the honest
       // way to show a state that just changed underneath it entirely.
       location.reload();
@@ -49,25 +53,24 @@ export function Backup() {
           download
           className="rounded border border-edge bg-surface px-3 py-1.5 text-sm hover:border-accent"
         >
-          Descargar copia completa
+          {t('downloadFull')}
         </a>
         <a
           href="/api/export/good"
           download
           className="rounded border border-edge bg-surface px-3 py-1.5 text-sm hover:border-accent"
         >
-          Exportar a GOOD
+          {t('exportGood')}
         </a>
         <span className="font-mono text-xs text-muted">
-          la copia restaura todo; GOOD lo lee Genshin Optimizer
+          {t('exportHint')}
         </span>
       </div>
 
       {confirming ? (
         <form action={restore} className="space-y-2 rounded border border-accent/40 bg-surface p-3">
           <p className="text-sm">
-            <strong className="text-accent">Restaurar reemplaza todo</strong> — inventario,
-            roster, equipos, reglas y objetivos. Lo que haya ahora se pierde.
+            <strong className="text-accent">{t('confirmTitle')}</strong> {t('confirmBody')}
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <input
@@ -82,14 +85,14 @@ export function Backup() {
               disabled={busy}
               className="rounded border border-accent px-3 py-1.5 text-sm text-accent disabled:opacity-50"
             >
-              {busy ? 'Restaurando…' : 'Reemplazar todo'}
+              {busy ? t('restoring') : t('replaceAll')}
             </button>
             <button
               type="button"
               onClick={() => setConfirming(false)}
               className="text-sm text-muted hover:text-text"
             >
-              Cancelar
+              {t('cancel')}
             </button>
           </div>
         </form>
@@ -99,7 +102,7 @@ export function Backup() {
           onClick={() => setConfirming(true)}
           className="rounded border border-edge bg-surface px-3 py-1.5 text-sm text-muted hover:border-accent hover:text-text"
         >
-          Restaurar desde una copia…
+          {t('restoreFromBackup')}
         </button>
       )}
 

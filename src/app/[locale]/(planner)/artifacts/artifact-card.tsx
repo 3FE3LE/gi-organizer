@@ -1,4 +1,5 @@
 import { Sparkles } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 
 import { GameIcon } from '@/components/game-icon';
 import { propLabel, type Catalog } from '@/lib/data/catalog';
@@ -7,8 +8,6 @@ import type { OwnedArtifact } from '@/lib/player/artifacts';
 import { TIERS, type CritRating, type RollQuality } from '@/lib/rules/rolls';
 import { pieceWorth, type Scaler } from '@/lib/rules/worth';
 import { mainStatValue } from '@/lib/rules/stats';
-
-import { SCALER_LABELS, SLOT_LABELS } from './filters';
 
 /** Loud only where it earns it: a piece nobody would keep stays grey. */
 const CRIT_TONE: Record<CritRating, string> = {
@@ -28,7 +27,7 @@ const CRIT_TONE: Record<CritRating, string> = {
  * four minimum ones land within a hair of each other, and only one of them is
  * a piece worth keeping.
  */
-export function ArtifactCard({
+export async function ArtifactCard({
   piece,
   scaler,
   catalog,
@@ -39,6 +38,10 @@ export function ArtifactCard({
   catalog: Catalog;
   locale: string;
 }) {
+  const t = await getTranslations('artifacts');
+  const slotLabel = await getTranslations('common.slot');
+  const scalerLabel = await getTranslations('common.scaler');
+  const critRatingLabel = await getTranslations('common.critRating');
   const set = catalog.artifacts.get(piece.setId);
   const worth = pieceWorth(piece, scaler);
   const dead = new Set(worth.substats.filter((entry) => entry.dead).map((entry) => entry.prop));
@@ -60,11 +63,17 @@ export function ArtifactCard({
           <p className="mt-0.5 flex flex-wrap items-center gap-x-2 font-mono text-[0.65rem]">
             <span className="rounded bg-ink px-1 text-muted">+{piece.level}</span>
             <span className="text-accent">{'★'.repeat(piece.rarity)}</span>
-            <span className="text-muted">{SLOT_LABELS[piece.slot] ?? piece.slot}</span>
+            <span className="text-muted capitalize">
+              {slotLabel.has(piece.slot) ? slotLabel(piece.slot) : piece.slot}
+            </span>
           </p>
         </div>
         {piece.quality.hasPerfect && (
-          <Sparkles size={13} className="shrink-0 text-accent" aria-label="substat perfecto" />
+          <Sparkles
+            size={13}
+            className="shrink-0 text-accent"
+            aria-label={t('perfectSubstatActive')}
+          />
         )}
       </div>
 
@@ -94,7 +103,7 @@ export function ArtifactCard({
               className={`flex items-baseline justify-between gap-2 ${
                 wasted ? 'opacity-45' : ''
               }`}
-              title={wasted ? 'No escala con nada: estos rolls no cuentan' : undefined}
+              title={wasted ? t('deadSubstatHint') : undefined}
             >
               <span className="truncate text-[0.7rem] text-muted">
                 {propLabel(catalog, substat.prop)}
@@ -112,20 +121,22 @@ export function ArtifactCard({
 
       <p className="mt-2 flex flex-wrap items-baseline justify-between gap-x-2 border-t border-edge pt-1.5 font-mono text-[0.65rem]">
         <span className={holder ? 'text-muted' : 'text-good'}>
-          {holder ?? 'libre'}
+          {holder ?? t('free')}
         </span>
         <span className="flex items-baseline gap-2">
           {piece.critValue > 0 && (
             <span
               className={`tabular ${CRIT_TONE[piece.critRating]}`}
-              title={`Crit value: 2 × prob. CRIT + daño CRIT = ${
-                piece.critValue.toFixed(1)} · ${piece.critRating}`}
+              title={t('critValueHint', {
+                value: piece.critValue.toFixed(1),
+                rating: critRatingLabel(piece.critRating),
+              })}
             >
               CV {piece.critValue.toFixed(1)}
             </span>
           )}
           <span className="tabular text-muted">
-            {piece.quality.count} roll{piece.quality.count === 1 ? '' : 's'}
+            {piece.quality.count} {t('rollsCount', { count: piece.quality.count })}
             {piece.quality.efficiency !== null
               && ` · ${Math.round(piece.quality.efficiency * 100)}%`}
           </span>
@@ -138,12 +149,12 @@ export function ArtifactCard({
       {(worth.serves !== null || worth.wastedCount > 0) && (
         <p className="mt-1 flex flex-wrap items-baseline justify-between gap-x-2 font-mono text-[0.6rem] text-muted">
           <span>
-            {worth.serves !== null && `para ${SCALER_LABELS[worth.serves]}`}
+            {worth.serves !== null && t('servesPrefix', { scaler: scalerLabel(worth.serves) })}
           </span>
           {worth.wastedCount > 0 && (
             <span>
               <span className="text-bad">{worth.wastedCount}</span>
-              {` de ${worth.count} rolls perdidos`}
+              {` ${t('wastedRolls', { count: worth.count })}`}
             </span>
           )}
         </p>
@@ -158,12 +169,14 @@ export function ArtifactCard({
  * Four dots rather than a number, because the tier is the reading and a
  * percentage next to a percentage is unreadable.
  */
-function RollBadge({ quality, muted }: { quality: RollQuality; muted?: boolean }) {
+async function RollBadge({ quality, muted }: { quality: RollQuality; muted?: boolean }) {
+  const t = await getTranslations('artifacts');
+  const tierLabel = await getTranslations('common.tier');
   const tier = TIERS.indexOf(quality.tier);
 
   return (
     <span
-      title={`${quality.count} roll${quality.count === 1 ? '' : 's'} · ${quality.tier}`}
+      title={`${quality.count} ${t('rollsCount', { count: quality.count })} · ${tierLabel(quality.tier)}`}
       className={`flex items-center gap-0.5 ${
         muted
           ? 'text-muted'

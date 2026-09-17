@@ -1,10 +1,10 @@
+import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { CharacterSheet } from '@/components/character-sheet';
 import { getCatalog, propLabel } from '@/lib/data/catalog';
 import { isLocale } from '@/lib/data/locales';
-import { MECHANICS } from '@/lib/data/mechanics';
 import { roleLabel } from '@/lib/rules/role-labels';
 
 import { BuildPicker } from './build-picker';
@@ -47,6 +47,8 @@ export default async function BuildPage({
   });
   const { loadout, suggestions } = context;
   const activeBuild = suggestions.build;
+  const roleLabelT = await getTranslations('common.role');
+  const mechanicLabelT = await getTranslations('common.mechanic');
 
   const basePath = `/${locale}/build/${characterId}`;
   const tabHref = (next: Tab) =>
@@ -69,9 +71,9 @@ export default async function BuildPage({
         characterId={characterId}
         builds={suggestions.builds.map((build) => ({
           id: build.id,
-          label: roleLabel(build.role),
+          label: roleLabel(roleLabelT, build.role),
           objective: build.objective
-            ? MECHANICS[build.objective as keyof typeof MECHANICS]?.label ?? build.objective
+            ? (mechanicLabelT.has(build.objective) ? mechanicLabelT(build.objective) : build.objective)
             : null,
         }))}
         activeId={activeBuild?.id ?? null}
@@ -108,11 +110,12 @@ export default async function BuildPage({
 async function ObjectiveTab({ context }: { context: BuildContext }) {
   const { character, locale } = context;
   const view = await objectiveViewFor(context);
+  const t = await getTranslations('build');
 
   return (
     <div className="space-y-4">
       <p className="max-w-prose text-sm text-muted">
-        Dónde está {character.name} hoy y a dónde quieres llevarlo.
+        {t('objectiveIntro', { name: character.name })}
       </p>
 
       <ProgressPanel
@@ -127,6 +130,8 @@ async function ObjectiveTab({ context }: { context: BuildContext }) {
 
 async function ChangesTab({ context }: { context: BuildContext }) {
   const { catalog, characterId, locale, suggestions } = context;
+  const t = await getTranslations('build');
+  const roleLabelT = await getTranslations('common.role');
   const objectiveHref = serializeBuildParams(
     `/${locale}/build/${characterId}`,
     { build: suggestions.build?.id ?? null, tab: 'objective' },
@@ -135,13 +140,13 @@ async function ChangesTab({ context }: { context: BuildContext }) {
   if (!suggestions.build) {
     return (
       <p className="max-w-prose text-sm text-muted">
-        Esta pestaña compara lo que lleva puesto contra lo que podría llevar, y para eso
-        hace falta saber para qué. {catalog.characters.get(characterId)?.name ?? 'Este personaje'}{' '}
-        no tiene ningún objetivo todavía, así que no hay nada contra lo que medir.{' '}
+        {t('changesNoBuild', {
+          name: catalog.characters.get(characterId)?.name ?? t('thisCharacterFallback'),
+        })}{' '}
         <Link href={objectiveHref} className="underline hover:text-accent">
-          Crea uno en Objetivo
+          {t('createObjectiveLink')}
         </Link>{' '}
-        — con el set, las main stats y los umbrales que quieras alcanzar.
+        {t('changesNoBuildSuffix')}
       </p>
     );
   }
@@ -152,9 +157,11 @@ async function ChangesTab({ context }: { context: BuildContext }) {
   return (
     <section className="space-y-6">
       <div className="mb-3 flex flex-wrap items-baseline gap-3">
-        <h2 className="text-sm font-medium uppercase tracking-wide text-muted">Qué cambiar</h2>
+        <h2 className="text-sm font-medium uppercase tracking-wide text-muted">
+          {t('changesHeading')}
+        </h2>
         <span className="font-mono text-xs text-muted">
-          objetivo · {roleLabel(suggestions.build.role)}
+          {t('objectiveRole', { role: roleLabel(roleLabelT, suggestions.build.role) })}
         </span>
         {suggestions.goals.map((goal) => (
           <span
@@ -175,9 +182,9 @@ async function ChangesTab({ context }: { context: BuildContext }) {
 
       {swaps === 0 ? (
         <p className="max-w-prose text-sm text-muted">
-          Nada de lo que tienes mejora lo que lleva puesto. Lo que queda es farmear: mira{' '}
+          {t('noSwapsMessage')}{' '}
           <Link href={`/${locale}/plan`} className="underline hover:text-accent">
-            qué dominios tocan hoy
+            {t('whatRotatesLink')}
           </Link>
           .
         </p>

@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 /**
  * The stats of one piece, and the same piece next to what is worn now.
  *
@@ -35,21 +37,24 @@ export type PieceStats = {
 export function PieceComparison({
   equipped,
   candidate,
-  candidateLabel = 'candidata',
+  candidateLabel,
 }: {
   equipped: PieceStats | null;
   candidate: PieceStats;
   candidateLabel?: string;
 }) {
+  const t = useTranslations('build');
   const rows = mergeRows(equipped, candidate);
 
   return (
     <table className="w-full border-collapse font-mono text-[0.65rem]">
       <thead>
         <tr className="text-muted">
-          <th className="py-1 text-left font-normal">stat</th>
-          <th className="py-1 text-right font-normal">equipada</th>
-          <th className="py-1 text-right font-normal">{candidateLabel}</th>
+          <th className="py-1 text-left font-normal">{t('statHeader')}</th>
+          <th className="py-1 text-right font-normal">{t('equippedHeader')}</th>
+          <th className="py-1 text-right font-normal">
+            {candidateLabel ?? t('defaultCandidateLabel')}
+          </th>
         </tr>
       </thead>
       <tbody>
@@ -57,7 +62,7 @@ export function PieceComparison({
           <tr key={`${row.kind}:${row.prop}`} className="border-t border-edge/40">
             <td className="py-1 pr-2">
               <span className={row.wanted ? 'text-accent' : 'text-muted'}>{row.label}</span>
-              {row.kind === 'main' && <span className="text-muted"> · principal</span>}
+              {row.kind === 'main' && <span className="text-muted"> {t('mainStatSuffix')}</span>}
             </td>
             <Cell line={row.equipped} />
             <Cell line={row.candidate} direction={row.direction} />

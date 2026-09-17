@@ -83,8 +83,3 @@ export function gameWeekStrip(
     return { day: WEEKDAYS[date.getUTCDay()], date: date.getUTCDate() };
   });
 }
-
-/** How the region is worded where the player picks one. */
-export const REGION_LABEL: Record<GameRegion, string> = {
-  america: 'América', europe: 'Europa', asia: 'Asia',
-};

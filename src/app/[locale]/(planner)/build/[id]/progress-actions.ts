@@ -1,5 +1,6 @@
 'use server';
 
+import { getTranslations } from 'next-intl/server';
 import { refresh } from 'next/cache';
 
 import { getCatalog } from '@/lib/data/catalog';
@@ -33,22 +34,25 @@ export type ProgressState =
 
 export async function saveProgressAction(values: ProgressFormValues): Promise<ProgressState> {
   const parsed = progressSchema.safeParse(values);
-  if (!parsed.success) return { status: 'error', message: firstIssue(parsed.error) };
+  if (!parsed.success) {
+    return { status: 'error', message: firstIssue(parsed.error, await getTranslations('forms')) };
+  }
 
+  const t = await getTranslations('build.actions');
   const input = parsed.data;
   const catalog = await getCatalog(DEFAULT_LOCALE);
   const character = catalog.characters.get(input.characterId);
-  if (!character) return { status: 'error', message: 'ese personaje no existe' };
+  if (!character) return { status: 'error', message: t('characterNotFound') };
 
   const weaponId = input.weaponId;
   if (weaponId !== null && !catalog.weapons.get(weaponId)) {
-    return { status: 'error', message: 'esa arma no existe' };
+    return { status: 'error', message: t('weaponNotFound') };
   }
 
   const setIds = statedSetIds(input.setIds);
   const unknownSet = setIds.find((setId) => !catalog.artifacts.get(setId));
   if (unknownSet !== undefined) {
-    return { status: 'error', message: `el set #${unknownSet} no existe` };
+    return { status: 'error', message: t('setNotFound', { id: unknownSet }) };
   }
 
   try {
@@ -75,7 +79,7 @@ export async function saveProgressAction(values: ProgressFormValues): Promise<Pr
     if (error instanceof NotInRoster) {
       return {
         status: 'error',
-        message: `${character.name} no está en tu cuenta: reimporta tu GOOD`,
+        message: t('notInRoster', { name: character.name }),
       };
     }
     // A character has one goal per role, as a unique index rather than as a
@@ -84,12 +88,12 @@ export async function saveProgressAction(values: ProgressFormValues): Promise<Pr
     if (String(error).includes('ux_build_role')) {
       return {
         status: 'error',
-        message: `${character.name} ya tiene un objetivo con ese rol`,
+        message: t('goalRoleTaken', { name: character.name }),
       };
     }
     throw error;
   }
 
   refresh();
-  return { status: 'ok', message: `objetivo de ${character.name} guardado` };
+  return { status: 'ok', message: t('objectiveSaved', { name: character.name }) };
 }

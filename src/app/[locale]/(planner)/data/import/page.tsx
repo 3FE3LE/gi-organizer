@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 
 import { isLocale } from '@/lib/data/locales';
 
@@ -16,13 +17,13 @@ import { ImportForm } from '../import-form';
 export default async function DataIoPage({ params }: PageProps<'/[locale]/data/import'>) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
-
+  const t = await getTranslations('data.importPage');
 
   return (
     <div className="space-y-8">
       <section>
         <h2 className="text-sm font-medium uppercase tracking-wide text-muted">
-          Importar
+          {t('importHeading')}
         </h2>
         <div className="mt-4">
           <ImportForm />
@@ -31,10 +32,10 @@ export default async function DataIoPage({ params }: PageProps<'/[locale]/data/i
 
       <section>
         <h2 className="text-sm font-medium uppercase tracking-wide text-muted">
-          Copias y salida
+          {t('backupHeading')}
         </h2>
         <p className="mt-2 max-w-prose text-sm text-muted">
-          Nada de esto es una puerta de un solo sentido.
+          {t('backupHint')}
         </p>
         <div className="mt-4">
           <Backup />

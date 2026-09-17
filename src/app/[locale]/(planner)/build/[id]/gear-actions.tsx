@@ -1,6 +1,7 @@
 'use client';
 
 import { ArrowLeftRight, Pencil, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useActionState, useEffect, useState } from 'react';
 
 import { AssetImage } from '@/components/asset-image';
@@ -41,6 +42,7 @@ export function GearActions({
   slot: string;
   title: string;
 }) {
+  const t = useTranslations('build');
   const [mode, setMode] = useState<'edit' | 'compare' | null>(null);
 
   return (
@@ -53,10 +55,10 @@ export function GearActions({
         className={`absolute inset-x-0 bottom-0 flex justify-center gap-2 p-2 opacity-0 transition-opacity
           group-hover:opacity-100 group-focus-within:opacity-100 max-sm:static max-sm:mt-2 max-sm:opacity-100`}
       >
-        <Action icon={<Pencil size={12} />} label="Editar" onClick={() => setMode('edit')} />
+        <Action icon={<Pencil size={12} />} label={t('editButton')} onClick={() => setMode('edit')} />
         <Action
           icon={<ArrowLeftRight size={12} />}
-          label="Comparar"
+          label={t('compareButton')}
           onClick={() => setMode('compare')}
         />
       </div>
@@ -123,6 +125,7 @@ function SlotDialog({
   compare: boolean;
   onClose: () => void;
 }) {
+  const t = useTranslations('build');
   const [view, setView] = useState<SlotView | null>(null);
   const [failed, setFailed] = useState(false);
   const [state, move, pending] = useActionState<MoveState, FormData>(
@@ -155,7 +158,7 @@ function SlotDialog({
       <div
         role="dialog"
         aria-modal="true"
-        aria-label={`Candidatas para ${title}`}
+        aria-label={t('candidatesForAria', { title })}
         onClick={(event) => event.stopPropagation()}
         className="flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-t-xl border border-edge-strong bg-surface shadow-2xl sm:rounded-xl"
       >
@@ -173,7 +176,7 @@ function SlotDialog({
             <p className="truncate text-sm">
               {view?.equipped
                 ? <>{view.equipped.label} <span className="text-muted">{view.equipped.detail}</span></>
-                : <span className="text-muted">vacío</span>}
+                : <span className="text-muted">{t('emptySlotText')}</span>}
             </p>
           </div>
 
@@ -187,14 +190,14 @@ function SlotDialog({
                   : { kind: 'unequip-artifact', instanceId: view.equipped.id }
               }
               expectedHolderId={characterId}
-              title="Quitar"
+              title={t('removeButton')}
             />
           )}
 
           <button
             type="button"
             onClick={onClose}
-            aria-label="Cerrar"
+            aria-label={t('closeAria')}
             className="shrink-0 rounded p-1 text-muted transition-colors hover:bg-surface-2 hover:text-text"
           >
             <X size={16} />
@@ -213,10 +216,10 @@ function SlotDialog({
 
         {view && (
           <p className="border-b border-edge px-4 py-1.5 text-xs text-muted">
-            {view.candidates.length} candidatas
+            {t('candidatesCount', { count: view.candidates.length })}
             {view.hiddenInUse > 0 && (
               <span className="font-mono text-[0.65rem]">
-                {' · '}{view.hiddenInUse} en uso fuera del plan, ocultas
+                {' · '}{t('hiddenInUse', { count: view.hiddenInUse })}
               </span>
             )}
           </p>
@@ -224,11 +227,11 @@ function SlotDialog({
 
         <ul className="min-h-24 flex-1 overflow-y-auto">
           {!view && !failed && (
-            <li className="px-4 py-6 text-center text-xs text-muted">buscando candidatas…</li>
+            <li className="px-4 py-6 text-center text-xs text-muted">{t('searchingCandidates')}</li>
           )}
           {failed && (
             <li className="px-4 py-6 text-center text-xs text-accent">
-              no se pudieron cargar las candidatas
+              {t('failedToLoad')}
             </li>
           )}
           {view?.candidates.map((candidate, index) => (
@@ -239,13 +242,13 @@ function SlotDialog({
               characterId={characterId}
               action={move}
               pending={pending}
-              // "Comparar" is the same list with the argument already made: the
+              // "Compare" is the same list with the argument already made: the
               // best candidate open against what is worn.
               defaultOpen={compare && index === 0}
             />
           ))}
           {view?.candidates.length === 0 && (
-            <li className="px-4 py-6 text-center text-xs text-muted">nada que encaje</li>
+            <li className="px-4 py-6 text-center text-xs text-muted">{t('noMatch')}</li>
           )}
         </ul>
       </div>

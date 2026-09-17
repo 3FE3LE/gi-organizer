@@ -1,10 +1,10 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useActionState } from 'react';
 
 import { AssetImage } from '@/components/asset-image';
-import { ROLE_LABELS } from '@/lib/rules/role-labels';
-import type { TeamRole } from '@/lib/rules/types';
+import { TEAM_ROLES, type TeamRole } from '@/lib/rules/types';
 
 import {
   type TeamActionState,
@@ -55,7 +55,7 @@ export type RosterEntry = {
   inTeam: { id: string; name: string } | null;
 };
 
-const ROLES = Object.keys(ROLE_LABELS) as TeamRole[];
+const ROLES = TEAM_ROLES;
 
 export function TeamBoard({
   team,
@@ -66,6 +66,7 @@ export function TeamBoard({
   roster: RosterEntry[];
   objectives: { id: string; label: string }[];
 }) {
+  const t = useTranslations('teams');
   const [addState, add, adding] = useActionState<TeamActionState, FormData>(
     addSlotAction, { status: 'idle' },
   );
@@ -89,7 +90,7 @@ export function TeamBoard({
               type="submit"
               className="rounded border border-edge px-2 py-1 text-xs text-muted hover:border-accent hover:text-accent"
             >
-              Borrar
+              {t('deleteButton')}
             </button>
           </form>
         </div>
@@ -126,7 +127,7 @@ export function TeamBoard({
             key={`empty-${index}`}
             className="flex min-h-44 items-center justify-center bg-surface text-xs text-muted"
           >
-            vacío
+            {t('emptySlot')}
           </div>
         ))}
       </div>
@@ -143,6 +144,7 @@ function ObjectivePicker({
   current: string | null;
   objectives: { id: string; label: string }[];
 }) {
+  const t = useTranslations('teams');
   const [, save, saving] = useActionState<TeamActionState, FormData>(
     setObjectiveAction, { status: 'idle' },
   );
@@ -156,7 +158,7 @@ function ObjectivePicker({
         disabled={saving}
         className="rounded border border-edge bg-ink px-2 py-1 text-xs"
       >
-        <option value="">sin objetivo</option>
+        <option value="">{t('noObjective')}</option>
         {objectives.map((objective) => (
           <option key={objective.id} value={objective.id}>{objective.label}</option>
         ))}
@@ -190,32 +192,35 @@ function AddMember({
   action: (form: FormData) => void;
   pending: boolean;
 }) {
+  const t = useTranslations('teams');
+  const roleLabel = useTranslations('common.role');
+
   return (
     <form action={action} className="space-y-2 border-b border-edge px-4 py-3">
       <input type="hidden" name="teamId" value={teamId} />
 
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs text-muted">1. Rol</span>
+        <span className="text-xs text-muted">{t('step1Role')}</span>
         {ROLES.map((role) => (
           <label
             key={role}
             className="cursor-pointer rounded border border-edge px-1.5 py-0.5 text-[0.65rem] text-muted hover:border-accent has-checked:border-accent has-checked:text-accent"
           >
             <input type="checkbox" name="roles" value={role} className="sr-only" />
-            {ROLE_LABELS[role]}
+            {roleLabel(role)}
           </label>
         ))}
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs text-muted">2. Personaje</span>
+        <span className="text-xs text-muted">{t('step2Character')}</span>
         <select
           name="characterId"
           required
           defaultValue=""
           className="max-w-56 rounded border border-edge bg-ink px-2 py-1 text-xs"
         >
-          <option value="" disabled>de tu roster…</option>
+          <option value="" disabled>{t('fromRoster')}</option>
           {/* One team per character: whoever holds them is named and the option
               is refused here rather than at submit. */}
           {roster.map((character) => (
@@ -227,8 +232,8 @@ function AddMember({
               {character.name} · {character.detail}
               {character.inTeam &&
                 (character.inTeam.id === teamId
-                  ? ' · ya en este equipo'
-                  : ` · en ${character.inTeam.name}`)}
+                  ? t('alreadyInThisTeam')
+                  : t('inOtherTeam', { name: character.inTeam.name }))}
             </option>
           ))}
         </select>
@@ -237,7 +242,7 @@ function AddMember({
           disabled={pending}
           className="rounded border border-edge px-3 py-1 text-xs hover:border-accent disabled:opacity-50"
         >
-          Añadir
+          {t('addButton')}
         </button>
       </div>
     </form>
@@ -245,6 +250,8 @@ function AddMember({
 }
 
 function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
+  const t = useTranslations('teams');
+  const roleLabel = useTranslations('common.role');
   const [, saveRoles, savingRoles] = useActionState<TeamActionState, FormData>(
     setRolesAction, { status: 'idle' },
   );
@@ -271,7 +278,7 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
           <button
             type="submit"
             className="text-xs text-muted hover:text-accent"
-            aria-label={`Quitar ${slot.name}`}
+            aria-label={t('removeAria', { name: slot.name })}
           >
             ×
           </button>
@@ -281,7 +288,7 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
       <p className="font-mono text-[0.65rem] text-muted">
         {slot.buildName
           ? <span className="text-accent">{slot.buildName}</span>
-          : 'sin build para este rol'}
+          : t('noBuildForRole')}
         {slot.weapon && <> · {slot.weapon}</>}
       </p>
 
@@ -330,7 +337,7 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
                 defaultChecked={slot.roles.includes(role)}
                 className="sr-only"
               />
-              {ROLE_LABELS[role]}
+              {roleLabel(role)}
             </label>
           ))}
         </div>
@@ -339,7 +346,7 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
           disabled={savingRoles}
           className="rounded border border-edge px-2 py-0.5 text-[0.65rem] hover:border-accent disabled:opacity-50"
         >
-          Guardar roles
+          {t('saveRolesButton')}
         </button>
       </form>
 
@@ -353,7 +360,7 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
             defaultValue={slot.declarations[declaration.field] ?? ''}
             className="min-w-0 flex-1 rounded border border-edge bg-ink px-1 py-0.5 text-[0.65rem]"
           >
-            <option value="">sin declarar</option>
+            <option value="">{t('noDeclaration')}</option>
             {declaration.options.map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}

@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 
 import { resolveIcon } from '@/lib/data/icon';
 import { getCatalog, propLabel } from '@/lib/data/catalog';
@@ -12,19 +13,15 @@ import { readGear } from '@/lib/player/queries';
 import { computeStats, evaluateGoals } from '@/lib/rules/stats';
 import { getAnnotations } from '@/lib/rules/assemble';
 import { getProfileId } from '@/lib/player/db';
-import { MECHANICS, MECHANIC_IDS } from '@/lib/data/mechanics';
+import { MECHANIC_IDS } from '@/lib/data/mechanics';
 import { assemble } from '@/lib/rules/assemble';
-import { describe, type Naming } from '@/lib/rules/messages/es';
+import { describe, type Naming } from '@/lib/rules/diagnostics';
 import { targetKey } from '@/lib/rules/types';
 
 import { TeamBoard, type SlotView, type TeamView } from './team-board';
 import { TeamRail, type RailEntry } from './team-rail';
 
 export const dynamic = 'force-dynamic';
-
-const SLOT_LABELS: Record<string, string> = {
-  flower: 'flor', plume: 'pluma', sands: 'arena', goblet: 'cáliz', circlet: 'diadema',
-};
 
 /**
  * Teams, and everything the rules say about them.
@@ -41,6 +38,11 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
   const db = getDb();
   const { teams, result, input } = await assemble(catalog, db);
   const annotations = await getAnnotations(catalog);
+  const t = await getTranslations('diagnostics');
+  const tTeams = await getTranslations('teams');
+  const slotLabel = await getTranslations('common.slot');
+  const roleLabelT = await getTranslations('common.role');
+  const mechanicLabelT = await getTranslations('common.mechanic');
 
   const requested = (await searchParams).team;
   const selectedId = typeof requested === 'string' && teams.some((team) => team.id === requested)
@@ -52,14 +54,14 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
     weapon: (id) => catalog.weapons.get(id)?.name ?? `#${id}`,
     artifactSet: (id) => catalog.artifacts.get(id)?.name ?? `#${id}`,
     element: (type) => elementName(catalog, type),
-    slot: (slot) => SLOT_LABELS[slot] ?? slot,
+    slot: (slot) => (slotLabel.has(slot) ? slotLabel(slot) : slot),
   };
 
   const findingsFor = (key: string) =>
     (result.byTarget.get(key) ?? []).map((diagnostic) => ({
       id: diagnostic.id,
       severity: diagnostic.severity,
-      message: describe(diagnostic, naming),
+      message: describe(diagnostic, naming, t),
     }));
 
   // Which declarations a slot is asked for comes from the rules that could
@@ -176,7 +178,7 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
       name: team.name,
       mode: team.mode,
       objectiveLabel: team.objective
-        ? MECHANICS[team.objective as keyof typeof MECHANICS]?.label ?? team.objective
+        ? (mechanicLabelT.has(team.objective) ? mechanicLabelT(team.objective) : team.objective)
         : null,
       members: team.slots.length,
       errors: findings.filter((finding) => finding.severity === 'error').length,
@@ -216,7 +218,7 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
         icon: await resolveIcon(character?.icon, 'avatar'),
         element: character?.elementText ?? '',
         elementColor: elementColor(character?.elementType ?? 'ELEMENT_NONE'),
-        buildName: detail.build ? roleLabel(detail.build.role) : null,
+        buildName: detail.build ? roleLabel(roleLabelT, detail.build.role) : null,
         gear: detail.gear,
         weapon: detail.weapon,
         goals: detail.goals,
@@ -235,7 +237,7 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
     })),
   })));
 
-  const objectives = MECHANIC_IDS.map((id) => ({ id, label: MECHANICS[id].label }));
+  const objectives = MECHANIC_IDS.map((id) => ({ id, label: mechanicLabelT(id) }));
 
   // A character belongs to one team at a time, so the picker states who holds
   // each one rather than letting the add fail after the click.
@@ -263,9 +265,7 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
 
       <main className="min-w-0 space-y-6">
         {views.length === 0 ? (
-          <p className="max-w-prose text-sm text-muted">
-            Ningún equipo todavía. Crea uno a la izquierda y añade personajes de tu roster.
-          </p>
+          <p className="max-w-prose text-sm text-muted">{tTeams('empty')}</p>
         ) : (
           views.map((team) => (
             <TeamBoard key={team.id} team={team} roster={roster} objectives={objectives} />
@@ -275,7 +275,7 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
         {selectedDiagnostics.length > 0 && (
           <section>
             <h2 className="mb-2 text-sm font-medium uppercase tracking-wide text-muted">
-              Detectado en este equipo{' '}
+              {tTeams('detectedHeading')}{' '}
               <span className="font-mono">{selectedDiagnostics.length}</span>
             </h2>
             <ul className="space-y-1">
@@ -291,7 +291,7 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
                   }`}
                 >
                   <span className="font-mono text-muted">{diagnostic.code}</span>{' '}
-                  {describe(diagnostic, naming)}
+                  {describe(diagnostic, naming, t)}
                 </li>
               ))}
             </ul>

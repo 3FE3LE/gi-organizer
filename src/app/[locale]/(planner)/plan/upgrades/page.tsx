@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -7,21 +8,9 @@ import { isLocale } from '@/lib/data/locales';
 import { getDb } from '@/lib/db/client';
 import { accountAgenda, accountCascade } from '@/lib/rules/assemble';
 import { chainsOf } from '@/lib/rules/cascade';
-import { summarizeAgenda, type AgendaItem, type Cost } from '@/lib/rules/agenda';
+import { summarizeAgenda, type AgendaItem } from '@/lib/rules/agenda';
 
 export const dynamic = 'force-dynamic';
-
-const SLOT_TITLES: Record<string, string> = {
-  flower: 'flor', plume: 'pluma', sands: 'arena', goblet: 'cáliz', circlet: 'diadema',
-};
-
-const COST_LABEL: Record<Cost, string> = {
-  free: 'sin coste',
-  displaces: 'se lo quitas a alguien',
-  'needs-levelling': 'hay que subirlo',
-  'breaks-set': 'rompe el set',
-  'needs-farming': 'hay que farmear',
-};
 
 /**
  * What to do next, for the whole account.
@@ -43,27 +32,41 @@ export default async function AgendaPage({ params }: PageProps<'/[locale]/plan/u
   ]);
   const summary = summarizeAgenda(items);
   const chains = chainsOf(cascade);
+  const t = await getTranslations('plan.upgrades');
+  const slotLabel = await getTranslations('common.slot');
+  const costLabel = await getTranslations('common.cost');
 
   const describe = (item: AgendaItem) => {
-    const slot = item.slot ? SLOT_TITLES[item.slot] ?? item.slot : null;
+    const slot = item.slot ? (slotLabel.has(item.slot) ? slotLabel(item.slot) : item.slot) : '';
 
     switch (item.kind) {
       case 'fill-empty-slot':
-        return `${slot} vacía`;
+        return t('emptySlot', { slot });
       case 'fix-goal':
-        return `cambiar ${slot} cierra ${item.fixesGoals.map((prop) => propLabel(catalog, prop)).join(', ')}`;
+        return t('fixGoal', {
+          slot,
+          goals: item.fixesGoals.map((prop) => propLabel(catalog, prop)).join(', '),
+        });
       case 'equip-upgrade':
-        return `mejor ${slot} disponible`;
+        return t('equipUpgrade', { slot });
       case 'level-prospect':
-        return `subir un prospecto de ${slot} (${item.data.rolls} rolls)`;
+        return t('levelProspect', { slot, rolls: String(item.data.rolls) });
       case 'complete-set':
-        return `faltan piezas de ${catalog.artifacts.get(Number(item.data.setId))?.name ?? item.data.setId}` +
-          ` — ${item.data.have}/${item.data.need}`;
+        return t('completeSet', {
+          set: catalog.artifacts.get(Number(item.data.setId))?.name ?? String(item.data.setId),
+          have: String(item.data.have),
+          need: String(item.data.need),
+        });
       case 'acquire-weapon':
-        return `no tienes ${catalog.weapons.get(Number(item.data.weaponId))?.name ?? item.data.weaponId}`;
+        return t('acquireWeapon', {
+          weapon: catalog.weapons.get(Number(item.data.weaponId))?.name ?? String(item.data.weaponId),
+        });
       case 'goal-unreachable':
-        return `${propLabel(catalog, String(item.data.prop))} ${item.data.actual}/${item.data.min}` +
-          ' — nada en tu cuenta lo arregla';
+        return t('goalUnreachable', {
+          prop: propLabel(catalog, String(item.data.prop)),
+          actual: String(item.data.actual),
+          min: String(item.data.min),
+        });
     }
   };
 
@@ -71,8 +74,9 @@ export default async function AgendaPage({ params }: PageProps<'/[locale]/plan/u
     <div className="space-y-6">
       <header className="flex flex-wrap items-baseline justify-between gap-4">
         <p className="font-mono text-xs text-muted">
-          {summary.total} pendientes · {summary.actionableNow} hacibles ya ·{' '}
-          {summary.fixesGoals} cierran una meta
+          {t('pendingSummary', {
+            total: summary.total, actionable: summary.actionableNow, fixes: summary.fixesGoals,
+          })}
         </p>
       </header>
 
@@ -80,17 +84,18 @@ export default async function AgendaPage({ params }: PageProps<'/[locale]/plan/u
         <section>
           <div className="mb-2 flex flex-wrap items-baseline gap-3">
             <h2 className="text-sm font-medium uppercase tracking-wide text-muted">
-              Cadena de mejoras
+              {t('chainHeading')}
             </h2>
             <span className="font-mono text-xs text-muted">
-              {cascade.moves.length} movimiento{cascade.moves.length === 1 ? '' : 's'} ·
-              {' '}+{cascade.netGain.toFixed(1)} en total
-              {cascade.truncated && ' · hay más'}
+              {t('movementsCount', {
+                count: cascade.moves.length,
+                gain: cascade.netGain.toFixed(1),
+                more: cascade.truncated ? t('moreSuffix') : '',
+              })}
             </span>
           </div>
           <p className="mb-3 max-w-prose text-sm text-muted">
-            Aplicados en este orden. Cada movimiento libera una pieza, y algunos solo
-            son posibles gracias al anterior.
+            {t('chainExplainer')}
           </p>
 
           <ol className="space-y-1">
@@ -107,18 +112,21 @@ export default async function AgendaPage({ params }: PageProps<'/[locale]/plan/u
                       {step > 0 ? '↳' : `${index + 1}.`}
                     </span>
                     <span className="w-20 shrink-0 font-mono text-muted">
-                      {SLOT_TITLES[move.slot] ?? move.slot}
+                      {slotLabel.has(move.slot) ? slotLabel(move.slot) : move.slot}
                     </span>
                     <span className="min-w-0 flex-1">
                       {move.fromCharacterId === null
-                        ? 'una pieza libre'
-                        : `la de ${catalog.characters.get(move.fromCharacterId)?.name ?? move.fromCharacterId}`}
+                        ? t('freePiece')
+                        : t('fromCharacter', {
+                            name: catalog.characters.get(move.fromCharacterId)?.name
+                              ?? move.fromCharacterId,
+                          })}
                       {' → '}
                       <span className="text-accent">
                         {catalog.characters.get(move.toCharacterId)?.name ?? move.toCharacterId}
                       </span>
                       {move.fromCharacterId !== null && !move.fromPlanned && (
-                        <span className="text-muted"> (sin build)</span>
+                        <span className="text-muted">{t('noBuildSuffix')}</span>
                       )}
                     </span>
                     <span className="tabular font-mono text-muted">
@@ -126,7 +134,7 @@ export default async function AgendaPage({ params }: PageProps<'/[locale]/plan/u
                       {move.cost > 0 && ` −${move.cost.toFixed(1)}`}
                     </span>
                     {move.breaksSetFor && (
-                      <span className="font-mono text-warn">rompe el set</span>
+                      <span className="font-mono text-warn">{t('breaksSet')}</span>
                     )}
                   </p>
                 ))}
@@ -151,10 +159,9 @@ export default async function AgendaPage({ params }: PageProps<'/[locale]/plan/u
 
       {items.length === 0 ? (
         <p className="max-w-prose text-sm text-muted">
-          Nada que hacer todavía. La cola se llena cuando un slot de equipo declara un rol
-          y ese personaje tiene una build con ese rol —{' '}
+          {t('empty')}{' '}
           <Link href={`/${locale}/teams`} className="underline hover:text-accent">
-            empieza por ahí
+            {t('startHereLink')}
           </Link>
           .
         </p>
@@ -182,7 +189,7 @@ export default async function AgendaPage({ params }: PageProps<'/[locale]/plan/u
                   <span className="min-w-0 flex-1">{describe(item)}</span>
 
                   {item.fixesGoals.length > 0 && (
-                    <span className="font-mono text-accent">meta</span>
+                    <span className="font-mono text-accent">{t('goalTag')}</span>
                   )}
                   {item.delta > 0 && item.kind !== 'goal-unreachable' && (
                     <span className="font-mono text-muted">+{item.delta.toFixed(1)}</span>
@@ -192,7 +199,7 @@ export default async function AgendaPage({ params }: PageProps<'/[locale]/plan/u
                       item.cost === 'free' ? 'text-text' : 'text-muted'
                     }`}
                   >
-                    {COST_LABEL[item.cost]}
+                    {costLabel(item.cost)}
                   </span>
                 </Link>
               </li>

@@ -1,10 +1,11 @@
 import 'server-only';
 
+import { getTranslations } from 'next-intl/server';
+
 import { propLabel, type Catalog } from '@/lib/data/catalog';
 import { resolveIcon } from '@/lib/data/icon';
 import { formatPropValue } from '@/lib/data/props';
 import { isAscended } from '@/lib/data/stats';
-import { SOURCE_LABELS } from '@/lib/data/weapon-sources';
 import { ASSUMED_TARGET } from '@/lib/rules/materials';
 import { wornMainStats, wornSetPlan, wornSubstats } from '@/lib/rules/worn';
 
@@ -40,7 +41,8 @@ export type ObjectiveView = {
 
 export async function objectiveViewFor(context: BuildContext): Promise<ObjectiveView> {
   const { catalog, character, characterId, gear, loadout, locale, suggestions, target } = context;
-  const editor = editorOptionsFor(catalog, character);
+  const editor = await editorOptionsFor(catalog, character);
+  const t = await getTranslations('build');
   const activeBuild = suggestions.build;
   // What the character is already wearing, which is what a goal nobody has
   // written down opens on. See `@/lib/rules/worn`.
@@ -86,8 +88,11 @@ export async function objectiveViewFor(context: BuildContext): Promise<Objective
     weaponRefinement:
       activeBuild?.weaponRefinement ?? target.refinement ?? gear.weapon?.refinement ?? null,
     equippedWeapon: gear.weapon
-      ? `${catalog.weapons.get(gear.weapon.weaponId)?.name ?? `#${gear.weapon.weaponId}`}`
-        + ` Nv.${gear.weapon.level} R${gear.weapon.refinement}`
+      ? t('equippedWeaponLine', {
+          name: catalog.weapons.get(gear.weapon.weaponId)?.name ?? `#${gear.weapon.weaponId}`,
+          level: gear.weapon.level,
+          refinement: gear.weapon.refinement,
+        })
       : null,
     setIds: activeBuild?.setPlan.flatMap((plan) => plan.setIds) ?? wornSetPlan(worn),
     mainStats: Object.values(buildMainStats).some(Boolean)
@@ -96,15 +101,16 @@ export async function objectiveViewFor(context: BuildContext): Promise<Objective
     goals: activeBuild?.goals ?? [],
   };
 
-  const [suggested, all] = await Promise.all([
+  const [suggested, all, suggestedWeaponOptions] = await Promise.all([
     suggestedSets(context),
     allSets(catalog),
+    suggestedWeapons(context),
   ]);
 
   const options: ProgressOptions = {
     roles: editor.roles,
     substats: editor.substats,
-    weapons: { suggested: suggestedWeapons(context), all: editor.weapons },
+    weapons: { suggested: suggestedWeaponOptions, all: editor.weapons },
     sets: { suggested, all },
     mainStatsBySlot: editor.mainStatsBySlot,
     goalProps: goalPropsFor(character).map((prop) => ({
@@ -139,6 +145,7 @@ export async function objectiveViewFor(context: BuildContext): Promise<Objective
  * set.
  */
 async function suggestedSets({ catalog, suggestions }: BuildContext): Promise<SetOption[]> {
+  const t = await getTranslations('build');
   const setName = (setId: number) => catalog.artifacts.get(setId)?.name ?? `#${setId}`;
 
   const options: SetOption[] = [];
@@ -147,18 +154,22 @@ async function suggestedSets({ catalog, suggestions }: BuildContext): Promise<Se
   for (const suggestion of suggestions.sets.slice(0, 8)) {
     const rank = suggestion.externalRank === null ? '·' : `#${suggestion.externalRank + 1}`;
     const holders = suggestion.blocked === 'conflicts-in-team'
-      ? ` · lo lleva ${suggestion.conflictsWith
-          .map((id) => catalog.characters.get(id)?.name ?? `#${id}`).join(', ')}`
+      ? t('heldByOne', {
+          names: suggestion.conflictsWith
+            .map((id) => catalog.characters.get(id)?.name ?? `#${id}`).join(', '),
+        })
       : '';
     const missing = suggestion.complete
       ? ''
-      : ` · ${suggestion.available}/${suggestion.needed} · a farmear`;
+      : t('missingToFarm', { available: suggestion.available, needed: suggestion.needed });
     // What the ranking had in mind for it, so a 2+2 half does not read as a
     // four-piece plan.
     const pairing = suggestion.setIds.length > 1
-      ? ` · 2+2 con ${suggestion.setIds
-          .filter((id) => id !== suggestion.setIds[0]).map(setName).join(' + ')}`
-      : ` · ${suggestion.pieces}pc`;
+      ? t('pairingTwoPlusTwo', {
+          names: suggestion.setIds
+            .filter((id) => id !== suggestion.setIds[0]).map(setName).join(' + '),
+        })
+      : t('pairingPieces', { pieces: suggestion.pieces });
 
     for (const setId of suggestion.setIds) {
       if (seen.has(setId)) continue;
@@ -203,7 +214,9 @@ async function setOption(catalog: Catalog, setId: number): Promise<SetOption> {
   };
 }
 
-function suggestedWeapons({ catalog, suggestions }: BuildContext): Option[] {
+async function suggestedWeapons({ catalog, suggestions }: BuildContext): Promise<Option[]> {
+  const t = await getTranslations('build');
+  const sourceLabel = await getTranslations('common.weaponSource');
   const seen = new Set<number>();
 
   return suggestions.weapons.slice(0, 8).flatMap((suggestion) => {
@@ -211,11 +224,11 @@ function suggestedWeapons({ catalog, suggestions }: BuildContext): Option[] {
     seen.add(suggestion.weaponId);
 
     const rank = suggestion.externalRank === null ? '·' : `#${suggestion.externalRank + 1}`;
-    // Only reachable weapons are suggested now, so "no la tienes" always comes
+    // Only reachable weapons are suggested now, so "not owned" always comes
     // with the way to get it.
     const stock = suggestion.owned === 0
-      ? SOURCE_LABELS[suggestion.source ?? 'forge']
-      : suggestion.spare > 0 ? `${suggestion.spare} libre` : 'ya comprometida';
+      ? sourceLabel(suggestion.source ?? 'forge')
+      : suggestion.spare > 0 ? t('weaponFree', { spare: suggestion.spare }) : t('weaponCommitted');
     const refinement = suggestion.minRefinement > 1 ? ` R${suggestion.minRefinement}+` : '';
 
     return [{

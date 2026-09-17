@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -35,6 +36,7 @@ export default async function ArtifactsPage({
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
 
+  const t = await getTranslations('artifacts');
   const filters = await loadArtifactFilters(searchParams);
   const catalog = await getCatalog(locale);
   const db = getDb();
@@ -89,13 +91,13 @@ export default async function ArtifactsPage({
     <div className="space-y-4">
       <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <h1 className="text-lg font-medium">Artefactos</h1>
+          <h1 className="text-lg font-medium">{t('title')}</h1>
           <p className="font-mono text-xs text-muted">
             {shown.length === all.length
-              ? `${all.length} piezas`
-              : `${shown.length} de ${all.length} piezas`}
+              ? t('countAll', { count: all.length })
+              : t('countFiltered', { shown: shown.length, total: all.length })}
             {' · '}
-            <span className="text-accent">{perfect}</span> con algún substat perfecto
+            <span className="text-accent">{perfect}</span> {t('perfectSuffix')}
           </p>
         </div>
         <RankControls />
@@ -111,9 +113,9 @@ export default async function ArtifactsPage({
 
       {shown.length === 0 ? (
         <p className="max-w-prose text-sm text-muted">
-          Ninguna pieza pasa ese filtro.{' '}
+          {t('empty')}{' '}
           <Link href={href(base, filters, CLEARED)} className="underline hover:text-accent">
-            Quítalos todos
+            {t('clearAllLink')}
           </Link>.
         </p>
       ) : (

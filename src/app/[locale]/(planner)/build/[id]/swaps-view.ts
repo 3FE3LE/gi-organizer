@@ -1,10 +1,11 @@
 import 'server-only';
 
+import { getTranslations } from 'next-intl/server';
+
 import { propLabel } from '@/lib/data/catalog';
 import { resolveIcon } from '@/lib/data/icon';
 
 import type { BuildContext } from './context';
-import { SLOT_TITLES } from './labels';
 import type { SlotPanel, SwapRow } from './swaps';
 
 /**
@@ -16,13 +17,14 @@ import type { SlotPanel, SwapRow } from './swaps';
  */
 export async function swapPanelsFor(context: BuildContext): Promise<SlotPanel[]> {
   const { catalog, characterId, plannedSetIds, suggestions, format } = context;
+  const slotLabel = await getTranslations('common.slot');
 
   const setName = (setId: number) => catalog.artifacts.get(setId)?.name ?? `#${setId}`;
   const holderOf = (instanceId: string) => suggestions.holderOf.get(instanceId) ?? null;
 
   return Promise.all(suggestions.comparisons.map(async (comparison): Promise<SlotPanel> => ({
     slot: comparison.slot,
-    title: SLOT_TITLES[comparison.slot] ?? comparison.slot,
+    title: slotLabel.has(comparison.slot) ? slotLabel(comparison.slot) : comparison.slot,
     equipped: comparison.equipped
       ? {
           setName: setName(comparison.equipped.setId),

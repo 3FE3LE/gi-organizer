@@ -1,6 +1,7 @@
 'use server';
 
 import { refresh } from 'next/cache';
+import { getTranslations } from 'next-intl/server';
 
 import { AssignmentViolation, applyShowcase, applyStaged } from '@/lib/player/import';
 
@@ -24,6 +25,7 @@ export async function applyStagedAction(
 ): Promise<ActionState> {
   const token = String(form.get('token') ?? '');
   const onAbsent = form.get('onAbsent') === 'remove' ? 'remove' : 'keep';
+  const t = await getTranslations('data.import.actions');
 
   try {
     const result = await applyStaged(token, { onAbsent });
@@ -31,22 +33,27 @@ export async function applyStagedAction(
 
     const { artifacts, weapons } = result.persisted;
     const repaired = result.repairs.length
-      ? `; ${result.repairs.length} imposible assignment(s) dropped`
+      ? t('repairsSuffix', { count: result.repairs.length })
       : '';
 
     return {
       status: 'ok',
-      message:
-        `artefactos +${artifacts.inserted} ~${artifacts.updated} -${artifacts.deleted} · ` +
-        `armas +${weapons.inserted} ~${weapons.updated} -${weapons.deleted} · ` +
-        `${result.charactersUpserted} personajes${repaired}`,
+      message: t('appliedMessage', {
+        artifactsInserted: artifacts.inserted,
+        artifactsUpdated: artifacts.updated,
+        artifactsDeleted: artifacts.deleted,
+        weaponsInserted: weapons.inserted,
+        weaponsUpdated: weapons.updated,
+        weaponsDeleted: weapons.deleted,
+        characters: result.charactersUpserted,
+        repaired,
+      }),
     };
   } catch (error) {
     if (error instanceof AssignmentViolation) {
       return {
         status: 'error',
-        message:
-          `${error.conflicts.length} conflicto(s) de exclusividad; no se escribió nada`,
+        message: t('exclusivityConflicts', { count: error.conflicts.length }),
       };
     }
     return { status: 'error', message: (error as Error).message };
@@ -58,6 +65,7 @@ export async function applyShowcaseAction(
   form: FormData,
 ): Promise<ActionState> {
   const uid = String(form.get('uid') ?? '').trim();
+  const t = await getTranslations('data.import.actions');
 
   try {
     const result = await applyShowcase(uid);
@@ -66,10 +74,14 @@ export async function applyShowcaseAction(
     const { artifacts, weapons } = result.persisted;
     return {
       status: 'ok',
-      message:
-        `semilla de ${uid}: artefactos +${artifacts.inserted} ~${artifacts.updated} · ` +
-        `armas +${weapons.inserted} ~${weapons.updated} · ` +
-        `${result.charactersUpserted} personajes`,
+      message: t('showcaseAppliedMessage', {
+        uid,
+        artifactsInserted: artifacts.inserted,
+        artifactsUpdated: artifacts.updated,
+        weaponsInserted: weapons.inserted,
+        weaponsUpdated: weapons.updated,
+        characters: result.charactersUpserted,
+      }),
     };
   } catch (error) {
     return { status: 'error', message: (error as Error).message };

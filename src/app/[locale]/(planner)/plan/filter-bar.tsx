@@ -1,19 +1,17 @@
+import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
 import type { Catalog } from '@/lib/data/catalog';
 import type { Team } from '@/lib/player/teams';
 import {
   GAME_REGIONS,
-  REGION_LABEL,
   gameWeekStrip,
   type GameRegion,
 } from '@/lib/rules/game-day';
 
 import { chooseRegion } from './region-actions';
 import {
-  DAY_SHORT,
   REASONS,
-  REASON_LABEL,
   type Filters,
   href,
   toggle,
@@ -54,7 +52,7 @@ function Chip({
  * view while that panel decided who counted at all, which read as two lists of
  * the same roster disagreeing about what clicking a face meant.
  */
-export function FilterBar({
+export async function FilterBar({
   base,
   filters,
   catalog,
@@ -68,23 +66,30 @@ export function FilterBar({
   /** The game server whose clock the day strip is read against. */
   region: GameRegion;
 }) {
+  const t = await getTranslations('plan');
+  const reasonLabel = await getTranslations('common.reason');
+  const weekdayShort = await getTranslations('common.weekdayShort');
+  const regionLabel = await getTranslations('common.region');
+
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <span className="w-16 font-mono text-[0.65rem] uppercase text-muted">vista</span>
+        <span className="w-16 font-mono text-[0.65rem] uppercase text-muted">
+          {t('viewLabel')}
+        </span>
         <Chip
           to={href(base, filters, { range: 'day' })}
           active={filters.range === 'day'}
-          title="Lo que rota un día concreto, en tarjetas compactas"
+          title={t('byDayTitle')}
         >
-          por día
+          {t('byDayChip')}
         </Chip>
         <Chip
           to={href(base, filters, { range: 'all' })}
           active={filters.range === 'all'}
-          title="Todo lo que falta, sin importar el día"
+          title={t('allBacklogTitle')}
         >
-          todo el backlog
+          {t('allBacklogChip')}
         </Chip>
       </div>
 
@@ -104,7 +109,9 @@ export function FilterBar({
                     : 'border-edge text-muted hover:border-accent hover:text-text'
                 }`}
               >
-                <span className="block font-mono text-[0.6rem] uppercase">{DAY_SHORT[day]}</span>
+                <span className="block font-mono text-[0.6rem] uppercase">
+                  {weekdayShort(day)}
+                </span>
                 <span className="block font-mono text-sm tabular">{date}</span>
               </Link>
             );
@@ -113,29 +120,33 @@ export function FilterBar({
       )}
 
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <span className="w-16 font-mono text-[0.65rem] uppercase text-muted">servidor</span>
+        <span className="w-16 font-mono text-[0.65rem] uppercase text-muted">
+          {t('serverLabel')}
+        </span>
         {GAME_REGIONS.map((entry) => (
           <form key={entry} action={chooseRegion.bind(null, entry)}>
             <button
               type="submit"
               aria-current={region === entry ? 'true' : undefined}
-              title="El día rota con el reloj del servidor y cambia a las 04:00, no a medianoche"
+              title={t('serverTitle')}
               className={`rounded border px-2 py-1 text-xs ${
                 region === entry
                   ? 'border-accent bg-surface-2 text-accent'
                   : 'border-edge text-muted hover:border-accent hover:text-text'
               }`}
             >
-              {REGION_LABEL[entry]}
+              {regionLabel(entry)}
             </button>
           </form>
         ))}
       </div>
 
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <span className="w-16 font-mono text-[0.65rem] uppercase text-muted">equipo</span>
+        <span className="w-16 font-mono text-[0.65rem] uppercase text-muted">
+          {t('teamLabel')}
+        </span>
         <Chip to={href(base, filters, { team: null, chars: [] })} active={!filters.team}>
-          todos
+          {t('allTeams')}
         </Chip>
         {teams.map((entry) => (
           <Chip
@@ -152,9 +163,11 @@ export function FilterBar({
       </div>
 
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <span className="w-16 font-mono text-[0.65rem] uppercase text-muted">tipo</span>
+        <span className="w-16 font-mono text-[0.65rem] uppercase text-muted">
+          {t('reasonLabel')}
+        </span>
         <Chip to={href(base, filters, { reason: [] })} active={filters.reason.length === 0}>
-          todo
+          {t('allReasons')}
         </Chip>
         {REASONS.map((reason) => (
           <Chip
@@ -162,7 +175,7 @@ export function FilterBar({
             to={href(base, filters, { reason: toggle(filters.reason, reason) })}
             active={filters.reason.includes(reason)}
           >
-            {REASON_LABEL[reason]}
+            {reasonLabel(reason)}
           </Chip>
         ))}
 
@@ -173,9 +186,9 @@ export function FilterBar({
               chars: [],
             })}
             active={filters.assume}
-            title="Cuenta a los personajes sin objetivo como si fueran a 90 y talentos 9"
+            title={t('assumeTitle')}
           >
-            {filters.assume ? '✓ ' : ''}incluir sin objetivo
+            {filters.assume ? '✓ ' : ''}{t('assumeToggle')}
           </Chip>
         </span>
       </div>

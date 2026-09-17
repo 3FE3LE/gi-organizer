@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { getTranslations } from 'next-intl/server';
+
 import { propLabel } from '@/lib/data/catalog';
 import { resolveIcon } from '@/lib/data/icon';
 import { ARTIFACT_SLOTS } from '@/lib/enka/slots';
@@ -12,7 +14,6 @@ import {
 
 import type { BuildContext } from './context';
 import type { CandidateView, SlotView } from './gear-slot';
-import { SLOT_TITLES } from './labels';
 
 /**
  * One slot, with the pieces that could fill it.
@@ -35,8 +36,9 @@ export function gearSlotFor(context: BuildContext, key: string): Promise<SlotVie
   return Promise.resolve(null);
 }
 
-function candidateViews(context: BuildContext) {
+async function candidateViews(context: BuildContext) {
   const { catalog, suggestions, format } = context;
+  const t = await getTranslations('build');
 
   // How well each owned piece serves this build, so the slot list is ordered by
   // usefulness rather than by rarity. Set membership is not part of it: a
@@ -51,9 +53,9 @@ function candidateViews(context: BuildContext) {
 
     const fit = scored
       ? [
-          scored.mainStatWanted === false ? 'main stat fuera' : null,
+          scored.mainStatWanted === false ? t('mainStatOff') : null,
           scored.mainStatWanted === true ? 'main stat ok' : null,
-          `${scored.score.toFixed(1)} rolls útiles`,
+          t('usefulRolls', { score: scored.score.toFixed(1) }),
         ].filter(Boolean).join(' · ')
       : null;
 
@@ -94,7 +96,8 @@ async function artifactSlot(
   slot: (typeof ARTIFACT_SLOTS)[number],
 ): Promise<SlotView> {
   const { db, gear, characterId, plannedSetIds } = context;
-  const { pieceView } = candidateViews(context);
+  const { pieceView } = await candidateViews(context);
+  const slotLabel = await getTranslations('common.slot');
 
   const equipped = gear.bySlot.get(slot) ?? null;
   const free = await artifactCandidates(slot, { limit: 40 }, db);
@@ -105,7 +108,7 @@ async function artifactSlot(
 
   return {
     key: slot,
-    title: SLOT_TITLES[slot] ?? slot,
+    title: slotLabel.has(slot) ? slotLabel(slot) : slot,
     kind: 'artifact',
     equipped: equipped ? await pieceView(equipped) : null,
     candidates: (await Promise.all([...free, ...worthTaking].map(pieceView)))
@@ -116,7 +119,7 @@ async function artifactSlot(
 
 async function weaponSlot(context: BuildContext): Promise<SlotView> {
   const { catalog, character, characterId, db, gear, suggestions, target } = context;
-  const { weaponView } = candidateViews(context);
+  const { weaponView } = await candidateViews(context);
 
   // Only weapons this character can hold. The catalog knows; the schema cannot.
   const usableWeaponIds = (catalog.index.weaponsByType.get(character.weaponType) ?? [])

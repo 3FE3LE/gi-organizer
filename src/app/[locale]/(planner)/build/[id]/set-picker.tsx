@@ -1,6 +1,7 @@
 'use client';
 
 import { ChevronDown, Search } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 
 import { AssetImage } from '@/components/asset-image';
@@ -59,6 +60,7 @@ export function SetPicker({
   placeholder: string;
   activePieces: 2 | 4;
 }) {
+  const t = useTranslations('build');
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [hinting, setHinting] = useState(false);
@@ -86,10 +88,10 @@ export function SetPicker({
     const shown = new Set(suggested.map((option) => option.value));
 
     return [
-      { label: 'Sugeridos para este personaje', items: suggested },
-      { label: 'Todos', items: options.all.filter((o) => matches(o) && !shown.has(o.value)) },
+      { label: t('suggestedForCharacter'), items: suggested },
+      { label: t('allOption'), items: options.all.filter((o) => matches(o) && !shown.has(o.value)) },
     ].filter((group) => group.items.length > 0);
-  }, [options, query]);
+  }, [options, query, t]);
 
   useEffect(() => {
     if (!open) return;
@@ -165,8 +167,8 @@ export function SetPicker({
               autoFocus
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="buscar set…"
-              aria-label="Buscar set"
+              placeholder={t('searchSetPlaceholder')}
+              aria-label={t('searchSetAria')}
               className="w-full bg-transparent py-2 text-xs focus:outline-none"
             />
           </div>
@@ -215,7 +217,7 @@ export function SetPicker({
 
             {groups.length === 0 && (
               <li className="px-2 py-3 text-center text-xs text-muted">
-                Ningún set con ese nombre.
+                {t('noSetFound')}
               </li>
             )}
           </ul>
@@ -269,6 +271,7 @@ function Effects({
   option: SetOption;
   activePieces: 2 | 4;
 }) {
+  const t = useTranslations('build');
   if (option.effects.length === 0) return null;
 
   return (
@@ -298,7 +301,7 @@ function Effects({
       </ul>
       {activePieces === 2 && (
         <p className="mt-2 font-mono text-[0.6rem] text-muted">
-          En 2+2 sólo cuenta el bono de 2 piezas.
+          {t('twoPlusTwoNote')}
         </p>
       )}
     </div>

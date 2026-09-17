@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useTransition } from 'react';
 import { useQueryStates } from 'nuqs';
 
@@ -8,9 +9,7 @@ import { SCALERS } from '@/lib/rules/worth';
 import {
   CRIT_FILTERS,
   CRIT_STEP_LABELS,
-  SCALER_LABELS,
   SORTS,
-  SORT_LABELS,
   artifactParsers,
 } from './filters';
 
@@ -36,31 +35,33 @@ export function FilterInputs({
   /** Empty for a slot whose main stat the game fixed, and before one is picked. */
   ownedMains: { prop: string; name: string }[];
 }) {
+  const t = useTranslations('artifacts');
+  const critRatingLabel = useTranslations('common.critRating');
   const [pending, startTransition] = useTransition();
   const [filters, setFilters] = useQueryStates(artifactParsers, {
     shallow: false,
     startTransition,
   });
 
-  // 0 is "cualquiera"; the rest index into the cut-offs.
+  // 0 is "any"; the rest index into the cut-offs.
   const step = filters.cv === null ? 0 : CRIT_FILTERS.indexOf(filters.cv) + 1;
   const reading = step === 0
-    ? 'cualquiera'
-    : `${CRIT_STEP_LABELS[step - 1]} · CV ${CRIT_FILTERS[step - 1]} o más`;
+    ? t('any')
+    : t('cvOrMore', { rating: critRatingLabel(CRIT_STEP_LABELS[step - 1]), value: CRIT_FILTERS[step - 1] });
 
   return (
     <div
       data-pending={pending || undefined}
       className="grid gap-x-6 gap-y-4 transition-opacity data-pending:opacity-50 sm:grid-cols-2"
     >
-      <Field label="crit value" hint={reading}>
+      <Field label={t('critValueLabel')} hint={reading}>
         <input
           type="range"
           min={0}
           max={CRIT_FILTERS.length}
           step={1}
           value={step}
-          aria-label="Crit value mínimo"
+          aria-label={t('cvMinAria')}
           aria-valuetext={reading}
           onChange={(event) => {
             const next = Number(event.target.value);
@@ -92,13 +93,13 @@ export function FilterInputs({
       </Field>
 
       <div className={`grid gap-4 ${ownedMains.length > 0 ? 'sm:grid-cols-2' : ''}`}>
-        <Field label="set">
+        <Field label={t('setLabel')}>
           <Select
             value={filters.set === null ? '' : String(filters.set)}
             onChange={(value) => setFilters({ set: value === '' ? null : Number(value) })}
-            aria-label="Set"
+            aria-label={t('setAria')}
           >
-            <option value="">todos ({ownedSets.length})</option>
+            <option value="">{t('allSetsWithCount', { count: ownedSets.length })}</option>
             {ownedSets.map((set) => (
               <option key={set.setId} value={set.setId}>{set.name}</option>
             ))}
@@ -110,13 +111,13 @@ export function FilterInputs({
             which main stat is right is the build's decision and not the box's.
             Absent until a slot makes it a question with more than one answer. */}
         {ownedMains.length > 0 && (
-          <Field label="main stat">
+          <Field label={t('mainStatLabel')}>
             <Select
               value={filters.main ?? ''}
               onChange={(value) => setFilters({ main: value === '' ? null : value })}
-              aria-label="Main stat"
+              aria-label={t('mainStatAria')}
             >
-              <option value="">cualquiera ({ownedMains.length})</option>
+              <option value="">{t('anyWithCount', { count: ownedMains.length })}</option>
               {ownedMains.map((main) => (
                 <option key={main.prop} value={main.prop}>{main.name}</option>
               ))}
@@ -138,6 +139,9 @@ export function FilterInputs({
  * cards grey out the rolls it prices at nothing.
  */
 export function RankControls() {
+  const t = useTranslations('artifacts');
+  const scalerLabel = useTranslations('common.scaler');
+  const sortLabel = useTranslations('common.sort');
   const [pending, startTransition] = useTransition();
   const [filters, setFilters] = useQueryStates(artifactParsers, {
     shallow: false,
@@ -150,29 +154,29 @@ export function RankControls() {
       className="flex flex-wrap items-center gap-x-3 gap-y-1.5 transition-opacity data-pending:opacity-50"
     >
       <label className="flex items-center gap-1.5">
-        <span className="font-mono text-[0.6rem] uppercase text-muted">escala</span>
+        <span className="font-mono text-[0.6rem] uppercase text-muted">{t('scalerLabel')}</span>
         <Select
           value={filters.scaler ?? ''}
           onChange={(value) =>
             setFilters({ scaler: value === '' ? null : (value as typeof filters.scaler) })}
-          aria-label="Escalador que cuenta como útil"
+          aria-label={t('scalerAria')}
         >
-          <option value="">general · mejor</option>
+          <option value="">{t('generalBest')}</option>
           {SCALERS.map((scaler) => (
-            <option key={scaler} value={scaler}>{SCALER_LABELS[scaler]}</option>
+            <option key={scaler} value={scaler}>{scalerLabel(scaler)}</option>
           ))}
         </Select>
       </label>
 
       <label className="flex items-center gap-1.5">
-        <span className="font-mono text-[0.6rem] uppercase text-muted">orden</span>
+        <span className="font-mono text-[0.6rem] uppercase text-muted">{t('sortLabel')}</span>
         <Select
           value={filters.sort}
           onChange={(value) => setFilters({ sort: value as typeof filters.sort })}
-          aria-label="Orden"
+          aria-label={t('sortAria')}
         >
           {SORTS.map((sort) => (
-            <option key={sort} value={sort}>{SORT_LABELS[sort]}</option>
+            <option key={sort} value={sort}>{sortLabel(sort)}</option>
           ))}
         </Select>
       </label>

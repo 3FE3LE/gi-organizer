@@ -1,3 +1,5 @@
+import { getTranslations } from 'next-intl/server';
+
 import { GameIcon } from '@/components/game-icon';
 import { type Catalog, propLabel, resolveCosts } from '@/lib/data/catalog';
 import type { Locale } from '@/lib/data/locales';
@@ -23,6 +25,7 @@ export async function CharacterSheet({
   character: CharacterView;
   locale: Locale;
 }) {
+  const t = await getTranslations('characterSheet');
   const detail = await getCharacterDetailStrings(locale, character.id);
   const ascension = resolveCosts(catalog, character.costs);
   const talentCosts = resolveCosts(catalog, character.talentCosts);
@@ -34,12 +37,12 @@ export async function CharacterSheet({
 
   return (
     <div className="space-y-10">
-      <Section title="Stats por nivel">
+      <Section title={t('statsByLevel')}>
         <div className="overflow-x-auto">
           <table className="w-full min-w-md border-collapse font-mono text-xs">
             <thead>
               <tr className="text-muted">
-                <th className="border-b border-edge px-2 py-1 text-left">Nivel</th>
+                <th className="border-b border-edge px-2 py-1 text-left">{t('level')}</th>
                 {statKeys.map((key) => (
                   <th key={key} className="border-b border-edge px-2 py-1 text-right">
                     {propLabel(catalog, statRowProp(key, character.substatType))}
@@ -69,16 +72,16 @@ export async function CharacterSheet({
         </div>
       </Section>
 
-      <Section title="Materiales de ascenso">
-        <CostList costs={ascension} />
+      <Section title={t('ascensionMaterials')}>
+        <CostList costs={ascension} t={t} />
       </Section>
 
-      <Section title="Materiales de talentos">
-        <CostList costs={talentCosts} />
+      <Section title={t('talentMaterials')}>
+        <CostList costs={talentCosts} t={t} />
       </Section>
 
       {detail.talents && (
-        <Section title="Talentos">
+        <Section title={t('talents')}>
           <ul className="space-y-3">
             {[...detail.talents.combat, ...detail.talents.passive].map((talent) => (
               <li key={talent.name} className="rounded border border-edge bg-surface p-3">
@@ -125,8 +128,13 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function CostList({ costs }: { costs: ReturnType<typeof resolveCosts> }) {
-  if (costs.length === 0) return <p className="text-sm text-muted">Sin datos.</p>;
+function CostList({
+  costs, t,
+}: {
+  costs: ReturnType<typeof resolveCosts>;
+  t: Awaited<ReturnType<typeof getTranslations<'characterSheet'>>>;
+}) {
+  if (costs.length === 0) return <p className="text-sm text-muted">{t('noData')}</p>;
 
   return (
     <ul className="space-y-2">

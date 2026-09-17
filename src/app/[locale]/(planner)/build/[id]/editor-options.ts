@@ -1,11 +1,11 @@
+import { getTranslations } from 'next-intl/server';
+
 import { propLabel, type Catalog } from '@/lib/data/catalog';
 import { elementDamageProp } from '@/lib/data/elements';
 import type { CharacterView } from '@/lib/data/types';
 import { CHOOSABLE_SLOTS } from '@/lib/rules/piece-score';
-import { ROLE_LABELS } from '@/lib/rules/role-labels';
+import { roleLabel } from '@/lib/rules/role-labels';
 import { TEAM_ROLES } from '@/lib/rules/types';
-
-import { SLOT_TITLES } from './labels';
 
 /**
  * What the build editor is allowed to offer.
@@ -36,13 +36,15 @@ const BASE_MAIN_STATS = [
   'FIGHT_PROP_ELEMENT_MASTERY',
 ];
 
-export type EditorOptions = ReturnType<typeof editorOptionsFor>;
+export type EditorOptions = Awaited<ReturnType<typeof editorOptionsFor>>;
 
-export function editorOptionsFor(catalog: Catalog, character: CharacterView) {
+export async function editorOptionsFor(catalog: Catalog, character: CharacterView) {
   const propOption = (prop: string): Option => ({ value: prop, label: propLabel(catalog, prop) });
+  const t = await getTranslations('common.role');
+  const slotLabel = await getTranslations('common.slot');
 
   return {
-    roles: TEAM_ROLES.map((role) => ({ value: role, label: ROLE_LABELS[role] })),
+    roles: TEAM_ROLES.map((role) => ({ value: role, label: roleLabel(t, role) })),
     weapons: (catalog.index.weaponsByType.get(character.weaponType) ?? []).map((weapon) => ({
       value: String(weapon.id), label: `${weapon.rarity}★ ${weapon.name}`,
     })),
@@ -55,7 +57,9 @@ export function editorOptionsFor(catalog: Catalog, character: CharacterView) {
       ].map(propOption),
     },
     substats: SUBSTAT_PROPS.map(propOption),
-    slots: CHOOSABLE_SLOTS.map((slot) => ({ key: slot, label: SLOT_TITLES[slot] ?? slot })),
+    slots: CHOOSABLE_SLOTS.map((slot) => ({
+      key: slot, label: slotLabel.has(slot) ? slotLabel(slot) : slot,
+    })),
   };
 }
 

@@ -1,3 +1,5 @@
+import { getTranslations } from 'next-intl/server';
+
 import { GameIcon } from '@/components/game-icon';
 import { type Catalog, enkaEntry, propLabel } from '@/lib/data/catalog';
 import { elementColor, elementDamageProp } from '@/lib/data/elements';
@@ -28,14 +30,6 @@ import { GearActions } from './gear-actions';
 
 const SLOT_ORDER = ['flower', 'plume', 'sands', 'goblet', 'circlet'] as const;
 
-const SLOT_TITLES: Record<string, string> = {
-  flower: 'Flor',
-  plume: 'Pluma',
-  sands: 'Arena',
-  goblet: 'Cáliz',
-  circlet: 'Diadema',
-};
-
 /** Loud only where it earns it. */
 const CRIT_TONE: Record<ReturnType<typeof critRating>, string> = {
   ninguno: 'text-muted',
@@ -63,6 +57,7 @@ export async function CharacterPanel({
   const detail = await getCharacterDetailStrings(locale, character.id);
   const entry = enkaEntry(catalog, character.id, loadout.skillDepotId);
   const accent = elementColor(character.elementType);
+  const t = await getTranslations('build');
 
   const talentLevels = [loadout.talent.auto, loadout.talent.skill, loadout.talent.burst];
   const talentBonus = loadout.talentBonus
@@ -79,7 +74,7 @@ export async function CharacterPanel({
 
   const talents = [0, 1, 2].map((index) => ({
     icon: talentIcons[index] ?? null,
-    name: talentNames[index] ?? `Talento ${index + 1}`,
+    name: talentNames[index] ?? t('talentFallback', { n: index + 1 }),
     level: talentLevels[index],
     bonus: talentBonus[index],
   }));
@@ -190,7 +185,7 @@ export async function CharacterPanel({
           <header className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1">
             <h1 className="text-lg font-medium">{character.name}</h1>
             <span className="rounded border border-edge bg-surface-2 px-1.5 py-0.5 font-mono text-xs">
-              Nv. {loadout.level}
+              {t('levelPrefix')} {loadout.level}
             </span>
             <span className="font-mono text-xs" style={{ color: accent }}>
               {'★'.repeat(character.rarity)}
@@ -199,12 +194,12 @@ export async function CharacterPanel({
               {character.elementText} · {character.weaponText}
             </span>
             {!loadout.known && (
-              <span className="font-mono text-xs text-warn">sin ficha en el roster</span>
+              <span className="font-mono text-xs text-warn">{t('noSheetInRoster')}</span>
             )}
           </header>
 
           <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">
-            Atributos del personaje
+            {t('characterAttributes')}
           </h3>
           <dl className="grid gap-x-6 sm:grid-cols-2">
             <StatRow
@@ -276,7 +271,7 @@ export async function CharacterPanel({
           </dl>
 
           <h3 className="mb-2 mt-5 text-xs font-medium uppercase tracking-wide text-muted">
-            Arma
+            {t('weaponHeading')}
           </h3>
           {loadout.weapon && weaponDefinition ? (
             <div className="group relative flex items-center gap-3 rounded-lg border border-edge bg-surface-2 p-3">
@@ -295,7 +290,7 @@ export async function CharacterPanel({
                 <p className="flex flex-wrap items-center gap-2">
                   <span className="truncate text-sm">{weaponDefinition.name}</span>
                   <span className="rounded border border-edge px-1 font-mono text-[0.65rem] text-muted">
-                    Nv. {loadout.weapon.level}
+                    {t('levelPrefix')} {loadout.weapon.level}
                   </span>
                   <span className="font-mono text-[0.65rem] text-accent">
                     {'★'.repeat(weaponDefinition.rarity)}
@@ -330,7 +325,7 @@ export async function CharacterPanel({
             </div>
           ) : (
             <div className="group relative rounded-lg border border-dashed border-edge px-3 py-4">
-              <p className="text-sm text-muted">Sin arma equipada.</p>
+              <p className="text-sm text-muted">{t('noWeaponEquipped')}</p>
               <GearActions
                 characterId={character.id}
                 locale={locale}
@@ -345,7 +340,9 @@ export async function CharacterPanel({
 
       <div className="border-t border-edge p-4">
         <div className="mb-2 flex flex-wrap items-baseline gap-x-3">
-          <h3 className="text-xs font-medium uppercase tracking-wide text-muted">Artefactos</h3>
+          <h3 className="text-xs font-medium uppercase tracking-wide text-muted">
+            {t('artifactsHeading')}
+          </h3>
           {loadout.setCounts.map(([setId, count]) => (
             <span key={setId} className="font-mono text-xs text-muted">
               {catalog.artifacts.get(setId)?.name ?? `#${setId}`}{' '}
@@ -418,7 +415,7 @@ function StatRow({
   );
 }
 
-function ArtifactCard({
+async function ArtifactCard({
   catalog,
   slot,
   piece,
@@ -433,20 +430,24 @@ function ArtifactCard({
   characterId: number;
   buildId: string | null;
 }) {
+  const t = await getTranslations('build');
+  const slotLabel = await getTranslations('common.slot');
+  const title = slotLabel.has(slot) ? slotLabel(slot) : slot;
+
   const actions = (
     <GearActions
       characterId={characterId}
       locale={locale}
       buildId={buildId}
       slot={slot}
-      title={SLOT_TITLES[slot] ?? slot}
+      title={title}
     />
   );
 
   if (!piece) {
     return (
       <li className="group relative rounded-lg border border-dashed border-edge p-3 text-xs text-muted">
-        {SLOT_TITLES[slot] ?? slot} · vacío
+        {title} · {t('emptySlotText')}
         {actions}
       </li>
     );
@@ -458,6 +459,7 @@ function ArtifactCard({
   // there is one: a zero on a mastery piece reads as a verdict, and it is not.
   const crit = critValue(piece.substats);
   const rating = critRating(crit);
+  const critRatingLabel = await getTranslations('common.critRating');
 
   return (
     <li className="group relative flex flex-col rounded-lg border border-edge bg-surface-2 p-3">
@@ -467,12 +469,12 @@ function ArtifactCard({
             {set?.pieces[piece.slot]?.name ?? set?.name ?? `#${piece.setId}`}
           </p>
           <p className="mt-1 flex flex-wrap items-center gap-x-2 font-mono text-[0.65rem]">
-            <span className="rounded bg-ink px-1 text-muted">Nv. {piece.level}</span>
+            <span className="rounded bg-ink px-1 text-muted">{t('levelPrefix')} {piece.level}</span>
             <span className="text-accent">{'★'.repeat(piece.rarity)}</span>
             {crit > 0 && (
               <span
                 className={`tabular ${CRIT_TONE[rating]}`}
-                title={`Crit value: 2 × prob. CRIT + daño CRIT = ${crit.toFixed(1)} · ${rating}`}
+                title={t('critValueHint', { value: crit.toFixed(1), rating: critRatingLabel(rating) })}
               >
                 CV {crit.toFixed(1)}
               </span>

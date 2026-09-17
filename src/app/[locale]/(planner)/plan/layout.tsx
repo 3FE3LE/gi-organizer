@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
 import { SectionTabs } from '@/components/section-tabs';
@@ -11,14 +12,15 @@ import { isLocale } from '@/lib/data/locales';
 export default async function PlanLayout({ children, params }: LayoutProps<'/[locale]/plan'>) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
+  const t = await getTranslations('plan');
 
   return (
     <div className="space-y-6">
       <h1 className="text-lg font-medium">Plan</h1>
       <SectionTabs
         tabs={[
-          { href: `/${locale}/plan`, label: 'Qué farmear', hint: 'Hoy, o todo el backlog' },
-          { href: `/${locale}/plan/upgrades`, label: 'Qué mejorar', hint: 'La cola de cambios' },
+          { href: `/${locale}/plan`, label: t('farmTab'), hint: t('farmHint') },
+          { href: `/${locale}/plan/upgrades`, label: t('upgradesTab'), hint: t('upgradesHint') },
         ]}
       />
       {children}

@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -13,7 +14,7 @@ import { charactersIn, domainsByKind, type DomainPlan, type Need } from '@/lib/r
 
 import { groupAnytime, type AnytimeGroup } from './anytime';
 import { FilterBar } from './filter-bar';
-import { DAY_LABEL, href, loadFilters } from './filters';
+import { href, loadFilters } from './filters';
 import { MaterialRow } from './material-row';
 import { RosterPanel, summarizeRoster } from './roster-panel';
 import { RosterSheet } from './roster-sheet';
@@ -57,6 +58,8 @@ export default async function PlanPage({ params, searchParams }: PageProps<'/[lo
   const showing = filters.view === 'weapon' ? weapon : talent;
   const base = `/${locale}/plan`;
   const rosterSummary = summarizeRoster(roster, teams, filters);
+  const t = await getTranslations('plan');
+  const weekdayLabel = await getTranslations('common.weekday');
 
   return (
     <div className="space-y-6">
@@ -75,34 +78,36 @@ export default async function PlanPage({ params, searchParams }: PageProps<'/[lo
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h2 className="text-sm">
           {filters.range === 'day'
-            ? <>{filters.day === today ? 'Hoy' : 'El'} {DAY_LABEL[filters.day]}</>
-            : 'Todo el backlog'}
+            ? (filters.day === today
+              ? t('today')
+              : t('otherDay', { day: weekdayLabel(filters.day) }))
+            : t('allBacklogHeading')}
           {team && <span className="text-muted"> · {team.name}</span>}
         </h2>
         <p className="font-mono text-xs text-muted">
           {filters.range === 'day'
-            ? <>
-                {sources} con objetivo · {talent.length + weapon.length} dominio
-                {talent.length + weapon.length === 1 ? '' : 's'} · {schedule.anytime.length} sin horario
-              </>
-            : <>
-                {sources} build{sources === 1 ? '' : 's'} con objetivo de nivel ·{' '}
-                {schedule.domains.length} dominio{schedule.domains.length === 1 ? '' : 's'} ·{' '}
-                {schedule.anytime.length} sin horario
-              </>}
+            ? t('sourcesCountDay', {
+                count: sources,
+                domains: talent.length + weapon.length,
+                anytime: schedule.anytime.length,
+              })
+            : t('sourcesCountAll', {
+                count: sources,
+                domains: schedule.domains.length,
+                anytime: schedule.anytime.length,
+              })}
         </p>
       </div>
 
       {sources === 0 ? (
         <p className="max-w-prose text-sm text-muted">
-          Nadie tiene objetivo todavía, así que no hay nada que farmear. La demanda es la
-          diferencia entre dónde está un personaje y dónde debería estar.{' '}
+          {t('noTargetsMessage')}{' '}
           <Link href={`/${locale}/characters`} className="underline hover:text-accent">
-            Fija nivel o talentos objetivo en una ficha
+            {t('fixTargetLink')}
           </Link>
-          , o mira qué costaría subirlos a todos con{' '}
+          , {t('costToLevelAllPrefix')}{' '}
           <Link href={href(base, filters, { assume: true })} className="underline hover:text-accent">
-            incluir sin objetivo
+            {t('assumeToggle')}
           </Link>
           .
         </p>
@@ -110,8 +115,8 @@ export default async function PlanPage({ params, searchParams }: PageProps<'/[lo
         <>
           <nav className="flex flex-wrap gap-x-1 border-b border-edge">
             {([
-              ['talent', 'Materiales de talento', talent.length],
-              ['weapon', 'Materiales de arma', weapon.length],
+              ['talent', t('talentTab'), talent.length],
+              ['weapon', t('weaponTab'), weapon.length],
             ] as const).map(([view, label, count]) => (
               <Link
                 key={view}
@@ -130,8 +135,12 @@ export default async function PlanPage({ params, searchParams }: PageProps<'/[lo
 
           {showing.length === 0 ? (
             <p className="text-sm text-muted">
-              Ningún dominio de {filters.view === 'weapon' ? 'forja' : 'maestría'} que necesites rota
-              {filters.day === today ? ' hoy' : ` el ${DAY_LABEL[filters.day]}`}.
+              {t('noDomainsMessage', {
+                kind: filters.view === 'weapon' ? t('forjaWord') : t('maestriaWord'),
+                day: filters.day === today
+                  ? t('todaySuffix')
+                  : t('daySuffix', { day: weekdayLabel(filters.day) }),
+              })}
             </p>
           ) : (
             <div className="space-y-3">
@@ -152,15 +161,13 @@ export default async function PlanPage({ params, searchParams }: PageProps<'/[lo
       {schedule.anytime.length > 0 && (
         <section>
           <h2 className="mb-1 text-sm font-medium uppercase tracking-wide text-muted">
-            Recolección general
+            {t('collectionHeading')}
           </h2>
           <p className="mb-3 max-w-prose text-xs text-muted">
-            Jefes, especialidades locales, drops de enemigos y Mora. Sin horario: es cuestión
-            de cantidad, no de qué día es. Cada montón se abre para ver cuánto falta y quién
-            lo espera.
+            {t('collectionHint')}
           </p>
           <div className="space-y-2">
-            {groupAnytime(schedule.anytime, (id) => catalog.materials.get(id)).map((group) => (
+            {groupAnytime(schedule.anytime, (id) => catalog.materials.get(id), t('unsortedLabel')).map((group) => (
               <AnytimePile key={group.label} group={group} catalog={catalog} locale={locale} />
             ))}
           </div>
@@ -184,6 +191,7 @@ async function DomainCard({
 }: {
   plan: DomainPlan; catalog: Catalog; locale: Locale;
 }) {
+  const t = await getTranslations('plan');
   // Lowest tier first, which is the order the domain itself lists them in.
   const needs = [...plan.needs].sort((a, b) => a.materialId - b.materialId);
   const waiting = charactersIn([plan]);
@@ -193,7 +201,7 @@ async function DomainCard({
       <p className="flex flex-wrap items-baseline gap-x-3 border-b border-edge px-3 py-2">
         <span className="flex-1 text-sm">{plan.label}</span>
         <span className="font-mono text-xs text-muted">
-          faltan {plan.short.toLocaleString(locale)}
+          {t('missing', { count: plan.short.toLocaleString(locale) })}
         </span>
       </p>
 
@@ -224,8 +232,11 @@ async function DomainCard({
               <li key={entry.characterId}>
                 <Link
                   href={`/${locale}/build/${entry.characterId}`}
-                  title={`${character?.name ?? entry.characterId} — faltan ${entry.count}` +
-                    (assumed ? ' (objetivo asumido: 90 y talentos 9)' : '')}
+                  title={t('waitingTitle', {
+                    name: character?.name ?? entry.characterId,
+                    count: entry.count,
+                    assumedSuffix: assumed ? t('assumedTargetSuffix') : '',
+                  })}
                   className={`block rounded border ${
                     assumed ? 'border-dashed border-edge opacity-60' : 'border-edge'
                   } hover:border-accent`}
@@ -260,20 +271,23 @@ function isAssumed(needs: Need[], characterId: number) {
  * behind it. Used in the backlog view, where the point is the number rather
  * than the glance.
  */
-function FullDomainCard({
+async function FullDomainCard({
   plan, catalog, locale,
 }: {
   plan: DomainPlan; catalog: Catalog; locale: Locale;
 }) {
+  const t = await getTranslations('plan');
+  const weekdayLabel = await getTranslations('common.weekday');
+
   return (
     <section className="rounded border border-edge bg-surface">
       <p className="flex flex-wrap items-baseline gap-x-3 border-b border-edge px-3 py-2 text-sm">
         <span className="flex-1">{plan.label}</span>
         <span className="font-mono text-xs text-muted">
-          {plan.days.map((day) => DAY_LABEL[day]).join(' · ')}
+          {plan.days.map((day) => weekdayLabel(day)).join(' · ')}
         </span>
         <span className="font-mono text-xs">
-          faltan {plan.short.toLocaleString(locale)}
+          {t('missing', { count: plan.short.toLocaleString(locale) })}
         </span>
       </p>
       <ul>
@@ -302,6 +316,8 @@ async function AnytimePile({
 }: {
   group: AnytimeGroup; catalog: Catalog; locale: Locale;
 }) {
+  const t = await getTranslations('plan');
+
   return (
     <details className="rounded border border-edge bg-surface">
       <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-xs">
@@ -327,7 +343,7 @@ async function AnytimePile({
         </span>
 
         <span className="font-mono text-muted">
-          faltan <span className="text-accent">{group.short.toLocaleString(locale)}</span>
+          {t('missingLabel')} <span className="text-accent">{group.short.toLocaleString(locale)}</span>
         </span>
       </summary>
 

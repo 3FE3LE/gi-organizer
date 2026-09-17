@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 
 import { SectionTabs } from '@/components/section-tabs';
 import { isLocale } from '@/lib/data/locales';
@@ -11,19 +12,20 @@ import { isLocale } from '@/lib/data/locales';
 export default async function DataLayout({ children, params }: LayoutProps<'/[locale]/data'>) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
+  const t = await getTranslations('data');
 
   return (
     <div className="space-y-6">
-      <h1 className="text-lg font-medium">Datos</h1>
+      <h1 className="text-lg font-medium">{t('title')}</h1>
       <SectionTabs
         tabs={[
-          { href: `/${locale}/data`, label: 'Inventario', hint: 'Lo que tienes' },
+          { href: `/${locale}/data`, label: t('tabs.inventory.label'), hint: t('tabs.inventory.hint') },
           {
             href: `/${locale}/data/import`,
-            label: 'Entrada y salida',
-            hint: 'Importar, exportar, copias y entrada manual',
+            label: t('tabs.importExport.label'),
+            hint: t('tabs.importExport.hint'),
           },
-          { href: `/${locale}/data/history`, label: 'Historial', hint: 'Lo que has movido' },
+          { href: `/${locale}/data/history`, label: t('tabs.history.label'), hint: t('tabs.history.hint') },
         ]}
       />
       {children}

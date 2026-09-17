@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useActionState, useState, useTransition } from 'react';
 
 import {
@@ -35,6 +36,7 @@ type Preview = {
  * looked at.
  */
 export function ImportForm() {
+  const t = useTranslations('data.import');
   const [preview, setPreview] = useState<Preview | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploading, startUpload] = useTransition();
@@ -55,7 +57,7 @@ export function ImportForm() {
       const body = await response.json();
 
       if (!response.ok) {
-        setUploadError(body.message ?? body.error ?? 'no se pudo leer el archivo');
+        setUploadError(body.message ?? body.error ?? t('readError'));
         return;
       }
       setPreview(body as Preview);
@@ -66,10 +68,10 @@ export function ImportForm() {
     <div className="space-y-10">
       <section>
         <h2 className="text-sm font-medium uppercase tracking-wide text-muted">
-          Archivo GOOD
+          {t('fileSectionTitle')}
         </h2>
         <p className="mt-2 max-w-prose text-sm text-muted">
-          El export de Inventory Kamera. Se revisa antes de escribir nada.
+          {t('fileSectionHint')}
         </p>
 
         <form action={upload} className="mt-4 flex flex-wrap items-center gap-3">
@@ -87,7 +89,7 @@ export function ImportForm() {
             disabled={uploading}
             className="rounded border border-edge bg-surface px-3 py-1.5 text-sm hover:border-accent disabled:opacity-50"
           >
-            {uploading ? 'Leyendo…' : 'Previsualizar'}
+            {uploading ? t('reading') : t('preview')}
           </button>
         </form>
 
@@ -101,22 +103,22 @@ export function ImportForm() {
           <div className="mt-6 space-y-4">
             <p className="font-mono text-xs text-muted">
               {preview.filename} · {(preview.bytes / 1024).toFixed(0)} KB ·{' '}
-              {preview.origin} · cobertura {preview.coverage}
+              {preview.origin} · {t('coveragePrefix', { coverage: preview.coverage })}
             </p>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <Counts title="Artefactos" entries={Object.entries(preview.summary.artifacts)} />
-              <Counts title="Armas" entries={Object.entries(preview.summary.weapons)} />
+              <Counts title={t('artifactsCounts')} entries={Object.entries(preview.summary.artifacts)} />
+              <Counts title={t('weaponsCounts')} entries={Object.entries(preview.summary.weapons)} />
             </div>
 
             <p className="font-mono text-xs text-muted">
-              {preview.summary.characters} personajes en el archivo
+              {t('charactersInFile', { count: preview.summary.characters })}
             </p>
 
             {preview.suspect && (
               <p className="rounded border border-accent/40 bg-surface px-3 py-2 text-sm">
-                <strong className="text-accent">Sospechoso.</strong> {preview.suspect.reason}.
-                No se va a borrar nada.
+                <strong className="text-accent">{t('suspectLabel')}</strong> {preview.suspect.reason}.
+                {t('suspectSuffix')}
               </p>
             )}
 
@@ -130,7 +132,7 @@ export function ImportForm() {
                     {group.examples.map((example) => (
                       <p key={example.path} className="mt-1 text-muted">
                         {example.path}: {example.message}
-                        {example.suggestion && ` (¿${example.suggestion}?)`}
+                        {example.suggestion && ` ${t('suggestionHint', { suggestion: example.suggestion })}`}
                       </p>
                     ))}
                   </li>
@@ -145,7 +147,7 @@ export function ImportForm() {
               {preview.coverage === 'full' && (
                 <label className="flex items-center gap-2 text-sm text-muted">
                   <input type="checkbox" name="onAbsent" value="remove" />
-                  Borrar lo que no aparece en el archivo
+                  {t('removeAbsentLabel')}
                 </label>
               )}
               <button
@@ -153,7 +155,7 @@ export function ImportForm() {
                 disabled={applying}
                 className="rounded border border-accent bg-surface px-3 py-1.5 text-sm text-accent disabled:opacity-50"
               >
-                {applying ? 'Aplicando…' : 'Aplicar'}
+                {applying ? t('applying') : t('apply')}
               </button>
             </form>
 
@@ -164,11 +166,10 @@ export function ImportForm() {
 
       <section>
         <h2 className="text-sm font-medium uppercase tracking-wide text-muted">
-          Semilla desde Enka
+          {t('showcaseSectionTitle')}
         </h2>
         <p className="mt-2 max-w-prose text-sm text-muted">
-          Los 8 personajes de la vitrina, con su equipo exacto. Nunca borra nada,
-          porque una vitrina no dice nada sobre el resto de la cuenta.
+          {t('showcaseSectionHint')}
         </p>
 
         <form action={seed} className="mt-4 flex flex-wrap items-center gap-3">
@@ -185,7 +186,7 @@ export function ImportForm() {
             disabled={seeding}
             className="rounded border border-edge bg-surface px-3 py-1.5 text-sm hover:border-accent disabled:opacity-50"
           >
-            {seeding ? 'Leyendo…' : 'Importar vitrina'}
+            {seeding ? t('reading') : t('importShowcase')}
           </button>
         </form>
 

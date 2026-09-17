@@ -29,18 +29,17 @@ export type AnytimeGroup = {
   short: number;
 };
 
-const UNSORTED = 'Otros materiales';
-
 export function groupAnytime(
   needs: Need[],
   describe: (materialId: number) => MaterialGrouping | undefined,
+  unsortedLabel: string,
 ): AnytimeGroup[] {
   const rankOf = (need: Need) => describe(need.materialId)?.sortRank ?? Number.MAX_SAFE_INTEGER;
 
   const groups = new Map<string, { rank: number; needs: Need[] }>();
 
   for (const need of needs) {
-    const label = describe(need.materialId)?.typeText?.trim() || UNSORTED;
+    const label = describe(need.materialId)?.typeText?.trim() || unsortedLabel;
     const group = groups.get(label) ?? { rank: Number.MAX_SAFE_INTEGER, needs: [] };
 
     group.rank = Math.min(group.rank, rankOf(need));

@@ -1,10 +1,12 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { usePathname, useRouter } from 'next/navigation';
 
 import { LOCALES, LOCALE_CODES, type Locale } from '@/lib/data/locales';
 
 export function LocaleSwitcher({ current }: { current: Locale }) {
+  const t = useTranslations('nav');
   const router = useRouter();
   const pathname = usePathname();
 
@@ -18,7 +20,7 @@ export function LocaleSwitcher({ current }: { current: Locale }) {
 
   return (
     <select
-      aria-label="Idioma"
+      aria-label={t('language')}
       value={current}
       onChange={(event) => change(event.target.value)}
       className="rounded border border-edge bg-surface px-2 py-1 text-sm text-text"

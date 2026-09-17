@@ -1,4 +1,5 @@
 import { ChevronRight, Crown, Feather, Flower2, Hourglass, Sparkles, Wine, X } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
 import { statLabel, type Catalog } from '@/lib/data/catalog';
@@ -11,8 +12,6 @@ import {
   CRIT_FILTERS,
   CRIT_STEP_LABELS,
   HELD,
-  HELD_LABELS,
-  SLOT_LABELS,
   TIER_FILTERS,
   activeCount,
   href,
@@ -40,7 +39,7 @@ const SLOT_ICONS: Record<ArtifactSlot, typeof Flower2> = {
   circlet: Crown,
 };
 
-export function FilterPanel({
+export async function FilterPanel({
   base,
   filters,
   catalog,
@@ -54,17 +53,21 @@ export function FilterPanel({
   ownedMains: { prop: string; name: string }[];
 }) {
   const active = activeCount(filters);
+  const t = await getTranslations('artifacts');
+  const slotLabel = await getTranslations('common.slot');
+  const heldLabel = await getTranslations('common.held');
+  const tierLabel = await getTranslations('common.tier');
 
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <Segments label="Pieza">
+        <Segments label={t('pieceLabel')}>
           <Segment to={href(base, filters, { slot: null, main: null })} active={!filters.slot}>
-            todas
+            {t('allSlots')}
           </Segment>
           {ARTIFACT_SLOTS.map((slot) => {
             const Icon = SLOT_ICONS[slot];
-            const label = SLOT_LABELS[slot] ?? slot;
+            const label = slotLabel.has(slot) ? slotLabel(slot) : slot;
 
             return (
               <Segment
@@ -80,9 +83,9 @@ export function FilterPanel({
           })}
         </Segments>
 
-        <Segments label="Quién">
+        <Segments label={t('whoLabel')}>
           <Segment to={href(base, filters, { held: null })} active={!filters.held}>
-            todos
+            {t('allHolders')}
           </Segment>
           {HELD.map((held) => (
             <Segment
@@ -90,7 +93,7 @@ export function FilterPanel({
               to={href(base, filters, { held })}
               active={filters.held === held}
             >
-              {HELD_LABELS[held]}
+              {heldLabel(held)}
             </Segment>
           ))}
         </Segments>
@@ -105,13 +108,13 @@ export function FilterPanel({
       >
         <summary className="flex cursor-pointer list-none items-center gap-1.5 px-3 py-2 font-mono text-[0.65rem] uppercase text-muted hover:text-text">
           <ChevronRight size={12} className="transition-transform group-open:rotate-90" />
-          más filtros
+          {t('moreFilters')}
         </summary>
 
         <div className="space-y-4 border-t border-edge px-3 py-3">
-          <Row label="substat">
+          <Row label={t('substatLabel')}>
             <Chip to={href(base, filters, { sub: null })} active={!filters.sub}>
-              cualquiera
+              {t('any')}
             </Chip>
             {ROLLABLE.map((prop) => (
               <Chip
@@ -127,12 +130,12 @@ export function FilterPanel({
           {/* "quality" named nothing in particular. What it cuts on is the
               average tier of a piece's rolls, which is the vocabulary the cards
               below already use, so the row says that instead. */}
-          <Row label="rolls">
+          <Row label={t('rollsLabel')}>
             <Chip
               to={href(base, filters, { quality: null })}
               active={filters.quality === null}
             >
-              cualquiera
+              {t('any')}
             </Chip>
             {TIER_FILTERS.map((fraction) => {
               const percent = Math.round(fraction * 100);
@@ -142,7 +145,7 @@ export function FilterPanel({
                   to={href(base, filters, { quality: percent })}
                   active={filters.quality === percent}
                 >
-                  media {tierAt(fraction)} o mejor
+                  {t('tierOrBetter', { tier: tierLabel(tierAt(fraction)) })}
                 </Chip>
               );
             })}
@@ -150,7 +153,7 @@ export function FilterPanel({
               to={href(base, filters, { perfect: !filters.perfect })}
               active={filters.perfect}
             >
-              <Sparkles size={11} className="inline" /> con substat perfecto
+              <Sparkles size={11} className="inline" /> {t('perfectSubstatToggle')}
             </Chip>
           </Row>
 
@@ -160,19 +163,19 @@ export function FilterPanel({
 
       {active > 0 && (
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="font-mono text-[0.6rem] uppercase text-muted">activos</span>
-          {describe(filters, catalog).map((entry) => (
+          <span className="font-mono text-[0.6rem] uppercase text-muted">{t('activeLabel')}</span>
+          {(await describe(filters, catalog)).map((entry) => (
             <Chip key={entry.key} to={href(base, filters, entry.clear)} active>
               {entry.label}
               <X size={10} className="ml-1 inline" aria-hidden />
-              <span className="sr-only">quitar</span>
+              <span className="sr-only">{t('removeSr')}</span>
             </Chip>
           ))}
           <Link
             href={href(base, filters, CLEARED)}
             className="font-mono text-[0.65rem] text-muted underline decoration-edge-strong underline-offset-2 hover:text-accent"
           >
-            quitar todos
+            {t('clearAll')}
           </Link>
         </div>
       )}
@@ -181,18 +184,24 @@ export function FilterPanel({
 }
 
 /** What is on, named the way the control that set it named it. */
-function describe(filters: ArtifactFilters, catalog: Catalog) {
+async function describe(filters: ArtifactFilters, catalog: Catalog) {
+  const t = await getTranslations('artifacts');
+  const slotLabel = await getTranslations('common.slot');
+  const heldLabel = await getTranslations('common.held');
+  const critRatingLabel = await getTranslations('common.critRating');
+  const tierLabel = await getTranslations('common.tier');
+
   const entries: { key: string; label: string; clear: Partial<ArtifactFilters> }[] = [];
 
   if (filters.slot) {
     entries.push({
       key: 'slot',
-      label: SLOT_LABELS[filters.slot] ?? filters.slot,
+      label: slotLabel.has(filters.slot) ? slotLabel(filters.slot) : filters.slot,
       clear: { slot: null },
     });
   }
   if (filters.held) {
-    entries.push({ key: 'held', label: HELD_LABELS[filters.held], clear: { held: null } });
+    entries.push({ key: 'held', label: heldLabel(filters.held), clear: { held: null } });
   }
   if (filters.sub) {
     entries.push({ key: 'sub', label: statLabel(catalog, filters.sub), clear: { sub: null } });
@@ -210,7 +219,7 @@ function describe(filters: ArtifactFilters, catalog: Catalog) {
   if (filters.quality !== null) {
     entries.push({
       key: 'quality',
-      label: `media ${tierAt(filters.quality / 100)} o mejor`,
+      label: t('tierOrBetter', { tier: tierLabel(tierAt(filters.quality / 100)) }),
       clear: { quality: null },
     });
   }
@@ -218,12 +227,13 @@ function describe(filters: ArtifactFilters, catalog: Catalog) {
     const step = CRIT_FILTERS.indexOf(filters.cv);
     entries.push({
       key: 'cv',
-      label: `CV ≥ ${filters.cv}${step >= 0 ? ` · ${CRIT_STEP_LABELS[step]}` : ''}`,
+      label: t('cvActive', { value: filters.cv })
+        + (step >= 0 ? ` · ${critRatingLabel(CRIT_STEP_LABELS[step])}` : ''),
       clear: { cv: null },
     });
   }
   if (filters.perfect) {
-    entries.push({ key: 'perfect', label: 'substat perfecto', clear: { perfect: false } });
+    entries.push({ key: 'perfect', label: t('perfectSubstatActive'), clear: { perfect: false } });
   }
 
   return entries;

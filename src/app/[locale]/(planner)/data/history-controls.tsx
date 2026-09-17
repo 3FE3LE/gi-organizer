@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useActionState, useEffect } from 'react';
 
 import { type HistoryState, redoAction, undoAction } from './history-actions';
@@ -10,6 +11,7 @@ import { type HistoryState, redoAction, undoAction } from './history-actions';
  * is an edit nobody makes twice.
  */
 export function HistoryControls() {
+  const t = useTranslations('data.history');
   const [undoState, runUndo, undoing] = useActionState<HistoryState, FormData>(
     undoAction, { status: 'idle' },
   );
@@ -43,7 +45,7 @@ export function HistoryControls() {
           disabled={undoing}
           className="rounded border border-edge bg-surface px-3 py-1.5 text-sm hover:border-accent disabled:opacity-50"
         >
-          Deshacer <span className="font-mono text-xs text-muted">⌘Z</span>
+          {t('undoButton')} <span className="font-mono text-xs text-muted">⌘Z</span>
         </button>
       </form>
       <form action={runRedo}>
@@ -52,7 +54,7 @@ export function HistoryControls() {
           disabled={redoing}
           className="rounded border border-edge bg-surface px-3 py-1.5 text-sm hover:border-accent disabled:opacity-50"
         >
-          Rehacer <span className="font-mono text-xs text-muted">⇧⌘Z</span>
+          {t('redoButton')} <span className="font-mono text-xs text-muted">⇧⌘Z</span>
         </button>
       </form>
       {state.status !== 'idle' && (

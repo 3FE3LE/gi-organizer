@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
 import { CreateTeam } from './create-team';
@@ -12,10 +13,6 @@ export type RailEntry = {
   warnings: number;
 };
 
-const MODE_LABEL: Record<string, string> = {
-  abyss: 'Abismo', theater: 'Teatro', stygian: 'Stygian', other: 'Otro',
-};
-
 /**
  * The team list.
  *
@@ -23,7 +20,7 @@ const MODE_LABEL: Record<string, string> = {
  * one needs attention — a rail that only lists names makes you open all of them
  * to find the broken one.
  */
-export function TeamRail({
+export async function TeamRail({
   locale,
   teams,
   selectedId,
@@ -32,10 +29,13 @@ export function TeamRail({
   teams: RailEntry[];
   selectedId: string | null;
 }) {
+  const t = await getTranslations('teams');
+  const modeLabel = await getTranslations('common.mode');
+
   return (
     <aside className="space-y-3 lg:sticky lg:top-4 lg:self-start">
       <h1 className="text-lg font-medium">
-        Equipos <span className="font-mono text-sm text-muted">{teams.length}</span>
+        {t('heading')} <span className="font-mono text-sm text-muted">{teams.length}</span>
       </h1>
 
       <ul className="space-y-1">
@@ -58,12 +58,12 @@ export function TeamRail({
                   <span className="tabular font-mono text-xs text-muted">{team.members}/4</span>
                 </span>
                 <span className="mt-0.5 flex flex-wrap items-baseline gap-x-2 font-mono text-[0.65rem] text-muted">
-                  <span>{MODE_LABEL[team.mode] ?? team.mode}</span>
+                  <span>{modeLabel.has(team.mode) ? modeLabel(team.mode) : team.mode}</span>
                   {team.objectiveLabel && <span className="text-accent">{team.objectiveLabel}</span>}
                   {team.errors > 0 && <span className="text-bad">{team.errors} ✗</span>}
                   {team.warnings > 0 && <span className="text-warn">{team.warnings} !</span>}
                   {team.errors === 0 && team.warnings === 0 && team.members === 4 && (
-                    <span className="text-good">ok</span>
+                    <span className="text-good">{t('ok')}</span>
                   )}
                 </span>
               </Link>

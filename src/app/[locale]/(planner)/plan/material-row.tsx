@@ -1,9 +1,9 @@
+import { getTranslations } from 'next-intl/server';
+
 import { GameIcon } from '@/components/game-icon';
 import type { Catalog } from '@/lib/data/catalog';
 import type { Locale } from '@/lib/data/locales';
 import type { Need } from '@/lib/rules/materials';
-
-import { REASON_LABEL } from './filters';
 
 /**
  * One material's shortfall, and who is waiting on it.
@@ -15,11 +15,13 @@ import { REASON_LABEL } from './filters';
  * on the same material, so it reads as one dense line instead of several
  * short ones.
  */
-export function MaterialRow({
+export async function MaterialRow({
   need, catalog, locale,
 }: {
   need: Need; catalog: Catalog; locale: Locale;
 }) {
+  const t = await getTranslations('plan');
+  const reasonLabel = await getTranslations('common.reason');
   const material = catalog.materials.get(need.materialId);
 
   return (
@@ -36,10 +38,13 @@ export function MaterialRow({
           {material?.name ?? `#${need.materialId}`}
         </span>
         <span className="font-mono">
-          faltan <span className="text-accent">{need.short.toLocaleString(locale)}</span>
+          {t('missingLabel')} <span className="text-accent">{need.short.toLocaleString(locale)}</span>
         </span>
         <span className="font-mono text-muted">
-          tienes {need.owned.toLocaleString(locale)} de {need.needed.toLocaleString(locale)}
+          {t('haveOf', {
+            owned: need.owned.toLocaleString(locale),
+            needed: need.needed.toLocaleString(locale),
+          })}
         </span>
       </div>
 
@@ -50,7 +55,7 @@ export function MaterialRow({
             className="rounded border border-edge/60 bg-surface-2/60 px-1.5 py-0.5 font-mono text-[0.65rem] text-muted"
           >
             {catalog.characters.get(entry.characterId)?.name ?? entry.characterId}
-            {' '}{REASON_LABEL[entry.reason]} ×{entry.count}
+            {' '}{reasonLabel(entry.reason)} ×{entry.count}
             {entry.assumed ? '?' : ''}
           </li>
         ))}

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useActionState } from 'react';
 
@@ -35,6 +36,7 @@ export function BuildPicker({
   basePath: string;
   tab: string;
 }) {
+  const t = useTranslations('build');
   const [createState, create, creating] = useActionState<BuildFormState, FormData>(
     createBuildAction, { status: 'idle' },
   );
@@ -66,7 +68,7 @@ export function BuildPicker({
           disabled={creating}
           className="rounded border border-edge px-2 py-1 text-xs text-muted hover:border-accent disabled:opacity-50"
         >
-          + otro rol
+          {t('addRoleButton')}
         </button>
       </form>
 

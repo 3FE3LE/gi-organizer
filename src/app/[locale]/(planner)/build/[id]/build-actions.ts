@@ -1,5 +1,6 @@
 'use server';
 
+import { getTranslations } from 'next-intl/server';
 import { refresh } from 'next/cache';
 import { redirect } from 'next/navigation';
 
@@ -28,10 +29,11 @@ export async function createBuildAction(
   _previous: BuildFormState,
   form: FormData,
 ): Promise<BuildFormState> {
+  const t = await getTranslations('build.actions');
   const characterId = Number(form.get('characterId'));
   const catalog = await getCatalog(DEFAULT_LOCALE);
   if (!catalog.characters.get(characterId)) {
-    return { status: 'error', message: 'ese personaje no existe' };
+    return { status: 'error', message: t('characterNotFound') };
   }
 
   // A goal with no role is the character's plain target; declaring a role is
@@ -40,7 +42,7 @@ export async function createBuildAction(
   const existing = await readBuildsFor(characterId);
   const roleless = existing.find((build) => build.role === null);
   if (roleless) {
-    return { status: 'error', message: 'ya hay un objetivo sin rol — dale uno primero' };
+    return { status: 'error', message: t('roleAlreadyHasGoal') };
   }
 
   const buildId = await saveBuild({
@@ -69,16 +71,17 @@ export async function createBuildAction(
   if (returnTo.startsWith('/')) redirect(`${returnTo}?build=${buildId}&tab=objective`);
 
   refresh();
-  return { status: 'ok', message: 'build creada', buildId };
+  return { status: 'ok', message: t('buildCreated'), buildId };
 }
 
 export async function deleteBuildAction(buildId: string): Promise<BuildFormState> {
+  const t = await getTranslations('build.actions');
   const removed = await deleteBuild(buildId);
   refresh();
 
   return removed > 0
-    ? { status: 'ok', message: 'build borrada' }
-    : { status: 'error', message: 'esa build ya no existe' };
+    ? { status: 'ok', message: t('buildDeleted') }
+    : { status: 'error', message: t('buildNotFound') };
 }
 
 /**
@@ -93,16 +96,19 @@ export async function deleteBuildAction(buildId: string): Promise<BuildFormState
 export async function applyTemplateAction(
   input: { characterId: number; buildId: string; role: string },
 ): Promise<BuildFormState> {
+  const t = await getTranslations('build.actions');
   const parsed = templateSchema.safeParse(input);
-  if (!parsed.success) return { status: 'error', message: firstIssue(parsed.error) };
+  if (!parsed.success) {
+    return { status: 'error', message: firstIssue(parsed.error, await getTranslations('forms')) };
+  }
 
   const { characterId, buildId, role } = parsed.data;
   const catalog = await getCatalog(DEFAULT_LOCALE);
   const character = catalog.characters.get(characterId);
-  if (!character) return { status: 'error', message: 'ese personaje no existe' };
+  if (!character) return { status: 'error', message: t('characterNotFound') };
 
   const existing = buildId ? await readBuild(buildId, getDb()) : null;
-  if (!existing) return { status: 'error', message: 'abre un objetivo primero' };
+  if (!existing) return { status: 'error', message: t('openObjectiveFirst') };
 
   // The role on screen wins over the one on disk, so picking a role and
   // filling from it is one gesture rather than two saves.
@@ -140,5 +146,5 @@ export async function applyTemplateAction(
   });
 
   refresh();
-  return { status: 'ok', message: 'objetivo rellenado desde el rol', buildId: existing.id };
+  return { status: 'ok', message: t('objectiveFilledFromRole'), buildId: existing.id };
 }

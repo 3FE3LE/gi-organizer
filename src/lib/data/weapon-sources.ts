@@ -30,10 +30,3 @@ export type WeaponSourceEntry = { source: WeaponSource; name: string };
 export function isAlwaysReachable(source: WeaponSource | undefined) {
   return source === 'forge' || source === 'battlepass';
 }
-
-export const SOURCE_LABELS: Record<WeaponSource, string> = {
-  forge: 'forjable',
-  battlepass: 'pase de batalla',
-  starglitter: 'tienda de estelarita',
-  event: 'de evento',
-};

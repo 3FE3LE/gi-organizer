@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import { AssetImage } from '@/components/asset-image';
@@ -57,6 +58,7 @@ export function CandidateRow({
   /** "Comparar" opens the best candidate against what is worn, straight away. */
   defaultOpen?: boolean;
 }) {
+  const t = useTranslations('build');
   const [open, setOpen] = useState(defaultOpen);
 
   return (
@@ -74,7 +76,9 @@ export function CandidateRow({
           <span className="font-mono text-[0.65rem] text-muted">{candidate.fit}</span>
         )}
         {candidate.holder && (
-          <span className="font-mono text-[0.65rem] text-accent">en {candidate.holder}</span>
+          <span className="font-mono text-[0.65rem] text-accent">
+            {t('heldBy', { holder: candidate.holder })}
+          </span>
         )}
         {candidate.stats && (
           <button
@@ -83,7 +87,7 @@ export function CandidateRow({
             aria-expanded={open}
             className="shrink-0 rounded border border-edge px-2 py-0.5 font-mono text-[0.65rem] text-muted hover:border-accent hover:text-text"
           >
-            {open ? 'cerrar' : 'comparar'}
+            {open ? t('closeCompare') : t('openCompare')}
           </button>
         )}
         <MoveButton
@@ -95,7 +99,7 @@ export function CandidateRow({
               : { kind: 'equip-artifact', instanceId: candidate.id, toCharacterId: characterId }
           }
           expectedHolderId={candidate.holderId}
-          title={candidate.holder ? 'Mover aquí' : 'Equipar'}
+          title={candidate.holder ? t('moveHereButton') : t('equipButton')}
         />
       </div>
 

@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 
 import { GameIcon } from '@/components/game-icon';
 import { getCatalog } from '@/lib/data/catalog';
@@ -25,6 +26,7 @@ export const dynamic = 'force-dynamic';
 export default async function InventoryPage({ params }: PageProps<'/[locale]/data'>) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
+  const t = await getTranslations('data.inventoryPage');
 
   const catalog = await getCatalog(locale);
   const db = getDb();
@@ -66,25 +68,23 @@ export default async function InventoryPage({ params }: PageProps<'/[locale]/dat
     <div className="space-y-10">
       <section>
         <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Stat label="Artefactos" value={inventory.artifacts.length}
-            note={`${assignedArtifacts.length} equipados`} />
-          <Stat label="Armas" value={inventory.weapons.length}
-            note={`${assignedWeapons.length} equipadas`} />
-          <Stat label="Roster" value={roster.length} note="con ficha" />
-          <Stat label="Sin asignar" value={inventory.artifacts.length - assignedArtifacts.length}
-            note="piezas libres" />
+          <Stat label={t('artifactsStat')} value={inventory.artifacts.length}
+            note={t('artifactsEquippedNote', { count: assignedArtifacts.length })} />
+          <Stat label={t('weaponsStat')} value={inventory.weapons.length}
+            note={t('weaponsEquippedNote', { count: assignedWeapons.length })} />
+          <Stat label={t('rosterStat')} value={roster.length} note={t('rosterNote')} />
+          <Stat label={t('unassignedStat')} value={inventory.artifacts.length - assignedArtifacts.length}
+            note={t('unassignedNote')} />
         </dl>
       </section>
 
       {unrostered.length > 0 && (
         <section>
           <h2 className="text-sm font-medium uppercase tracking-wide text-muted">
-            Equipo sin ficha de personaje
+            {t('unrosteredTitle')}
           </h2>
           <p className="mt-2 max-w-prose text-sm text-muted">
-            Estos personajes llevan equipo pero no están en el roster, porque el
-            escaneo lee el inventario y la pantalla de personajes por separado.
-            Añádelos abajo para que cuenten en la planificación.
+            {t('unrosteredHint')}
           </p>
           <ul className="mt-3 flex flex-wrap gap-2">
             {unrostered.map((id) => (
@@ -100,8 +100,10 @@ export default async function InventoryPage({ params }: PageProps<'/[locale]/dat
                 />
                 {name(id)}
                 <span className="font-mono text-xs text-muted">
-                  {[...inventory.artifacts, ...inventory.weapons]
-                    .filter((item) => item.equippedTo === id).length} objetos
+                  {t('itemsCount', {
+                    count: [...inventory.artifacts, ...inventory.weapons]
+                      .filter((item) => item.equippedTo === id).length,
+                  })}
                 </span>
               </li>
             ))}
@@ -112,10 +114,10 @@ export default async function InventoryPage({ params }: PageProps<'/[locale]/dat
       {duplicated.length > 0 && (
         <section>
           <h2 className="text-sm font-medium uppercase tracking-wide text-muted">
-            Armas con varias copias
+            {t('duplicatedWeaponsTitle')}
           </h2>
           <p className="mt-2 max-w-prose text-sm text-muted">
-            Lo que realmente limita cuántos personajes pueden llevar cada arma.
+            {t('duplicatedWeaponsHint')}
           </p>
           <ul className="mt-3 grid gap-2 sm:grid-cols-2">
             {duplicated.map((entry) => {
@@ -128,7 +130,7 @@ export default async function InventoryPage({ params }: PageProps<'/[locale]/dat
                   <GameIcon filename={weapon?.icon} kind="weapon" className="h-8 w-8" sizes="32px" />
                   <span className="flex-1 truncate text-sm">{weapon?.name ?? `#${entry.weaponId}`}</span>
                   <span className="font-mono text-xs text-muted">
-                    R{entry.refinement} · {entry.assigned}/{entry.total} en uso
+                    R{entry.refinement} · {entry.assigned}/{entry.total} {t('inUseNote')}
                   </span>
                 </li>
               );

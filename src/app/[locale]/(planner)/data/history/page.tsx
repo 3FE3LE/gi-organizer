@@ -1,21 +1,14 @@
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 
 import { getCatalog } from '@/lib/data/catalog';
 import { isLocale } from '@/lib/data/locales';
 import { getDb } from '@/lib/db/client';
 import { readHistory } from '@/lib/player/history';
-import type { Move } from '@/lib/player/move';
 
 import { HistoryControls } from '../history-controls';
 
 export const dynamic = 'force-dynamic';
-
-const OPS: Record<Move['kind'], string> = {
-  'equip-artifact': 'equipó artefacto',
-  'unequip-artifact': 'quitó artefacto',
-  'equip-weapon': 'equipó arma',
-  'unequip-weapon': 'quitó arma',
-};
 
 /**
  * What the player changed.
@@ -30,19 +23,20 @@ export default async function HistoryPage({ params }: PageProps<'/[locale]/data/
 
   const catalog = await getCatalog(locale);
   const entries = await readHistory(getDb());
+  const t = await getTranslations('data.history');
+  const moveKindLabel = await getTranslations('common.moveKind');
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-baseline justify-between gap-4">
         <p className="max-w-prose text-sm text-muted">
-          Cada movimiento, y de dónde salió. Deshacer devuelve la pieza a quien
-          la llevaba, no a donde estaba.
+          {t('hint')}
         </p>
         <HistoryControls />
       </div>
 
       {entries.length === 0 ? (
-        <p className="text-sm text-muted">Nada todavía.</p>
+        <p className="text-sm text-muted">{t('empty')}</p>
       ) : (
         <ol className="space-y-1">
           {entries.map((entry) => {
@@ -61,12 +55,14 @@ export default async function HistoryPage({ params }: PageProps<'/[locale]/data/
               >
                 <span className="text-muted">#{entry.seq}</span>
                 <span className="text-muted">{entry.at.slice(11, 19)}</span>
-                <span className="text-text">{OPS[move.kind] ?? entry.op}</span>
+                <span className="text-text">
+                  {moveKindLabel.has(move.kind) ? moveKindLabel(move.kind) : entry.op}
+                </span>
                 {target && <span>→ {target}</span>}
                 {entry.summary.label && (
                   <span className="text-muted">{entry.summary.label}</span>
                 )}
-                {entry.undone && <span className="text-accent">deshecho</span>}
+                {entry.undone && <span className="text-accent">{t('undone')}</span>}
               </li>
             );
           })}

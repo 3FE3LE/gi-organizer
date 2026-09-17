@@ -1,5 +1,6 @@
-import Link from 'next/link';
 import { RotateCcw, X } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
 
 import { GameIcon } from '@/components/game-icon';
 import type { Catalog } from '@/lib/data/catalog';
@@ -50,7 +51,7 @@ export function summarizeRoster(
  * the player says no — the opposite way round from asking them to opt sixty
  * characters in one at a time, which is the version nobody finishes.
  */
-export function RosterPanel({
+export async function RosterPanel({
   base,
   catalog,
   filters,
@@ -63,6 +64,7 @@ export function RosterPanel({
   roster: { characterId: number; hasTarget: boolean; dismissed: boolean }[];
   teams: Team[];
 }) {
+  const t = await getTranslations('plan');
   const team = teams.find((entry) => entry.id === filters.team) ?? null;
   const inTeam = new Set(team?.slots.map((slot) => slot.characterId) ?? []);
 
@@ -86,35 +88,37 @@ export function RosterPanel({
   return (
     <section className="rounded-lg border border-edge bg-surface">
       <header className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-edge px-3 py-2 text-xs">
-        <span className="font-mono text-[0.65rem] uppercase text-muted">personajes</span>
+        <span className="font-mono text-[0.65rem] uppercase text-muted">
+          {t('charactersLabel')}
+        </span>
         <span>
           <span className="text-accent">{planned.length}</span>
-          <span className="text-muted"> de {named.length} en el plan</span>
+          <span className="text-muted">
+            {' '}{t('inPlanSuffix', { total: named.length })}
+          </span>
         </span>
-        {team && <span className="text-muted">· solo {team.name}</span>}
+        {team && <span className="text-muted">{t('onlyTeam', { team: team.name })}</span>}
         {filters.chars.length > 0 && (
           <Link
             href={href(base, filters, { chars: [] })}
             className="text-muted underline hover:text-accent"
           >
-            quitar el filtro ({filters.chars.length})
+            {t('removeFilter', { count: filters.chars.length })}
           </Link>
         )}
         <span className="ml-auto flex flex-wrap gap-2">
           <Bulk action={dismissRoster} disabled={planned.length === 0}>
-            <X size={11} /> descartar todos
+            <X size={11} /> {t('dismissAll')}
           </Bulk>
           <Bulk action={restoreRoster} disabled={dismissed.length === 0}>
-            <RotateCcw size={11} /> restaurar todos
+            <RotateCcw size={11} /> {t('restoreAll')}
           </Bulk>
         </span>
       </header>
 
       <div className="space-y-3 px-3 py-3">
         <p className="max-w-prose text-xs leading-relaxed text-muted">
-          Sin un objetivo escrito, el plan asume que cada personaje va a nivel 90 con los
-          talentos a 9. Toca un nombre para mirar solo su demanda; usa la × para descartarlo,
-          y su demanda desaparece del total, no solo de la vista.
+          {t('explainer')}
         </p>
 
         <ul className="flex flex-wrap gap-1.5">
@@ -139,6 +143,7 @@ export function RosterPanel({
                   to={filterable
                     ? href(base, filters, { chars: toggle(filters.chars, entry.characterId) })
                     : null}
+                  t={t}
                 />
 
                 <form
@@ -148,7 +153,7 @@ export function RosterPanel({
                 >
                   <button
                     type="submit"
-                    title={entry.dismissed ? 'Volver a incluirlo' : 'Descartarlo del plan'}
+                    title={entry.dismissed ? t('restoreTitle') : t('dismissTitle')}
                     className={`flex h-7 w-6 items-center justify-center border-l text-muted ${
                       picked ? 'border-accent' : 'border-edge'
                     } ${entry.dismissed ? 'hover:text-accent' : 'hover:text-bad'}`}
@@ -179,7 +184,12 @@ type Entry = {
  * A link and a form button cannot nest, so the two verbs sit side by side
  * inside one chip rather than one inside the other.
  */
-function Face({ entry, picked, to }: { entry: Entry; picked: boolean; to: string | null }) {
+function Face({
+  entry, picked, to, t,
+}: {
+  entry: Entry; picked: boolean; to: string | null;
+  t: Awaited<ReturnType<typeof getTranslations<'plan'>>>;
+}) {
   const content = (
     <>
       <GameIcon
@@ -203,7 +213,7 @@ function Face({ entry, picked, to }: { entry: Entry; picked: boolean; to: string
   return (
     <Link
       href={to}
-      title={picked ? 'Dejar de mirar solo a este personaje' : 'Mirar solo su demanda'}
+      title={picked ? t('stopFilterTitle') : t('filterTitle')}
       aria-current={picked ? 'true' : undefined}
       className={`${className} ${picked ? 'text-accent' : 'hover:text-accent'}`}
     >

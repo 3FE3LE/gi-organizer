@@ -1,10 +1,13 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useActionState } from 'react';
 
 import { type TeamActionState, createTeamAction } from './actions';
 
 export function CreateTeam() {
+  const t = useTranslations('teams');
+  const modeLabel = useTranslations('common.mode');
   const [state, create, pending] = useActionState<TeamActionState, FormData>(
     createTeamAction, { status: 'idle' },
   );
@@ -18,7 +21,7 @@ export function CreateTeam() {
       <input
         name="name"
         required
-        placeholder="Nombre del equipo"
+        placeholder={t('namePlaceholder')}
         className="w-full rounded border border-edge bg-ink px-2 py-1.5 text-sm"
       />
       <select
@@ -26,17 +29,17 @@ export function CreateTeam() {
         defaultValue="abyss"
         className="w-full rounded border border-edge bg-ink px-2 py-1.5 text-sm"
       >
-        <option value="abyss">Abismo</option>
-        <option value="theater">Teatro</option>
-        <option value="stygian">Stygian</option>
-        <option value="other">Otro</option>
+        <option value="abyss">{modeLabel('abyss')}</option>
+        <option value="theater">{modeLabel('theater')}</option>
+        <option value="stygian">{modeLabel('stygian')}</option>
+        <option value="other">{modeLabel('other')}</option>
       </select>
       <button
         type="submit"
         disabled={pending}
         className="w-full rounded border border-edge bg-ink px-3 py-1.5 text-sm hover:border-accent disabled:opacity-50"
       >
-        Crear equipo
+        {t('createButton')}
       </button>
       {state.status !== 'idle' && (
         <span

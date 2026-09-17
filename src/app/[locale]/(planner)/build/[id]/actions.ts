@@ -1,5 +1,6 @@
 'use server';
 
+import { getTranslations } from 'next-intl/server';
 import { refresh } from 'next/cache';
 
 import { getCatalog } from '@/lib/data/catalog';
@@ -24,6 +25,7 @@ export async function moveGearAction(
   _previous: MoveState,
   form: FormData,
 ): Promise<MoveState> {
+  const t = await getTranslations('build.actions');
   const raw = String(form.get('move') ?? '');
   const expected = form.get('expectedHolderId');
 
@@ -31,7 +33,7 @@ export async function moveGearAction(
   try {
     move = JSON.parse(raw) as Move;
   } catch {
-    return { status: 'error', message: 'movimiento ilegible' };
+    return { status: 'error', message: t('unreadableMove') };
   }
 
   const catalog = await getCatalog(DEFAULT_LOCALE);
@@ -51,15 +53,17 @@ export async function moveGearAction(
           status: 'conflict',
           actualHolderId: result.actualHolderId,
           message: result.actualHolderId === null
-            ? 'ya no lo lleva nadie; vuelve a intentarlo'
-            : `ahora lo lleva ${catalog.characters.get(result.actualHolderId)?.name ?? result.actualHolderId}`,
+            ? t('nowHeldByNobody')
+            : t('nowHeldBy', {
+                name: catalog.characters.get(result.actualHolderId)?.name ?? result.actualHolderId,
+              }),
         };
       case 'wrong-weapon-type':
-        return { status: 'error', message: 'ese personaje no puede llevar ese tipo de arma' };
+        return { status: 'error', message: t('wrongWeaponType') };
       case 'not-found':
-        return { status: 'error', message: 'ese objeto ya no existe' };
+        return { status: 'error', message: t('itemNotFound') };
       default:
-        return { status: 'error', message: 'no se pudo mover' };
+        return { status: 'error', message: t('couldNotMove') };
     }
   }
 
@@ -71,6 +75,8 @@ export async function moveGearAction(
 
   return {
     status: 'ok',
-    message: displaced.length > 0 ? `movido; se lo quitaste a ${displaced.join(', ')}` : 'movido',
+    message: displaced.length > 0
+      ? t('movedDisplaced', { names: displaced.join(', ') })
+      : t('moved'),
   };
 }

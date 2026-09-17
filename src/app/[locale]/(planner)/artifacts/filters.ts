@@ -11,7 +11,7 @@ import {
 import { ARTIFACT_SLOTS } from '@/lib/enka/slots';
 import type { ArtifactSort } from '@/lib/player/artifacts';
 import { CRIT_VALUE_PER_ROLL, TIER_FRACTIONS, TIERS, critRating } from '@/lib/rules/rolls';
-import { SCALERS, type Scaler } from '@/lib/rules/worth';
+import { SCALERS } from '@/lib/rules/worth';
 
 /**
  * The box, narrowed.
@@ -107,20 +107,3 @@ export function activeCount(filters: ArtifactFilters) {
     ([key, empty]) => filters[key as keyof ArtifactFilters] !== empty,
   ).length;
 }
-
-export const SLOT_LABELS: Record<string, string> = {
-  flower: 'Flor', plume: 'Pluma', sands: 'Arena', goblet: 'Cáliz', circlet: 'Diadema',
-};
-
-export const HELD_LABELS: Record<(typeof HELD)[number], string> = {
-  free: 'libres', worn: 'equipados',
-};
-
-export const SORT_LABELS: Record<ArtifactSort, string> = {
-  value: 'valor', quality: 'calidad', cv: 'crit value', rolls: 'rolls',
-  level: 'nivel', set: 'set',
-};
-
-export const SCALER_LABELS: Record<Scaler, string> = {
-  atk: 'ATQ%', hp: 'Vida%', em: 'Maestría', def: 'DEF%',
-};

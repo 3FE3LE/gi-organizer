@@ -93,19 +93,3 @@ export function toggle<T>(values: readonly T[], value: T): T[] {
     ? values.filter((entry) => entry !== value)
     : [...values, value];
 }
-
-/* ------------------------------------------------------------- wording --- */
-
-export const REASON_LABEL: Record<Reason, string> = {
-  ascension: 'ascenso', talent: 'talentos', weapon: 'arma',
-};
-
-export const DAY_LABEL: Record<Weekday, string> = {
-  Sunday: 'domingo', Monday: 'lunes', Tuesday: 'martes', Wednesday: 'miércoles',
-  Thursday: 'jueves', Friday: 'viernes', Saturday: 'sábado',
-};
-
-export const DAY_SHORT: Record<Weekday, string> = {
-  Sunday: 'DO', Monday: 'LU', Tuesday: 'MA', Wednesday: 'MI',
-  Thursday: 'JU', Friday: 'VI', Saturday: 'SA',
-};

@@ -24,6 +24,7 @@ test('every material lands in the pile the catalog puts it in', () => {
   const groups = groupAnytime(
     [need(113001), need(112001), need(202)],
     describe,
+    'Otros materiales',
   );
 
   assert.deepEqual(groups.map((group) => group.label), [
@@ -37,6 +38,7 @@ test('the piles come out in the order the bag is in', () => {
   const groups = groupAnytime(
     [need(104101), need(100082), need(202)],
     describe,
+    'Otros materiales',
   );
 
   assert.deepEqual(groups.map((group) => group.label), [
@@ -47,7 +49,7 @@ test('the piles come out in the order the bag is in', () => {
 });
 
 test('a pile carries what it is short in total', () => {
-  const [group] = groupAnytime([need(112001, 30), need(112002, 12)], describe);
+  const [group] = groupAnytime([need(112001, 30), need(112002, 12)], describe, 'Otros materiales');
 
   assert.equal(group.label, 'Material de mejora de personaje y arma');
   assert.equal(group.short, 42);
@@ -56,7 +58,7 @@ test('a pile carries what it is short in total', () => {
 });
 
 test('a material the catalog cannot place is still shown, last', () => {
-  const groups = groupAnytime([need(999999), need(202)], describe);
+  const groups = groupAnytime([need(999999), need(202)], describe, 'Otros materiales');
 
   assert.deepEqual(groups.map((group) => group.label), ['Moneda común', 'Otros materiales']);
 });

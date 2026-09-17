@@ -54,7 +54,7 @@ const selectedId = z
   .transform((value) => (value === '' ? null : Number(value)))
   .refine(
     (value) => value === null || (Number.isInteger(value) && value > 0),
-    { message: 'id inválido' },
+    { message: 'invalid_id' },
   );
 
 /**
@@ -154,7 +154,9 @@ export function statedSubstats(substats: string[]) {
 }
 
 /** A rejected payload, worded for the player rather than for a log. */
-export function firstIssue(error: z.ZodError): string {
+export function firstIssue(error: z.ZodError, t: (key: string) => string): string {
   const issue = error.issues[0];
-  return issue ? `${issue.path.join('.') || 'formulario'}: ${issue.message}` : 'datos inválidos';
+  if (!issue) return t('invalidData');
+  const message = issue.message === 'invalid_id' ? t('invalidId') : issue.message;
+  return `${issue.path.join('.') || t('formLabel')}: ${message}`;
 }

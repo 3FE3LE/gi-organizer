@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -128,17 +129,9 @@ export type ProgressValues = {
 /** The resolver transforms, so the control carries both shapes. */
 type ProgressControl = Control<ProgressFormValues, unknown, ProgressPayload>;
 
-const SLOTS = [
-  { key: 'sands', label: 'Arena' },
-  { key: 'goblet', label: 'Cáliz' },
-  { key: 'circlet', label: 'Diadema' },
-];
+const SLOTS = [{ key: 'sands' }, { key: 'goblet' }, { key: 'circlet' }];
 
-const TALENTS = [
-  { key: 'auto', label: 'Normal' },
-  { key: 'skill', label: 'Habilidad' },
-  { key: 'burst', label: 'Definitiva' },
-] as const;
+const TALENTS = ['auto', 'skill', 'burst'] as const;
 
 function defaultsFrom(values: ProgressValues): ProgressFormValues {
   return {
@@ -221,6 +214,9 @@ function ProgressForm({
   state: ProgressState;
   onState: (state: ProgressState) => void;
 }) {
+  const t = useTranslations('build');
+  const slotLabel = useTranslations('common.slot');
+  const talentLabel = useTranslations('common.talent');
   const [busy, setBusy] = useState<'template' | 'delete' | null>(null);
 
   /*
@@ -312,46 +308,47 @@ function ProgressForm({
           picks up, and which template fills the rest of this page in. */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border border-edge bg-surface px-4 py-3">
         <label className="flex items-center gap-2">
-          <span className="font-mono text-[0.65rem] uppercase tracking-wide text-muted">Rol</span>
+          <span className="font-mono text-[0.65rem] uppercase tracking-wide text-muted">{t('roleLabel')}</span>
           <select
             {...form.register('role')}
             defaultValue={defaults.role}
             className="rounded border border-edge bg-ink px-2 py-1.5 text-sm focus:border-accent focus:outline-none"
           >
-            <option value="">sin rol</option>
+            <option value="">{t('noRole')}</option>
             {options.roles.map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}
           </select>
         </label>
         <p className="min-w-48 flex-1 text-xs leading-relaxed text-muted">
-          Un personaje tiene un objetivo por rol, y el rol es su identidad: es lo que un
-          slot de equipo busca, y lo que decide los umbrales y substats de partida.
+          {t('roleHint')}
         </p>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-12">
         <Panel
           icon={<Gauge size={14} />}
-          title="Progreso"
-          summary={`Nv. ${values.current.level} → ${targetLevel} · C${values.current.constellation}`}
+          title={t('progressPanelTitle')}
+          summary={t('progressSummary', {
+            level: values.current.level, target: targetLevel, constellation: values.current.constellation,
+          })}
           className="lg:col-span-5"
         >
           {/* One grid for level and the three talents: they are the same
               question — where it is, where it ends — asked four times. */}
           <div className="grid grid-cols-[minmax(3.5rem,auto)_1fr_1fr] items-start gap-x-2 gap-y-2 sm:gap-x-3">
             <span />
-            <Column>hoy</Column>
-            <Column>meta</Column>
+            <Column>{t('todayColumn')}</Column>
+            <Column>{t('targetColumn')}</Column>
 
-            <RowLabel>Nivel</RowLabel>
+            <RowLabel>{t('levelRow')}</RowLabel>
             <Today>
               {values.current.level}{values.current.ascended && '+'}
             </Today>
             <LevelCell
               control={form.control}
               name="targetLevel"
-              label="nivel objetivo"
+              label={t('targetLevelAria')}
               level={targetLevel}
               ascendedField={form.register('targetAscended')}
               ascendedDefault={defaults.targetAscended}
@@ -359,16 +356,17 @@ function ProgressForm({
 
             {TALENTS.map((talent) => (
               <TalentRow
-                key={talent.key}
+                key={talent}
                 talent={talent}
-                today={values.current.talents[talent.key]}
+                label={talentLabel(talent)}
+                today={values.current.talents[talent]}
                 control={form.control}
               />
             ))}
           </div>
 
           <p className="mb-1.5 mt-4 flex items-baseline justify-between gap-2 font-mono text-[0.6rem] uppercase tracking-wide text-muted">
-            Constelación
+            {t('constellationLabel')}
             <span className="text-sm text-text">C{values.current.constellation}</span>
           </p>
 
@@ -376,31 +374,31 @@ function ProgressForm({
               itself, so there is nothing to type here — only somewhere to go
               when it is out of date. */}
           <p className="mt-3 text-[0.7rem] leading-relaxed text-muted">
-            Nivel, constelación y talentos salen del último import.{' '}
+            {t('importHint')}{' '}
             <Link
               href={`/${locale}/data/import`}
               className="underline decoration-edge-strong underline-offset-2 hover:text-accent"
             >
-              Reimporta tu GOOD
+              {t('reimportLink')}
             </Link>{' '}
-            para actualizarlos.
+            {t('importHintSuffix')}
           </p>
         </Panel>
 
         <Panel
           icon={<Shield size={14} />}
-          title="Equipamiento"
-          summary={plannedSet ? `${plannedSet} · ${showSecondSet ? '2+2' : '4pc'}` : 'sin set'}
+          title={t('gearPanelTitle')}
+          summary={plannedSet ? `${plannedSet} · ${showSecondSet ? '2+2' : '4pc'}` : t('gearSummaryNoSet')}
           className="lg:col-span-7"
         >
           <div className="space-y-4">
             <div>
-              <FieldLabel>Arma objetivo</FieldLabel>
+              <FieldLabel>{t('targetWeaponLabel')}</FieldLabel>
               <div className="flex flex-wrap items-end gap-2">
                 <Ranked
                   field={form.register('weaponId')}
                   defaultValue={defaults.weaponId}
-                  placeholder="sin arma objetivo…"
+                  placeholder={t('weaponPlaceholder')}
                   options={options.weapons}
                   className="min-w-48 flex-1 rounded border border-edge bg-ink px-2 py-2 text-sm"
                 />
@@ -409,7 +407,7 @@ function ProgressForm({
                   name="weaponRefinement"
                   render={({ field }) => (
                     <Stepper
-                      label="refinamiento del arma objetivo"
+                      label={t('weaponRefinementAria')}
                       value={Number(field.value)}
                       onChange={field.onChange}
                       onBlur={field.onBlur}
@@ -423,14 +421,14 @@ function ProgressForm({
               </div>
               {values.equippedWeapon && (
                 <p className="mt-1.5 font-mono text-[0.65rem] text-muted">
-                  lleva ahora: <span className="text-text">{values.equippedWeapon}</span>
+                  {t('equippedNow')} <span className="text-text">{values.equippedWeapon}</span>
                 </p>
               )}
             </div>
 
             <div>
               <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
-                <FieldLabel className="mb-0">Set de artefactos</FieldLabel>
+                <FieldLabel className="mb-0">{t('artifactSetLabel')}</FieldLabel>
                 <div className="flex overflow-hidden rounded border border-edge">
                   <Segment
                     active={!showSecondSet}
@@ -440,12 +438,12 @@ function ProgressForm({
                       // too, or a 2+2 stays saved with one half invisible.
                       form.setValue('setIds.1', '', { shouldDirty: true });
                     }}
-                    label="4 piezas"
+                    label={t('fourPieces')}
                   />
                   <Segment
                     active={showSecondSet}
                     onClick={() => setShowSecondSet(true)}
-                    label="2 + 2"
+                    label={t('twoPlusTwo')}
                   />
                 </div>
               </div>
@@ -456,11 +454,11 @@ function ProgressForm({
                   name="setIds.0"
                   render={({ field }) => (
                     <SetPicker
-                      label="primer set del plan"
+                      label={t('firstSetAria')}
                       options={options.sets}
                       value={field.value}
                       onChange={field.onChange}
-                      placeholder="elige un set…"
+                      placeholder={t('chooseSetPlaceholder')}
                       activePieces={showSecondSet ? 2 : 4}
                     />
                   )}
@@ -471,11 +469,11 @@ function ProgressForm({
                     name="setIds.1"
                     render={({ field }) => (
                       <SetPicker
-                        label="segundo set del plan"
+                        label={t('secondSetAria')}
                         options={options.sets}
                         value={field.value}
                         onChange={field.onChange}
-                        placeholder="segundo set…"
+                        placeholder={t('secondSetPlaceholder')}
                         activePieces={2}
                       />
                     )}
@@ -485,12 +483,12 @@ function ProgressForm({
             </div>
 
             <div>
-              <FieldLabel count={`${chosenStats}/3`}>Main stats</FieldLabel>
+              <FieldLabel count={`${chosenStats}/3`}>{t('mainStatsLabel')}</FieldLabel>
               <div className="grid min-w-0 grid-cols-3 gap-2">
                 {SLOTS.map((slot) => (
                   <label key={slot.key} className="min-w-0">
                     <span className="mb-1 block truncate text-[0.65rem] text-muted">
-                      {slot.label}
+                      {slotLabel(slot.key)}
                     </span>
                     <select
                       {...form.register(`mainStats.${slot.key}`)}
@@ -508,8 +506,8 @@ function ProgressForm({
             </div>
 
             <div>
-              <FieldLabel count={`${chosenSubstats}/4`} hint="ordenan las candidatas de cada slot">
-                Substats por prioridad
+              <FieldLabel count={`${chosenSubstats}/4`} hint={t('substatsHint')}>
+                {t('substatsLabel')}
               </FieldLabel>
               {/* Two by two on a phone, four across from `sm`: four stacked
                   selects is the shape that read as a questionnaire. */}
@@ -538,16 +536,12 @@ function ProgressForm({
 
         <Panel
           icon={<Target size={14} />}
-          title="Objetivos de stats"
-          summary={statedGoals === 0
-            ? 'ninguno'
-            : `${statedGoals} umbral${statedGoals === 1 ? '' : 'es'}`}
+          title={t('statGoalsTitle')}
+          summary={statedGoals === 0 ? t('noneGoals') : t('thresholdsCount', { count: statedGoals })}
           className="lg:col-span-12"
         >
           <p className="mb-3 max-w-prose text-xs leading-relaxed text-muted">
-            El total que quieres alcanzar, no el reparto por pieza. Cada cambio se juzga
-            contra esto: cumplido, cerca o corto. Con dos o tres basta — Furina es vida,
-            prob. crítico y daño crítico; Sacarosa, mil de maestría y poco más.
+            {t('statGoalsHint')}
           </p>
 
           {/* A grid, not a list: three thresholds side by side is a plan you
@@ -568,7 +562,7 @@ function ProgressForm({
                       defaultValue={defaults.goals[index]?.prop ?? ''}
                       className="w-full min-w-0 rounded border border-edge bg-ink px-2 py-1.5 text-xs focus:border-accent focus:outline-none"
                     >
-                      <option value="">elige un stat…</option>
+                      <option value="">{t('chooseStatPlaceholder')}</option>
                       {options.goalProps.map((option) => (
                         <option key={option.value} value={option.value}>{option.label}</option>
                       ))}
@@ -582,7 +576,7 @@ function ProgressForm({
                         inputMode="decimal"
                         {...form.register(`goals.${index}.min`)}
                         defaultValue={defaults.goals[index]?.min ?? ''}
-                        placeholder="mínimo"
+                        placeholder={t('minPlaceholder')}
                         className="tabular w-20 shrink-0 rounded border border-edge bg-ink px-2 py-1 text-right font-mono text-xs focus:border-accent focus:outline-none"
                       />
                       <Verdict status={status} current={prop ? propInfo(prop)?.current : null} />
@@ -593,7 +587,7 @@ function ProgressForm({
                     <button
                       type="button"
                       onClick={() => goalRows.remove(index)}
-                      aria-label={`Quitar el objetivo ${index + 1}`}
+                      aria-label={t('removeGoalAria', { n: index + 1 })}
                       className="shrink-0 rounded p-1 text-muted transition-colors hover:bg-surface-2 hover:text-bad"
                     >
                       <X size={14} />
@@ -610,7 +604,7 @@ function ProgressForm({
                   onClick={() => goalRows.append({ prop: '', min: '' })}
                   className="flex h-full min-h-20 w-full items-center justify-center gap-2 rounded border border-dashed border-edge text-xs text-muted transition-colors hover:border-accent hover:text-accent"
                 >
-                  <Plus size={14} /> otro objetivo
+                  <Plus size={14} /> {t('addGoal')}
                 </button>
               </li>
             )}
@@ -627,7 +621,7 @@ function ProgressForm({
           className="flex items-center gap-2 rounded border border-accent px-3 py-1.5 text-sm text-accent transition-colors hover:bg-surface-2 disabled:opacity-50"
         >
           <Save size={14} />
-          {form.formState.isSubmitting ? 'Guardando…' : 'Guardar objetivo'}
+          {form.formState.isSubmitting ? t('saving') : t('saveGoal')}
         </button>
 
         {values.buildId && (
@@ -635,11 +629,11 @@ function ProgressForm({
             type="button"
             onClick={fillFromRole}
             disabled={form.formState.isSubmitting || busy !== null}
-            title="Vuelve a rellenar set, main stats, substats, arma y umbrales con lo que pide el rol elegido"
+            title={t('fillFromRoleTitle')}
             className="flex items-center gap-2 rounded border border-edge px-3 py-1.5 text-sm text-muted transition-colors hover:border-accent hover:text-text disabled:opacity-50"
           >
             <Sparkles size={14} />
-            {busy === 'template' ? 'Rellenando…' : 'Rellenar desde el rol'}
+            {busy === 'template' ? t('filling') : t('fillFromRole')}
           </button>
         )}
 
@@ -658,8 +652,8 @@ function ProgressForm({
             type="button"
             onClick={remove}
             disabled={form.formState.isSubmitting || busy !== null}
-            aria-label="Borrar este objetivo"
-            title="Borrar este objetivo"
+            aria-label={t('deleteGoalAria')}
+            title={t('deleteGoalAria')}
             className="ml-auto rounded border border-edge p-2 text-muted transition-colors hover:border-bad hover:text-bad disabled:opacity-50"
           >
             <Trash2 size={14} />
@@ -770,7 +764,8 @@ function Verdict({
   status: 'met' | 'close' | 'short' | null;
   current: string | null | undefined;
 }) {
-  if (!current) return <span className="text-[0.65rem] text-muted/60">sin stat</span>;
+  const t = useTranslations('build');
+  if (!current) return <span className="text-[0.65rem] text-muted/60">{t('noStatCurrent')}</span>;
 
   const tone = status === 'met'
     ? 'text-good'
@@ -783,7 +778,7 @@ function Verdict({
       {status === 'met' && <Check size={12} className="shrink-0" />}
       {status === 'close' && <CircleAlert size={12} className="shrink-0" />}
       {status === 'short' && <X size={12} className="shrink-0" />}
-      <span className="tabular truncate">hoy {current}</span>
+      <span className="tabular truncate">{t('todayPrefix', { value: current })}</span>
     </span>
   );
 }
@@ -802,6 +797,7 @@ function Ranked({
   options: RankedOptions;
   className: string;
 }) {
+  const t = useTranslations('build');
   return (
     <select
       {...field}
@@ -811,14 +807,14 @@ function Ranked({
       <option value="">{placeholder}</option>
 
       {options.suggested.length > 0 && (
-        <optgroup label="Sugeridos para este personaje">
+        <optgroup label={t('suggestedForCharacter')}>
           {options.suggested.map((option) => (
             <option key={option.value} value={option.value}>{option.label}</option>
           ))}
         </optgroup>
       )}
 
-      <optgroup label="Todos">
+      <optgroup label={t('allOption')}>
         {options.all.map((option) => (
           <option key={option.value} value={option.value}>{option.label}</option>
         ))}
@@ -848,6 +844,7 @@ function LevelCell({
   ascendedField: UseFormRegisterReturn;
   ascendedDefault: boolean;
 }) {
+  const t = useTranslations('build');
   return (
     <div className="min-w-0">
       <Controller
@@ -872,7 +869,7 @@ function LevelCell({
             defaultChecked={ascendedDefault}
             className="accent-accent"
           />
-          ascendido
+          {t('ascendedLabel')}
         </label>
       )}
     </div>
@@ -890,25 +887,28 @@ function Today({ children }: { children: React.ReactNode }) {
 
 function TalentRow({
   talent,
+  label,
   today,
   control,
 }: {
   talent: (typeof TALENTS)[number];
+  label: string;
   today: number;
   control: ProgressControl;
 }) {
+  const t = useTranslations('build');
   return (
     <>
-      <RowLabel>{talent.label}</RowLabel>
+      <RowLabel>{label}</RowLabel>
       <Today>{today}</Today>
       {(['targetTalents'] as const).map((group) => (
         <Controller
           key={group}
           control={control}
-          name={`${group}.${talent.key}`}
+          name={`${group}.${talent}`}
           render={({ field }) => (
             <Stepper
-              label={`objetivo: ${talent.label}`}
+              label={t('targetTalentAria', { talent: label })}
               value={Number(field.value)}
               onChange={field.onChange}
               onBlur={field.onBlur}
@@ -948,6 +948,7 @@ function Stepper({
   prefix?: string;
   className?: string;
 }) {
+  const t = useTranslations('build');
   const set = (next: number) => onChange(Math.min(max, Math.max(min, next)));
 
   return (
@@ -959,7 +960,7 @@ function Stepper({
       <button
         type="button"
         onClick={() => set(value - 1)}
-        aria-label={`${label}: menos`}
+        aria-label={t('decreaseAria', { label })}
         className="flex shrink-0 items-center px-2 text-muted transition-colors hover:bg-surface-2 hover:text-text disabled:opacity-30"
         disabled={value <= min}
       >
@@ -982,7 +983,7 @@ function Stepper({
       <button
         type="button"
         onClick={() => set(value + 1)}
-        aria-label={`${label}: más`}
+        aria-label={t('increaseAria', { label })}
         className="flex shrink-0 items-center px-2 text-muted transition-colors hover:bg-surface-2 hover:text-text disabled:opacity-30"
         disabled={value >= max}
       >

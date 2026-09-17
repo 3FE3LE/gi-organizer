@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -24,6 +25,7 @@ export default async function CharactersPage({ params }: PageProps<'/[locale]/ch
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
 
+  const t = await getTranslations('characters');
   const catalog = await getCatalog(locale);
   const db = getDb();
   const owned = await readOwnedCharacterIds(db, await getProfileId(db));
@@ -47,35 +49,36 @@ export default async function CharactersPage({ params }: PageProps<'/[locale]/ch
     <div className="space-y-8">
       <header className="flex flex-wrap items-baseline justify-between gap-4">
         <h1 className="text-lg font-medium">
-          Mis personajes{' '}
+          {t('title')}{' '}
           <span className="font-mono text-sm text-muted">
             {mine.length}/{catalog.characters.size}
           </span>
         </h1>
-        <p className="font-mono text-xs text-muted">por lanzamiento, más reciente primero</p>
+        <p className="font-mono text-xs text-muted">{t('sortHint')}</p>
       </header>
 
       {orphaned.length > 0 && (
         <p className="rounded border border-accent/40 bg-surface px-3 py-2 text-sm">
-          <strong className="text-accent">Sin ficha.</strong>{' '}
-          {orphaned.map((id) => catalog.characters.get(id)?.name ?? `#${id}`).join(', ')}{' '}
-          {orphaned.length === 1 ? 'lleva equipo' : 'llevan equipo'} pero no{' '}
-          {orphaned.length === 1 ? 'está' : 'están'} en el roster.{' '}
+          <strong className="text-accent">{t('orphanedTitle')}</strong>{' '}
+          {t('orphanedBody', {
+            names: orphaned.map((id) => catalog.characters.get(id)?.name ?? `#${id}`).join(', '),
+            count: orphaned.length,
+          })}{' '}
           <Link href={`/${locale}/data`} className="underline hover:text-accent">
-            Añádelos
+            {t('orphanedLink')}
           </Link>{' '}
-          o vuelve a escanear con la pantalla de personajes activada.
+          {t('orphanedHint')}
         </p>
       )}
 
-      <Gallery locale={locale} characters={mine} owned gear={gear} />
+      <Gallery locale={locale} characters={mine} owned gear={gear} t={t} />
 
       {missing.length > 0 && (
         <section>
           <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-muted">
-            Sin conseguir <span className="font-mono">{missing.length}</span>
+            {t('missingHeading')} <span className="font-mono">{missing.length}</span>
           </h2>
-          <Gallery locale={locale} characters={missing} owned={false} gear={gear} />
+          <Gallery locale={locale} characters={missing} owned={false} gear={gear} t={t} />
         </section>
       )}
     </div>
@@ -89,14 +92,16 @@ function Gallery({
   characters,
   owned,
   gear,
+  t,
 }: {
   locale: string;
   characters: CharacterView[];
   owned: boolean;
   gear: Map<number, number>;
+  t: Awaited<ReturnType<typeof getTranslations<'characters'>>>;
 }) {
   if (characters.length === 0) {
-    return <p className="text-sm text-muted">Nada aquí todavía.</p>;
+    return <p className="text-sm text-muted">{t('empty')}</p>;
   }
 
   return (
@@ -127,7 +132,7 @@ function Gallery({
                 {character.name}
               </p>
               <p className="font-mono text-[0.65rem] text-muted">
-                v{character.version} · {character.rarity}★
+                {t('versionLine', { version: character.version, rarity: character.rarity })}
                 {owned && pieces > 0 && ` · ${pieces}/5`}
               </p>
             </Link>

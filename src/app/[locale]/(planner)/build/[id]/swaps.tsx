@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useActionState, useState } from 'react';
 
 import { AssetImage } from '@/components/asset-image';
@@ -41,20 +42,6 @@ export type SlotPanel = {
   swaps: SwapRow[];
 };
 
-const KIND_LABEL: Record<SwapRow['kind'], string> = {
-  upgrade: 'mejora',
-  prospect: 'prospecto',
-  stopgap: 'parche',
-  sidegrade: 'lateral',
-};
-
-const KIND_HELP: Record<SwapRow['kind'], string> = {
-  upgrade: 'mejor ahora y sigue siéndolo',
-  prospect: 'peor ahora, mejor al subirlo',
-  stopgap: 'mejor ahora, peor cuando subas lo que llevas',
-  sidegrade: 'sin cambio real',
-};
-
 /**
  * What to change in one slot, and what changing it buys.
  *
@@ -63,6 +50,7 @@ const KIND_HELP: Record<SwapRow['kind'], string> = {
  * upside would be a different, worse tool.
  */
 export function SlotSwaps({ panel, characterId }: { panel: SlotPanel; characterId: number }) {
+  const t = useTranslations('build');
   const [state, move, pending] = useActionState<MoveState, FormData>(
     moveGearAction, { status: 'idle' },
   );
@@ -80,7 +68,7 @@ export function SlotSwaps({ panel, characterId }: { panel: SlotPanel; characterI
             </span>
           </>
         ) : (
-          <span className="flex-1 text-sm text-muted">vacío</span>
+          <span className="flex-1 text-sm text-muted">{t('emptySlotText')}</span>
         )}
       </header>
 
@@ -96,7 +84,7 @@ export function SlotSwaps({ panel, characterId }: { panel: SlotPanel; characterI
 
       {panel.swaps.length === 0 ? (
         <p className="px-3 py-2 text-xs text-muted">
-          Nada en tu cuenta mejora este slot para esta build.
+          {t('noSwapsForSlot')}
         </p>
       ) : (
         <ul>
@@ -130,13 +118,16 @@ function SwapItem({
   action: (form: FormData) => void;
   pending: boolean;
 }) {
+  const t = useTranslations('build');
+  const kindLabel = useTranslations('build.kind');
+  const kindHelp = useTranslations('build.kindHelp');
   const [open, setOpen] = useState(false);
 
   return (
     <li className="border-b border-edge/40 last:border-b-0">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 px-3 py-2">
               <span
-                title={KIND_HELP[swap.kind]}
+                title={kindHelp(swap.kind)}
                 className={`w-20 shrink-0 font-mono text-[0.65rem] ${
                   swap.kind === 'upgrade'
                     ? 'text-accent'
@@ -145,7 +136,7 @@ function SwapItem({
                       : 'text-muted'
                 }`}
               >
-                {KIND_LABEL[swap.kind]}
+                {kindLabel(swap.kind)}
               </span>
 
               <AssetImage src={swap.icon} kind="relic" className="h-6 w-6" sizes="24px" />
@@ -160,7 +151,7 @@ function SwapItem({
               </span>
 
               <span className="w-24 shrink-0 text-right font-mono text-[0.65rem]">
-                {swap.delta >= 0 ? '+' : ''}{swap.delta.toFixed(1)} ahora
+                {swap.delta >= 0 ? '+' : ''}{swap.delta.toFixed(1)} {t('deltaNowSuffix')}
               </span>
               {/* The expectation, not the ceiling: every roll landing the
                   build's first choice at the top tier is one path out of
@@ -168,19 +159,20 @@ function SwapItem({
                   like a bargain. The ceiling stays in the tooltip. */}
               <span
                 className="w-28 shrink-0 text-right font-mono text-[0.65rem] text-muted"
-                title={`En el mejor de los casos: ${swap.bestCaseDelta >= 0 ? '+' : ''}${
-                  swap.bestCaseDelta.toFixed(1)}`}
+                title={t('bestCaseTitle', {
+                  value: `${swap.bestCaseDelta >= 0 ? '+' : ''}${swap.bestCaseDelta.toFixed(1)}`,
+                })}
               >
-                {swap.potentialDelta >= 0 ? '+' : ''}{swap.potentialDelta.toFixed(1)} esperado
+                {swap.potentialDelta >= 0 ? '+' : ''}{swap.potentialDelta.toFixed(1)} {t('expectedSuffix')}
                 {swap.remainingRolls > 0 && ` (${swap.remainingRolls})`}
               </span>
 
               {!swap.keepsSetBonus && (
-                <span className="font-mono text-[0.65rem] text-accent">rompe el set</span>
+                <span className="font-mono text-[0.65rem] text-accent">{t('breaksSet')}</span>
               )}
               {swap.holder && (
                 <span className="font-mono text-[0.65rem] text-muted">
-                  se lo quitas a {swap.holder}
+                  {t('displacesFrom', { holder: swap.holder })}
                 </span>
               )}
               {swap.goalChanges.map((change) => (
@@ -200,7 +192,7 @@ function SwapItem({
                 aria-expanded={open}
                 className="shrink-0 rounded border border-edge px-2 py-0.5 font-mono text-[0.65rem] text-muted hover:border-accent hover:text-text"
               >
-                {open ? 'cerrar' : 'comparar'}
+                {open ? t('closeCompare') : t('openCompare')}
               </button>
 
               <form action={action} className="contents">
@@ -223,7 +215,7 @@ function SwapItem({
                   disabled={pending}
                   className="shrink-0 rounded border border-edge px-2 py-0.5 text-[0.65rem] hover:border-accent disabled:opacity-50"
                 >
-                  Equipar
+                  {t('equipButton')}
                 </button>
               </form>
       </div>

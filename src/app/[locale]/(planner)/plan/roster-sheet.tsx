@@ -1,7 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { Users, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 /**
@@ -28,6 +29,7 @@ export function RosterSheet({
   clearCharsHref: string | null;
   children: React.ReactNode;
 }) {
+  const t = useTranslations('plan');
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -56,14 +58,14 @@ export function RosterSheet({
         <Users size={13} aria-hidden />
         <span>
           <span className="text-accent">{planned}</span>
-          <span className="text-muted"> de {total} en el plan</span>
+          <span className="text-muted"> {t('inPlanSuffix', { total })}</span>
         </span>
-        {teamName && <span className="text-muted">· solo {teamName}</span>}
+        {teamName && <span className="text-muted">{t('onlyTeam', { team: teamName })}</span>}
       </button>
 
       {charsCount > 0 && clearCharsHref && (
         <Link href={clearCharsHref} className="text-xs text-muted underline hover:text-accent">
-          filtro de personaje ({charsCount}) · quitar
+          {t('charFilterLink', { count: charsCount })}
         </Link>
       )}
 
@@ -71,22 +73,24 @@ export function RosterSheet({
         <div className="fixed inset-0 z-40">
           <button
             type="button"
-            aria-label="Cerrar"
+            aria-label={t('closeAria')}
             onClick={() => setOpen(false)}
             className="absolute inset-0 bg-ink/60"
           />
           <div
             role="dialog"
             aria-modal="true"
-            aria-label="Personajes"
+            aria-label={t('sheetAriaLabel')}
             className="absolute inset-y-0 right-0 flex w-full max-w-md flex-col border-l border-edge bg-surface shadow-xl"
           >
             <header className="flex items-center justify-between border-b border-edge px-3 py-2">
-              <span className="font-mono text-xs uppercase text-muted">personajes</span>
+              <span className="font-mono text-xs uppercase text-muted">
+                {t('charactersLabel')}
+              </span>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                aria-label="Cerrar"
+                aria-label={t('closeAria')}
                 className="text-muted hover:text-text"
               >
                 <X size={16} aria-hidden />
