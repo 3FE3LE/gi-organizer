@@ -59,16 +59,18 @@ const serialize = createSerializer(filterParsers);
  * What the pages pass around: the parsed state with the day resolved.
  *
  * `dia` is the one value with no static default — "today" is a fact about the
- * request, not about the schema — so it is filled in here rather than left
- * nullable for every reader to handle.
+ * request and the player's game server, not about the schema — so it is filled
+ * in by the caller, which is the only place that knows both. See
+ * `@/lib/rules/game-day`.
  */
 export type Filters = Omit<inferParserType<typeof filterParsers>, 'dia'> & { dia: Weekday };
 
 export async function loadFilters(
   searchParams: Promise<Record<string, string | string[] | undefined>>,
+  today: Weekday,
 ): Promise<Filters> {
   const parsed = await load(searchParams);
-  return { ...parsed, dia: parsed.dia ?? todayName() };
+  return { ...parsed, dia: parsed.dia ?? today };
 }
 
 /** The same filters back as a link, with one value changed. */
@@ -81,26 +83,6 @@ export function toggle<T>(values: readonly T[], value: T): T[] {
   return values.includes(value)
     ? values.filter((entry) => entry !== value)
     : [...values, value];
-}
-
-/** Today in the game's own week, which starts on Sunday like `Date`. */
-export function todayName(): Weekday {
-  return WEEKDAYS[new Date().getDay()];
-}
-
-/**
- * The seven days around today, today in the middle.
- *
- * Centred rather than week-aligned: a calendar that starts on Monday puts
- * Sunday six columns away on a Monday, and the days anyone actually plans are
- * the ones next to the one they are on.
- */
-export function weekStrip(now = new Date()): { day: Weekday; date: number }[] {
-  return Array.from({ length: 7 }, (_, column) => {
-    const date = new Date(now);
-    date.setDate(now.getDate() + column - 3);
-    return { day: WEEKDAYS[date.getDay()], date: date.getDate() };
-  });
 }
 
 /* ------------------------------------------------------------- wording --- */

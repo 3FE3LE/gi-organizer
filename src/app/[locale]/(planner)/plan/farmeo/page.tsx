@@ -5,8 +5,10 @@ import { GameIcon } from '@/components/game-icon';
 import { getCatalog } from '@/lib/data/catalog';
 import { isLocale } from '@/lib/data/locales';
 import { getDb } from '@/lib/db/client';
+import { readRegion } from '@/lib/player/region';
 import { readTeams } from '@/lib/player/teams';
 import { farmingPlan } from '@/lib/rules/assemble';
+import { gameWeekday } from '@/lib/rules/game-day';
 import type { Need } from '@/lib/rules/materials';
 
 import { FilterBar } from '../filter-bar';
@@ -30,10 +32,12 @@ export default async function FarmingPage({
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
 
-  const filters = await loadFilters(searchParams);
   const catalog = await getCatalog(locale);
   const db = getDb();
   const teams = await readTeams(db);
+
+  const region = await readRegion(db);
+  const filters = await loadFilters(searchParams, gameWeekday(new Date(), region));
 
   const { characterIds } = resolveScope(teams, filters);
   const { schedule, sources, roster } = await farmingPlan(
@@ -76,6 +80,7 @@ export default async function FarmingPage({
         filters={filters}
         catalog={catalog}
         teams={teams}
+        region={region}
         showDays={false}
       />
 

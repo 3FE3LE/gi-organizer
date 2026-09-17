@@ -321,6 +321,19 @@ const MIGRATIONS: string[] = [
     -- makes a months-old dismissal worth revisiting.
     ALTER TABLE character_build ADD COLUMN dismissed_at TEXT;
   `,
+  /* 9 */ `
+    -- Which game server this account plays on.
+    --
+    -- The domain rotation is a fact about the server's clock, not about the
+    -- machine rendering the page: the same instant is Wednesday on America and
+    -- Thursday on Asia, and the day turns at four in the morning rather than at
+    -- midnight. Without this the plan was read against UTC, which showed
+    -- tomorrow's domains to anybody farming in the evening west of Greenwich.
+    --
+    -- Null means nobody has said, which is answered by a default rather than by
+    -- a guess — see \`DEFAULT_REGION\`.
+    ALTER TABLE profile ADD COLUMN game_region TEXT;
+  `,
 ];
 
 /**

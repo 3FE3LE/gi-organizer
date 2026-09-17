@@ -2,7 +2,14 @@ import Link from 'next/link';
 
 import type { Catalog } from '@/lib/data/catalog';
 import type { Team } from '@/lib/player/teams';
+import {
+  GAME_REGIONS,
+  REGION_LABEL,
+  gameWeekStrip,
+  type GameRegion,
+} from '@/lib/rules/game-day';
 
+import { chooseRegion } from './region-actions';
 import {
   DAY_SHORT,
   REASONS,
@@ -10,7 +17,6 @@ import {
   type Filters,
   href,
   toggle,
-  weekStrip,
 } from './filters';
 
 /** One filter value, on or off. */
@@ -53,19 +59,22 @@ export function FilterBar({
   filters,
   catalog,
   teams,
+  region,
   showDays = true,
 }: {
   base: string;
   filters: Filters;
   catalog: Catalog;
   teams: Team[];
+  /** The game server whose clock the day strip is read against. */
+  region: GameRegion;
   showDays?: boolean;
 }) {
   return (
     <div className="space-y-3">
       {showDays && (
         <nav className="flex flex-wrap gap-1">
-          {weekStrip().map(({ day, date }) => {
+          {gameWeekStrip(new Date(), region).map(({ day, date }) => {
             const active = day === filters.dia;
 
             return (
@@ -86,6 +95,26 @@ export function FilterBar({
           })}
         </nav>
       )}
+
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <span className="w-16 font-mono text-[0.65rem] uppercase text-muted">servidor</span>
+        {GAME_REGIONS.map((entry) => (
+          <form key={entry} action={chooseRegion.bind(null, entry)}>
+            <button
+              type="submit"
+              aria-current={region === entry ? 'true' : undefined}
+              title="El día rota con el reloj del servidor y cambia a las 04:00, no a medianoche"
+              className={`rounded border px-2 py-1 text-xs ${
+                region === entry
+                  ? 'border-accent bg-surface-2 text-accent'
+                  : 'border-edge text-muted hover:border-accent hover:text-text'
+              }`}
+            >
+              {REGION_LABEL[entry]}
+            </button>
+          </form>
+        ))}
+      </div>
 
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <span className="w-16 font-mono text-[0.65rem] uppercase text-muted">equipo</span>

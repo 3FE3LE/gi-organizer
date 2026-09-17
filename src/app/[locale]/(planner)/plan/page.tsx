@@ -5,12 +5,14 @@ import { GameIcon } from '@/components/game-icon';
 import { getCatalog, type Catalog } from '@/lib/data/catalog';
 import { isLocale, type Locale } from '@/lib/data/locales';
 import { getDb } from '@/lib/db/client';
+import { readRegion } from '@/lib/player/region';
 import { readTeams } from '@/lib/player/teams';
 import { farmingPlan } from '@/lib/rules/assemble';
+import { gameWeekday } from '@/lib/rules/game-day';
 import { charactersIn, domainsByKind, type DomainPlan, type Need } from '@/lib/rules/materials';
 
 import { FilterBar } from './filter-bar';
-import { DAY_LABEL, REASON_LABEL, href, loadFilters, todayName } from './filters';
+import { DAY_LABEL, REASON_LABEL, href, loadFilters } from './filters';
 import { RosterPanel } from './roster-panel';
 import { farmingFilter, resolveScope } from './scope';
 
@@ -28,10 +30,16 @@ export default async function TodayPage({ params, searchParams }: PageProps<'/[l
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
 
-  const filters = await loadFilters(searchParams);
   const catalog = await getCatalog(locale);
   const db = getDb();
   const teams = await readTeams(db);
+
+  // Today on the player's own server, where the rotation turns at 04:00 and
+  // not at midnight — and never on the machine's UTC clock, which showed
+  // tomorrow's domains to anybody farming in the evening west of Greenwich.
+  const region = await readRegion(db);
+  const today = gameWeekday(new Date(), region);
+  const filters = await loadFilters(searchParams, today);
 
   const { team, characterIds } = resolveScope(teams, filters);
   const { schedule, sources, roster } = await farmingPlan(
@@ -40,7 +48,6 @@ export default async function TodayPage({ params, searchParams }: PageProps<'/[l
 
   const { talent, weapon } = domainsByKind(schedule, filters.dia);
   const showing = filters.ver === 'arma' ? weapon : talent;
-  const today = todayName();
 
   return (
     <div className="space-y-6">
@@ -49,6 +56,7 @@ export default async function TodayPage({ params, searchParams }: PageProps<'/[l
         filters={filters}
         catalog={catalog}
         teams={teams}
+        region={region}
       />
 
       <RosterPanel
