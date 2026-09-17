@@ -260,44 +260,48 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
     .sort((a, b) => a.name.localeCompare(b.name, locale));
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)]">
-      <TeamRail locale={locale} teams={rail} selectedId={selectedId} />
+    <div className="space-y-6">
+      <div className="grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)]">
+        <TeamRail locale={locale} teams={rail} selectedId={selectedId} />
 
-      <main className="min-w-0 space-y-6">
-        {views.length === 0 ? (
-          <p className="max-w-prose text-sm text-muted">{tTeams('empty')}</p>
-        ) : (
-          views.map((team) => (
-            <TeamBoard key={team.id} team={team} roster={roster} objectives={objectives} />
-          ))
-        )}
+        {/* Not a `<main>`: the layout already owns that landmark, and two of
+            them on a page means neither is the main one. */}
+        <div className="min-w-0 space-y-6">
+          {views.length === 0 ? (
+            <p className="max-w-prose text-sm text-muted">{tTeams('empty')}</p>
+          ) : (
+            views.map((team) => (
+              <TeamBoard key={team.id} team={team} roster={roster} objectives={objectives} />
+            ))
+          )}
 
-        {selectedDiagnostics.length > 0 && (
-          <section>
-            <h2 className="mb-2 text-sm font-medium uppercase tracking-wide text-muted">
-              {tTeams('detectedHeading')}{' '}
-              <span className="font-mono">{selectedDiagnostics.length}</span>
-            </h2>
-            <ul className="space-y-1">
-              {selectedDiagnostics.map((diagnostic) => (
-                <li
-                  key={diagnostic.id}
-                  className={`rounded border-l-2 border border-edge bg-surface px-3 py-1.5 text-xs ${
-                    diagnostic.severity === 'error'
-                      ? 'border-l-bad'
-                      : diagnostic.severity === 'warning'
-                        ? 'border-l-warn'
-                        : 'border-l-edge-strong'
-                  }`}
-                >
-                  <span className="font-mono text-muted">{diagnostic.code}</span>{' '}
-                  {describe(diagnostic, naming, t)}
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-      </main>
+          {selectedDiagnostics.length > 0 && (
+            <section>
+              <h2 className="mb-2 text-sm font-medium uppercase tracking-wide text-muted">
+                {tTeams('detectedHeading')}{' '}
+                <span className="font-mono">{selectedDiagnostics.length}</span>
+              </h2>
+              <ul className="space-y-1">
+                {selectedDiagnostics.map((diagnostic) => (
+                  <li
+                    key={diagnostic.id}
+                    className={`rounded border-l-2 border border-edge bg-surface px-3 py-1.5 text-xs ${
+                      diagnostic.severity === 'error'
+                        ? 'border-l-bad'
+                        : diagnostic.severity === 'warning'
+                          ? 'border-l-warn'
+                          : 'border-l-edge-strong'
+                    }`}
+                  >
+                    <span className="font-mono text-muted">{diagnostic.code}</span>{' '}
+                    {describe(diagnostic, naming, t)}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

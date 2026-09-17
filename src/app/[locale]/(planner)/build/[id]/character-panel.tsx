@@ -198,9 +198,9 @@ export async function CharacterPanel({
             )}
           </header>
 
-          <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">
+          <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">
             {t('characterAttributes')}
-          </h3>
+          </h2>
           <dl className="grid gap-x-6 sm:grid-cols-2">
             <StatRow
               label={propLabel(catalog, 'FIGHT_PROP_HP')}
@@ -270,9 +270,9 @@ export async function CharacterPanel({
             ))}
           </dl>
 
-          <h3 className="mb-2 mt-5 text-xs font-medium uppercase tracking-wide text-muted">
+          <h2 className="mb-2 mt-5 text-xs font-medium uppercase tracking-wide text-muted">
             {t('weaponHeading')}
-          </h3>
+          </h2>
           {loadout.weapon && weaponDefinition ? (
             <div className="group relative flex items-center gap-3 rounded-lg border border-edge bg-surface-2 p-3">
               <div className="relative shrink-0">
@@ -340,9 +340,9 @@ export async function CharacterPanel({
 
       <div className="border-t border-edge p-4">
         <div className="mb-2 flex flex-wrap items-baseline gap-x-3">
-          <h3 className="text-xs font-medium uppercase tracking-wide text-muted">
+          <h2 className="text-xs font-medium uppercase tracking-wide text-muted">
             {t('artifactsHeading')}
-          </h3>
+          </h2>
           {loadout.setCounts.map(([setId, count]) => (
             <span key={setId} className="font-mono text-xs text-muted">
               {catalog.artifacts.get(setId)?.name ?? `#${setId}`}{' '}

@@ -27,6 +27,7 @@ import {
   type UseFormRegisterReturn,
 } from 'react-hook-form';
 
+import { ActionStatus } from '@/components/action-status';
 import {
   BREAKPOINTS,
   DEFAULT_GOAL_ROWS,
@@ -312,7 +313,7 @@ function ProgressForm({
           <select
             {...form.register('role')}
             defaultValue={defaults.role}
-            className="rounded border border-edge bg-ink px-2 py-1.5 text-sm focus:border-accent focus:outline-none"
+            className="rounded border border-edge bg-ink px-2 py-1.5 text-sm focus:border-accent"
           >
             <option value="">{t('noRole')}</option>
             {options.roles.map((option) => (
@@ -397,6 +398,7 @@ function ProgressForm({
               <div className="flex flex-wrap items-end gap-2">
                 <Ranked
                   field={form.register('weaponId')}
+                  label={t('targetWeaponLabel')}
                   defaultValue={defaults.weaponId}
                   placeholder={t('weaponPlaceholder')}
                   options={options.weapons}
@@ -493,7 +495,7 @@ function ProgressForm({
                     <select
                       {...form.register(`mainStats.${slot.key}`)}
                       defaultValue={defaults.mainStats[slot.key]}
-                      className="w-full min-w-0 rounded border border-edge bg-ink px-2 py-1.5 text-xs focus:border-accent focus:outline-none"
+                      className="w-full min-w-0 rounded border border-edge bg-ink px-2 py-1.5 text-xs focus:border-accent"
                     >
                       <option value="">—</option>
                       {(options.mainStatsBySlot[slot.key] ?? []).map((option) => (
@@ -520,7 +522,8 @@ function ProgressForm({
                     <select
                       {...form.register(`substats.${position - 1}`)}
                       defaultValue={defaults.substats[position - 1]}
-                      className="w-full min-w-0 rounded border border-edge bg-ink px-1.5 py-1.5 text-xs focus:border-accent focus:outline-none"
+                      aria-label={t('substatPositionAria', { position })}
+                      className="w-full min-w-0 rounded border border-edge bg-ink px-1.5 py-1.5 text-xs focus:border-accent"
                     >
                       <option value="">—</option>
                       {options.substats.map((option) => (
@@ -560,7 +563,8 @@ function ProgressForm({
                     <select
                       {...form.register(`goals.${index}.prop`)}
                       defaultValue={defaults.goals[index]?.prop ?? ''}
-                      className="w-full min-w-0 rounded border border-edge bg-ink px-2 py-1.5 text-xs focus:border-accent focus:outline-none"
+                      aria-label={t('goalStatAria', { n: index + 1 })}
+                      className="w-full min-w-0 rounded border border-edge bg-ink px-2 py-1.5 text-xs focus:border-accent"
                     >
                       <option value="">{t('chooseStatPlaceholder')}</option>
                       {options.goalProps.map((option) => (
@@ -577,7 +581,8 @@ function ProgressForm({
                         {...form.register(`goals.${index}.min`)}
                         defaultValue={defaults.goals[index]?.min ?? ''}
                         placeholder={t('minPlaceholder')}
-                        className="tabular w-20 shrink-0 rounded border border-edge bg-ink px-2 py-1 text-right font-mono text-xs focus:border-accent focus:outline-none"
+                        aria-label={t('goalMinAria', { n: index + 1 })}
+                        className="tabular w-20 shrink-0 rounded border border-edge bg-ink px-2 py-1 text-right font-mono text-xs focus:border-accent"
                       />
                       <Verdict status={status} current={prop ? propInfo(prop)?.current : null} />
                     </div>
@@ -637,15 +642,7 @@ function ProgressForm({
           </button>
         )}
 
-        {state.status !== 'idle' && (
-          <span
-            className={`font-mono text-xs ${
-              state.status === 'ok' ? 'text-muted' : 'text-accent'
-            }`}
-          >
-            {state.message}
-          </span>
-        )}
+        <ActionStatus state={state} className="font-mono text-xs" />
 
         {values.buildId && (
           <button
@@ -718,7 +715,7 @@ function FieldLabel({
         {children}
       </span>
       {count && <span className="tabular font-mono text-[0.6rem] text-muted">{count}</span>}
-      {hint && <span className="text-[0.65rem] text-muted/70">{hint}</span>}
+      {hint && <span className="text-[0.65rem] text-muted">{hint}</span>}
     </p>
   );
 }
@@ -765,7 +762,7 @@ function Verdict({
   current: string | null | undefined;
 }) {
   const t = useTranslations('build');
-  if (!current) return <span className="text-[0.65rem] text-muted/60">{t('noStatCurrent')}</span>;
+  if (!current) return <span className="text-[0.65rem] text-muted">{t('noStatCurrent')}</span>;
 
   const tone = status === 'met'
     ? 'text-good'
@@ -786,12 +783,15 @@ function Verdict({
 /** A select whose first group is what the engine would pick, in its order. */
 function Ranked({
   field,
+  label,
   defaultValue,
   placeholder,
   options,
   className,
 }: {
   field: UseFormRegisterReturn;
+  /** The caption above it is a `<span>`, so the control states its own name. */
+  label: string;
   defaultValue: string;
   placeholder: string;
   options: RankedOptions;
@@ -801,8 +801,9 @@ function Ranked({
   return (
     <select
       {...field}
+      aria-label={label}
       defaultValue={defaultValue}
-      className={`min-w-0 focus:border-accent focus:outline-none ${className}`}
+      className={`min-w-0 focus:border-accent ${className}`}
     >
       <option value="">{placeholder}</option>
 
@@ -977,7 +978,7 @@ function Stepper({
           onBlur={onBlur}
           min={min}
           max={max}
-          className="tabular w-full min-w-0 bg-transparent py-1.5 text-center font-mono text-sm focus:outline-none"
+          className="tabular w-full min-w-0 bg-transparent py-1.5 text-center font-mono text-sm"
         />
       </span>
       <button

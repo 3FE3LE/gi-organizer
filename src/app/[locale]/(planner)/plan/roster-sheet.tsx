@@ -3,7 +3,9 @@
 import { Users, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+
+import { useModalFocus } from '@/components/use-modal';
 
 /**
  * The roster, one tap away instead of always on screen.
@@ -77,12 +79,7 @@ export function RosterSheet({
             onClick={() => setOpen(false)}
             className="absolute inset-0 bg-ink/60"
           />
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label={t('sheetAriaLabel')}
-            className="absolute inset-y-0 right-0 flex w-full max-w-md flex-col border-l border-edge bg-surface shadow-xl"
-          >
+          <SheetPanel label={t('sheetAriaLabel')}>
             <header className="flex items-center justify-between border-b border-edge px-3 py-2">
               <span className="font-mono text-xs uppercase text-muted">
                 {t('charactersLabel')}
@@ -97,9 +94,33 @@ export function RosterSheet({
               </button>
             </header>
             <div className="flex-1 overflow-y-auto p-3">{children}</div>
-          </div>
+          </SheetPanel>
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * The panel itself, split out so the focus hook has a node to hold.
+ *
+ * It only exists while the sheet is open, which is what makes mounting it the
+ * moment to take focus and unmounting it the moment to give it back.
+ */
+function SheetPanel({ label, children }: { label: string; children: React.ReactNode }) {
+  const panel = useRef<HTMLDivElement>(null);
+  useModalFocus(panel);
+
+  return (
+    <div
+      ref={panel}
+      role="dialog"
+      tabIndex={-1}
+      aria-modal="true"
+      aria-label={label}
+      className="absolute inset-y-0 right-0 flex w-full max-w-md flex-col border-l border-edge bg-surface shadow-xl"
+    >
+      {children}
     </div>
   );
 }

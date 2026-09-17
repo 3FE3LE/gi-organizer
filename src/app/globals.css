@@ -58,6 +58,35 @@ body {
 }
 
 /**
+ * Keyboard focus, said once.
+ *
+ * Controls that change a border on focus read fine with a mouse and vanish
+ * with a keyboard: a one-pixel edge moving from slate to gold is not a
+ * position indicator on a page of forty bordered things. `:focus-visible`
+ * means a pointer never sees this ring, so nothing has to opt out of it —
+ * which is what the `focus:outline-none` scattered across the forms was for.
+ */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/**
+ * The only motion here is a pulse on loading blocks and a few opacity fades,
+ * but a vestibular trigger does not care how tasteful the animation is.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/**
  * Numbers in a table only line up when the digits are the same width, and
  * almost every number here sits in a column next to another.
  */

@@ -71,7 +71,7 @@ export default async function CharactersPage({ params }: PageProps<'/[locale]/ch
         </p>
       )}
 
-      <Gallery locale={locale} characters={mine} owned gear={gear} t={t} />
+      <Gallery locale={locale} characters={mine} owned gear={gear} t={t} eager />
 
       {missing.length > 0 && (
         <section>
@@ -93,12 +93,15 @@ function Gallery({
   owned,
   gear,
   t,
+  eager = false,
 }: {
   locale: string;
   characters: CharacterView[];
   owned: boolean;
   gear: Map<number, number>;
   t: Awaited<ReturnType<typeof getTranslations<'characters'>>>;
+  /** The first gallery holds the largest contentful paint; the second is below it. */
+  eager?: boolean;
 }) {
   if (characters.length === 0) {
     return <p className="text-sm text-muted">{t('empty')}</p>;
@@ -106,7 +109,7 @@ function Gallery({
 
   return (
     <ul className="grid grid-cols-[repeat(auto-fill,minmax(8rem,1fr))] gap-3">
-      {characters.map((character) => {
+      {characters.map((character, index) => {
         const pieces = gear.get(character.id) ?? 0;
 
         return (
@@ -127,6 +130,9 @@ function Gallery({
                 kind="avatar"
                 className={`mx-auto h-16 w-16 ${owned ? '' : 'opacity-30 grayscale'}`}
                 sizes="64px"
+                // The first row is above the fold on every viewport; lazy-loading
+                // it means the page paints its own empty grid first.
+                priority={eager && index < 6}
               />
               <p className={`mt-1 truncate text-sm ${owned ? '' : 'text-muted'}`}>
                 {character.name}

@@ -34,6 +34,8 @@ export default async function CharacterPage({ params }: PageProps<'/[locale]/cha
           kind="splash"
           className="h-40 w-40 rounded-lg border border-edge object-cover object-top"
           sizes="160px"
+          // The splash is this page's largest contentful paint.
+          priority
         />
         <div className="min-w-64 flex-1">
           <p className="font-mono text-xs uppercase tracking-wide" style={{ color: accent }}>

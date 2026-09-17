@@ -1,20 +1,28 @@
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
 
 import { GameIcon } from '@/components/game-icon';
+import { PanelsSkeleton, Skeleton } from '@/components/skeleton';
 import { getCatalog, type Catalog } from '@/lib/data/catalog';
 import { isLocale, type Locale } from '@/lib/data/locales';
 import { getDb } from '@/lib/db/client';
 import { readRegion } from '@/lib/player/region';
-import { readTeams } from '@/lib/player/teams';
+import { readTeams, type Team } from '@/lib/player/teams';
 import { farmingPlan } from '@/lib/rules/assemble';
 import { gameWeekday } from '@/lib/rules/game-day';
-import { charactersIn, domainsByKind, type DomainPlan, type Need } from '@/lib/rules/materials';
+import {
+  charactersIn,
+  domainsByKind,
+  type DomainPlan,
+  type Need,
+  type Weekday,
+} from '@/lib/rules/materials';
 
 import { groupAnytime, type AnytimeGroup } from './anytime';
 import { FilterBar } from './filter-bar';
-import { href, loadFilters } from './filters';
+import { href, loadFilters, type Filters } from './filters';
 import { MaterialRow } from './material-row';
 import { RosterPanel, summarizeRoster } from './roster-panel';
 import { RosterSheet } from './roster-sheet';
@@ -50,21 +58,78 @@ export default async function PlanPage({ params, searchParams }: PageProps<'/[lo
   const filters = await loadFilters(searchParams, today);
 
   const { team, characterIds } = resolveScope(teams, filters);
+  const base = `/${locale}/plan`;
+
+  /*
+   * The filter bar is a pure function of the URL and the catalog; the plan
+   * behind it is a scan of every target the account holds. Streaming the
+   * second one means the controls are on screen — and clickable — while it
+   * runs, instead of the whole page waiting on the slowest thing on it.
+   *
+   * Keyed by the filters so that changing one re-shows the fallback rather
+   * than leaving the previous answer up, which reads as "nothing happened".
+   */
+  return (
+    <div className="space-y-6">
+      <FilterBar base={base} filters={filters} catalog={catalog} teams={teams} region={region} />
+
+      <Suspense
+        key={href(base, filters)}
+        fallback={
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-52" />
+            <PanelsSkeleton count={4} height="h-28" />
+          </div>
+        }
+      >
+        <PlanContent
+          base={base}
+          catalog={catalog}
+          characterIds={characterIds}
+          filters={filters}
+          locale={locale}
+          team={team}
+          teams={teams}
+          today={today}
+        />
+      </Suspense>
+    </div>
+  );
+}
+
+/** Everything that needs the plan itself, which is the expensive half. */
+async function PlanContent({
+  base,
+  catalog,
+  characterIds,
+  filters,
+  locale,
+  team,
+  teams,
+  today,
+}: {
+  base: string;
+  catalog: Catalog;
+  characterIds: Set<number> | undefined;
+  filters: Filters;
+  locale: Locale;
+  team: Team | null;
+  teams: Team[];
+  today: Weekday;
+}) {
+  const db = getDb();
   const { schedule, sources, roster } = await farmingPlan(
     catalog, db, farmingFilter(filters, characterIds),
   );
 
   const { talent, weapon } = domainsByKind(schedule, filters.day);
   const showing = filters.view === 'weapon' ? weapon : talent;
-  const base = `/${locale}/plan`;
   const rosterSummary = summarizeRoster(roster, teams, filters);
   const t = await getTranslations('plan');
   const weekdayLabel = await getTranslations('common.weekday');
 
   return (
     <div className="space-y-6">
-      <FilterBar base={base} filters={filters} catalog={catalog} teams={teams} region={region} />
-
       <RosterSheet
         total={rosterSummary.total}
         planned={rosterSummary.planned}

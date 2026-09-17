@@ -2,9 +2,11 @@
 
 import { ArrowLeftRight, Pencil, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useActionState, useEffect, useState } from 'react';
+import { useActionState, useEffect, useRef, useState } from 'react';
 
+import { ActionStatus } from '@/components/action-status';
 import { AssetImage } from '@/components/asset-image';
+import { useModalFocus } from '@/components/use-modal';
 
 import { type MoveState, moveGearAction } from './actions';
 import { CandidateRow, MoveButton, type SlotView } from './gear-slot';
@@ -126,8 +128,11 @@ function SlotDialog({
   onClose: () => void;
 }) {
   const t = useTranslations('build');
+  const panel = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<SlotView | null>(null);
   const [failed, setFailed] = useState(false);
+
+  useModalFocus(panel);
   const [state, move, pending] = useActionState<MoveState, FormData>(
     moveGearAction, { status: 'idle' },
   );
@@ -156,7 +161,9 @@ function SlotDialog({
       onClick={onClose}
     >
       <div
+        ref={panel}
         role="dialog"
+        tabIndex={-1}
         aria-modal="true"
         aria-label={t('candidatesForAria', { title })}
         onClick={(event) => event.stopPropagation()}
@@ -204,15 +211,7 @@ function SlotDialog({
           </button>
         </header>
 
-        {state.status !== 'idle' && (
-          <p
-            className={`border-b border-edge px-4 py-1.5 font-mono text-xs ${
-              state.status === 'ok' ? 'text-muted' : 'text-accent'
-            }`}
-          >
-            {state.message}
-          </p>
-        )}
+        <ActionStatus state={state} className="border-b border-edge px-4 py-1.5 font-mono text-xs" />
 
         {view && (
           <p className="border-b border-edge px-4 py-1.5 text-xs text-muted">

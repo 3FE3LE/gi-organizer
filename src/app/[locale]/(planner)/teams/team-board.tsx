@@ -1,8 +1,10 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { useActionState } from 'react';
 
+import { ActionStatus } from '@/components/action-status';
 import { AssetImage } from '@/components/asset-image';
 import { TEAM_ROLES, type TeamRole } from '@/lib/rules/types';
 
@@ -96,15 +98,7 @@ export function TeamBoard({
         </div>
       </header>
 
-      {state.status !== 'idle' && (
-        <p
-          className={`border-b border-edge px-4 py-1.5 font-mono text-xs ${
-            state.status === 'ok' ? 'text-muted' : 'text-accent'
-          }`}
-        >
-          {state.message}
-        </p>
-      )}
+      <ActionStatus state={state} className="border-b border-edge px-4 py-1.5 font-mono text-xs" />
 
       {team.findings.length > 0 && (
         <ul className="border-b border-edge px-4 py-2">
@@ -165,9 +159,11 @@ function ObjectivePicker({
       </select>
       <button
         type="submit"
+        aria-label={t('saveObjectiveAria')}
+        title={t('saveObjectiveAria')}
         className="rounded border border-edge px-1.5 py-1 text-xs hover:border-accent"
       >
-        ✓
+        <span aria-hidden>✓</span>
       </button>
     </form>
   );
@@ -204,7 +200,7 @@ function AddMember({
         {ROLES.map((role) => (
           <label
             key={role}
-            className="cursor-pointer rounded border border-edge px-1.5 py-0.5 text-[0.65rem] text-muted hover:border-accent has-checked:border-accent has-checked:text-accent"
+            className="cursor-pointer rounded border border-edge px-1.5 py-0.5 text-[0.65rem] text-muted hover:border-accent has-checked:border-accent has-checked:text-accent has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent"
           >
             <input type="checkbox" name="roles" value={role} className="sr-only" />
             {roleLabel(role)}
@@ -269,9 +265,9 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
     >
       <div className="flex items-center gap-2">
         <AssetImage src={slot.icon} kind="avatar" className="h-8 w-8" sizes="32px" />
-        <a href={slot.buildHref} className="min-w-0 flex-1 truncate text-sm hover:text-accent">
+        <Link href={slot.buildHref} className="min-w-0 flex-1 truncate text-sm hover:text-accent">
           {slot.name}
-        </a>
+        </Link>
         <form action={drop}>
           <input type="hidden" name="teamId" value={teamId} />
           <input type="hidden" name="characterId" value={slot.characterId} />
@@ -324,7 +320,7 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
           {ROLES.map((role) => (
             <label
               key={role}
-              className={`cursor-pointer rounded border px-1.5 py-0.5 text-[0.65rem] ${
+              className={`cursor-pointer rounded border px-1.5 py-0.5 text-[0.65rem] has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent ${
                 slot.roles.includes(role)
                   ? 'border-accent text-accent'
                   : 'border-edge text-muted hover:border-accent/50'
@@ -367,9 +363,11 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
           </select>
           <button
             type="submit"
+            aria-label={t('saveDeclarationAria')}
+            title={t('saveDeclarationAria')}
             className="rounded border border-edge px-1.5 py-0.5 text-[0.65rem] hover:border-accent"
           >
-            ✓
+            <span aria-hidden>✓</span>
           </button>
         </form>
       ))}

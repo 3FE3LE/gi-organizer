@@ -3,6 +3,8 @@
 import { useTranslations } from 'next-intl';
 import { useActionState, useState, useTransition } from 'react';
 
+import { ActionStatus } from '@/components/action-status';
+
 import {
   type ActionState,
   applyShowcaseAction,
@@ -213,15 +215,14 @@ function Counts({ title, entries }: { title: string; entries: [string, number][]
 }
 
 function Result({ state }: { state: ActionState }) {
-  if (state.status === 'idle') return null;
-
   return (
-    <p
-      className={`mt-3 rounded border px-3 py-2 font-mono text-xs ${
-        state.status === 'ok' ? 'border-edge bg-surface' : 'border-accent/40 bg-surface text-accent'
-      }`}
-    >
-      {state.message}
-    </p>
+    <ActionStatus
+      state={state}
+      className="mt-3 rounded border px-3 py-2 font-mono text-xs"
+      tone={(current) =>
+        current.status === 'ok'
+          ? 'border-edge bg-surface'
+          : 'border-accent/40 bg-surface text-accent'}
+    />
   );
 }

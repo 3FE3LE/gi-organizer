@@ -3,6 +3,8 @@
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 
+import { ActionStatus } from '@/components/action-status';
+
 /**
  * Backup and exit.
  *
@@ -106,9 +108,10 @@ export function Backup() {
         </button>
       )}
 
-      {message && (
-        <p className={`font-mono text-xs ${failed ? 'text-accent' : 'text-muted'}`}>{message}</p>
-      )}
+      <ActionStatus
+        state={{ status: message ? (failed ? 'error' : 'ok') : 'idle', message: message ?? undefined }}
+        className="font-mono text-xs"
+      />
     </div>
   );
 }

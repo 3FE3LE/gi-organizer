@@ -3,6 +3,8 @@
 import { useTranslations } from 'next-intl';
 import { useActionState } from 'react';
 
+import { ActionStatus } from '@/components/action-status';
+
 import { type TeamActionState, createTeamAction } from './actions';
 
 export function CreateTeam() {
@@ -22,11 +24,13 @@ export function CreateTeam() {
         name="name"
         required
         placeholder={t('namePlaceholder')}
+        aria-label={t('namePlaceholder')}
         className="w-full rounded border border-edge bg-ink px-2 py-1.5 text-sm"
       />
       <select
         name="mode"
         defaultValue="abyss"
+        aria-label={t('modeAria')}
         className="w-full rounded border border-edge bg-ink px-2 py-1.5 text-sm"
       >
         <option value="abyss">{modeLabel('abyss')}</option>
@@ -41,13 +45,7 @@ export function CreateTeam() {
       >
         {t('createButton')}
       </button>
-      {state.status !== 'idle' && (
-        <span
-          className={`font-mono text-xs ${state.status === 'ok' ? 'text-muted' : 'text-accent'}`}
-        >
-          {state.message}
-        </span>
-      )}
+      <ActionStatus state={state} className="font-mono text-xs" />
     </form>
   );
 }

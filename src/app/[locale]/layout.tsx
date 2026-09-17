@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { UserButton, ClerkProvider } from '@clerk/nextjs';
 import { NextIntlClientProvider } from 'next-intl';
@@ -9,6 +9,7 @@ import { NuqsAdapter } from 'nuqs/adapters/next/app';
 
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { SyncLocaleCookie } from '@/components/sync-locale-cookie';
+import { clientMessages } from '@/i18n/client-messages';
 import { LOCALE_CODES, isLocale } from '@/lib/data/locales';
 import { getMeta } from '@/lib/data/registry';
 
@@ -17,9 +18,41 @@ import '../globals.css';
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] });
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] });
 
+/**
+ * The browser chrome's own colour, so the address bar on a phone matches the
+ * page instead of framing a dark tool in white.
+ */
+export const viewport: Viewport = {
+  themeColor: '#10131c',
+  colorScheme: 'dark',
+};
+
+/**
+ * `metadataBase` is what turns a relative Open Graph image or canonical path
+ * into the absolute URL a crawler needs. Vercel states the deployment's own
+ * host; locally there is none, and the fallback keeps the value defined rather
+ * than leaving Next to warn on every build.
+ */
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
+  ?? (process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : 'http://localhost:3000');
+
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('nav');
-  return { title: 'GI Organizer', description: t('metaDescription') };
+  const description = t('metaDescription');
+
+  return {
+    metadataBase: new URL(siteUrl),
+    title: 'GI Organizer',
+    description,
+    openGraph: {
+      type: 'website',
+      siteName: 'GI Organizer',
+      title: 'GI Organizer',
+      description,
+    },
+  };
 }
 
 export function generateStaticParams() {
@@ -44,8 +77,10 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
   // — which can differ from the route's `locale` above for a Japanese or
   // Chinese catalog reader.
   const uiLocale = await getLocale();
-  const messages = await getMessages();
+  // Only what a client component reads — see `clientMessages`.
+  const messages = clientMessages(await getMessages());
   const t = await getTranslations('nav');
+  const tUi = await getTranslations('ui');
 
   return (
     <html
@@ -53,6 +88,16 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
+        {/* Five nav links, a language picker and an account button sit between
+            the top of the page and the content on every route. Tabbing through
+            them once per navigation is what a skip link exists to spare. It is
+            off-screen until focused. */}
+        <a
+          href="#content"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded focus:border focus:border-accent focus:bg-ink focus:px-3 focus:py-2 focus:text-sm focus:text-accent"
+        >
+          {tUi('skipToContent')}
+        </a>
         <SyncLocaleCookie locale={uiLocale} />
         <NextIntlClientProvider locale={uiLocale} messages={messages}>
           <ClerkProvider>
@@ -71,7 +116,10 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
                   >
                     <span className="text-accent">GI</span> Organizer
                   </Link>
-                  <nav className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted">
+                  <nav
+                    aria-label={t('primaryNavAria')}
+                    className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted"
+                  >
                     <Link
                       href={`/${locale}/characters`}
                       className="whitespace-nowrap hover:text-text"
@@ -101,7 +149,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
                 </div>
               </header>
 
-              <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
+              <main id="content" className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
                 {children}
               </main>
 

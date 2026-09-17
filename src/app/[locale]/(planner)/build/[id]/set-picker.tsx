@@ -130,7 +130,7 @@ export function SetPicker({
         aria-expanded={open}
         aria-controls={open ? popupId : undefined}
         aria-describedby={selected && hinting ? `${popupId}-effects` : undefined}
-        className="flex w-full min-w-0 items-center gap-2 rounded border border-edge bg-ink px-2 py-1.5 text-left text-sm transition-colors hover:border-accent focus:border-accent focus:outline-none"
+        className="flex w-full min-w-0 items-center gap-2 rounded border border-edge bg-ink px-2 py-1.5 text-left text-sm transition-colors hover:border-accent focus:border-accent"
       >
         {selected ? (
           <>
@@ -169,7 +169,7 @@ export function SetPicker({
               onChange={(event) => setQuery(event.target.value)}
               placeholder={t('searchSetPlaceholder')}
               aria-label={t('searchSetAria')}
-              className="w-full bg-transparent py-2 text-xs focus:outline-none"
+              className="w-full bg-transparent py-2 text-xs"
             />
           </div>
 

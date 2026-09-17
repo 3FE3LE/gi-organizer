@@ -56,6 +56,10 @@ export default async function BuildPage({
 
   return (
     <div className="space-y-6">
+      {/* The panel carries the page's `h1`. Without a loadout there is no
+          panel, and the page would have no heading at all. */}
+      {!loadout && <h1 className="text-lg font-medium">{character.name}</h1>}
+
       {/* What is equipped now, on every tab: the tabs argue about it. */}
       {loadout && (
         <CharacterPanel

@@ -3,6 +3,8 @@
 import { useTranslations } from 'next-intl';
 import { useActionState, useEffect } from 'react';
 
+import { ActionStatus } from '@/components/action-status';
+
 import { type HistoryState, redoAction, undoAction } from './history-actions';
 
 /**
@@ -57,15 +59,7 @@ export function HistoryControls() {
           {t('redoButton')} <span className="font-mono text-xs text-muted">⇧⌘Z</span>
         </button>
       </form>
-      {state.status !== 'idle' && (
-        <span
-          className={`font-mono text-xs ${
-            state.status === 'ok' ? 'text-muted' : 'text-accent'
-          }`}
-        >
-          {state.message}
-        </span>
-      )}
+      <ActionStatus state={state} className="font-mono text-xs" />
     </div>
   );
 }

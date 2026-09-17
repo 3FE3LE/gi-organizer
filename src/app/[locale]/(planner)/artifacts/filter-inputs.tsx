@@ -220,7 +220,7 @@ function Select({
       value={value}
       onChange={(event) => onChange(event.target.value)}
       className="w-full truncate rounded border border-edge bg-ink px-2 py-1 text-xs text-text
-        transition-colors hover:border-edge-strong focus:border-accent focus:outline-none"
+        transition-colors hover:border-edge-strong focus:border-accent"
     >
       {children}
     </select>

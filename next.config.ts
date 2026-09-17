@@ -20,6 +20,25 @@ const nextConfig: NextConfig = {
    */
   serverExternalPackages: ['@libsql/client', 'libsql'],
 
+  /**
+   * The code here is already written for it — `progress-form.tsx` reaches for
+   * `useWatch` over `form.watch` precisely so the compiler does not bail on
+   * that component — but the flag was never set, so none of it was memoised.
+   *
+   * Runs through `babel-plugin-react-compiler`, which Next applies only to
+   * files that hold JSX or hooks; the rest of the build stays on SWC.
+   */
+  reactCompiler: true,
+
+  /**
+   * A URL that matches no route has no `[locale]` to render a layout from, so
+   * `[locale]/not-found.tsx` cannot serve it — see `src/app/global-not-found.tsx`,
+   * which renders its own document instead. Still flagged experimental.
+   */
+  experimental: {
+    globalNotFound: true,
+  },
+
   images: {
     // Kept in sync with `ASSET_HOSTS` in src/lib/data/assets.ts, which documents
     // why two hosts are needed.
