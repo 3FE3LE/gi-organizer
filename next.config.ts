@@ -37,10 +37,10 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       { source: '/:locale/agenda', destination: '/:locale/plan', permanent: false },
-      { source: '/:locale/farming', destination: '/:locale/plan/farmeo', permanent: false },
-      { source: '/:locale/inventory', destination: '/:locale/datos', permanent: false },
-      { source: '/:locale/import', destination: '/:locale/datos/importar', permanent: false },
-      { source: '/:locale/history', destination: '/:locale/datos/historial', permanent: false },
+      { source: '/:locale/farming', destination: '/:locale/plan?range=all', permanent: false },
+      { source: '/:locale/inventory', destination: '/:locale/data', permanent: false },
+      { source: '/:locale/import', destination: '/:locale/data/import', permanent: false },
+      { source: '/:locale/history', destination: '/:locale/data/history', permanent: false },
     ];
   },
 };

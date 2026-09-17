@@ -4,9 +4,9 @@ import { SectionTabs } from '@/components/section-tabs';
 import { isLocale } from '@/lib/data/locales';
 
 /**
- * What to do next, in three views of one calculation: the day's domains, the
- * whole material backlog behind them, and the queue of gear moves that need no
- * farming at all.
+ * What to do next, in two views: material demand — a day's rotation or the
+ * whole backlog, picked with the `range` filter — and the queue of gear moves
+ * that need no farming at all.
  */
 export default async function PlanLayout({ children, params }: LayoutProps<'/[locale]/plan'>) {
   const { locale } = await params;
@@ -17,9 +17,8 @@ export default async function PlanLayout({ children, params }: LayoutProps<'/[lo
       <h1 className="text-lg font-medium">Plan</h1>
       <SectionTabs
         tabs={[
-          { href: `/${locale}/plan`, label: 'Hoy', hint: 'Los dominios que rotan hoy' },
-          { href: `/${locale}/plan/farmeo`, label: 'Qué farmear', hint: 'Todos los materiales' },
-          { href: `/${locale}/plan/mejoras`, label: 'Qué mejorar', hint: 'La cola de cambios' },
+          { href: `/${locale}/plan`, label: 'Qué farmear', hint: 'Hoy, o todo el backlog' },
+          { href: `/${locale}/plan/upgrades`, label: 'Qué mejorar', hint: 'La cola de cambios' },
         ]}
       />
       {children}

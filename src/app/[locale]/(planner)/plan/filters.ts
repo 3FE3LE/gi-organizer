@@ -27,18 +27,27 @@ import { WEEKDAYS, type Reason, type Weekday } from '@/lib/rules/materials';
 export const REASONS = ['ascension', 'talent', 'weapon'] as const satisfies readonly Reason[];
 
 /** Talent books and weapon materials are two runs, so they are two tabs. */
-export const VIEWS = ['talento', 'arma'] as const;
+export const VIEWS = ['talent', 'weapon'] as const;
 export type DomainView = (typeof VIEWS)[number];
+
+/**
+ * One day's rotation, or the whole backlog behind it — the two questions the
+ * page used to answer as two separate routes.
+ */
+export const RANGES = ['day', 'all'] as const;
+export type PlanRange = (typeof RANGES)[number];
 
 export const filterParsers = {
   /** The day being planned. Absent means today, which only the request knows. */
-  dia: parseAsStringLiteral(WEEKDAYS),
+  day: parseAsStringLiteral(WEEKDAYS),
+  /** "day": today's rotation, compact. "all": the full backlog, by domain. */
+  range: parseAsStringLiteral(RANGES).withDefault('day'),
   /** The team whose members count. Absent means the whole roster. */
-  equipo: parseAsString,
+  team: parseAsString,
   /** Characters picked by hand. Empty means no restriction. */
-  pj: parseAsArrayOf(parseAsInteger, ',').withDefault([]),
+  chars: parseAsArrayOf(parseAsInteger, ',').withDefault([]),
   /** Kinds of cost counted. Empty means all three. */
-  tipo: parseAsArrayOf(parseAsStringLiteral(REASONS), ',').withDefault([]),
+  reason: parseAsArrayOf(parseAsStringLiteral(REASONS), ',').withDefault([]),
   /**
    * Count characters with no stated target, headed for the cap.
    *
@@ -47,9 +56,9 @@ export const filterParsers = {
    * left the plan empty for exactly the person who needed it most. Turning it
    * off narrows to the goals actually written down.
    */
-  sinmeta: parseAsBoolean.withDefault(true),
+  assume: parseAsBoolean.withDefault(true),
   /** Which of the day's two domain kinds is on screen. */
-  ver: parseAsStringLiteral(VIEWS).withDefault('talento'),
+  view: parseAsStringLiteral(VIEWS).withDefault('talent'),
 };
 
 const load = createLoader(filterParsers);
@@ -58,19 +67,19 @@ const serialize = createSerializer(filterParsers);
 /**
  * What the pages pass around: the parsed state with the day resolved.
  *
- * `dia` is the one value with no static default — "today" is a fact about the
+ * `day` is the one value with no static default — "today" is a fact about the
  * request and the player's game server, not about the schema — so it is filled
  * in by the caller, which is the only place that knows both. See
  * `@/lib/rules/game-day`.
  */
-export type Filters = Omit<inferParserType<typeof filterParsers>, 'dia'> & { dia: Weekday };
+export type Filters = Omit<inferParserType<typeof filterParsers>, 'day'> & { day: Weekday };
 
 export async function loadFilters(
   searchParams: Promise<Record<string, string | string[] | undefined>>,
   today: Weekday,
 ): Promise<Filters> {
   const parsed = await load(searchParams);
-  return { ...parsed, dia: parsed.dia ?? today };
+  return { ...parsed, day: parsed.day ?? today };
 }
 
 /** The same filters back as a link, with one value changed. */

@@ -66,7 +66,7 @@ export async function createBuildAction(
   // entry the player then has to go and click. The redirect re-renders the
   // route on its own, so there is nothing to refresh first.
   const returnTo = String(form.get('returnTo') ?? '');
-  if (returnTo.startsWith('/')) redirect(`${returnTo}?build=${buildId}&tab=objetivo`);
+  if (returnTo.startsWith('/')) redirect(`${returnTo}?build=${buildId}&tab=objective`);
 
   refresh();
   return { status: 'ok', message: 'build creada', buildId };

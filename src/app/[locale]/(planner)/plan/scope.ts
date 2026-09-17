@@ -11,8 +11,8 @@ import type { Filters } from './filters';
  * this is two answers to "what does my electro team need".
  */
 export function resolveScope(teams: Team[], filters: Filters) {
-  const team = teams.find((entry) => entry.id === filters.equipo) ?? null;
-  const picked = new Set(filters.pj);
+  const team = teams.find((entry) => entry.id === filters.team) ?? null;
+  const picked = new Set(filters.chars);
   const inTeam = new Set(team?.slots.map((slot) => slot.characterId) ?? []);
 
   let characterIds: Set<number> | undefined;
@@ -27,7 +27,7 @@ export function resolveScope(teams: Team[], filters: Filters) {
 export function farmingFilter(filters: Filters, characterIds: Set<number> | undefined) {
   return {
     characterIds,
-    reasons: filters.tipo.length > 0 ? new Set(filters.tipo) : undefined,
-    includeWithoutTarget: filters.sinmeta,
+    reasons: filters.reason.length > 0 ? new Set(filters.reason) : undefined,
+    includeWithoutTarget: filters.assume,
   };
 }

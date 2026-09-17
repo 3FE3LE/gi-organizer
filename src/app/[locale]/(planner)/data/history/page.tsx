@@ -24,7 +24,7 @@ const OPS: Record<Move['kind'], string> = {
  * which makes the history localized for free and keeps it readable after a
  * patch renames something.
  */
-export default async function HistoryPage({ params }: PageProps<'/[locale]/datos/historial'>) {
+export default async function HistoryPage({ params }: PageProps<'/[locale]/data/history'>) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
 

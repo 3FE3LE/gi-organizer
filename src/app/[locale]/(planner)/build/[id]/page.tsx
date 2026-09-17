@@ -96,9 +96,9 @@ export default async function BuildPage({
         ))}
       </nav>
 
-      {tab === 'objetivo' && <ObjectiveTab context={context} />}
-      {tab === 'cambios' && <ChangesTab context={context} />}
-      {tab === 'ficha' && (
+      {tab === 'objective' && <ObjectiveTab context={context} />}
+      {tab === 'changes' && <ChangesTab context={context} />}
+      {tab === 'sheet' && (
         <CharacterSheet catalog={catalog} character={character} locale={locale} />
       )}
     </div>
@@ -129,7 +129,7 @@ async function ChangesTab({ context }: { context: BuildContext }) {
   const { catalog, characterId, locale, suggestions } = context;
   const objectiveHref = serializeBuildParams(
     `/${locale}/build/${characterId}`,
-    { build: suggestions.build?.id ?? null, tab: 'objetivo' },
+    { build: suggestions.build?.id ?? null, tab: 'objective' },
   );
 
   if (!suggestions.build) {

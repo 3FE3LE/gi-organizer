@@ -152,9 +152,9 @@ export function RankControls() {
       <label className="flex items-center gap-1.5">
         <span className="font-mono text-[0.6rem] uppercase text-muted">escala</span>
         <Select
-          value={filters.escalador ?? ''}
+          value={filters.scaler ?? ''}
           onChange={(value) =>
-            setFilters({ escalador: value === '' ? null : (value as typeof filters.escalador) })}
+            setFilters({ scaler: value === '' ? null : (value as typeof filters.scaler) })}
           aria-label="Escalador que cuenta como útil"
         >
           <option value="">general · mejor</option>
@@ -167,8 +167,8 @@ export function RankControls() {
       <label className="flex items-center gap-1.5">
         <span className="font-mono text-[0.6rem] uppercase text-muted">orden</span>
         <Select
-          value={filters.orden}
-          onChange={(value) => setFilters({ orden: value as typeof filters.orden })}
+          value={filters.sort}
+          onChange={(value) => setFilters({ sort: value as typeof filters.sort })}
           aria-label="Orden"
         >
           {SORTS.map((sort) => (

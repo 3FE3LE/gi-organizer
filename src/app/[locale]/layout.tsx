@@ -33,13 +33,13 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
             <Link href={`/${locale}/teams`} className="whitespace-nowrap hover:text-text">
               Equipos
             </Link>
-            <Link href={`/${locale}/artefactos`} className="whitespace-nowrap hover:text-text">
+            <Link href={`/${locale}/artifacts`} className="whitespace-nowrap hover:text-text">
               Artefactos
             </Link>
             <Link href={`/${locale}/plan`} className="whitespace-nowrap hover:text-text">
               Plan
             </Link>
-            <Link href={`/${locale}/datos`} className="whitespace-nowrap hover:text-text">
+            <Link href={`/${locale}/data`} className="whitespace-nowrap hover:text-text">
               Datos
             </Link>
           </nav>

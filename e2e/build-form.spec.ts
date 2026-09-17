@@ -11,7 +11,7 @@ import { expect, test } from '@playwright/test';
  */
 
 const CHARACTER = 10000022;
-const BUILD = `/es/build/${CHARACTER}?tab=objetivo`;
+const BUILD = `/es/build/${CHARACTER}?tab=objective`;
 
 /**
  * Opens the set picker and returns its list.
@@ -129,9 +129,8 @@ test('the levelling target reaches the farming plan', async ({ page }) => {
   await page.getByRole('button', { name: 'Guardar objetivo' }).click();
   await expect(page.getByText(/guardado/)).toBeVisible();
 
-  await page.goto('/es/plan/farmeo');
+  await page.goto('/es/plan?range=all');
   await expect(page.getByText(/build con objetivo de nivel/)).toBeVisible();
-  await expect(page.getByText('Por dominio')).toBeVisible();
 });
 
 test('the goal rows start at three and grow on request', async ({ page }) => {

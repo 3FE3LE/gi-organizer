@@ -18,9 +18,9 @@ import { createLoader, createSerializer, parseAsString, parseAsStringLiteral } f
  * 404ing, which is what the literal parser buys.
  */
 export const TABS = [
-  { key: 'objetivo', label: 'Objetivo' },
-  { key: 'cambios', label: 'Cambios' },
-  { key: 'ficha', label: 'Ficha' },
+  { key: 'objective', label: 'Objetivo' },
+  { key: 'changes', label: 'Cambios' },
+  { key: 'sheet', label: 'Ficha' },
 ] as const;
 
 export type Tab = (typeof TABS)[number]['key'];
@@ -29,7 +29,7 @@ const TAB_KEYS = TABS.map((tab) => tab.key) as unknown as readonly [Tab, ...Tab[
 
 export const buildParsers = {
   build: parseAsString,
-  tab: parseAsStringLiteral(TAB_KEYS).withDefault('objetivo'),
+  tab: parseAsStringLiteral(TAB_KEYS).withDefault('objective'),
 };
 
 export const loadBuildParams = createLoader(buildParsers);

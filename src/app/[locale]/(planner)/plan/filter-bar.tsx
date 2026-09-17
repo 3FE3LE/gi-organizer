@@ -60,7 +60,6 @@ export function FilterBar({
   catalog,
   teams,
   region,
-  showDays = true,
 }: {
   base: string;
   filters: Filters;
@@ -68,19 +67,36 @@ export function FilterBar({
   teams: Team[];
   /** The game server whose clock the day strip is read against. */
   region: GameRegion;
-  showDays?: boolean;
 }) {
   return (
     <div className="space-y-3">
-      {showDays && (
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <span className="w-16 font-mono text-[0.65rem] uppercase text-muted">vista</span>
+        <Chip
+          to={href(base, filters, { range: 'day' })}
+          active={filters.range === 'day'}
+          title="Lo que rota un día concreto, en tarjetas compactas"
+        >
+          por día
+        </Chip>
+        <Chip
+          to={href(base, filters, { range: 'all' })}
+          active={filters.range === 'all'}
+          title="Todo lo que falta, sin importar el día"
+        >
+          todo el backlog
+        </Chip>
+      </div>
+
+      {filters.range === 'day' && (
         <nav className="flex flex-wrap gap-1">
           {gameWeekStrip(new Date(), region).map(({ day, date }) => {
-            const active = day === filters.dia;
+            const active = day === filters.day;
 
             return (
               <Link
                 key={day}
-                href={href(base, filters, { dia: day })}
+                href={href(base, filters, { day })}
                 aria-current={active ? 'page' : undefined}
                 className={`w-12 rounded border px-1 py-1 text-center ${
                   active
@@ -118,14 +134,14 @@ export function FilterBar({
 
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <span className="w-16 font-mono text-[0.65rem] uppercase text-muted">equipo</span>
-        <Chip to={href(base, filters, { equipo: null, pj: [] })} active={!filters.equipo}>
+        <Chip to={href(base, filters, { team: null, chars: [] })} active={!filters.team}>
           todos
         </Chip>
         {teams.map((entry) => (
           <Chip
             key={entry.id}
-            to={href(base, filters, { equipo: entry.id, pj: [] })}
-            active={filters.equipo === entry.id}
+            to={href(base, filters, { team: entry.id, chars: [] })}
+            active={filters.team === entry.id}
             title={entry.slots
               .map((slot) => catalog.characters.get(slot.characterId)?.name ?? slot.characterId)
               .join(' · ')}
@@ -137,14 +153,14 @@ export function FilterBar({
 
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <span className="w-16 font-mono text-[0.65rem] uppercase text-muted">tipo</span>
-        <Chip to={href(base, filters, { tipo: [] })} active={filters.tipo.length === 0}>
+        <Chip to={href(base, filters, { reason: [] })} active={filters.reason.length === 0}>
           todo
         </Chip>
         {REASONS.map((reason) => (
           <Chip
             key={reason}
-            to={href(base, filters, { tipo: toggle(filters.tipo, reason) })}
-            active={filters.tipo.includes(reason)}
+            to={href(base, filters, { reason: toggle(filters.reason, reason) })}
+            active={filters.reason.includes(reason)}
           >
             {REASON_LABEL[reason]}
           </Chip>
@@ -153,13 +169,13 @@ export function FilterBar({
         <span className="ml-2">
           <Chip
             to={href(base, filters, {
-              sinmeta: !filters.sinmeta,
-              pj: [],
+              assume: !filters.assume,
+              chars: [],
             })}
-            active={filters.sinmeta}
+            active={filters.assume}
             title="Cuenta a los personajes sin objetivo como si fueran a 90 y talentos 9"
           >
-            {filters.sinmeta ? '✓ ' : ''}incluir sin objetivo
+            {filters.assume ? '✓ ' : ''}incluir sin objetivo
           </Chip>
         </span>
       </div>

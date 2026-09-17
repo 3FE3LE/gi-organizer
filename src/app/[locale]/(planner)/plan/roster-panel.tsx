@@ -9,6 +9,30 @@ import { type Filters, href, toggle } from './filters';
 import { dismissRoster, restoreRoster } from './roster-actions';
 
 /**
+ * How many of the roster are in the plan, narrowed to the active team.
+ *
+ * The same scoping `RosterPanel` does internally to decide who counts, pulled
+ * out so the roster sheet's trigger can show the count without rendering the
+ * panel itself — the panel needs the catalog to sort and label each face, the
+ * trigger only needs how many.
+ */
+export function summarizeRoster(
+  roster: { characterId: number; dismissed: boolean }[],
+  teams: Team[],
+  filters: Pick<Filters, 'team'>,
+) {
+  const team = teams.find((entry) => entry.id === filters.team) ?? null;
+  const inTeam = new Set(team?.slots.map((slot) => slot.characterId) ?? []);
+  const scoped = roster.filter((entry) => !team || inTeam.has(entry.characterId));
+
+  return {
+    teamName: team?.name ?? null,
+    total: scoped.length,
+    planned: scoped.filter((entry) => !entry.dismissed).length,
+  };
+}
+
+/**
  * Who the plan is for — the whole question, in one list.
  *
  * There used to be two. A row of faces in the filter bar narrowed the view to
@@ -39,7 +63,7 @@ export function RosterPanel({
   roster: { characterId: number; hasTarget: boolean; dismissed: boolean }[];
   teams: Team[];
 }) {
-  const team = teams.find((entry) => entry.id === filters.equipo) ?? null;
+  const team = teams.find((entry) => entry.id === filters.team) ?? null;
   const inTeam = new Set(team?.slots.map((slot) => slot.characterId) ?? []);
 
   const named = roster
@@ -68,12 +92,12 @@ export function RosterPanel({
           <span className="text-muted"> de {named.length} en el plan</span>
         </span>
         {team && <span className="text-muted">· solo {team.name}</span>}
-        {filters.pj.length > 0 && (
+        {filters.chars.length > 0 && (
           <Link
-            href={href(base, filters, { pj: [] })}
+            href={href(base, filters, { chars: [] })}
             className="text-muted underline hover:text-accent"
           >
-            quitar el filtro ({filters.pj.length})
+            quitar el filtro ({filters.chars.length})
           </Link>
         )}
         <span className="ml-auto flex flex-wrap gap-2">
@@ -95,10 +119,10 @@ export function RosterPanel({
 
         <ul className="flex flex-wrap gap-1.5">
           {shown.map((entry) => {
-            const picked = filters.pj.includes(entry.characterId);
+            const picked = filters.chars.includes(entry.characterId);
             // Somebody the plan is not counting has no demand to filter down
             // to, so their name is a label rather than a control.
-            const filterable = !entry.dismissed && (entry.hasTarget || filters.sinmeta);
+            const filterable = !entry.dismissed && (entry.hasTarget || filters.assume);
 
             return (
               <li
@@ -106,14 +130,14 @@ export function RosterPanel({
                 className={`flex items-center overflow-hidden rounded border text-[0.7rem] ${
                   picked ? 'border-accent bg-surface-2' : 'border-edge'
                 } ${entry.dismissed ? 'opacity-60' : ''} ${
-                  filters.pj.length > 0 && !picked ? 'opacity-50' : ''
+                  filters.chars.length > 0 && !picked ? 'opacity-50' : ''
                 }`}
               >
                 <Face
                   entry={entry}
                   picked={picked}
                   to={filterable
-                    ? href(base, filters, { pj: toggle(filters.pj, entry.characterId) })
+                    ? href(base, filters, { chars: toggle(filters.chars, entry.characterId) })
                     : null}
                 />
 

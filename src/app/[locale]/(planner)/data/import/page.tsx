@@ -13,7 +13,7 @@ import { ImportForm } from '../import-form';
  * it holds — a second way to say it was a second answer that drifted from the
  * first and won until the next import overwrote it.
  */
-export default async function DataIoPage({ params }: PageProps<'/[locale]/datos/importar'>) {
+export default async function DataIoPage({ params }: PageProps<'/[locale]/data/import'>) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
 

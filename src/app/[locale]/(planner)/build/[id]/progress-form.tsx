@@ -378,7 +378,7 @@ function ProgressForm({
           <p className="mt-3 text-[0.7rem] leading-relaxed text-muted">
             Nivel, constelación y talentos salen del último import.{' '}
             <Link
-              href={`/${locale}/datos/importar`}
+              href={`/${locale}/data/import`}
               className="underline decoration-edge-strong underline-offset-2 hover:text-accent"
             >
               Reimporta tu GOOD

@@ -8,7 +8,7 @@ import { isLocale } from '@/lib/data/locales';
  * been done to it. Three views that were three nav entries for no reason —
  * nobody reaches for "importar" without thinking about the inventory.
  */
-export default async function DataLayout({ children, params }: LayoutProps<'/[locale]/datos'>) {
+export default async function DataLayout({ children, params }: LayoutProps<'/[locale]/data'>) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
 
@@ -17,13 +17,13 @@ export default async function DataLayout({ children, params }: LayoutProps<'/[lo
       <h1 className="text-lg font-medium">Datos</h1>
       <SectionTabs
         tabs={[
-          { href: `/${locale}/datos`, label: 'Inventario', hint: 'Lo que tienes' },
+          { href: `/${locale}/data`, label: 'Inventario', hint: 'Lo que tienes' },
           {
-            href: `/${locale}/datos/importar`,
+            href: `/${locale}/data/import`,
             label: 'Entrada y salida',
             hint: 'Importar, exportar, copias y entrada manual',
           },
-          { href: `/${locale}/datos/historial`, label: 'Historial', hint: 'Lo que has movido' },
+          { href: `/${locale}/data/history`, label: 'Historial', hint: 'Lo que has movido' },
         ]}
       />
       {children}

@@ -101,7 +101,7 @@ export type ArtifactFilter = {
   minCritValue?: number | null;
 };
 
-export type ArtifactSort = 'valor' | 'calidad' | 'cv' | 'rolls' | 'nivel' | 'set';
+export type ArtifactSort = 'value' | 'quality' | 'cv' | 'rolls' | 'level' | 'set';
 
 /**
  * Filtering and ordering, in one place because the page is a list and the list
@@ -111,7 +111,7 @@ export type ArtifactSort = 'valor' | 'calidad' | 'cv' | 'rolls' | 'nivel' | 'set
 export function filterArtifacts(
   artifacts: OwnedArtifact[],
   filter: ArtifactFilter,
-  sort: ArtifactSort = 'valor',
+  sort: ArtifactSort = 'value',
   scaler: Scaler | null = null,
 ): OwnedArtifact[] {
   const kept = artifacts.filter((piece) => {
@@ -134,7 +134,7 @@ export function filterArtifacts(
   // Worth depends on the scaler, so it is not a property of the piece and is
   // not cached on it. Computed once per piece here rather than inside the
   // comparator, which a sort calls a few thousand times for a box this size.
-  if (sort === 'valor') {
+  if (sort === 'value') {
     const value = new Map(kept.map(
       (piece) => [piece.instanceId, pieceWorth(piece, scaler).value] as const,
     ));
@@ -149,11 +149,11 @@ export function filterArtifacts(
 
 type Comparator = (a: OwnedArtifact, b: OwnedArtifact) => number;
 
-/** `valor` is missing on purpose: it needs the scaler, so it is not a pure pair. */
-const comparators: Record<Exclude<ArtifactSort, 'valor'>, Comparator> = {
+/** `value` is missing on purpose: it needs the scaler, so it is not a pure pair. */
+const comparators: Record<Exclude<ArtifactSort, 'value'>, Comparator> = {
   // Quality first, then how much of it there is: a piece that rolled perfectly
   // once is promising, one that rolled well five times is finished.
-  calidad: (a, b) =>
+  quality: (a, b) =>
     (b.quality.efficiency ?? 0) - (a.quality.efficiency ?? 0)
     || b.quality.rolls - a.quality.rolls,
   // Crit value is a narrower question than quality — it only speaks for crit
@@ -161,6 +161,6 @@ const comparators: Record<Exclude<ArtifactSort, 'valor'>, Comparator> = {
   cv: (a, b) => b.critValue - a.critValue || b.quality.rolls - a.quality.rolls,
   rolls: (a, b) => b.quality.rolls - a.quality.rolls
     || (b.quality.efficiency ?? 0) - (a.quality.efficiency ?? 0),
-  nivel: (a, b) => b.level - a.level || b.quality.rolls - a.quality.rolls,
+  level: (a, b) => b.level - a.level || b.quality.rolls - a.quality.rolls,
   set: (a, b) => a.setId - b.setId || a.slot.localeCompare(b.slot) || b.level - a.level,
 };

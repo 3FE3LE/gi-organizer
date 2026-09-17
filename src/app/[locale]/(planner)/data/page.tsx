@@ -22,7 +22,7 @@ export const dynamic = 'force-dynamic';
  * character screen separately, so it can report a piece equipped on someone it
  * never recorded. Left unsaid, that gear looks assigned to nobody.
  */
-export default async function InventoryPage({ params }: PageProps<'/[locale]/datos'>) {
+export default async function InventoryPage({ params }: PageProps<'/[locale]/data'>) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
 

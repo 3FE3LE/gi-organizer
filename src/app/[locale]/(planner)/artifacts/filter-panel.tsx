@@ -81,14 +81,14 @@ export function FilterPanel({
         </Segments>
 
         <Segments label="Quién">
-          <Segment to={href(base, filters, { quien: null })} active={!filters.quien}>
+          <Segment to={href(base, filters, { held: null })} active={!filters.held}>
             todos
           </Segment>
           {HELD.map((held) => (
             <Segment
               key={held}
-              to={href(base, filters, { quien: held })}
-              active={filters.quien === held}
+              to={href(base, filters, { held })}
+              active={filters.held === held}
             >
               {HELD_LABELS[held]}
             </Segment>
@@ -99,8 +99,8 @@ export function FilterPanel({
       {/* `open` when something inside it is on, so a shared URL does not hide
           the control that produced it. */}
       <details
-        open={filters.sub !== null || filters.calidad !== null || filters.cv !== null
-          || filters.perfectos || filters.set !== null || filters.main !== null}
+        open={filters.sub !== null || filters.quality !== null || filters.cv !== null
+          || filters.perfect || filters.set !== null || filters.main !== null}
         className="group rounded-lg border border-edge bg-surface"
       >
         <summary className="flex cursor-pointer list-none items-center gap-1.5 px-3 py-2 font-mono text-[0.65rem] uppercase text-muted hover:text-text">
@@ -124,13 +124,13 @@ export function FilterPanel({
             ))}
           </Row>
 
-          {/* "calidad" named nothing in particular. What it cuts on is the
+          {/* "quality" named nothing in particular. What it cuts on is the
               average tier of a piece's rolls, which is the vocabulary the cards
               below already use, so the row says that instead. */}
           <Row label="rolls">
             <Chip
-              to={href(base, filters, { calidad: null })}
-              active={filters.calidad === null}
+              to={href(base, filters, { quality: null })}
+              active={filters.quality === null}
             >
               cualquiera
             </Chip>
@@ -139,16 +139,16 @@ export function FilterPanel({
               return (
                 <Chip
                   key={percent}
-                  to={href(base, filters, { calidad: percent })}
-                  active={filters.calidad === percent}
+                  to={href(base, filters, { quality: percent })}
+                  active={filters.quality === percent}
                 >
                   media {tierAt(fraction)} o mejor
                 </Chip>
               );
             })}
             <Chip
-              to={href(base, filters, { perfectos: !filters.perfectos })}
-              active={filters.perfectos}
+              to={href(base, filters, { perfect: !filters.perfect })}
+              active={filters.perfect}
             >
               <Sparkles size={11} className="inline" /> con substat perfecto
             </Chip>
@@ -191,8 +191,8 @@ function describe(filters: ArtifactFilters, catalog: Catalog) {
       clear: { slot: null },
     });
   }
-  if (filters.quien) {
-    entries.push({ key: 'quien', label: HELD_LABELS[filters.quien], clear: { quien: null } });
+  if (filters.held) {
+    entries.push({ key: 'held', label: HELD_LABELS[filters.held], clear: { held: null } });
   }
   if (filters.sub) {
     entries.push({ key: 'sub', label: statLabel(catalog, filters.sub), clear: { sub: null } });
@@ -207,11 +207,11 @@ function describe(filters: ArtifactFilters, catalog: Catalog) {
       clear: { set: null },
     });
   }
-  if (filters.calidad !== null) {
+  if (filters.quality !== null) {
     entries.push({
-      key: 'calidad',
-      label: `media ${tierAt(filters.calidad / 100)} o mejor`,
-      clear: { calidad: null },
+      key: 'quality',
+      label: `media ${tierAt(filters.quality / 100)} o mejor`,
+      clear: { quality: null },
     });
   }
   if (filters.cv !== null) {
@@ -222,8 +222,8 @@ function describe(filters: ArtifactFilters, catalog: Catalog) {
       clear: { cv: null },
     });
   }
-  if (filters.perfectos) {
-    entries.push({ key: 'perfectos', label: 'substat perfecto', clear: { perfectos: false } });
+  if (filters.perfect) {
+    entries.push({ key: 'perfect', label: 'substat perfecto', clear: { perfect: false } });
   }
 
   return entries;

@@ -31,7 +31,7 @@ export const dynamic = 'force-dynamic';
  */
 export default async function ArtifactsPage({
   params, searchParams,
-}: PageProps<'/[locale]/artefactos'>) {
+}: PageProps<'/[locale]/artifacts'>) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
 
@@ -50,16 +50,16 @@ export default async function ArtifactsPage({
       setId: filters.set,
       substat: filters.sub,
       mainProp: filters.main,
-      held: filters.quien,
-      perfectOnly: filters.perfectos,
-      minEfficiency: filters.calidad === null ? null : filters.calidad / 100,
+      held: filters.held,
+      perfectOnly: filters.perfect,
+      minEfficiency: filters.quality === null ? null : filters.quality / 100,
       minCritValue: filters.cv,
     },
-    filters.orden,
-    filters.escalador,
+    filters.sort,
+    filters.scaler,
   );
 
-  const base = `/${locale}/artefactos`;
+  const base = `/${locale}/artifacts`;
   const perfect = all.filter((piece) => piece.quality.hasPerfect).length;
 
   // Only the sets the player actually owns: the catalogue has sixty-three and
@@ -122,7 +122,7 @@ export default async function ArtifactsPage({
             <ArtifactCard
               key={piece.instanceId}
               piece={piece}
-              scaler={filters.escalador}
+              scaler={filters.scaler}
               catalog={catalog}
               locale={locale}
             />

@@ -13,21 +13,27 @@ import { charactersIn, domainsByKind, type DomainPlan, type Need } from '@/lib/r
 
 import { groupAnytime, type AnytimeGroup } from './anytime';
 import { FilterBar } from './filter-bar';
-import { DAY_LABEL, REASON_LABEL, href, loadFilters } from './filters';
-import { RosterPanel } from './roster-panel';
+import { DAY_LABEL, href, loadFilters } from './filters';
+import { MaterialRow } from './material-row';
+import { RosterPanel, summarizeRoster } from './roster-panel';
+import { RosterSheet } from './roster-sheet';
 import { farmingFilter, resolveScope } from './scope';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * The day, at a glance.
+ * The plan, in one of two grains: a day's rotation, or the whole backlog
+ * behind it.
  *
- * The other two tabs answer "what is left" and "what should I change"; this one
- * answers "what do I open tonight". So it is the day's domains and nothing
- * else: which ones rotate, what they drop, and who is waiting on them — the
- * per-material arithmetic stays one tab over, where it is the point.
+ * These used to be two routes that answered nearly the same question twice —
+ * "what do I open tonight" and "what is left, in full" — sharing the same
+ * filter bar and roster underneath. The `range` filter is the one thing that
+ * actually differs, so it is one page with a switch rather than two pages
+ * that disagree about layout. "What should I change" stays its own tab: that
+ * question is about gear, not material demand, and answering it needs neither
+ * a day nor a backlog.
  */
-export default async function TodayPage({ params, searchParams }: PageProps<'/[locale]/plan'>) {
+export default async function PlanPage({ params, searchParams }: PageProps<'/[locale]/plan'>) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
 
@@ -47,57 +53,45 @@ export default async function TodayPage({ params, searchParams }: PageProps<'/[l
     catalog, db, farmingFilter(filters, characterIds),
   );
 
-  const { talent, weapon } = domainsByKind(schedule, filters.dia);
-  const showing = filters.ver === 'arma' ? weapon : talent;
+  const { talent, weapon } = domainsByKind(schedule, filters.day);
+  const showing = filters.view === 'weapon' ? weapon : talent;
+  const base = `/${locale}/plan`;
+  const rosterSummary = summarizeRoster(roster, teams, filters);
 
   return (
     <div className="space-y-6">
-      <FilterBar
-        base={`/${locale}/plan`}
-        filters={filters}
-        catalog={catalog}
-        teams={teams}
-        region={region}
-      />
+      <FilterBar base={base} filters={filters} catalog={catalog} teams={teams} region={region} />
 
-      <RosterPanel
-        base={`/${locale}/plan`}
-        catalog={catalog}
-        filters={filters}
-        roster={roster}
-        teams={teams}
-      />
+      <RosterSheet
+        total={rosterSummary.total}
+        planned={rosterSummary.planned}
+        teamName={rosterSummary.teamName}
+        charsCount={filters.chars.length}
+        clearCharsHref={filters.chars.length > 0 ? href(base, filters, { chars: [] }) : null}
+      >
+        <RosterPanel base={base} catalog={catalog} filters={filters} roster={roster} teams={teams} />
+      </RosterSheet>
 
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h2 className="text-sm">
-          {filters.dia === today ? 'Hoy' : 'El'} {DAY_LABEL[filters.dia]}
+          {filters.range === 'day'
+            ? <>{filters.day === today ? 'Hoy' : 'El'} {DAY_LABEL[filters.day]}</>
+            : 'Todo el backlog'}
           {team && <span className="text-muted"> · {team.name}</span>}
         </h2>
         <p className="font-mono text-xs text-muted">
-          {sources} con objetivo · {talent.length + weapon.length} dominio
-          {talent.length + weapon.length === 1 ? '' : 's'} · {schedule.anytime.length} sin horario
+          {filters.range === 'day'
+            ? <>
+                {sources} con objetivo · {talent.length + weapon.length} dominio
+                {talent.length + weapon.length === 1 ? '' : 's'} · {schedule.anytime.length} sin horario
+              </>
+            : <>
+                {sources} build{sources === 1 ? '' : 's'} con objetivo de nivel ·{' '}
+                {schedule.domains.length} dominio{schedule.domains.length === 1 ? '' : 's'} ·{' '}
+                {schedule.anytime.length} sin horario
+              </>}
         </p>
       </div>
-
-      <nav className="flex flex-wrap gap-x-1 border-b border-edge">
-        {([
-          ['talento', 'Materiales de talento', talent.length],
-          ['arma', 'Materiales de arma', weapon.length],
-        ] as const).map(([view, label, count]) => (
-          <Link
-            key={view}
-            href={href(`/${locale}/plan`, filters, { ver: view })}
-            aria-current={filters.ver === view ? 'page' : undefined}
-            className={`-mb-px border-b-2 px-3 py-2 text-sm ${
-              filters.ver === view
-                ? 'border-accent text-accent'
-                : 'border-transparent text-muted hover:text-text'
-            }`}
-          >
-            {label} <span className="font-mono text-xs">{count}</span>
-          </Link>
-        ))}
-      </nav>
 
       {sources === 0 ? (
         <p className="max-w-prose text-sm text-muted">
@@ -107,23 +101,50 @@ export default async function TodayPage({ params, searchParams }: PageProps<'/[l
             Fija nivel o talentos objetivo en una ficha
           </Link>
           , o mira qué costaría subirlos a todos con{' '}
-          <Link
-            href={href(`/${locale}/plan`, filters, { sinmeta: true })}
-            className="underline hover:text-accent"
-          >
+          <Link href={href(base, filters, { assume: true })} className="underline hover:text-accent">
             incluir sin objetivo
           </Link>
           .
         </p>
-      ) : showing.length === 0 ? (
-        <p className="text-sm text-muted">
-          Ningún dominio de {filters.ver === 'arma' ? 'forja' : 'maestría'} que necesites rota
-          {filters.dia === today ? ' hoy' : ` el ${DAY_LABEL[filters.dia]}`}.
-        </p>
+      ) : filters.range === 'day' ? (
+        <>
+          <nav className="flex flex-wrap gap-x-1 border-b border-edge">
+            {([
+              ['talent', 'Materiales de talento', talent.length],
+              ['weapon', 'Materiales de arma', weapon.length],
+            ] as const).map(([view, label, count]) => (
+              <Link
+                key={view}
+                href={href(base, filters, { view })}
+                aria-current={filters.view === view ? 'page' : undefined}
+                className={`-mb-px border-b-2 px-3 py-2 text-sm ${
+                  filters.view === view
+                    ? 'border-accent text-accent'
+                    : 'border-transparent text-muted hover:text-text'
+                }`}
+              >
+                {label} <span className="font-mono text-xs">{count}</span>
+              </Link>
+            ))}
+          </nav>
+
+          {showing.length === 0 ? (
+            <p className="text-sm text-muted">
+              Ningún dominio de {filters.view === 'weapon' ? 'forja' : 'maestría'} que necesites rota
+              {filters.day === today ? ' hoy' : ` el ${DAY_LABEL[filters.day]}`}.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {showing.map((plan) => (
+                <DomainCard key={plan.domain} plan={plan} catalog={catalog} locale={locale} />
+              ))}
+            </div>
+          )}
+        </>
       ) : (
         <div className="space-y-3">
-          {showing.map((plan) => (
-            <DomainCard key={plan.domain} plan={plan} catalog={catalog} locale={locale} />
+          {schedule.domains.map((plan) => (
+            <FullDomainCard key={plan.domain} plan={plan} catalog={catalog} locale={locale} />
           ))}
         </div>
       )}
@@ -154,7 +175,9 @@ export default async function TodayPage({ params, searchParams }: PageProps<'/[l
  *
  * The materials are a row of icons rather than rows of numbers on purpose —
  * the tiers of one book are the same run, and the quantity only decides how
- * many times you go in.
+ * many times you go in. Used in the day view, where the domain is already
+ * narrowed to one day's worth and the per-material arithmetic is one click
+ * away in the backlog view instead.
  */
 async function DomainCard({
   plan, catalog, locale,
@@ -233,6 +256,36 @@ function isAssumed(needs: Need[], characterId: number) {
 }
 
 /**
+ * One domain, in full: which days it rotates, and the per-material arithmetic
+ * behind it. Used in the backlog view, where the point is the number rather
+ * than the glance.
+ */
+function FullDomainCard({
+  plan, catalog, locale,
+}: {
+  plan: DomainPlan; catalog: Catalog; locale: Locale;
+}) {
+  return (
+    <section className="rounded border border-edge bg-surface">
+      <p className="flex flex-wrap items-baseline gap-x-3 border-b border-edge px-3 py-2 text-sm">
+        <span className="flex-1">{plan.label}</span>
+        <span className="font-mono text-xs text-muted">
+          {plan.days.map((day) => DAY_LABEL[day]).join(' · ')}
+        </span>
+        <span className="font-mono text-xs">
+          faltan {plan.short.toLocaleString(locale)}
+        </span>
+      </p>
+      <ul>
+        {plan.needs.map((need) => (
+          <MaterialRow key={need.materialId} need={need} catalog={catalog} locale={locale} />
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/**
  * One pile of ungated materials: what it is, and what it is short.
  *
  * Closed it is a line — the pile's name, its faces, the total missing — which
@@ -240,8 +293,9 @@ function isAssumed(needs: Need[], characterId: number) {
  * arrowhead night. Open it is the arithmetic: per material, how much is
  * missing against how much is owned, and who is waiting on it.
  *
- * Collapsed by default, because the answer this tab exists for is which
- * domains rotate today; the bag is the thing you check after deciding.
+ * Collapsed by default, because in the day view the answer this section
+ * exists for is which domains rotate today, and in the backlog view the bag
+ * is still the thing you check after the domains — same reason, either way.
  */
 async function AnytimePile({
   group, catalog, locale,
@@ -279,33 +333,7 @@ async function AnytimePile({
 
       <ul className="border-t border-edge">
         {group.needs.map((need) => (
-          <li
-            key={need.materialId}
-            className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-edge/40 px-3 py-1.5 text-xs last:border-b-0"
-          >
-            <GameIcon
-              filename={catalog.materials.get(need.materialId)?.icon}
-              kind="material"
-              className="h-6 w-6"
-              sizes="24px"
-            />
-            <span className="min-w-0 flex-1 truncate">
-              {catalog.materials.get(need.materialId)?.name ?? `#${need.materialId}`}
-            </span>
-            <span className="font-mono">
-              faltan <span className="text-accent">{need.short.toLocaleString(locale)}</span>
-            </span>
-            <span className="font-mono text-muted">
-              tienes {need.owned.toLocaleString(locale)} de {need.needed.toLocaleString(locale)}
-            </span>
-            <span className="w-full font-mono text-[0.65rem] text-muted sm:w-auto">
-              {need.by
-                .map((entry) =>
-                  `${catalog.characters.get(entry.characterId)?.name ?? entry.characterId}` +
-                  ` ${REASON_LABEL[entry.reason]} ×${entry.count}`)
-                .join(' · ')}
-            </span>
-          </li>
+          <MaterialRow key={need.materialId} need={need} catalog={catalog} locale={locale} />
         ))}
       </ul>
     </details>

@@ -17,6 +17,7 @@ import { farmingPlan } from './assemble';
  * row — otherwise the totals keep counting somebody the player said no to.
  */
 const VENTI = 10000022;
+const SUCROSE = 10000043;
 const SKYWARD_HARP = 15502;
 
 async function rosterWith(level: number) {
@@ -82,6 +83,48 @@ test('dismissing everyone and taking it back are one call each', async () => {
 
   await setDismissed(db, profileId, null, false);
   assert.equal((await farmingPlan(catalog, db)).sources, 1);
+});
+
+/**
+ * `characterIds` is the roster panel's "look only at this face" filter. It
+ * has to reach the anytime pile the same way dismissal does above — a
+ * character picked out of scope has no demand left anywhere, not just no row
+ * in the domain list.
+ */
+test('characterIds scopes demand, including the anytime pile', async () => {
+  const db = createMemoryDb();
+  const profileId = await getProfileId(db);
+  const catalog = await getCatalog('es');
+
+  for (const characterId of [VENTI, SUCROSE]) {
+    await upsertCharacter(db, profileId, {
+      characterId,
+      travelerElement: null,
+      level: 50,
+      ascension: 3,
+      constellation: 0,
+      talent: { auto: 1, skill: 1, burst: 1 },
+      talentBonus: null,
+    }, { source: 'good', observedAt: '2026-09-16T00:00:00.000Z' });
+  }
+
+  const both = await farmingPlan(catalog, db);
+  assert.equal(both.sources, 2);
+  assert.ok(
+    both.schedule.anytime.some((need) =>
+      need.materialId === 202 && need.by.some((row) => row.characterId === SUCROSE)),
+    'both characters owe mora before scoping',
+  );
+
+  const onlyVenti = await farmingPlan(catalog, db, { characterIds: new Set([VENTI]) });
+  assert.equal(onlyVenti.sources, 1);
+
+  const mora = onlyVenti.schedule.anytime.find((need) => need.materialId === 202);
+  assert.ok(mora, 'venti alone still owes mora');
+  assert.ok(
+    !mora.by.some((row) => row.characterId === SUCROSE),
+    "scoping to venti drops sucrose's demand from the shared anytime pile",
+  );
 });
 
 /**

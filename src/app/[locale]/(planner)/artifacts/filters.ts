@@ -23,7 +23,7 @@ import { SCALERS, type Scaler } from '@/lib/rules/worth';
  */
 
 export const SORTS = [
-  'valor', 'calidad', 'cv', 'rolls', 'nivel', 'set',
+  'value', 'quality', 'cv', 'rolls', 'level', 'set',
 ] as const satisfies readonly ArtifactSort[];
 
 /**
@@ -63,18 +63,18 @@ export const artifactParsers = {
   sub: parseAsString,
   /** The piece's main stat. Not scored — see `worth.ts` — but searched for. */
   main: parseAsString,
-  quien: parseAsStringLiteral(HELD),
-  perfectos: parseAsBoolean.withDefault(false),
+  held: parseAsStringLiteral(HELD),
+  perfect: parseAsBoolean.withDefault(false),
   /** As a percentage, because a fraction in a URL reads as noise. */
-  calidad: parseAsInteger,
+  quality: parseAsInteger,
   /** Minimum crit value, as a whole number. */
   cv: parseAsInteger,
-  orden: parseAsStringLiteral(SORTS).withDefault('valor'),
+  sort: parseAsStringLiteral(SORTS).withDefault('value'),
   /**
-   * Which scaler `valor` counts. Not a filter — it never changes which pieces
+   * Which scaler `value` counts. Not a filter — it never changes which pieces
    * are in the list, only how they are priced — so a reset leaves it alone.
    */
-  escalador: parseAsStringLiteral(SCALERS),
+  scaler: parseAsStringLiteral(SCALERS),
 };
 
 const load = createLoader(artifactParsers);
@@ -96,10 +96,10 @@ export function href(
   return serialize(base, { ...filters, ...patch });
 }
 
-/** Everything a reset has to clear. `orden` is a view, not a narrowing. */
+/** Everything a reset has to clear. `sort` is a view, not a narrowing. */
 export const CLEARED: Partial<ArtifactFilters> = {
-  slot: null, set: null, sub: null, main: null, quien: null, perfectos: false,
-  calidad: null, cv: null,
+  slot: null, set: null, sub: null, main: null, held: null, perfect: false,
+  quality: null, cv: null,
 };
 
 export function activeCount(filters: ArtifactFilters) {
@@ -117,8 +117,8 @@ export const HELD_LABELS: Record<(typeof HELD)[number], string> = {
 };
 
 export const SORT_LABELS: Record<ArtifactSort, string> = {
-  valor: 'valor', calidad: 'calidad', cv: 'crit value', rolls: 'rolls',
-  nivel: 'nivel', set: 'set',
+  value: 'valor', quality: 'calidad', cv: 'crit value', rolls: 'rolls',
+  level: 'nivel', set: 'set',
 };
 
 export const SCALER_LABELS: Record<Scaler, string> = {

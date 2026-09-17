@@ -61,7 +61,7 @@ export default async function CharactersPage({ params }: PageProps<'/[locale]/ch
           {orphaned.map((id) => catalog.characters.get(id)?.name ?? `#${id}`).join(', ')}{' '}
           {orphaned.length === 1 ? 'lleva equipo' : 'llevan equipo'} pero no{' '}
           {orphaned.length === 1 ? 'está' : 'están'} en el roster.{' '}
-          <Link href={`/${locale}/datos`} className="underline hover:text-accent">
+          <Link href={`/${locale}/data`} className="underline hover:text-accent">
             Añádelos
           </Link>{' '}
           o vuelve a escanear con la pantalla de personajes activada.

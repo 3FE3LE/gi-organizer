@@ -31,7 +31,7 @@ const COST_LABEL: Record<Cost, string> = {
  * its threshold is not working, and a marginal swap on one that already works
  * is not the next thing to do.
  */
-export default async function AgendaPage({ params }: PageProps<'/[locale]/plan/mejoras'>) {
+export default async function AgendaPage({ params }: PageProps<'/[locale]/plan/upgrades'>) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
 
