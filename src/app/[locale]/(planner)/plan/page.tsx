@@ -11,6 +11,7 @@ import { farmingPlan } from '@/lib/rules/assemble';
 import { gameWeekday } from '@/lib/rules/game-day';
 import { charactersIn, domainsByKind, type DomainPlan, type Need } from '@/lib/rules/materials';
 
+import { groupAnytime, type AnytimeGroup } from './anytime';
 import { FilterBar } from './filter-bar';
 import { DAY_LABEL, REASON_LABEL, href, loadFilters } from './filters';
 import { RosterPanel } from './roster-panel';
@@ -132,36 +133,16 @@ export default async function TodayPage({ params, searchParams }: PageProps<'/[l
           <h2 className="mb-1 text-sm font-medium uppercase tracking-wide text-muted">
             Recolección general
           </h2>
-          <p className="mb-2 max-w-prose text-xs text-muted">
+          <p className="mb-3 max-w-prose text-xs text-muted">
             Jefes, especialidades locales, drops de enemigos y Mora. Sin horario: es cuestión
-            de cantidad, no de qué día es.
+            de cantidad, no de qué día es. Cada montón se abre para ver cuánto falta y quién
+            lo espera.
           </p>
-          <ul className="flex flex-wrap gap-2">
-            {schedule.anytime.map((need) => (
-              <li
-                key={need.materialId}
-                title={`${catalog.materials.get(need.materialId)?.name ?? need.materialId} — ${
-                  need.by.map((entry) =>
-                    `${catalog.characters.get(entry.characterId)?.name ?? entry.characterId}` +
-                    ` ${REASON_LABEL[entry.reason]} ×${entry.count}`).join(' · ')
-                }`}
-                className="flex items-center gap-2 rounded border border-edge bg-surface px-2 py-1"
-              >
-                <GameIcon
-                  filename={catalog.materials.get(need.materialId)?.icon}
-                  kind="material"
-                  className="h-6 w-6"
-                  sizes="24px"
-                />
-                <span className="max-w-32 truncate text-xs">
-                  {catalog.materials.get(need.materialId)?.name ?? `#${need.materialId}`}
-                </span>
-                <span className="font-mono text-xs text-accent tabular">
-                  {need.short.toLocaleString(locale)}
-                </span>
-              </li>
+          <div className="space-y-2">
+            {groupAnytime(schedule.anytime, (id) => catalog.materials.get(id)).map((group) => (
+              <AnytimePile key={group.label} group={group} catalog={catalog} locale={locale} />
             ))}
-          </ul>
+          </div>
         </section>
       )}
     </div>
@@ -249,4 +230,84 @@ function isAssumed(needs: Need[], characterId: number) {
     need.by.filter((entry) => entry.characterId === characterId));
 
   return rows.length > 0 && rows.every((entry) => entry.assumed);
+}
+
+/**
+ * One pile of ungated materials: what it is, and what it is short.
+ *
+ * Closed it is a line — the pile's name, its faces, the total missing — which
+ * is everything needed to decide whether tonight is a boss night or an
+ * arrowhead night. Open it is the arithmetic: per material, how much is
+ * missing against how much is owned, and who is waiting on it.
+ *
+ * Collapsed by default, because the answer this tab exists for is which
+ * domains rotate today; the bag is the thing you check after deciding.
+ */
+async function AnytimePile({
+  group, catalog, locale,
+}: {
+  group: AnytimeGroup; catalog: Catalog; locale: Locale;
+}) {
+  return (
+    <details className="rounded border border-edge bg-surface">
+      <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-xs">
+        <span className="min-w-0 flex-1 truncate">{group.label}</span>
+
+        {/* What is in the pile, without opening it. */}
+        <span className="flex flex-wrap gap-1">
+          {group.needs.slice(0, 8).map((need) => (
+            <GameIcon
+              key={need.materialId}
+              filename={catalog.materials.get(need.materialId)?.icon}
+              kind="material"
+              alt={catalog.materials.get(need.materialId)?.name ?? ''}
+              className="h-6 w-6"
+              sizes="24px"
+            />
+          ))}
+          {group.needs.length > 8 && (
+            <span className="self-center font-mono text-[0.65rem] text-muted">
+              +{group.needs.length - 8}
+            </span>
+          )}
+        </span>
+
+        <span className="font-mono text-muted">
+          faltan <span className="text-accent">{group.short.toLocaleString(locale)}</span>
+        </span>
+      </summary>
+
+      <ul className="border-t border-edge">
+        {group.needs.map((need) => (
+          <li
+            key={need.materialId}
+            className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-edge/40 px-3 py-1.5 text-xs last:border-b-0"
+          >
+            <GameIcon
+              filename={catalog.materials.get(need.materialId)?.icon}
+              kind="material"
+              className="h-6 w-6"
+              sizes="24px"
+            />
+            <span className="min-w-0 flex-1 truncate">
+              {catalog.materials.get(need.materialId)?.name ?? `#${need.materialId}`}
+            </span>
+            <span className="font-mono">
+              faltan <span className="text-accent">{need.short.toLocaleString(locale)}</span>
+            </span>
+            <span className="font-mono text-muted">
+              tienes {need.owned.toLocaleString(locale)} de {need.needed.toLocaleString(locale)}
+            </span>
+            <span className="w-full font-mono text-[0.65rem] text-muted sm:w-auto">
+              {need.by
+                .map((entry) =>
+                  `${catalog.characters.get(entry.characterId)?.name ?? entry.characterId}` +
+                  ` ${REASON_LABEL[entry.reason]} ×${entry.count}`)
+                .join(' · ')}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
 }
