@@ -1,6 +1,5 @@
 import Link from 'next/link';
 
-import { GameIcon } from '@/components/game-icon';
 import type { Catalog } from '@/lib/data/catalog';
 import type { Team } from '@/lib/player/teams';
 
@@ -37,36 +36,31 @@ function Chip({
 }
 
 /**
- * Who and what the day is being planned for.
+ * What the day is being planned against.
  *
- * Every control is a link, so the whole thing is static HTML and the state is
- * shareable. Narrowing to a team is the one that matters: "what does my
- * electro team still need" is a different question from "what does my account
- * still need", and only the first one is answerable in an evening.
+ * Every control here is a link, so the whole thing is static HTML and the
+ * state is shareable. Narrowing to a team is the one that matters: "what does
+ * my electro team still need" is a different question from "what does my
+ * account still need", and only the first one is answerable in an evening.
+ *
+ * Who it is planned *for* is one list, and it is not this one — see
+ * `RosterPanel`. This used to carry a second row of faces that filtered the
+ * view while that panel decided who counted at all, which read as two lists of
+ * the same roster disagreeing about what clicking a face meant.
  */
 export function FilterBar({
   base,
   filters,
   catalog,
   teams,
-  characters,
   showDays = true,
 }: {
   base: string;
   filters: Filters;
   catalog: Catalog;
   teams: Team[];
-  /** The roster, already narrowed to whoever can contribute demand. */
-  characters: { characterId: number; hasTarget: boolean }[];
   showDays?: boolean;
 }) {
-  const team = teams.find((entry) => entry.id === filters.equipo) ?? null;
-  const inTeam = new Set(team?.slots.map((slot) => slot.characterId) ?? []);
-
-  const pickable = characters
-    .filter((entry) => !team || inTeam.has(entry.characterId))
-    .filter((entry) => entry.hasTarget || filters.sinmeta);
-
   return (
     <div className="space-y-3">
       {showDays && (
@@ -111,38 +105,6 @@ export function FilterBar({
           </Chip>
         ))}
       </div>
-
-      {pickable.length > 0 && (
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="w-16 font-mono text-[0.65rem] uppercase text-muted">personaje</span>
-          {pickable.map((entry) => {
-            const character = catalog.characters.get(entry.characterId);
-            const active = filters.pj.includes(entry.characterId);
-
-            return (
-              <Link
-                key={entry.characterId}
-                href={href(base, filters, {
-                  pj: toggle(filters.pj, entry.characterId),
-                })}
-                title={character?.name ?? `#${entry.characterId}`}
-                aria-current={active ? 'true' : undefined}
-                className={`rounded border ${
-                  active ? 'border-accent' : 'border-edge hover:border-accent'
-                } ${filters.pj.length > 0 && !active ? 'opacity-40' : ''}`}
-              >
-                <GameIcon
-                  filename={character?.icon}
-                  kind="avatar"
-                  alt={character?.name ?? ''}
-                  className="h-7 w-7 rounded"
-                  sizes="28px"
-                />
-              </Link>
-            );
-          })}
-        </div>
-      )}
 
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <span className="w-16 font-mono text-[0.65rem] uppercase text-muted">tipo</span>

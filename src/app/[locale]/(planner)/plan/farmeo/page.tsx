@@ -11,6 +11,7 @@ import type { Need } from '@/lib/rules/materials';
 
 import { FilterBar } from '../filter-bar';
 import { DAY_LABEL, REASON_LABEL, href, loadFilters } from '../filters';
+import { RosterPanel } from '../roster-panel';
 import { farmingFilter, resolveScope } from '../scope';
 
 export const dynamic = 'force-dynamic';
@@ -75,8 +76,15 @@ export default async function FarmingPage({
         filters={filters}
         catalog={catalog}
         teams={teams}
-        characters={roster}
         showDays={false}
+      />
+
+      <RosterPanel
+        base={`/${locale}/plan/farmeo`}
+        catalog={catalog}
+        filters={filters}
+        roster={roster}
+        teams={teams}
       />
 
       <p className="font-mono text-xs text-muted">

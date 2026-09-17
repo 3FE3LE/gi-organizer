@@ -11,7 +11,7 @@ import { charactersIn, domainsByKind, type DomainPlan, type Need } from '@/lib/r
 
 import { FilterBar } from './filter-bar';
 import { DAY_LABEL, REASON_LABEL, href, loadFilters, todayName } from './filters';
-import { RosterGate } from './roster-gate';
+import { RosterPanel } from './roster-panel';
 import { farmingFilter, resolveScope } from './scope';
 
 export const dynamic = 'force-dynamic';
@@ -49,10 +49,15 @@ export default async function TodayPage({ params, searchParams }: PageProps<'/[l
         filters={filters}
         catalog={catalog}
         teams={teams}
-        characters={roster}
       />
 
-      <RosterGate catalog={catalog} roster={roster} />
+      <RosterPanel
+        base={`/${locale}/plan`}
+        catalog={catalog}
+        filters={filters}
+        roster={roster}
+        teams={teams}
+      />
 
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h2 className="text-sm">
