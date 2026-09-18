@@ -4,9 +4,13 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useActionState } from 'react';
 
+import { Button } from '@/components/ui/button';
 import { ActionStatus } from '@/components/action-status';
 import { AssetImage } from '@/components/asset-image';
+import { FieldSelect } from '@/components/field-select';
 import { TEAM_ROLES, type TeamRole } from '@/lib/rules/types';
+
+import { SynergyPanel, type SynergyView } from './synergy-panel';
 
 import {
   type TeamActionState,
@@ -47,6 +51,8 @@ export type TeamView = {
   objective: string | null;
   slots: SlotView[];
   findings: { id: string; severity: string; message: string }[];
+  /** What the team is, as opposed to what is wrong with it. */
+  synergy: SynergyView;
 };
 
 /** A character the player owns, and the team that already holds them. */
@@ -88,12 +94,13 @@ export function TeamBoard({
         <div className="ml-auto flex items-center gap-2">
           <form action={remove}>
             <input type="hidden" name="teamId" value={team.id} />
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               type="submit"
-              className="btn btn-sm"
             >
               {t('deleteButton')}
-            </button>
+            </Button>
           </form>
         </div>
       </header>
@@ -107,6 +114,11 @@ export function TeamBoard({
           ))}
         </ul>
       )}
+
+      {/* Above the slots, because it is about all four of them: the resonance
+          the elements buy, the reactions they enable, and the auras one
+          member's gear hangs over the rest. */}
+      <SynergyPanel synergy={team.synergy} />
 
       {team.slots.length < 4 && (
         <AddMember teamId={team.id} roster={roster} action={add} pending={adding} />
@@ -146,25 +158,26 @@ function ObjectivePicker({
   return (
     <form action={save} className="flex items-center gap-1">
       <input type="hidden" name="teamId" value={teamId} />
-      <select
+      <FieldSelect
         name="objective"
+        label={t('noObjective')}
         defaultValue={current ?? ''}
         disabled={saving}
-        className="field px-2 py-1 text-xs"
-      >
-        <option value="">{t('noObjective')}</option>
-        {objectives.map((objective) => (
-          <option key={objective.id} value={objective.id}>{objective.label}</option>
-        ))}
-      </select>
-      <button
+        placeholder={t('noObjective')}
+        groups={[{ options: objectives.map((objective) => ({
+          value: objective.id, label: objective.label,
+        })) }]}
+        triggerClassName="w-auto px-2 py-1 text-xs"
+      />
+      <Button
+        variant="outline"
+        size="sm"
         type="submit"
         aria-label={t('saveObjectiveAria')}
         title={t('saveObjectiveAria')}
-        className="btn btn-sm"
       >
         <span aria-hidden>✓</span>
-      </button>
+      </Button>
     </form>
   );
 }
@@ -210,36 +223,32 @@ function AddMember({
 
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-xs text-muted">{t('step2Character')}</span>
-        <select
+        {/* One team per character: whoever holds them is named and the row is
+            refused here rather than at submit. */}
+        <FieldSelect
           name="characterId"
-          required
+          label={t('fromRoster')}
           defaultValue=""
-          className="max-w-56 field px-2 py-1 text-xs"
-        >
-          <option value="" disabled>{t('fromRoster')}</option>
-          {/* One team per character: whoever holds them is named and the option
-              is refused here rather than at submit. */}
-          {roster.map((character) => (
-            <option
-              key={character.id}
-              value={character.id}
-              disabled={character.inTeam !== null}
-            >
-              {character.name} · {character.detail}
-              {character.inTeam &&
-                (character.inTeam.id === teamId
-                  ? t('alreadyInThisTeam')
-                  : t('inOtherTeam', { name: character.inTeam.name }))}
-            </option>
-          ))}
-        </select>
-        <button
+          placeholder={t('fromRoster')}
+          groups={[{ options: roster.map((character) => ({
+            value: String(character.id),
+            disabled: character.inTeam !== null,
+            label: `${character.name} · ${character.detail}${character.inTeam
+              ? (character.inTeam.id === teamId
+                ? t('alreadyInThisTeam')
+                : t('inOtherTeam', { name: character.inTeam.name }))
+              : ''}`,
+          })) }]}
+          triggerClassName="max-w-56 px-2 py-1 text-xs"
+        />
+        <Button
+          variant="outline"
+          size="sm"
           type="submit"
           disabled={pending}
-          className="btn btn-sm"
         >
           {t('addButton')}
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -337,13 +346,14 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
             </label>
           ))}
         </div>
-        <button
+        <Button
+          variant="outline"
+          size="sm"
           type="submit"
           disabled={savingRoles}
-          className="btn btn-sm"
         >
           {t('saveRolesButton')}
-        </button>
+        </Button>
       </form>
 
       {slot.needed.map((declaration) => (
@@ -351,24 +361,25 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
           <input type="hidden" name="teamId" value={teamId} />
           <input type="hidden" name="characterId" value={slot.characterId} />
           <input type="hidden" name="field" value={declaration.field} />
-          <select
+          <FieldSelect
             name="value"
+            label={t('noDeclaration')}
             defaultValue={slot.declarations[declaration.field] ?? ''}
-            className="min-w-0 flex-1 field px-1 py-0.5 text-2xs"
-          >
-            <option value="">{t('noDeclaration')}</option>
-            {declaration.options.map((option) => (
-              <option key={option.value} value={option.value}>{option.label}</option>
-            ))}
-          </select>
-          <button
+            placeholder={t('noDeclaration')}
+            groups={[{ options: declaration.options.map((option) => ({
+              value: option.value, label: option.label,
+            })) }]}
+            triggerClassName="min-w-0 flex-1 px-1 py-0.5 text-2xs"
+          />
+          <Button
+            variant="outline"
+            size="sm"
             type="submit"
             aria-label={t('saveDeclarationAria')}
             title={t('saveDeclarationAria')}
-            className="btn btn-sm"
           >
             <span aria-hidden>✓</span>
-          </button>
+          </Button>
         </form>
       ))}
 

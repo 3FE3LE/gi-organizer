@@ -70,6 +70,26 @@
       "equip-artifact": "equipped artifact", "unequip-artifact": "unequipped artifact",
       "equip-weapon": "equipped weapon", "unequip-weapon": "unequipped weapon"
     },
+    "resonance": {
+      "fervent-flames": "Fervent Flames",
+      "soothing-water": "Soothing Water",
+      "shattering-ice": "Shattering Ice",
+      "high-voltage": "High Voltage",
+      "impetuous-winds": "Impetuous Winds",
+      "enduring-rock": "Enduring Rock",
+      "sprawling-greenery": "Sprawling Greenery",
+      "protective-canopy": "Protective Canopy"
+    },
+    "resonanceEffect": {
+      "fervent-flames": "ATK +25%, and Cryo freezes wear off sooner.",
+      "soothing-water": "Max HP +25%; healing received +30% below 50% HP.",
+      "shattering-ice": "CRIT Rate +15% against enemies affected by Cryo or frozen.",
+      "high-voltage": "More energy particles from Electro reactions.",
+      "impetuous-winds": "Stamina -15%, movement speed +10%, cooldowns -5%.",
+      "enduring-rock": "Shield strength +15%; while shielded, DMG +15% and hits shred 20% DEF.",
+      "sprawling-greenery": "Elemental Mastery +50, and Dendro reactions raise it further for the party.",
+      "protective-canopy": "All elemental RES +15% and physical RES +15%."
+    },
     "mechanic": {
       "stellar-conduct": "Stellar-Conduct",
       "stellar-swirl": "Stellar Swirl",
@@ -107,6 +127,21 @@
     "versionLine": "v{version} · {rarity}★"
   },
   "teams": {
+    "synergyHeading": "Synergy",
+    "resonanceHeading": "Resonance",
+    "noResonance": "No resonance. Two of an element gives one; four different elements give Protective Canopy.",
+    "mechanicsHeading": "Mechanics",
+    "noMechanics": "The elements on this team do not enable a reaction yet.",
+    "mechanicObjective": "objective",
+    "mechanicMissing": "missing {elements}",
+    "mechanicMissingAny": "something to react with",
+    "mechanicCarriers": "carried by {names}",
+    "aurasHeading": "Team auras",
+    "noAuras": "Nobody is wearing a set whose effect reaches the rest of the team.",
+    "auraPieces": "{pieces} pcs · {name}",
+    "auraWearer": "on {name}",
+    "auraShared": "worn again by {names}: the second one is wasted",
+    "auraPartitioned": "collides only if they declare the same element",
     "heading": "Teams",
     "ok": "ok",
     "empty": "No teams yet. Create one on the left and add characters from your roster.",

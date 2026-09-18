@@ -14,11 +14,13 @@ import { computeStats, evaluateGoals } from '@/lib/rules/stats';
 import { getAnnotations } from '@/lib/rules/assemble';
 import { getProfileId } from '@/lib/player/db';
 import { MECHANIC_IDS } from '@/lib/data/mechanics';
-import { assemble } from '@/lib/rules/assemble';
+import { assemble, getMechanics } from '@/lib/rules/assemble';
+import { synergyOf, type SynergyMember } from '@/lib/rules/synergy';
 import { describe, type Naming } from '@/lib/rules/diagnostics';
 import { targetKey } from '@/lib/rules/types';
 
 import { TeamBoard, type SlotView, type TeamView } from './team-board';
+import { type SynergyView } from './synergy-panel';
 import { TeamRail, type RailEntry } from './team-rail';
 
 export const dynamic = 'force-dynamic';
@@ -38,11 +40,24 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
   const db = getDb();
   const { teams, result, input } = await assemble(catalog, db);
   const annotations = await getAnnotations(catalog);
+  const mechanics = await getMechanics();
   const t = await getTranslations('diagnostics');
   const tTeams = await getTranslations('teams');
   const slotLabel = await getTranslations('common.slot');
   const roleLabelT = await getTranslations('common.role');
   const mechanicLabelT = await getTranslations('common.mechanic');
+
+  // One pass over the catalog rather than one per lookup. `elementName` was a
+  // linear scan of every character, and it is called once per element option
+  // and again for every diagnostic that names an element.
+  const elementNames = new Map<string, string>();
+  for (const character of catalog.characters.values()) {
+    if (character.elementText && !elementNames.has(character.elementType)) {
+      elementNames.set(character.elementType, character.elementText);
+    }
+  }
+  const elementName = (type: string) =>
+    elementNames.get(type) ?? type.replace('ELEMENT_', '').toLowerCase();
 
   const requested = (await searchParams).team;
   const selectedId = typeof requested === 'string' && teams.some((team) => team.id === requested)
@@ -53,7 +68,7 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
     character: (id) => catalog.characters.get(id)?.name ?? `#${id}`,
     weapon: (id) => catalog.weapons.get(id)?.name ?? `#${id}`,
     artifactSet: (id) => catalog.artifacts.get(id)?.name ?? `#${id}`,
-    element: (type) => elementName(catalog, type),
+    element: (type) => elementName(type),
     slot: (slot) => (slotLabel.has(slot) ? slotLabel(slot) : slot),
   };
 
@@ -82,7 +97,7 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
 
   const elementOptions = Object.keys(ELEMENT_COLORS)
     .filter((type) => type !== 'ELEMENT_NONE' && type !== 'ELEMENT_ANEMO')
-    .map((type) => ({ value: type, label: elementName(catalog, type) }));
+    .map((type) => ({ value: type, label: elementName(type) }));
 
   const bonusesBySet = new Map(
     [...annotations.sets]
@@ -170,8 +185,14 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
       }));
   };
 
+  // Kept from the pass the rail already makes: `selectedDiagnostics` used to
+  // filter every diagnostic a second time for a team whose findings were in
+  // hand.
+  const findingsByTeam = new Map<string, ReturnType<typeof diagnosticsForTeam>>();
+
   const rail: RailEntry[] = teams.map((team) => {
     const findings = diagnosticsForTeam(team);
+    findingsByTeam.set(team.id, findings);
 
     return {
       id: team.id,
@@ -187,16 +208,97 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
   });
 
   const selectedTeam = teams.find((team) => team.id === selectedId) ?? null;
-  const selectedDiagnostics = selectedTeam ? diagnosticsForTeam(selectedTeam) : [];
+  const selectedDiagnostics = selectedTeam ? findingsByTeam.get(selectedTeam.id) ?? [] : [];
 
-  const views: TeamView[] = await Promise.all(teams
-    .filter((team) => team.id === selectedId)
+  /**
+   * Everything a character brings to a team beyond their own build: the element
+   * that resonates, the mechanics their kit names, the sets they are wearing.
+   *
+   * The two sources of mechanic tags are kept together here because they answer
+   * the same question from opposite directions — the generated index reads the
+   * game's own text, and the curated file states the ones the text never says
+   * out loud, such as the Hexenzirkel classification behind Hexerei.
+   */
+  const memberOf = (characterId: number): SynergyMember => {
+    const character = catalog.characters.get(characterId);
+    const worn = new Map<number, number>();
+    for (const setId of input.gear.get(characterId)?.sets.values() ?? []) {
+      worn.set(setId, (worn.get(setId) ?? 0) + 1);
+    }
+
+    return {
+      characterId,
+      elementType: character?.elementType ?? 'ELEMENT_NONE',
+      mechanics: [...new Set([
+        ...(mechanics.characters[String(characterId)] ?? []),
+        ...(annotations.characters.get(characterId)?.mechanics ?? []),
+      ])],
+      sets: [...worn].map(([setId, pieces]) => ({ setId, pieces })),
+    };
+  };
+
+  /** The engine's answer, with every id turned into something readable. */
+  const synergyViewFor = (team: (typeof teams)[number]): SynergyView => {
+    const members = team.slots.map((slot) => memberOf(slot.characterId));
+    const synergy = synergyOf(members, {
+      objective: team.objective,
+      setStacking: (setId) => annotations.sets.get(setId)?.stacking,
+      // A party aura is the four-piece bonus, except on the circlet-only sets
+      // whose whole effect is one piece. The catalog is what knows which is
+      // which: those sets carry `effect1Pc` and no two-piece line at all.
+      auraAt: (setId) => {
+        const set = catalog.artifacts.get(setId);
+        return set?.effect1Pc && !set.effect2Pc ? 1 : 4;
+      },
+    });
+    const name = (characterId: number) =>
+      catalog.characters.get(characterId)?.name ?? `#${characterId}`;
+
+    return {
+      resonances: synergy.resonances.map((resonance) => ({
+        id: resonance.id,
+        color: elementColor(resonance.elementType ?? 'ELEMENT_NONE'),
+        members: resonance.members.map(name),
+      })),
+      mechanics: synergy.mechanics.map((mechanic) => ({
+        id: mechanic.id,
+        label: mechanicLabelT.has(mechanic.id) ? mechanicLabelT(mechanic.id) : mechanic.id,
+        active: mechanic.active,
+        objective: mechanic.objective,
+        missing: mechanic.missing
+          .filter((element) => element !== 'any')
+          .map((element) => elementName(element)),
+        missingAny: mechanic.missing.includes('any'),
+        carriers: mechanic.carriers.map(name),
+      })),
+      auras: synergy.auras.map((aura) => {
+        const set = catalog.artifacts.get(aura.setId);
+
+        return {
+          key: `${aura.setId}-${aura.wearer}`,
+          setName: set?.name ?? `#${aura.setId}`,
+          pieces: aura.pieces,
+          // The game's own words, at the piece count actually worn: four pieces
+          // on and the two-piece line is not what anyone is reading for.
+          effect: (aura.pieces >= 4 ? set?.effect4Pc : set?.effect2Pc)
+            ?? set?.effect1Pc ?? null,
+          wearer: name(aura.wearer),
+          partitioned: aura.partitioned,
+          alsoWornBy: aura.alsoWornBy.map(name),
+        };
+      }),
+    };
+  };
+
+  // One team is on screen, and it is the one already found above.
+  const views: TeamView[] = await Promise.all((selectedTeam ? [selectedTeam] : [])
     .map(async (team) => ({
     id: team.id,
     name: team.name,
     mode: team.mode,
     objective: team.objective,
     findings: findingsFor(targetKey({ kind: 'team', teamId: team.id })),
+    synergy: synergyViewFor(team),
     slots: await Promise.all(team.slots.map(async (slot): Promise<SlotView> => {
       const character = catalog.characters.get(slot.characterId);
       const gear = input.gear.get(slot.characterId);
@@ -306,9 +408,3 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
   );
 }
 
-function elementName(catalog: Awaited<ReturnType<typeof getCatalog>>, type: string) {
-  for (const character of catalog.characters.values()) {
-    if (character.elementType === type && character.elementText) return character.elementText;
-  }
-  return type.replace('ELEMENT_', '').toLowerCase();
-}

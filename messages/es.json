@@ -70,6 +70,26 @@
       "equip-artifact": "equipó artefacto", "unequip-artifact": "quitó artefacto",
       "equip-weapon": "equipó arma", "unequip-weapon": "quitó arma"
     },
+    "resonance": {
+      "fervent-flames": "Llamas Fervientes",
+      "soothing-water": "Agua Reconfortante",
+      "shattering-ice": "Hielo Rompedor",
+      "high-voltage": "Alto Voltaje",
+      "impetuous-winds": "Vientos Impetuosos",
+      "enduring-rock": "Roca Duradera",
+      "sprawling-greenery": "Vegetación Exuberante",
+      "protective-canopy": "Manto Protector"
+    },
+    "resonanceEffect": {
+      "fervent-flames": "ATQ +25% y menos duración del Criopegado.",
+      "soothing-water": "Vida máx. +25%; curación recibida +30% por debajo del 50% de vida.",
+      "shattering-ice": "Prob. de CRIT +15% contra enemigos afectados por Cryo o congelados.",
+      "high-voltage": "Más partículas de energía al provocar reacciones Electro.",
+      "impetuous-winds": "Aguante -15%, velocidad de movimiento +10% y enfriamientos -5%.",
+      "enduring-rock": "Resistencia de escudos +15%; con escudo, daño +15% y DEF del enemigo -20% al golpear.",
+      "sprawling-greenery": "Maestría elemental +50; las reacciones Dendro la suben más para todo el equipo.",
+      "protective-canopy": "Toda resistencia elemental +15% y resistencia física +15%."
+    },
     "mechanic": {
       "stellar-conduct": "Conducción Estelar",
       "stellar-swirl": "Remolino Estelar",
@@ -107,6 +127,21 @@
     "versionLine": "v{version} · {rarity}★"
   },
   "teams": {
+    "synergyHeading": "Sinergia",
+    "resonanceHeading": "Resonancia",
+    "noResonance": "Sin resonancia. Dos del mismo elemento la dan; cuatro distintos dan Manto Protector.",
+    "mechanicsHeading": "Mecánicas",
+    "noMechanics": "Los elementos de este equipo no habilitan ninguna reacción todavía.",
+    "mechanicObjective": "objetivo",
+    "mechanicMissing": "falta {elements}",
+    "mechanicMissingAny": "algo que reaccione",
+    "mechanicCarriers": "lo traen {names}",
+    "aurasHeading": "Auras del equipo",
+    "noAuras": "Nadie lleva un set cuyo efecto alcance al resto del equipo.",
+    "auraPieces": "{pieces} pzs · {name}",
+    "auraWearer": "en {name}",
+    "auraShared": "repetida en {names}: la segunda no suma",
+    "auraPartitioned": "solo choca si declaran el mismo elemento",
     "heading": "Equipos",
     "ok": "ok",
     "empty": "Ningún equipo todavía. Crea uno a la izquierda y añade personajes de tu roster.",
