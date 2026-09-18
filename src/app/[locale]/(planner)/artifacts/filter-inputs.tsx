@@ -4,6 +4,8 @@ import { useTranslations } from 'next-intl';
 import { useTransition } from 'react';
 import { useQueryStates } from 'nuqs';
 
+import { FieldSelect } from '@/components/field-select';
+import { Slider } from '@/components/ui/slider';
 import { SCALERS } from '@/lib/rules/worth';
 
 import {
@@ -55,32 +57,26 @@ export function FilterInputs({
       className="grid gap-x-6 gap-y-4 transition-opacity data-pending:opacity-50 sm:grid-cols-2"
     >
       <Field label={t('critValueLabel')} hint={reading}>
-        <input
-          type="range"
+        {/*
+          * The cut-off, as a scale.
+          *
+          * This was a native range with forty lines of vendor-prefixed CSS to
+          * paint its own track and thumb — `::-webkit-slider-runnable-track`,
+          * `::-moz-range-thumb`, and a `--fill` variable to colour the part
+          * behind the handle. The primitive draws the same thing from two
+          * elements, in both themes, and keeps the keyboard behaviour.
+          */}
+        <Slider
           min={0}
           max={CRIT_FILTERS.length}
           step={1}
           value={step}
           aria-label={t('cvMinAria')}
-          aria-valuetext={reading}
-          onChange={(event) => {
-            const next = Number(event.target.value);
-            setFilters({ cv: next === 0 ? null : CRIT_FILTERS[next - 1] });
+          onValueChange={(next) => {
+            const value = Number(next);
+            setFilters({ cv: value === 0 ? null : CRIT_FILTERS[value - 1] });
           }}
-          // The filled part of the track is the reading, so it is drawn rather
-          // than left to the browser's default grey.
-          style={{ '--fill': `${(step / CRIT_FILTERS.length) * 100}%` } as React.CSSProperties}
-          className="h-4 w-full cursor-pointer appearance-none bg-transparent
-            [&::-webkit-slider-runnable-track]:h-[3px] [&::-webkit-slider-runnable-track]:rounded-full
-            [&::-webkit-slider-runnable-track]:bg-[linear-gradient(to_right,var(--color-accent)_var(--fill),var(--color-edge-strong)_var(--fill))]
-            [&::-moz-range-track]:h-[3px] [&::-moz-range-track]:rounded-full
-            [&::-moz-range-track]:bg-[linear-gradient(to_right,var(--color-accent)_var(--fill),var(--color-edge-strong)_var(--fill))]
-            [&::-webkit-slider-thumb]:mt-[-5px] [&::-webkit-slider-thumb]:h-[13px] [&::-webkit-slider-thumb]:w-[13px]
-            [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full
-            [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-accent
-            [&::-webkit-slider-thumb]:bg-ink
-            [&::-moz-range-thumb]:h-[13px] [&::-moz-range-thumb]:w-[13px] [&::-moz-range-thumb]:rounded-full
-            [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-accent [&::-moz-range-thumb]:bg-ink"
+          className="py-1.5"
         />
         <div className="mt-1 flex justify-between font-mono text-2xs uppercase tracking-wide text-muted">
           <span>—</span>
@@ -94,16 +90,16 @@ export function FilterInputs({
 
       <div className={`grid gap-4 ${ownedMains.length > 0 ? 'sm:grid-cols-2' : ''}`}>
         <Field label={t('setLabel')}>
-          <Select
+          <FieldSelect
+            label={t('setAria')}
             value={filters.set === null ? '' : String(filters.set)}
-            onChange={(value) => setFilters({ set: value === '' ? null : Number(value) })}
-            aria-label={t('setAria')}
-          >
-            <option value="">{t('allSetsWithCount', { count: ownedSets.length })}</option>
-            {ownedSets.map((set) => (
-              <option key={set.setId} value={set.setId}>{set.name}</option>
-            ))}
-          </Select>
+            onValueChange={(value) => setFilters({ set: value === '' ? null : Number(value) })}
+            placeholder={t('allSetsWithCount', { count: ownedSets.length })}
+            groups={[{ options: ownedSets.map((set) => ({
+              value: String(set.setId), label: set.name,
+            })) }]}
+            triggerClassName="px-2 py-1 text-xs"
+          />
         </Field>
 
         {/* The main stat is how a search is actually phrased — "a mastery
@@ -112,16 +108,16 @@ export function FilterInputs({
             Absent until a slot makes it a question with more than one answer. */}
         {ownedMains.length > 0 && (
           <Field label={t('mainStatLabel')}>
-            <Select
+            <FieldSelect
+              label={t('mainStatAria')}
               value={filters.main ?? ''}
-              onChange={(value) => setFilters({ main: value === '' ? null : value })}
-              aria-label={t('mainStatAria')}
-            >
-              <option value="">{t('anyWithCount', { count: ownedMains.length })}</option>
-              {ownedMains.map((main) => (
-                <option key={main.prop} value={main.prop}>{main.name}</option>
-              ))}
-            </Select>
+              onValueChange={(value) => setFilters({ main: value === '' ? null : value })}
+              placeholder={t('anyWithCount', { count: ownedMains.length })}
+              groups={[{ options: ownedMains.map((main) => ({
+                value: main.prop, label: main.name,
+              })) }]}
+              triggerClassName="px-2 py-1 text-xs"
+            />
           </Field>
         )}
       </div>
@@ -155,30 +151,30 @@ export function RankControls() {
     >
       <label className="flex items-center gap-1.5">
         <span className="font-mono text-2xs uppercase text-muted">{t('scalerLabel')}</span>
-        <Select
+        <FieldSelect
+          label={t('scalerAria')}
           value={filters.scaler ?? ''}
-          onChange={(value) =>
+          onValueChange={(value) =>
             setFilters({ scaler: value === '' ? null : (value as typeof filters.scaler) })}
-          aria-label={t('scalerAria')}
-        >
-          <option value="">{t('generalBest')}</option>
-          {SCALERS.map((scaler) => (
-            <option key={scaler} value={scaler}>{scalerLabel(scaler)}</option>
-          ))}
-        </Select>
+          placeholder={t('generalBest')}
+          groups={[{ options: SCALERS.map((scaler) => ({
+            value: scaler, label: scalerLabel(scaler),
+          })) }]}
+          triggerClassName="w-auto px-2 py-1 text-xs"
+        />
       </label>
 
       <label className="flex items-center gap-1.5">
         <span className="font-mono text-2xs uppercase text-muted">{t('sortLabel')}</span>
-        <Select
+        <FieldSelect
+          label={t('sortAria')}
           value={filters.sort}
-          onChange={(value) => setFilters({ sort: value as typeof filters.sort })}
-          aria-label={t('sortAria')}
-        >
-          {SORTS.map((sort) => (
-            <option key={sort} value={sort}>{sortLabel(sort)}</option>
-          ))}
-        </Select>
+          onValueChange={(value) => setFilters({ sort: value as typeof filters.sort })}
+          groups={[{ options: SORTS.map((sort) => ({
+            value: sort, label: sortLabel(sort),
+          })) }]}
+          triggerClassName="w-auto px-2 py-1 text-xs"
+        />
       </label>
     </div>
   );
@@ -201,28 +197,5 @@ function Field({
       </span>
       <span className="mt-1.5 block">{children}</span>
     </label>
-  );
-}
-
-function Select({
-  value,
-  onChange,
-  children,
-  ...rest
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  children: React.ReactNode;
-} & React.AriaAttributes) {
-  return (
-    <select
-      {...rest}
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      className="w-full truncate field px-2 py-1 text-xs text-text
-        transition-colors hover:border-edge-strong focus:border-accent"
-    >
-      {children}
-    </select>
   );
 }

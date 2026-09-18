@@ -31,6 +31,12 @@ const ASSETS = {
   avatarSide: { host: 'enka', width: 132, height: 132 },
   /** Full gacha art. Large — never render it in a list. */
   splash: { host: 'enka', width: 2048, height: 1024 },
+  /**
+   * The character's namecard art, used as a wash behind their splash. Small by
+   * the standards of the art it sits under — 420×200 — which is why it is only
+   * ever drawn blurred and at low opacity. The Traveler has none.
+   */
+  namecard: { host: 'enka', width: 420, height: 200 },
   weapon: { host: 'enka', width: 256, height: 256 },
   /** Refined weapon art. Enka only. */
   weaponAwaken: { host: 'enka', width: 256, height: 256 },

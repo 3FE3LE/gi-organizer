@@ -3,7 +3,7 @@ import { getTranslations } from 'next-intl/server';
 
 import { GameIcon } from '@/components/game-icon';
 import { getCatalog } from '@/lib/data/catalog';
-import { isLocale } from '@/lib/data/locales';
+import { isLocale, type Locale } from '@/lib/data/locales';
 import { getDb } from '@/lib/db/client';
 import { readRoster } from '@/lib/player/characters';
 import { getProfileId, readInventory } from '@/lib/player/db';
@@ -66,17 +66,16 @@ export default async function InventoryPage({ params }: PageProps<'/[locale]/dat
 
   return (
     <div className="space-y-10">
-      <section>
-        <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Stat label={t('artifactsStat')} value={inventory.artifacts.length}
-            note={t('artifactsEquippedNote', { count: assignedArtifacts.length })} />
-          <Stat label={t('weaponsStat')} value={inventory.weapons.length}
-            note={t('weaponsEquippedNote', { count: assignedWeapons.length })} />
-          <Stat label={t('rosterStat')} value={roster.length} note={t('rosterNote')} />
-          <Stat label={t('unassignedStat')} value={inventory.artifacts.length - assignedArtifacts.length}
-            note={t('unassignedNote')} />
-        </dl>
-      </section>
+      <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Stat locale={locale} label={t('artifactsStat')} value={inventory.artifacts.length}
+          note={t('artifactsEquippedNote', { count: assignedArtifacts.length })} />
+        <Stat locale={locale} label={t('weaponsStat')} value={inventory.weapons.length}
+          note={t('weaponsEquippedNote', { count: assignedWeapons.length })} />
+        <Stat locale={locale} label={t('rosterStat')} value={roster.length} note={t('rosterNote')} />
+        <Stat locale={locale} label={t('unassignedStat')}
+          value={inventory.artifacts.length - assignedArtifacts.length}
+          note={t('unassignedNote')} />
+      </dl>
 
       {unrostered.length > 0 && (
         <section>
@@ -143,11 +142,16 @@ export default async function InventoryPage({ params }: PageProps<'/[locale]/dat
   );
 }
 
-function Stat({ label, value, note }: { label: string; value: number; note: string }) {
+function Stat({
+  label, value, note, locale,
+}: { label: string; value: number; note: string; locale: Locale }) {
   return (
     <div className="tile">
       <dt className="font-mono text-2xs uppercase tracking-[0.12em] text-muted">{label}</dt>
-      <dd className="mt-2 font-mono text-3xl leading-none tabular">{value.toLocaleString()}</dd>
+      {/* The player's locale, not the server's: every other number on the site
+          is grouped with `locale` and this one was grouped with whatever the
+          machine defaults to. */}
+      <dd className="mt-2 font-mono text-3xl leading-none tabular">{value.toLocaleString(locale)}</dd>
       <dd className="mt-2 font-mono text-2xs text-muted">{note}</dd>
     </div>
   );

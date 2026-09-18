@@ -3,6 +3,8 @@
 import { RotateCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
+import { buttonVariants } from '@/components/ui/button';
+
 /**
  * What a failed render looks like instead of a blank page.
  *
@@ -33,7 +35,7 @@ export default function PlannerError({
       <button
         type="button"
         onClick={() => retry()}
-        className="btn btn-primary"
+        className={buttonVariants({ variant: 'default' })}
       >
         <RotateCw size={14} aria-hidden />
         {t('retry')}

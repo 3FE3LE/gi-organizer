@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
 import { GameIcon } from '@/components/game-icon';
+import { Hint } from '@/components/hint';
 import type { Catalog } from '@/lib/data/catalog';
 import type { Team } from '@/lib/player/teams';
 
@@ -151,15 +152,17 @@ export async function RosterPanel({
                     ? restoreRoster.bind(null, entry.characterId)
                     : dismissRoster.bind(null, entry.characterId)}
                 >
-                  <button
-                    type="submit"
-                    title={entry.dismissed ? t('restoreTitle') : t('dismissTitle')}
-                    className={`flex h-7 w-6 items-center justify-center border-l text-muted ${
-                      picked ? 'border-accent' : 'border-edge'
-                    } ${entry.dismissed ? 'hover:text-accent' : 'hover:text-bad'}`}
-                  >
-                    {entry.dismissed ? <RotateCcw size={11} /> : <X size={11} />}
-                  </button>
+                  <Hint text={entry.dismissed ? t('restoreTitle') : t('dismissTitle')}>
+                    <button
+                      type="submit"
+                      aria-label={entry.dismissed ? t('restoreTitle') : t('dismissTitle')}
+                      className={`flex h-7 w-6 items-center justify-center border-l text-muted ${
+                        picked ? 'border-accent' : 'border-edge'
+                      } ${entry.dismissed ? 'hover:text-accent' : 'hover:text-bad'}`}
+                    >
+                      {entry.dismissed ? <RotateCcw size={11} /> : <X size={11} />}
+                    </button>
+                  </Hint>
                 </form>
               </li>
             );
@@ -211,14 +214,15 @@ function Face({
   if (!to) return <span className={`${className} text-muted`}>{content}</span>;
 
   return (
-    <Link
-      href={to}
-      title={picked ? t('stopFilterTitle') : t('filterTitle')}
-      aria-current={picked ? 'true' : undefined}
-      className={`${className} ${picked ? 'text-accent' : 'hover:text-accent'}`}
-    >
-      {content}
-    </Link>
+    <Hint text={picked ? t('stopFilterTitle') : t('filterTitle')}>
+      <Link
+        href={to}
+        aria-current={picked ? 'true' : undefined}
+        className={`${className} ${picked ? 'text-accent' : 'hover:text-accent'}`}
+      >
+        {content}
+      </Link>
+    </Hint>
   );
 }
 

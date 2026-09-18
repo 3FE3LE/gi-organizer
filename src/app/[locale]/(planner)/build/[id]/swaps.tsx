@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useActionState, useState } from 'react';
 
+import { Button, buttonVariants } from '@/components/ui/button';
 import { AssetImage } from '@/components/asset-image';
 
 import { type MoveState, moveGearAction } from './actions';
@@ -190,7 +191,7 @@ function SwapItem({
                 type="button"
                 onClick={() => setOpen((current) => !current)}
                 aria-expanded={open}
-                className="btn btn-sm shrink-0 font-mono"
+                className={buttonVariants({ variant: 'outline', size: 'sm', className: 'shrink-0 font-mono' })}
               >
                 {open ? t('closeCompare') : t('openCompare')}
               </button>
@@ -210,13 +211,15 @@ function SwapItem({
                   name="expectedHolderId"
                   value={swap.holderId === null ? 'null' : String(swap.holderId)}
                 />
-                <button
+                <Button
+                  variant="outline"
+                  size="sm"
                   type="submit"
                   disabled={pending}
-                  className="btn btn-sm shrink-0"
+                  className="shrink-0"
                 >
                   {t('equipButton')}
-                </button>
+                </Button>
               </form>
       </div>
 

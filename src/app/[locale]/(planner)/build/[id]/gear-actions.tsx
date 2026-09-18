@@ -2,11 +2,12 @@
 
 import { ArrowLeftRight, Pencil, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useActionState, useEffect, useRef, useState } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 
+import { buttonVariants } from '@/components/ui/button';
 import { ActionStatus } from '@/components/action-status';
 import { AssetImage } from '@/components/asset-image';
-import { useModalFocus } from '@/components/use-modal';
+import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog';
 
 import { type MoveState, moveGearAction } from './actions';
 import { CandidateRow, MoveButton, type SlotView } from './gear-slot';
@@ -65,17 +66,25 @@ export function GearActions({
         />
       </div>
 
-      {mode && (
-        <SlotDialog
-          characterId={characterId}
-          locale={locale}
-          buildId={buildId}
-          slot={slot}
-          title={title}
-          compare={mode === 'compare'}
-          onClose={() => setMode(null)}
-        />
-      )}
+      {/* One dialog, two ways in: "editar" opens the list, "comparar" opens it
+          with the best candidate already unfolded against what is worn. */}
+      <Dialog open={mode !== null} onOpenChange={(next) => { if (!next) setMode(null); }}>
+        {mode && (
+          <DialogContent
+            showCloseButton={false}
+            className="w-full max-w-3xl gap-0 overflow-hidden rounded-xl border border-edge-strong bg-surface p-0 ring-0 sm:max-w-3xl"
+          >
+            <SlotDialog
+              characterId={characterId}
+              locale={locale}
+              buildId={buildId}
+              slot={slot}
+              title={title}
+              compare={mode === 'compare'}
+            />
+          </DialogContent>
+        )}
+      </Dialog>
     </>
   );
 }
@@ -117,7 +126,6 @@ function SlotDialog({
   slot,
   title,
   compare,
-  onClose,
 }: {
   characterId: number;
   locale: string;
@@ -125,14 +133,11 @@ function SlotDialog({
   slot: string;
   title: string;
   compare: boolean;
-  onClose: () => void;
 }) {
   const t = useTranslations('build');
-  const panel = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<SlotView | null>(null);
   const [failed, setFailed] = useState(false);
 
-  useModalFocus(panel);
   const [state, move, pending] = useActionState<MoveState, FormData>(
     moveGearAction, { status: 'idle' },
   );
@@ -149,108 +154,86 @@ function SlotDialog({
     // moved is stale the moment the write lands.
   }, [characterId, locale, buildId, slot, state]);
 
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-ink/80 p-0 backdrop-blur-sm sm:items-center sm:p-6"
-      onClick={onClose}
-    >
-      <div
-        ref={panel}
-        role="dialog"
-        tabIndex={-1}
-        aria-modal="true"
-        aria-label={t('candidatesForAria', { title })}
-        onClick={(event) => event.stopPropagation()}
-        className="flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-t-xl border border-edge-strong bg-surface shadow-2xl sm:rounded-xl"
-      >
-        <header className="flex items-center gap-3 border-b border-edge px-4 py-3">
-          {view?.equipped && (
-            <AssetImage
-              src={view.equipped.icon}
-              kind={view.kind === 'weapon' ? 'weapon' : 'relic'}
-              className="h-8 w-8 shrink-0"
-              sizes="32px"
-            />
-          )}
-          <div className="min-w-0 flex-1">
-            <p className="font-mono text-xs uppercase tracking-wide text-accent">{title}</p>
-            <p className="truncate text-sm">
-              {view?.equipped
-                ? <>{view.equipped.label} <span className="text-muted">{view.equipped.detail}</span></>
-                : <span className="text-muted">{t('emptySlotText')}</span>}
-            </p>
-          </div>
-
-          {view?.equipped && (
-            <MoveButton
-              action={move}
-              pending={pending}
-              move={
-                view.kind === 'weapon'
-                  ? { kind: 'unequip-weapon', instanceId: view.equipped.id }
-                  : { kind: 'unequip-artifact', instanceId: view.equipped.id }
-              }
-              expectedHolderId={characterId}
-              title={t('removeButton')}
-            />
-          )}
-
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={t('closeAria')}
-            className="btn btn-quiet btn-icon shrink-0"
-          >
-            <X size={16} />
-          </button>
-        </header>
-
-        <ActionStatus state={state} className="border-b border-edge px-4 py-1.5 font-mono text-xs" />
-
-        {view && (
-          <p className="border-b border-edge px-4 py-1.5 text-xs text-muted">
-            {t('candidatesCount', { count: view.candidates.length })}
-            {view.hiddenInUse > 0 && (
-              <span className="font-mono text-2xs">
-                {' · '}{t('hiddenInUse', { count: view.hiddenInUse })}
-              </span>
-            )}
+    <div className="flex max-h-[85vh] flex-col">
+      <header className="flex items-center gap-3 border-b border-edge px-4 py-3">
+        {view?.equipped && (
+          <AssetImage
+            src={view.equipped.icon}
+            kind={view.kind === 'weapon' ? 'weapon' : 'relic'}
+            className="h-8 w-8 shrink-0"
+            sizes="32px"
+          />
+        )}
+        <div className="min-w-0 flex-1">
+          <DialogTitle className="font-mono text-xs font-normal uppercase tracking-wide text-accent">
+            {title}
+          </DialogTitle>
+          <p className="truncate text-sm">
+            {view?.equipped
+              ? <>{view.equipped.label} <span className="text-muted">{view.equipped.detail}</span></>
+              : <span className="text-muted">{t('emptySlotText')}</span>}
           </p>
+        </div>
+
+        {view?.equipped && (
+          <MoveButton
+            action={move}
+            pending={pending}
+            move={
+              view.kind === 'weapon'
+                ? { kind: 'unequip-weapon', instanceId: view.equipped.id }
+                : { kind: 'unequip-artifact', instanceId: view.equipped.id }
+            }
+            expectedHolderId={characterId}
+            title={t('removeButton')}
+          />
         )}
 
-        <ul className="min-h-24 flex-1 overflow-y-auto">
-          {!view && !failed && (
-            <li className="px-4 py-6 text-center text-xs text-muted">{t('searchingCandidates')}</li>
+        <DialogClose aria-label={t('closeAria')} className={buttonVariants({ variant: 'ghost', size: 'icon-sm', className: 'shrink-0' })}>
+          <X size={16} />
+        </DialogClose>
+      </header>
+
+      <ActionStatus state={state} className="border-b border-edge px-4 py-1.5 font-mono text-xs" />
+
+      {view && (
+        <p className="border-b border-edge px-4 py-1.5 text-xs text-muted">
+          {t('candidatesCount', { count: view.candidates.length })}
+          {view.hiddenInUse > 0 && (
+            <span className="font-mono text-2xs">
+              {' · '}{t('hiddenInUse', { count: view.hiddenInUse })}
+            </span>
           )}
-          {failed && (
-            <li className="px-4 py-6 text-center text-xs text-accent">
-              {t('failedToLoad')}
-            </li>
-          )}
-          {view?.candidates.map((candidate, index) => (
-            <CandidateRow
-              key={candidate.id}
-              candidate={candidate}
-              slot={view}
-              characterId={characterId}
-              action={move}
-              pending={pending}
-              // "Compare" is the same list with the argument already made: the
-              // best candidate open against what is worn.
-              defaultOpen={compare && index === 0}
-            />
-          ))}
-          {view?.candidates.length === 0 && (
-            <li className="px-4 py-6 text-center text-xs text-muted">{t('noMatch')}</li>
-          )}
-        </ul>
-      </div>
+        </p>
+      )}
+
+      <ul className="min-h-24 flex-1 overflow-y-auto">
+        {!view && !failed && (
+          <li className="px-4 py-6 text-center text-xs text-muted">{t('searchingCandidates')}</li>
+        )}
+        {failed && (
+          <li className="px-4 py-6 text-center text-xs text-accent">
+            {t('failedToLoad')}
+          </li>
+        )}
+        {view?.candidates.map((candidate, index) => (
+          <CandidateRow
+            key={candidate.id}
+            candidate={candidate}
+            slot={view}
+            characterId={characterId}
+            action={move}
+            pending={pending}
+            // "Compare" is the same list with the argument already made: the
+            // best candidate open against what is worn.
+            defaultOpen={compare && index === 0}
+          />
+        ))}
+        {view?.candidates.length === 0 && (
+          <li className="px-4 py-6 text-center text-xs text-muted">{t('noMatch')}</li>
+        )}
+      </ul>
     </div>
   );
 }

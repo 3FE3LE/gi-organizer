@@ -27,6 +27,8 @@ import {
   type UseFormRegisterReturn,
 } from 'react-hook-form';
 
+import { Button, buttonVariants } from '@/components/ui/button';
+import { FieldSelect } from '@/components/field-select';
 import { ActionStatus } from '@/components/action-status';
 import {
   BREAKPOINTS,
@@ -96,6 +98,8 @@ export type ProgressOptions = {
   roles: Option[];
   substats: Option[];
   weapons: RankedOptions;
+  /** Weapon ids whose refinement is farmable — see `objective-view.ts`. */
+  forgeable: number[];
   /** Richer than the rest: a set is picked by its icon and its bonus. */
   sets: SetOptions;
   mainStatsBySlot: Record<string, Option[]>;
@@ -279,6 +283,21 @@ function ProgressForm({
     control: form.control,
     name: ['targetLevel', 'setIds', 'mainStats', 'substats', 'goals'],
   });
+  const weaponId = useWatch({ control: form.control, name: 'weaponId' });
+
+  /*
+   * A refinement is only a target when copies can be worked towards.
+   *
+   * Forged weapons take a billet and ore whenever the player wants another
+   * copy, so R1 → R5 is a plan. Everything else — every five-star, every
+   * four-star off a banner, the gacha-shop and event weapons — is copies you
+   * either have or wish for, and typing a number here would have the planner
+   * cost out a wish. So it reads what the account holds and stops being a
+   * control. The stored value is left exactly as it is: nothing is rewritten
+   * because a field went quiet.
+   */
+  const plannableRefinement =
+    weaponId !== '' && options.forgeable.includes(Number(weaponId));
 
   const twoPlusTwo = (setIds?.[1] ?? '') !== '';
   const [showSecondSet, setShowSecondSet] = useState(twoPlusTwo);
@@ -310,16 +329,22 @@ function ProgressForm({
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 card px-4 py-3">
         <label className="flex items-center gap-2">
           <span className="font-mono text-2xs uppercase tracking-wide text-muted">{t('roleLabel')}</span>
-          <select
-            {...form.register('role')}
-            defaultValue={defaults.role}
-            className="field px-2 py-1.5 text-sm focus:border-accent"
-          >
-            <option value="">{t('noRole')}</option>
-            {options.roles.map((option) => (
-              <option key={option.value} value={option.value}>{option.label}</option>
-            ))}
-          </select>
+          <Controller
+            control={form.control}
+            name="role"
+            render={({ field }) => (
+              <FieldSelect
+                name={field.name}
+                label={t('roleLabel')}
+                value={field.value}
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
+                placeholder={t('noRole')}
+                groups={[{ options: options.roles }]}
+                triggerClassName="w-auto py-1.5"
+              />
+            )}
+          />
         </label>
         <p className="min-w-48 flex-1 text-xs leading-relaxed text-muted">
           {t('roleHint')}
@@ -396,18 +421,35 @@ function ProgressForm({
             <div>
               <FieldLabel>{t('targetWeaponLabel')}</FieldLabel>
               <div className="flex flex-wrap items-end gap-2">
-                <Ranked
-                  field={form.register('weaponId')}
-                  label={t('targetWeaponLabel')}
-                  defaultValue={defaults.weaponId}
-                  placeholder={t('weaponPlaceholder')}
-                  options={options.weapons}
-                  className="min-w-48 flex-1 field px-2 py-2 text-sm"
+                {/* Controlled, unlike a registered field: the refinement
+                    control beside it changes shape with what is picked here,
+                    and a registered select only tells the form its value on
+                    submit — the render next to it never hears about it. */}
+                <Controller
+                  control={form.control}
+                  name="weaponId"
+                  render={({ field }) => (
+                    <FieldSelect
+                      name={field.name}
+                      label={t('targetWeaponLabel')}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      onBlur={field.onBlur}
+                      placeholder={t('weaponPlaceholder')}
+                      groups={[
+                        ...(options.weapons.suggested.length > 0
+                          ? [{ label: t('suggestedForCharacter'), options: options.weapons.suggested }]
+                          : []),
+                        { label: t('allOption'), options: options.weapons.all },
+                      ]}
+                      triggerClassName="min-w-48 flex-1"
+                    />
+                  )}
                 />
                 <Controller
                   control={form.control}
                   name="weaponRefinement"
-                  render={({ field }) => (
+                  render={({ field }) => (plannableRefinement ? (
                     <Stepper
                       label={t('weaponRefinementAria')}
                       value={Number(field.value)}
@@ -418,9 +460,21 @@ function ProgressForm({
                       prefix="R"
                       className="w-24"
                     />
-                  )}
+                  ) : (
+                    <span
+                      className="tabular card-2 w-24 px-2 py-2 text-center font-mono text-sm text-muted"
+                      title={t('refinementNotPlannable')}
+                    >
+                      R{Number(field.value)}
+                    </span>
+                  ))}
                 />
               </div>
+              {weaponId !== '' && !plannableRefinement && (
+                <p className="mt-1.5 font-mono text-2xs text-muted">
+                  {t('refinementNotPlannable')}
+                </p>
+              )}
               {values.equippedWeapon && (
                 <p className="mt-1.5 font-mono text-2xs text-muted">
                   {t('equippedNow')} <span className="text-text">{values.equippedWeapon}</span>
@@ -492,16 +546,22 @@ function ProgressForm({
                     <span className="mb-1 block truncate text-2xs text-muted">
                       {slotLabel(slot.key)}
                     </span>
-                    <select
-                      {...form.register(`mainStats.${slot.key}`)}
-                      defaultValue={defaults.mainStats[slot.key]}
-                      className="w-full min-w-0 field px-2 py-1.5 text-xs focus:border-accent"
-                    >
-                      <option value="">—</option>
-                      {(options.mainStatsBySlot[slot.key] ?? []).map((option) => (
-                        <option key={option.value} value={option.value}>{option.label}</option>
-                      ))}
-                    </select>
+                    <Controller
+                      control={form.control}
+                      name={`mainStats.${slot.key}`}
+                      render={({ field }) => (
+                        <FieldSelect
+                          name={field.name}
+                          label={t('mainStatSlotAria', { slot: slotLabel(slot.key) })}
+                          value={field.value ?? ''}
+                          onValueChange={field.onChange}
+                          onBlur={field.onBlur}
+                          placeholder="—"
+                          groups={[{ options: options.mainStatsBySlot[slot.key] ?? [] }]}
+                          triggerClassName="px-2 py-1.5 text-xs"
+                        />
+                      )}
+                    />
                   </label>
                 ))}
               </div>
@@ -519,17 +579,22 @@ function ProgressForm({
                     <span className="w-4 shrink-0 font-mono text-2xs text-muted">
                       {position}º
                     </span>
-                    <select
-                      {...form.register(`substats.${position - 1}`)}
-                      defaultValue={defaults.substats[position - 1]}
-                      aria-label={t('substatPositionAria', { position })}
-                      className="w-full min-w-0 field px-1.5 py-1.5 text-xs focus:border-accent"
-                    >
-                      <option value="">—</option>
-                      {options.substats.map((option) => (
-                        <option key={option.value} value={option.value}>{option.label}</option>
-                      ))}
-                    </select>
+                    <Controller
+                      control={form.control}
+                      name={`substats.${position - 1}`}
+                      render={({ field }) => (
+                        <FieldSelect
+                          name={field.name}
+                          label={t('substatPositionAria', { position })}
+                          value={field.value ?? ''}
+                          onValueChange={field.onChange}
+                          onBlur={field.onBlur}
+                          placeholder="—"
+                          groups={[{ options: options.substats }]}
+                          triggerClassName="px-1.5 py-1.5 text-xs"
+                        />
+                      )}
+                    />
                   </div>
                 ))}
               </div>
@@ -560,17 +625,22 @@ function ProgressForm({
                   className="flex min-w-0 items-start gap-2 field/40 p-2"
                 >
                   <div className="min-w-0 flex-1 space-y-1.5">
-                    <select
-                      {...form.register(`goals.${index}.prop`)}
-                      defaultValue={defaults.goals[index]?.prop ?? ''}
-                      aria-label={t('goalStatAria', { n: index + 1 })}
-                      className="w-full min-w-0 field px-2 py-1.5 text-xs focus:border-accent"
-                    >
-                      <option value="">{t('chooseStatPlaceholder')}</option>
-                      {options.goalProps.map((option) => (
-                        <option key={option.value} value={option.value}>{option.label}</option>
-                      ))}
-                    </select>
+                    <Controller
+                      control={form.control}
+                      name={`goals.${index}.prop`}
+                      render={({ field }) => (
+                        <FieldSelect
+                          name={field.name}
+                          label={t('goalStatAria', { n: index + 1 })}
+                          value={field.value ?? ''}
+                          onValueChange={field.onChange}
+                          onBlur={field.onBlur}
+                          placeholder={t('chooseStatPlaceholder')}
+                          groups={[{ options: options.goalProps }]}
+                          triggerClassName="px-2 py-1.5 text-xs"
+                        />
+                      )}
+                    />
 
                     <div className="flex items-center gap-2">
                       <input
@@ -593,7 +663,7 @@ function ProgressForm({
                       type="button"
                       onClick={() => goalRows.remove(index)}
                       aria-label={t('removeGoalAria', { n: index + 1 })}
-                      className="btn btn-quiet btn-icon shrink-0 hover:text-bad"
+                      className={buttonVariants({ variant: 'ghost', size: 'icon-sm', className: 'shrink-0 hover:text-bad' })}
                     >
                       <X size={14} />
                     </button>
@@ -618,16 +688,17 @@ function ProgressForm({
       </div>
 
       {/* Stuck to the bottom on a phone, where the thumb is; a plain panel from
-          `sm`, where the end of the form is already on screen. */}
-      <div className="glass sticky bottom-0 -mx-4 flex flex-wrap items-center gap-2 border-t px-4 py-3 sm:static sm:mx-0 sm:rounded-card sm:border sm:px-4">
-        <button
+          `sm`, where the end of the form is already on screen. It stops above
+          the section bar rather than under it — see `--section-nav-height`. */}
+      <div className="glass sticky bottom-[var(--section-nav-height)] -mx-4 flex flex-wrap items-center gap-2 border-t px-4 py-3 sm:static sm:mx-0 sm:rounded-card sm:border sm:px-4">
+        <Button
+          variant="default"
           type="submit"
           disabled={form.formState.isSubmitting || busy !== null}
-          className="btn btn-primary"
         >
           <Save size={14} />
           {form.formState.isSubmitting ? t('saving') : t('saveGoal')}
-        </button>
+        </Button>
 
         {values.buildId && (
           <button
@@ -781,48 +852,6 @@ function Verdict({
 }
 
 /** A select whose first group is what the engine would pick, in its order. */
-function Ranked({
-  field,
-  label,
-  defaultValue,
-  placeholder,
-  options,
-  className,
-}: {
-  field: UseFormRegisterReturn;
-  /** The caption above it is a `<span>`, so the control states its own name. */
-  label: string;
-  defaultValue: string;
-  placeholder: string;
-  options: RankedOptions;
-  className: string;
-}) {
-  const t = useTranslations('build');
-  return (
-    <select
-      {...field}
-      aria-label={label}
-      defaultValue={defaultValue}
-      className={`min-w-0 focus:border-accent ${className}`}
-    >
-      <option value="">{placeholder}</option>
-
-      {options.suggested.length > 0 && (
-        <optgroup label={t('suggestedForCharacter')}>
-          {options.suggested.map((option) => (
-            <option key={option.value} value={option.value}>{option.label}</option>
-          ))}
-        </optgroup>
-      )}
-
-      <optgroup label={t('allOption')}>
-        {options.all.map((option) => (
-          <option key={option.value} value={option.value}>{option.label}</option>
-        ))}
-      </optgroup>
-    </select>
-  );
-}
 
 /**
  * A level, with the ascension it implies.

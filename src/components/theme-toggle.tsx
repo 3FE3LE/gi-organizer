@@ -3,6 +3,8 @@
 import { Moon, Sun } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
+import { Button } from '@/components/ui/button';
+
 /**
  * Light or dark, and nothing in between.
  *
@@ -41,15 +43,15 @@ export function ThemeToggle() {
   }
 
   return (
-    <button
-      type="button"
+    <Button
+      variant="ghost"
+      size="icon-sm"
       onClick={toggle}
       aria-label={t('themeToggle')}
       title={t('themeToggle')}
-      className="btn btn-quiet btn-icon"
     >
       <Sun size={16} aria-hidden className="theme-sun" />
       <Moon size={16} aria-hidden className="theme-moon" />
-    </button>
+    </Button>
   );
 }

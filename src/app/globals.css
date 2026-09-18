@@ -1,4 +1,9 @@
 @import "tailwindcss";
+/* Keyframes and the `data-open` / `data-closed` variants the shadcn components
+   are written against, plus the animation utilities they use. Additive: no
+   resets, no palette. */
+@import "shadcn/tailwind.css";
+@import "tw-animate-css";
 
 /**
  * Genshin's palette without Genshin's chrome.
@@ -33,6 +38,8 @@
   --color-text: var(--text);
   --color-muted: var(--muted);
 
+  --color-icon-bed: var(--icon-bed);
+
   --color-accent: var(--accent);
   --color-accent-quiet: var(--accent-quiet);
   --color-on-accent: var(--on-accent);
@@ -41,8 +48,43 @@
   --color-warn: var(--warn);
   --color-bad: var(--bad);
 
+  /**
+   * The names shadcn components are written against, pointed at ours.
+   *
+   * Their source assumes a palette called `background`, `foreground`, `border`,
+   * `ring` and so on. Ours is called `surface`, `text`, `edge`, `accent`, and
+   * it swaps at runtime through `[data-theme]`. Aliasing one onto the other
+   * means a component pasted in by the CLI inherits this app's parchment and
+   * gold, in both themes, without a line of its markup changing — and without
+   * a second palette to keep in step.
+   *
+   * `--color-muted` is deliberately absent: here it already means muted *text*,
+   * which `text-muted` uses on every page, while shadcn means a muted surface
+   * by it. The one that would collide is the one we keep.
+   */
+  --color-background: var(--surface);
+  --color-foreground: var(--text);
+  --color-card: var(--surface-2);
+  --color-card-foreground: var(--text);
+  --color-popover: var(--surface);
+  --color-popover-foreground: var(--text);
+  --color-primary: var(--accent);
+  --color-primary-foreground: var(--on-accent);
+  --color-secondary: var(--surface-2);
+  --color-secondary-foreground: var(--text);
+  --color-muted-foreground: var(--muted);
+  --color-accent-foreground: var(--on-accent);
+  --color-destructive: var(--bad);
+  --color-destructive-foreground: var(--on-accent);
+  --color-border: var(--edge);
+  --color-input: var(--edge);
+  --color-ring: var(--accent);
+  --radius: var(--radius-card);
+
   --font-sans: var(--font-geist-sans), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  /* Flavour text only — a character's title. See `layout.tsx`. */
+  --font-display: var(--font-display-face), ui-serif, Georgia, serif;
 
   /**
    * The floor of the type scale, and the reason it exists.
@@ -78,6 +120,33 @@
  * parchment warm rather than a blue white — the gold has to stay gold.
  */
 :root {
+  /**
+   * The disc the game's own glyphs sit on, dark in both themes.
+   *
+   * Enka's talent and constellation art is white line work on transparency,
+   * drawn for a dark HUD. On `--ink` that reads in the dark theme and vanishes
+   * in the light one, where `--ink` is parchment — a white glyph on cream is a
+   * blank circle. The bed is a property of the artwork rather than of the
+   * page, so it does not follow the palette; every other icon in the app is
+   * full-colour and needs none of this.
+   */
+  --icon-bed: #14192a;
+
+  /**
+   * How much of the screen the phone's bottom nav takes, and zero from `md`
+   * where the nav is back in the header row.
+   *
+   * It is a variable rather than a number in two places because more than one
+   * thing has to end above that bar — the page itself, and the save row that
+   * sticks to the bottom of the build form. A token means the second one was
+   * not left behind when the first was fixed.
+   *
+   * Outside `@theme` on purpose: this is a layout fact that changes at a
+   * breakpoint, and `@theme` values are inlined into the utilities Tailwind
+   * generates, where a media query cannot reach them.
+   */
+  --section-nav-height: calc(3.25rem + env(safe-area-inset-bottom, 0px));
+
   --ink: #0c0f17;
   --surface: #151a26;
   --surface-2: #1e2434;
@@ -149,6 +218,12 @@
   color-scheme: light;
 }
 
+@media (width >= 48rem) {
+  :root {
+    --section-nav-height: 0px;
+  }
+}
+
 /**
  * Nobody has chosen yet: follow the operating system. Scoped so that an
  * explicit `data-theme="dark"` still wins in a light OS, which is the whole
@@ -186,6 +261,20 @@
 
     color-scheme: light;
   }
+}
+
+/**
+ * The scrollbar's space is reserved whether or not it is there.
+ *
+ * Every overlay on the app freezes the page behind it, and on a scrollbar that
+ * takes up room, hiding the overflow hands those fifteen pixels back to the
+ * viewport: the layout jumps sideways as the dialog opens and jumps back as it
+ * closes. The Base UI primitives compensate for that themselves; this costs one
+ * always-present strip to make it true for everything else too — a long page
+ * followed by a short one, for instance.
+ */
+html {
+  scrollbar-gutter: stable;
 }
 
 body {
@@ -284,91 +373,15 @@ body {
 
   /* -------------------------------------------------------- controls --- */
 
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    border: 1px solid var(--edge);
-    border-radius: 0.625rem;
-    background: var(--surface-2);
-    color: var(--text);
-    padding: 0.4rem 0.85rem;
-    font-size: 0.8125rem;
-    line-height: 1.25rem;
-    white-space: nowrap;
-    transition:
-      transform var(--duration-exit) var(--ease-out-soft),
-      background-color var(--duration-exit) var(--ease-out-soft),
-      border-color var(--duration-exit) var(--ease-out-soft),
-      box-shadow var(--duration-exit) var(--ease-out-soft);
-  }
-
-  .btn:hover:not(:disabled) {
-    border-color: color-mix(in oklab, var(--accent) 60%, var(--edge));
-    background: var(--raised);
-  }
-
-  .btn:active:not(:disabled) {
-    transform: translateY(1px);
-  }
-
-  .btn:disabled {
-    opacity: 0.5;
-  }
-
-  /**
-   * The one loud control on a screen.
+  /*
+   * The buttons left with the markup that used them.
    *
-   * A gradient rather than a flat fill, because gold is a metal and a metal
-   * has a light side; the glow underneath is what lifts it off the panel it
-   * sits on. Exactly one of these per view — if two things are primary,
-   * neither is.
+   * Every `.btn` on the app is `components/ui/button.tsx` now — the same paint,
+   * a gold gradient for the one loud control and bordered parchment for the
+   * rest, but carried by a component that also handles the focus ring, the
+   * disabled state and icon sizing. The chip below stayed: it is a filter
+   * value, not a button, and nothing in the primitive set matches it.
    */
-  .btn-primary {
-    border-color: transparent;
-    background:
-      linear-gradient(
-        180deg,
-        color-mix(in oklab, var(--accent) 88%, white),
-        var(--accent)
-      );
-    color: var(--on-accent);
-    font-weight: 500;
-    box-shadow: var(--shadow-accent);
-  }
-
-  .btn-primary:hover:not(:disabled) {
-    background:
-      linear-gradient(
-        180deg,
-        color-mix(in oklab, var(--accent) 75%, white),
-        color-mix(in oklab, var(--accent) 95%, white)
-      );
-    border-color: transparent;
-  }
-
-  .btn-quiet {
-    background: transparent;
-    border-color: transparent;
-    color: var(--muted);
-  }
-
-  .btn-quiet:hover:not(:disabled) {
-    background: var(--surface-2);
-    color: var(--text);
-    border-color: transparent;
-  }
-
-  .btn-sm {
-    padding: 0.25rem 0.6rem;
-    font-size: var(--text-2xs);
-    border-radius: 0.5rem;
-  }
-
-  .btn-icon {
-    padding: 0.4rem;
-    border-radius: 0.5rem;
-  }
 
   /** A filter value, a tab, a toggle: round, small, and obviously switchable. */
   .chip {
@@ -452,6 +465,151 @@ body {
 
   .field:focus {
     border-color: var(--accent);
+  }
+
+  /* ------------------------------------------------------- section nav --- */
+
+  /**
+   * The five sections, in the place each screen has room for them.
+   *
+   * `header` is the row of pills a wide layout has the width for. `bar` is the
+   * phone's: fixed along the bottom edge, one row at any label length, within
+   * thumb reach, and out of the sticky header — which on a phone was wrapping
+   * those pills to three lines and taking a third of the viewport before the
+   * first row of content.
+   *
+   * Both variants are in the markup and exactly one is displayed; see
+   * `components/main-nav.tsx` for why the bar cannot simply be the header nav
+   * repositioned. `display: none` is what hides the other, so the hidden one
+   * is out of the accessibility tree and the tab order as well as off screen.
+   */
+  .section-nav[data-variant='header'] {
+    display: none;
+  }
+
+  .section-nav[data-variant='bar'] {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 40;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    border-top: 1px solid var(--edge);
+    /* Denser than `.glass`: this sits over content rather than over the top of
+       the page, and the labels have to stay readable through it. */
+    background: color-mix(in oklab, var(--ink) 88%, transparent);
+    backdrop-filter: blur(12px) saturate(140%);
+    /* The home indicator on a modern phone overlaps the bottom edge. */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /**
+   * The room the fixed bar takes out of the page.
+   *
+   * A fixed bar is not in the flow, so without this the last row of a grid and
+   * the whole footer sit underneath it — reachable only by overscrolling,
+   * which reads as content that is simply missing.
+   */
+  .section-nav-offset {
+    padding-bottom: var(--section-nav-height);
+  }
+
+  .section-nav-link {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    white-space: nowrap;
+    transition:
+      background-color var(--duration-exit) var(--ease-out-soft),
+      border-color var(--duration-exit) var(--ease-out-soft),
+      color var(--duration-exit) var(--ease-out-soft);
+  }
+
+  .section-nav[data-variant='bar'] .section-nav-link {
+    flex-direction: column;
+    gap: 0.2rem;
+    /* 44px is the smallest target a finger hits reliably; this clears it. */
+    min-height: 3.25rem;
+    padding: 0.5rem 0.25rem;
+    font-size: 0.6875rem;
+    line-height: 1;
+    text-align: center;
+  }
+
+  /* A label too long for its fifth of the screen is cut, not wrapped: a second
+     line would make one cell taller than the other four, and the bar would
+     change height between locales. */
+  .section-nav[data-variant='bar'] .section-nav-link > span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .section-nav[data-variant='bar'] .section-nav-link[data-active='true'] {
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  /*
+   * The filled pill is the header's cue; at this size a filled cell in a row
+   * of five reads as a button somebody is pressing. A rule along the edge the
+   * bar is attached to says "this one" without adding a shape.
+   */
+  .section-nav[data-variant='bar'] .section-nav-link[data-active='true']::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 2rem;
+    height: 2px;
+    transform: translateX(-50%);
+    border-radius: 999px;
+    background: var(--accent);
+  }
+
+  @media (width >= 48rem) {
+    .section-nav[data-variant='header'] {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.25rem;
+    }
+
+    .section-nav[data-variant='bar'] {
+      display: none;
+    }
+
+    /* The pills are `.chip` in everything but name — the same shape the filter
+       rows and the section tabs use. */
+    .section-nav[data-variant='header'] .section-nav-link {
+      gap: 0.4rem;
+      padding: 0.3rem 0.75rem;
+      border: 1px solid var(--edge);
+      border-radius: 999px;
+      background: var(--surface);
+      font-size: var(--text-2xs);
+      line-height: 1.15rem;
+    }
+
+    .section-nav[data-variant='header'] .section-nav-link:hover {
+      color: var(--text);
+      border-color: var(--edge-strong);
+    }
+
+    .section-nav[data-variant='header'] .section-nav-link[data-active='true'] {
+      background: var(--accent);
+      border-color: transparent;
+      color: var(--on-accent);
+      font-weight: 500;
+    }
+
+    .section-nav[data-variant='header'] .section-nav-link[data-active='true']:hover {
+      background: color-mix(in oklab, var(--accent) 88%, white);
+      border-color: transparent;
+      color: var(--on-accent);
+    }
   }
 
   /** A number with a caption under it: the counts at the top of a section. */

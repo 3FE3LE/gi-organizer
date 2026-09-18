@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useActionState, useState, useTransition } from 'react';
 
+import { Button } from '@/components/ui/button';
 import { ActionStatus } from '@/components/action-status';
 
 import {
@@ -152,13 +153,13 @@ export function ImportForm() {
                   {t('removeAbsentLabel')}
                 </label>
               )}
-              <button
+              <Button
+                variant="default"
                 type="submit"
                 disabled={applying}
-                className="btn btn-primary"
               >
                 {applying ? t('applying') : t('apply')}
-              </button>
+              </Button>
             </form>
 
             <Result state={applyState} />

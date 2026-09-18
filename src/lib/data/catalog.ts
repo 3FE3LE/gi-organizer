@@ -105,6 +105,17 @@ async function build(locale: Locale): Promise<Catalog> {
     charactersSorted: [...characters.values()].sort(
       (a, b) => b.rarity - a.rarity || byName(a, b),
     ),
+    /**
+     * Release order, newest first. Built here rather than in the roster page,
+     * which sorted a hundred-odd characters on every request to produce a list
+     * that only changes when the dataset does.
+     */
+    charactersByRelease: [...characters.values()].sort(
+      (a, b) =>
+        Number.parseFloat(b.version) - Number.parseFloat(a.version) ||
+        b.rarity - a.rarity ||
+        byName(a, b),
+    ),
     weaponsSorted: [...weapons.values()].sort(
       (a, b) => b.rarity - a.rarity || byName(a, b),
     ),

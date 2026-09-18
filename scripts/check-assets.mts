@@ -61,6 +61,18 @@ async function collect(): Promise<Target[]> {
     avatar: Object.values(characters).map((c) => c.icon).filter(nonNull),
     avatarSide: Object.values(characters).map((c) => c.sideIcon).filter(nonNull),
     splash: Object.values(characters).map((c) => c.gachaSplash).filter(nonNull),
+    // Namecard art is derived from the avatar icon's suffix rather than stored
+    // — see `character-panel.tsx` — so the same derivation is checked here.
+    namecard: Object.values(characters)
+      .map((c) => {
+        const suffix = c.icon?.startsWith('UI_AvatarIcon_')
+          ? c.icon.slice('UI_AvatarIcon_'.length)
+          : null;
+        return suffix && !suffix.startsWith('Player')
+          ? `UI_NameCardPic_${suffix}_P`
+          : null;
+      })
+      .filter(nonNull),
     weapon: Object.values(weapons).map((w) => w.icon).filter(nonNull),
     weaponAwaken: Object.values(weapons).map((w) => w.awakenIcon).filter(nonNull),
     relic: Object.values(artifacts)

@@ -6,6 +6,8 @@ import { useActionState } from 'react';
 
 import { type BuildFormState, createBuildAction } from './build-actions';
 
+import { Button } from '@/components/ui/button';
+
 /**
  * The character's builds, as tabs.
  *
@@ -60,13 +62,14 @@ export function BuildPicker({
       <form action={create}>
         <input type="hidden" name="characterId" value={characterId} />
         <input type="hidden" name="returnTo" value={basePath} />
-        <button
+        <Button
+          variant="outline"
+          size="sm"
           type="submit"
           disabled={creating}
-          className="btn btn-sm"
         >
           {t('addRoleButton')}
-        </button>
+        </Button>
       </form>
 
       {state.status === 'error' && (

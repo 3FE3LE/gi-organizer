@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter } from 'next/navigation';
 
+import { FieldSelect } from '@/components/field-select';
 import { LOCALES, LOCALE_CODES, type Locale } from '@/lib/data/locales';
 
 export function LocaleSwitcher({ current }: { current: Locale }) {
@@ -19,17 +20,17 @@ export function LocaleSwitcher({ current }: { current: Locale }) {
   }
 
   return (
-    <select
-      aria-label={t('language')}
+    <FieldSelect
+      label={t('language')}
       value={current}
-      onChange={(event) => change(event.target.value)}
-      className="field py-1.5 text-sm"
-    >
-      {LOCALE_CODES.map((locale) => (
-        <option key={locale} value={locale}>
-          {LOCALES[locale].label}
-        </option>
-      ))}
-    </select>
+      onValueChange={change}
+      groups={[{
+        options: LOCALE_CODES.map((locale) => ({
+          value: locale,
+          label: LOCALES[locale].label,
+        })),
+      }]}
+      triggerClassName="w-auto py-1.5"
+    />
   );
 }

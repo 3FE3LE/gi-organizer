@@ -37,6 +37,7 @@ const nextConfig: NextConfig = {
    */
   experimental: {
     globalNotFound: true,
+    gestureTransition: true,
   },
 
   images: {

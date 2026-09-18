@@ -18,6 +18,8 @@ const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 /** Venti, the character `e2e/seed.mts` writes. Repeated rather than imported:
  *  importing the seed would re-run it inside the test process. */
 const SEEDED_CHARACTER = 10000022;
+/** Ayaka: in every version of the catalog, and never seeded into the roster. */
+const UNOWNED_CHARACTER = 10000002;
 
 const PAGES = [
   { name: 'roster', path: '/es/characters' },
@@ -26,8 +28,12 @@ const PAGES = [
   { name: 'teams', path: '/es/teams' },
   { name: 'data', path: '/es/data' },
   { name: 'build', path: `/es/build/${SEEDED_CHARACTER}?tab=objective` },
-  // The catalogue entry, which is where the element colours are loudest.
-  { name: 'catalogue', path: `/es/characters/${SEEDED_CHARACTER}` },
+  /*
+   * The same page for a character the account does not hold, which is now the
+   * only shape the catalogue has: no gear, no tab strip, and the element
+   * colours at their loudest over the splash.
+   */
+  { name: 'unowned', path: `/es/build/${UNOWNED_CHARACTER}` },
 ];
 
 /**

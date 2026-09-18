@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { cache } from 'react';
 import type { InStatement } from '@libsql/client';
 
 import { getDb, type Db } from '@/lib/db/client';
@@ -28,8 +29,23 @@ import type { Inventory, OwnedArtifact, OwnedWeapon } from '@/lib/inventory/plan
  * returns, so it is the single place where one account's data is separated
  * from another's. It resolves from the session and never from a default; see
  * `profile.ts`.
+ *
+ * ## Why it is cached per request
+ *
+ * Nearly every read in the app calls this before its own statement, and the
+ * existence check is a statement of its own. Measured against the development
+ * database it was six of the fifteen statements the teams page ran and four of
+ * the six the upgrades page ran — against a libSQL server, where a statement is
+ * a network round trip, that is most of the page's latency spent asking whether
+ * a row that was created on the first request still exists.
+ *
+ * `cache` from React is per request, not per process: two players served by the
+ * same instance never share an answer, and a profile deleted between requests
+ * is still noticed on the next one. Outside a request — the unit suite, a
+ * script — it simply does not memoize, which is why the tests still see every
+ * call.
  */
-export async function getProfileId(db: Db = getDb()) {
+export const getProfileId = cache(async (db: Db = getDb()) => {
   const profileId = await currentProfileId();
 
   const existing = await db.prepare('SELECT id FROM profile WHERE id = ?').get(profileId);
@@ -39,7 +55,7 @@ export async function getProfileId(db: Db = getDb()) {
   }
 
   return profileId;
-}
+});
 
 type ArtifactRow = {
   id: string;

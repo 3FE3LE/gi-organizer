@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 
+import { buttonVariants } from '@/components/ui/button';
 import { DEFAULT_LOCALE } from '@/lib/data/locales';
 
 import './globals.css';
@@ -36,7 +37,7 @@ export default function GlobalNotFound() {
           </p>
           <a
             href={`/${DEFAULT_LOCALE}/characters`}
-            className="btn btn-primary"
+            className={buttonVariants({ variant: 'default' })}
           >
             Ir al roster
           </a>

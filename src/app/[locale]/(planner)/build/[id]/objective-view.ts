@@ -4,6 +4,7 @@ import { getTranslations } from 'next-intl/server';
 
 import { propLabel, type Catalog } from '@/lib/data/catalog';
 import { resolveIcon } from '@/lib/data/icon';
+import { getWeaponSources } from '@/lib/data/registry';
 import { formatPropValue } from '@/lib/data/props';
 import { isAscended } from '@/lib/data/stats';
 import { ASSUMED_TARGET } from '@/lib/rules/materials';
@@ -107,10 +108,29 @@ export async function objectiveViewFor(context: BuildContext): Promise<Objective
     suggestedWeapons(context),
   ]);
 
+  /*
+   * Which weapons a refinement can be *planned* for.
+   *
+   * Refinement is copies, and copies of a five-star or of an off-banner
+   * four-star are a wish, not a plan — nothing the player does between now and
+   * then changes the odds, so a target there is a wish list entry the planner
+   * would then cost out as if it were farmable. Forging is the one source that
+   * answers to work: a billet and ore, on demand, whenever the player wants
+   * another copy.
+   *
+   * The battle pass is deliberately not here even though `isAlwaysReachable`
+   * counts it: it hands out one copy per cycle on its own schedule, which is a
+   * date, not a cost.
+   */
+  const forgeable = [...(await getWeaponSources())]
+    .filter(([, entry]) => entry.source === 'forge')
+    .map(([weaponId]) => weaponId);
+
   const options: ProgressOptions = {
     roles: editor.roles,
     substats: editor.substats,
     weapons: { suggested: suggestedWeaponOptions, all: editor.weapons },
+    forgeable,
     sets: { suggested, all },
     mainStatsBySlot: editor.mainStatsBySlot,
     goalProps: goalPropsFor(character).map((prop) => ({

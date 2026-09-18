@@ -3,7 +3,9 @@
 import { useTranslations } from 'next-intl';
 import { useActionState } from 'react';
 
+import { Button } from '@/components/ui/button';
 import { ActionStatus } from '@/components/action-status';
+import { FieldSelect } from '@/components/field-select';
 
 import { type TeamActionState, createTeamAction } from './actions';
 
@@ -27,24 +29,23 @@ export function CreateTeam() {
         aria-label={t('namePlaceholder')}
         className="w-full field px-2 py-1.5 text-sm"
       />
-      <select
+      <FieldSelect
         name="mode"
         defaultValue="abyss"
-        aria-label={t('modeAria')}
-        className="w-full field px-2 py-1.5 text-sm"
-      >
-        <option value="abyss">{modeLabel('abyss')}</option>
-        <option value="theater">{modeLabel('theater')}</option>
-        <option value="stygian">{modeLabel('stygian')}</option>
-        <option value="other">{modeLabel('other')}</option>
-      </select>
-      <button
+        label={t('modeAria')}
+        groups={[{ options: (['abyss', 'theater', 'stygian', 'other'] as const).map((mode) => ({
+          value: mode, label: modeLabel(mode),
+        })) }]}
+        triggerClassName="py-1.5"
+      />
+      <Button
+        variant="default"
         type="submit"
         disabled={pending}
-        className="btn btn-primary w-full justify-center"
+        className="w-full justify-center"
       >
         {t('createButton')}
-      </button>
+      </Button>
       <ActionStatus state={state} className="font-mono text-xs" />
     </form>
   );

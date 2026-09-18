@@ -74,8 +74,26 @@ function loadAnnotationFile() {
   return annotationFile;
 }
 
-export async function getAnnotations(catalog: Catalog): Promise<ResolvedAnnotations> {
-  return resolveAnnotations(await loadAnnotationFile(), {}, catalog.gameVersion);
+/**
+ * The curated annotations, merged and version-checked once.
+ *
+ * There are no user overrides yet, so the result is a pure function of a file
+ * that is itself read once per process — and four call sites reach for it on a
+ * single page (`assemble`, `suggestionsFor`, `readLoadout`, the teams page),
+ * each of which was rebuilding three maps and re-scanning them for stale
+ * entries. Keyed by game version so a dataset rebuild still produces a fresh
+ * answer.
+ */
+const resolvedAnnotations = new Map<string, Promise<ResolvedAnnotations>>();
+
+export function getAnnotations(catalog: Catalog): Promise<ResolvedAnnotations> {
+  let pending = resolvedAnnotations.get(catalog.gameVersion);
+  if (!pending) {
+    pending = loadAnnotationFile()
+      .then((file) => resolveAnnotations(file, {}, catalog.gameVersion));
+    resolvedAnnotations.set(catalog.gameVersion, pending);
+  }
+  return pending;
 }
 
 let buildFile: Promise<Map<number, BuildPriority>> | undefined;

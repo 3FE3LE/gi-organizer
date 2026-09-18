@@ -2,6 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import { locale as rootLocale } from 'next/root-params';
 import Link from 'next/link';
 
+import { buttonVariants } from '@/components/ui/button';
 import { DEFAULT_LOCALE, isLocale } from '@/lib/data/locales';
 
 /**
@@ -31,7 +32,7 @@ export default async function NotFound() {
       <p className="text-sm text-muted">{t('notFoundBody')}</p>
       <Link
         href={`/${locale}/characters`}
-        className="btn btn-primary"
+        className={buttonVariants({ variant: 'default' })}
       >
         {t('notFoundLink')}
       </Link>

@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 
+import { Button } from '@/components/ui/button';
 import { ActionStatus } from '@/components/action-status';
 
 /**
@@ -82,13 +83,13 @@ export function Backup() {
               required
               className="text-sm file:mr-3 file:rounded file:border file:border-edge file:bg-ink file:px-3 file:py-1.5 file:text-sm file:text-text"
             />
-            <button
+            <Button
+              variant="default"
               type="submit"
               disabled={busy}
-              className="btn btn-primary"
             >
               {busy ? t('restoring') : t('replaceAll')}
-            </button>
+            </Button>
             <button
               type="button"
               onClick={() => setConfirming(false)}

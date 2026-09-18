@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { Suspense, ViewTransition } from 'react';
 
 import { GameIcon } from '@/components/game-icon';
+import { SectionTabs } from '@/components/section-tabs';
 import { PanelsSkeleton, Skeleton } from '@/components/skeleton';
 import { getCatalog, type Catalog } from '@/lib/data/catalog';
 import { isLocale, type Locale } from '@/lib/data/locales';
@@ -57,7 +58,7 @@ export default async function PlanPage({ params, searchParams }: PageProps<'/[lo
   const today = gameWeekday(new Date(), region);
   const filters = await loadFilters(searchParams, today);
 
-  const { team, characterIds } = resolveScope(teams, filters);
+  const { characterIds } = resolveScope(teams, filters);
   const base = `/${locale}/plan`;
 
   /*
@@ -96,7 +97,6 @@ export default async function PlanPage({ params, searchParams }: PageProps<'/[lo
             characterIds={characterIds}
             filters={filters}
             locale={locale}
-            team={team}
             teams={teams}
             today={today}
           />
@@ -113,7 +113,6 @@ async function PlanContent({
   characterIds,
   filters,
   locale,
-  team,
   teams,
   today,
 }: {
@@ -122,7 +121,6 @@ async function PlanContent({
   characterIds: Set<number> | undefined;
   filters: Filters;
   locale: Locale;
-  team: Team | null;
   teams: Team[];
   today: Weekday;
 }) {
@@ -150,13 +148,17 @@ async function PlanContent({
       </RosterSheet>
 
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        {/* The day, and only the day. The active team was named three times on
+            this screen: the filled chip in the filter bar, the roster trigger
+            that explains why the count is scoped, and here. The chip is the
+            control and the trigger earns its copy by explaining a number; a
+            heading that repeats the filter above it earns nothing. */}
         <h2 className="text-sm">
           {filters.range === 'day'
             ? (filters.day === today
               ? t('today')
               : t('otherDay', { day: weekdayLabel(filters.day) }))
             : t('allBacklogHeading')}
-          {team && <span className="text-muted"> · {team.name}</span>}
         </h2>
         <p className="font-mono text-xs text-muted">
           {filters.range === 'day'
@@ -187,25 +189,19 @@ async function PlanContent({
         </p>
       ) : filters.range === 'day' ? (
         <>
-          <nav className="flex flex-wrap gap-x-1 border-b border-edge">
-            {([
+          {/* One route with a `view` parameter, so the strip is told which tab
+              is current rather than reading it off the path. */}
+          <SectionTabs
+            tabs={([
               ['talent', t('talentTab'), talent.length],
               ['weapon', t('weaponTab'), weapon.length],
-            ] as const).map(([view, label, count]) => (
-              <Link
-                key={view}
-                href={href(base, filters, { view })}
-                aria-current={filters.view === view ? 'page' : undefined}
-                className={`-mb-px border-b-2 px-3 py-2 text-sm ${
-                  filters.view === view
-                    ? 'border-accent text-accent'
-                    : 'border-transparent text-muted hover:text-text'
-                }`}
-              >
-                {label} <span className="font-mono text-xs">{count}</span>
-              </Link>
-            ))}
-          </nav>
+            ] as const).map(([view, label, count]) => ({
+              href: href(base, filters, { view }),
+              label,
+              badge: count,
+              active: filters.view === view,
+            }))}
+          />
 
           {showing.length === 0 ? (
             <p className="text-sm text-muted">

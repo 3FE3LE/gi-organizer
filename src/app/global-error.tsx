@@ -2,6 +2,8 @@
 
 import './globals.css';
 
+import { buttonVariants } from '@/components/ui/button';
+
 /**
  * The last boundary: a failure in the root layout itself, which is where the
  * locale, the messages and the whole chrome are decided.
@@ -28,7 +30,7 @@ export default function GlobalError({
           <button
             type="button"
             onClick={() => retry()}
-            className="btn btn-primary"
+            className={buttonVariants({ variant: 'default' })}
           >
             Reintentar
           </button>

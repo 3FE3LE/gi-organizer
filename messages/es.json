@@ -104,24 +104,7 @@
     "orphanedHint": "o vuelve a escanear con la pantalla de personajes activada.",
     "missingHeading": "Sin conseguir",
     "empty": "Nada aquí todavía.",
-    "versionLine": "v{version} · {rarity}★",
-    "detail": {
-      "objectiveOf": "Objetivo de {name}",
-      "region": "Región",
-      "affiliation": "Afiliación",
-      "constellation": "Constelación",
-      "ascension": "Ascenso",
-      "birthday": "Cumpleaños",
-      "version": "Versión"
-    }
-  },
-  "characterSheet": {
-    "statsByLevel": "Stats por nivel",
-    "level": "Nivel",
-    "ascensionMaterials": "Materiales de ascenso",
-    "talentMaterials": "Materiales de talentos",
-    "talents": "Talentos",
-    "noData": "Sin datos."
+    "versionLine": "v{version} · {rarity}★"
   },
   "teams": {
     "heading": "Equipos",
@@ -288,15 +271,39 @@
   "build": {
     "objectiveIntro": "Dónde está {name} hoy y a dónde quieres llevarlo.",
     "changesHeading": "Qué cambiar",
-    "changesNoBuild": "Esta pestaña compara lo que lleva puesto contra lo que podría llevar, y para eso hace falta saber para qué. {name} no tiene ningún objetivo todavía, así que no hay nada contra lo que medir.",
-    "thisCharacterFallback": "Este personaje",
-    "createObjectiveLink": "Crea uno en Objetivo",
-    "changesNoBuildSuffix": "— con el set, las main stats y los umbrales que quieras alcanzar.",
+    "changesAssumed": "objetivo · por defecto",
+    "changesAssumedLink": "define el tuyo",
     "objectiveRole": "objetivo · {role}",
+    "ascensionPhase": "Asc. {phase}",
+    "previousCharacter": "Anterior: {name}",
+    "nextCharacter": "Siguiente: {name}",
+    "baseStats": "Stats base",
+    "baseStatsSlider": "Nivel a previsualizar",
+    "factAscension": "asciende en {stat}",
+    "factAscensionMark": "asc.",
+    "factVersion": "v{version}",
+    "abilityClose": "Cerrar",
+    "abilityScaling": "Escalado",
+    "abilityLevelNow": "Nivel {level}",
+    "abilityLevelShort": "Nv. {level}",
+    "abilityLevelSlider": "Nivel del talento a previsualizar",
+    "constellationLocked": "sin desbloquear",
+    "costHeading": "Falta por farmear",
+    "costRange": "Nv. {level} → {targetLevel} · Asc. {phase} → {targetPhase}",
+    "costTalentRange": "Talentos {talents} → {targetTalents}",
+    "costCovered": "Lo que tienes ya cubre este objetivo. No queda nada que farmear para él.",
+    "costMora": "Mora",
+    "costNeeded": "pide {count}",
+    "costOwned": "tienes {count}",
+    "costTiers": "· {count} tiers",
+    "costReason": {
+      "ascension": "ascensión",
+      "talent": "talentos",
+      "weapon": "arma"
+    },
     "noSwapsMessage": "Nada de lo que tienes mejora lo que lleva puesto. Lo que queda es farmear: mira",
     "whatRotatesLink": "qué dominios tocan hoy",
     "talentFallback": "Talento {n}",
-
     "roleLabel": "Rol",
     "noRole": "sin rol",
     "roleHint": "Un personaje tiene un objetivo por rol, y el rol es su identidad: es lo que un slot de equipo busca, y lo que decide los umbrales y substats de partida.",
@@ -316,6 +323,7 @@
     "targetWeaponLabel": "Arma objetivo",
     "weaponPlaceholder": "sin arma objetivo…",
     "weaponRefinementAria": "refinamiento del arma objetivo",
+    "refinementNotPlannable": "no forjable — el refinamiento son copias que te tocan, no trabajo que hagas",
     "equippedNow": "lleva ahora:",
     "artifactSetLabel": "Set de artefactos",
     "fourPieces": "4 piezas",
@@ -325,6 +333,7 @@
     "chooseSetPlaceholder": "elige un set…",
     "secondSetPlaceholder": "segundo set…",
     "mainStatsLabel": "Main stats",
+    "mainStatSlotAria": "main stat de {slot}",
     "substatsLabel": "Substats por prioridad",
     "substatsHint": "ordenan las candidatas de cada slot",
     "statGoalsTitle": "Objetivos de stats",
@@ -351,12 +360,10 @@
     "decreaseAria": "{label}: menos",
     "increaseAria": "{label}: más",
     "targetTalentAria": "objetivo: {talent}",
-
     "searchSetPlaceholder": "buscar set…",
     "searchSetAria": "Buscar set",
     "noSetFound": "Ningún set con ese nombre.",
     "twoPlusTwoNote": "En 2+2 sólo cuenta el bono de 2 piezas.",
-
     "noSheetInRoster": "sin ficha en el roster",
     "characterAttributes": "Atributos del personaje",
     "weaponHeading": "Arma",
@@ -364,7 +371,6 @@
     "artifactsHeading": "Artefactos",
     "levelPrefix": "Nv.",
     "emptySlotText": "vacío",
-
     "editButton": "Editar",
     "compareButton": "Comparar",
     "candidatesForAria": "Candidatas para {title}",
@@ -375,15 +381,16 @@
     "searchingCandidates": "buscando candidatas…",
     "failedToLoad": "no se pudieron cargar las candidatas",
     "noMatch": "nada que encaje",
-
     "heldBy": "en {holder}",
     "closeCompare": "cerrar",
     "openCompare": "comparar",
     "moveHereButton": "Mover aquí",
     "equipButton": "Equipar",
-
     "kind": {
-      "upgrade": "mejora", "prospect": "prospecto", "stopgap": "parche", "sidegrade": "lateral"
+      "upgrade": "mejora",
+      "prospect": "prospecto",
+      "stopgap": "parche",
+      "sidegrade": "lateral"
     },
     "kindHelp": {
       "upgrade": "mejor ahora y sigue siéndolo",
@@ -397,17 +404,14 @@
     "expectedSuffix": "esperado",
     "breaksSet": "rompe el set",
     "displacesFrom": "se lo quitas a {holder}",
-
     "defaultCandidateLabel": "candidata",
     "statHeader": "stat",
     "equippedHeader": "equipada",
     "mainStatSuffix": "· principal",
-
     "addRoleButton": "+ otro rol",
     "mainStatOff": "main stat fuera",
     "critValueHint": "Crit value: 2 × prob. CRIT + daño CRIT = {value} · {rating}",
     "usefulRolls": "{score} rolls útiles",
-
     "heldByOne": " · lo lleva {names}",
     "missingToFarm": " · {available}/{needed} · a farmear",
     "pairingTwoPlusTwo": " · 2+2 con {names}",
@@ -415,7 +419,6 @@
     "weaponFree": "{spare} libre",
     "weaponCommitted": "ya comprometida",
     "equippedWeaponLine": "{name} Nv.{level} R{refinement}",
-
     "actions": {
       "unreadableMove": "movimiento ilegible",
       "nowHeldByNobody": "ya no lo lleva nadie; vuelve a intentarlo",

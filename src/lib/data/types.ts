@@ -168,6 +168,8 @@ export type CatalogIndexes = {
   weaponsByType: Map<string, WeaponView[]>;
   materialsByCategory: Map<string, MaterialView[]>;
   charactersSorted: CharacterView[];
+  /** Newest first: the order the roster gallery reads as a timeline. */
+  charactersByRelease: CharacterView[];
   weaponsSorted: WeaponView[];
   artifactsSorted: ArtifactView[];
 };

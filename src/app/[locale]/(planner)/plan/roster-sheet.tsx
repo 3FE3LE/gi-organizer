@@ -3,9 +3,15 @@
 import { Users, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 
-import { useModalFocus } from '@/components/use-modal';
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 
 /**
  * The roster, one tap away instead of always on screen.
@@ -34,93 +40,51 @@ export function RosterSheet({
   const t = useTranslations('plan');
   const [open, setOpen] = useState(false);
 
-  useEffect(() => {
-    if (!open) return;
-
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false);
-    };
-
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [open]);
-
   // Nobody on the roster at all — same case `RosterPanel` itself bails on.
   if (total === 0) return null;
 
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        className="flex items-center gap-2 card px-3 py-1.5 text-xs hover:border-accent"
-      >
-        <Users size={13} aria-hidden />
-        <span>
-          <span className="text-accent">{planned}</span>
-          <span className="text-muted"> {t('inPlanSuffix', { total })}</span>
-        </span>
-        {teamName && <span className="text-muted">{t('onlyTeam', { team: teamName })}</span>}
-      </button>
+      {/*
+        * The sheet is shadcn's, over Base UI: it portals out of the filter bar,
+        * traps and restores focus, closes on Escape and on the backdrop, and
+        * compensates the scrollbar while the page behind it is frozen. All four
+        * used to be ours — a hook, a key listener, a bare `<button>` for a
+        * backdrop and a hand-written panel — and none of them were the point of
+        * this component, which is the trigger carrying the count.
+        */}
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetTrigger className="flex items-center gap-2 card px-3 py-1.5 text-xs hover:border-accent">
+          <Users size={13} aria-hidden />
+          <span>
+            <span className="text-accent">{planned}</span>
+            <span className="text-muted"> {t('inPlanSuffix', { total })}</span>
+          </span>
+          {teamName && <span className="text-muted">{t('onlyTeam', { team: teamName })}</span>}
+        </SheetTrigger>
+
+        <SheetContent
+          side="right"
+          showCloseButton={false}
+          className="w-full max-w-md gap-0 border-l border-edge bg-surface p-0 sm:max-w-md"
+        >
+          <header className="flex items-center justify-between border-b border-edge px-3 py-2">
+            <SheetTitle className="font-mono text-xs font-normal uppercase text-muted">
+              {t('charactersLabel')}
+            </SheetTitle>
+            <SheetClose aria-label={t('closeAria')} className="text-muted hover:text-text">
+              <X size={16} aria-hidden />
+            </SheetClose>
+          </header>
+          <div className="flex-1 overflow-y-auto p-3">{children}</div>
+        </SheetContent>
+      </Sheet>
 
       {charsCount > 0 && clearCharsHref && (
         <Link href={clearCharsHref} className="text-xs text-muted underline hover:text-accent">
           {t('charFilterLink', { count: charsCount })}
         </Link>
       )}
-
-      {open && (
-        <div className="fixed inset-0 z-40">
-          <button
-            type="button"
-            aria-label={t('closeAria')}
-            onClick={() => setOpen(false)}
-            className="absolute inset-0 bg-ink/60"
-          />
-          <SheetPanel label={t('sheetAriaLabel')}>
-            <header className="flex items-center justify-between border-b border-edge px-3 py-2">
-              <span className="font-mono text-xs uppercase text-muted">
-                {t('charactersLabel')}
-              </span>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                aria-label={t('closeAria')}
-                className="text-muted hover:text-text"
-              >
-                <X size={16} aria-hidden />
-              </button>
-            </header>
-            <div className="flex-1 overflow-y-auto p-3">{children}</div>
-          </SheetPanel>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/**
- * The panel itself, split out so the focus hook has a node to hold.
- *
- * It only exists while the sheet is open, which is what makes mounting it the
- * moment to take focus and unmounting it the moment to give it back.
- */
-function SheetPanel({ label, children }: { label: string; children: React.ReactNode }) {
-  const panel = useRef<HTMLDivElement>(null);
-  useModalFocus(panel);
-
-  return (
-    <div
-      ref={panel}
-      role="dialog"
-      tabIndex={-1}
-      aria-modal="true"
-      aria-label={label}
-      className="absolute inset-y-0 right-0 flex w-full max-w-md flex-col border-l border-edge bg-surface shadow-xl"
-    >
-      {children}
     </div>
   );
 }

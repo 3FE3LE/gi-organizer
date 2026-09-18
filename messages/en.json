@@ -104,24 +104,7 @@
     "orphanedHint": "or scan again with the character screen turned on.",
     "missingHeading": "Not obtained",
     "empty": "Nothing here yet.",
-    "versionLine": "v{version} · {rarity}★",
-    "detail": {
-      "objectiveOf": "Goal for {name}",
-      "region": "Region",
-      "affiliation": "Affiliation",
-      "constellation": "Constellation",
-      "ascension": "Ascension",
-      "birthday": "Birthday",
-      "version": "Version"
-    }
-  },
-  "characterSheet": {
-    "statsByLevel": "Stats by level",
-    "level": "Level",
-    "ascensionMaterials": "Ascension materials",
-    "talentMaterials": "Talent materials",
-    "talents": "Talents",
-    "noData": "No data."
+    "versionLine": "v{version} · {rarity}★"
   },
   "teams": {
     "heading": "Teams",
@@ -288,15 +271,39 @@
   "build": {
     "objectiveIntro": "Where {name} is today, and where you want to take them.",
     "changesHeading": "What to change",
-    "changesNoBuild": "This tab compares what's equipped against what could be, and that needs a target. {name} has no goal yet, so there's nothing to measure against.",
-    "thisCharacterFallback": "This character",
-    "createObjectiveLink": "Create one in Objective",
-    "changesNoBuildSuffix": "— with the set, main stats and thresholds you want to reach.",
+    "changesAssumed": "objective · default",
+    "changesAssumedLink": "set your own",
     "objectiveRole": "objective · {role}",
+    "ascensionPhase": "Asc. {phase}",
+    "previousCharacter": "Previous: {name}",
+    "nextCharacter": "Next: {name}",
+    "baseStats": "Base stats",
+    "baseStatsSlider": "Level to preview",
+    "factAscension": "ascends into {stat}",
+    "factAscensionMark": "asc.",
+    "factVersion": "v{version}",
+    "abilityClose": "Close",
+    "abilityScaling": "Scaling",
+    "abilityLevelNow": "Level {level}",
+    "abilityLevelShort": "Lv. {level}",
+    "abilityLevelSlider": "Talent level to preview",
+    "constellationLocked": "locked",
+    "costHeading": "Still to farm",
+    "costRange": "Lv. {level} → {targetLevel} · Asc. {phase} → {targetPhase}",
+    "costTalentRange": "Talents {talents} → {targetTalents}",
+    "costCovered": "What you hold already covers this objective. Nothing left to farm for it.",
+    "costMora": "Mora",
+    "costNeeded": "needs {count}",
+    "costOwned": "have {count}",
+    "costTiers": "· {count} tiers",
+    "costReason": {
+      "ascension": "ascension",
+      "talent": "talents",
+      "weapon": "weapon"
+    },
     "noSwapsMessage": "Nothing you own improves what's equipped. What's left is farming: check",
     "whatRotatesLink": "what domains rotate today",
     "talentFallback": "Talent {n}",
-
     "roleLabel": "Role",
     "noRole": "no role",
     "roleHint": "A character has one goal per role, and the role is its identity: it's what a team slot looks for, and what decides the starting thresholds and substats.",
@@ -316,6 +323,7 @@
     "targetWeaponLabel": "Target weapon",
     "weaponPlaceholder": "no target weapon…",
     "weaponRefinementAria": "target weapon refinement",
+    "refinementNotPlannable": "not forgeable — refinement is copies you draw, not work you do",
     "equippedNow": "currently equipped:",
     "artifactSetLabel": "Artifact set",
     "fourPieces": "4 pieces",
@@ -325,6 +333,7 @@
     "chooseSetPlaceholder": "choose a set…",
     "secondSetPlaceholder": "second set…",
     "mainStatsLabel": "Main stats",
+    "mainStatSlotAria": "main stat for the {slot}",
     "substatsLabel": "Substats by priority",
     "substatsHint": "orders each slot's candidates",
     "statGoalsTitle": "Stat goals",
@@ -351,12 +360,10 @@
     "decreaseAria": "{label}: less",
     "increaseAria": "{label}: more",
     "targetTalentAria": "target: {talent}",
-
     "searchSetPlaceholder": "search sets…",
     "searchSetAria": "Search set",
     "noSetFound": "No set with that name.",
     "twoPlusTwoNote": "In 2+2 only the 2-piece bonus counts.",
-
     "noSheetInRoster": "no sheet in the roster",
     "characterAttributes": "Character attributes",
     "weaponHeading": "Weapon",
@@ -364,7 +371,6 @@
     "artifactsHeading": "Artifacts",
     "levelPrefix": "Lv.",
     "emptySlotText": "empty",
-
     "editButton": "Edit",
     "compareButton": "Compare",
     "candidatesForAria": "Candidates for {title}",
@@ -375,15 +381,16 @@
     "searchingCandidates": "searching candidates…",
     "failedToLoad": "couldn't load the candidates",
     "noMatch": "nothing fits",
-
     "heldBy": "on {holder}",
     "closeCompare": "close",
     "openCompare": "compare",
     "moveHereButton": "Move here",
     "equipButton": "Equip",
-
     "kind": {
-      "upgrade": "upgrade", "prospect": "prospect", "stopgap": "stopgap", "sidegrade": "sidegrade"
+      "upgrade": "upgrade",
+      "prospect": "prospect",
+      "stopgap": "stopgap",
+      "sidegrade": "sidegrade"
     },
     "kindHelp": {
       "upgrade": "better now and stays that way",
@@ -397,17 +404,14 @@
     "expectedSuffix": "expected",
     "breaksSet": "breaks the set",
     "displacesFrom": "you take it from {holder}",
-
     "defaultCandidateLabel": "candidate",
     "statHeader": "stat",
     "equippedHeader": "equipped",
     "mainStatSuffix": "· main",
-
     "addRoleButton": "+ another role",
     "mainStatOff": "main stat off",
     "critValueHint": "Crit value: 2 × crit rate + crit dmg = {value} · {rating}",
     "usefulRolls": "{score} useful rolls",
-
     "heldByOne": " · worn by {names}",
     "missingToFarm": " · {available}/{needed} · to farm",
     "pairingTwoPlusTwo": " · 2+2 with {names}",
@@ -415,7 +419,6 @@
     "weaponFree": "{spare} free",
     "weaponCommitted": "already committed",
     "equippedWeaponLine": "{name} Lv.{level} R{refinement}",
-
     "actions": {
       "unreadableMove": "unreadable move",
       "nowHeldByNobody": "nobody's holding it anymore; try again",

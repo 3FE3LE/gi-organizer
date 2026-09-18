@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
+import { Button, buttonVariants } from '@/components/ui/button';
 import { AssetImage } from '@/components/asset-image';
 import type { Move } from '@/lib/player/move';
 
@@ -85,7 +86,7 @@ export function CandidateRow({
             type="button"
             onClick={() => setOpen((current) => !current)}
             aria-expanded={open}
-            className="btn btn-sm shrink-0 font-mono"
+            className={buttonVariants({ variant: 'outline', size: 'sm', className: 'shrink-0 font-mono' })}
           >
             {open ? t('closeCompare') : t('openCompare')}
           </button>
@@ -137,13 +138,15 @@ export function MoveButton({
         name="expectedHolderId"
         value={expectedHolderId === null ? 'null' : String(expectedHolderId)}
       />
-      <button
+      <Button
+        variant="outline"
+        size="sm"
         type="submit"
         disabled={pending}
-        className="btn btn-sm shrink-0"
+        className="shrink-0"
       >
         {title}
-      </button>
+      </Button>
     </form>
   );
 }
