@@ -2,7 +2,7 @@ import 'server-only';
 
 import { getTranslations } from 'next-intl/server';
 
-import { propLabel } from '@/lib/data/catalog';
+import { statLabel } from '@/lib/data/catalog';
 import { resolveIcon } from '@/lib/data/icon';
 import { ARTIFACT_SLOTS } from '@/lib/enka/slots';
 import {
@@ -62,7 +62,7 @@ async function candidateViews(context: BuildContext) {
     return {
       id: piece.id,
       label: set?.name ?? `#${piece.setId}`,
-      detail: `+${piece.level} ${propLabel(catalog, piece.mainProp)}`,
+      detail: `+${piece.level} ${statLabel(catalog, piece.mainProp)}`,
       fit,
       score: scored?.score ?? 0,
       icon: await resolveIcon(set?.pieces[piece.slot]?.icon, 'relic'),

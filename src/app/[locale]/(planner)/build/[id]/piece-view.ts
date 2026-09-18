@@ -1,4 +1,4 @@
-import { propLabel, type Catalog } from '@/lib/data/catalog';
+import { statLabel, type Catalog } from '@/lib/data/catalog';
 import type { Locale } from '@/lib/data/locales';
 import { formatPropValue } from '@/lib/data/props';
 import { statsAtLevel } from '@/lib/data/stats';
@@ -52,7 +52,10 @@ export function pieceFormatter({
     scale: 'percent' | 'ratio' = 'percent',
   ): StatLine => ({
     prop,
-    label: propLabel(catalog, prop),
+    // `statLabel`, not `propLabel`: a comparison table listing "ATQ" twice —
+    // once for the sands' 46.6% and once for a 33-point roll — is the one
+    // place the game's naming collision actually costs a decision.
+    label: statLabel(catalog, prop),
     text: formatPropValue(prop, value, scale, locale),
     value,
     rolls,

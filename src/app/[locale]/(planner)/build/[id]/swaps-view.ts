@@ -2,7 +2,7 @@ import 'server-only';
 
 import { getTranslations } from 'next-intl/server';
 
-import { propLabel } from '@/lib/data/catalog';
+import { statLabel } from '@/lib/data/catalog';
 import { resolveIcon } from '@/lib/data/icon';
 
 import type { BuildContext } from './context';
@@ -33,7 +33,7 @@ export async function swapPanelsFor(context: BuildContext): Promise<SlotPanel[]>
             'relic',
           ),
           level: comparison.equipped.level,
-          mainStat: propLabel(catalog, comparison.equipped.mainProp),
+          mainStat: statLabel(catalog, comparison.equipped.mainProp),
           stats: format.artifactStats(comparison.equipped),
         }
       : null,
@@ -56,8 +56,8 @@ export async function swapPanelsFor(context: BuildContext): Promise<SlotPanel[]>
               'relic',
             ),
             level: swap.candidate.level,
-            mainStat: propLabel(catalog, swap.candidate.mainProp),
-            substats: swap.candidate.substats.map((substat) => propLabel(catalog, substat.prop)),
+            mainStat: statLabel(catalog, swap.candidate.mainProp),
+            substats: swap.candidate.substats.map((substat) => statLabel(catalog, substat.prop)),
             kind: swap.kind,
             delta: swap.delta,
             potentialDelta: swap.potentialDelta,
@@ -67,7 +67,7 @@ export async function swapPanelsFor(context: BuildContext): Promise<SlotPanel[]>
             holder: format.holderName(holderId),
             holderId,
             goalChanges: swap.goalChanges.map((change) => ({
-              label: propLabel(catalog, change.prop),
+              label: statLabel(catalog, change.prop),
               from: change.from,
               to: change.to,
             })),
