@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { ViewTransition } from 'react';
 
 import { GameIcon } from '@/components/game-icon';
+import { PrefetchLink } from '@/components/prefetch-link';
 import { getCatalog } from '@/lib/data/catalog';
 import { elementColor } from '@/lib/data/elements';
 import { isLocale } from '@/lib/data/locales';
@@ -32,19 +33,22 @@ export default async function CharactersPage({ params }: PageProps<'/[locale]/ch
   const owned = await readOwnedCharacterIds(db, await getProfileId(db));
   const gear = await holdersWithGear(db);
 
-  const byRelease = [...catalog.characters.values()].sort(
-    (a, b) =>
-      Number.parseFloat(b.version) - Number.parseFloat(a.version) ||
-      b.rarity - a.rarity ||
-      a.name.localeCompare(b.name, locale),
-  );
-
+  const byRelease = catalog.index.charactersByRelease;
   const mine = byRelease.filter((character) => owned.has(character.id));
   const missing = byRelease.filter((character) => !owned.has(character.id));
 
-  // Gear on a character with no roster row: the scan saw the equipment and not
-  // its owner, which is worth surfacing here rather than only in the inventory.
-  const orphaned = [...gear.keys()].filter((id) => !owned.has(id));
+  /*
+   * Gear on a character with no roster row: the scan saw the equipment and not
+   * its owner.
+   *
+   * Counted here and named on `/data`. This is the page where the gap is
+   * noticed — a face that should be in the gallery and is not — and `/data` is
+   * where it is closed, because the fix is a re-scan or an import and both live
+   * there. Listing the names in both places meant the same finding computed
+   * twice from two different reads, free to disagree; and this is the first
+   * screen of the app, where a line of names is a wall before the roster.
+   */
+  const orphaned = [...gear.keys()].filter((id) => !owned.has(id)).length;
 
   return (
     <div className="space-y-8">
@@ -58,13 +62,10 @@ export default async function CharactersPage({ params }: PageProps<'/[locale]/ch
         <p className="font-mono text-xs text-muted">{t('sortHint')}</p>
       </header>
 
-      {orphaned.length > 0 && (
+      {orphaned > 0 && (
         <p className="rounded border border-accent/40 bg-surface px-3 py-2 text-sm">
           <strong className="text-accent">{t('orphanedTitle')}</strong>{' '}
-          {t('orphanedBody', {
-            names: orphaned.map((id) => catalog.characters.get(id)?.name ?? `#${id}`).join(', '),
-            count: orphaned.length,
-          })}{' '}
+          {t('orphanedBody', { count: orphaned })}{' '}
           <Link href={`/${locale}/data`} className="underline hover:text-accent">
             {t('orphanedLink')}
           </Link>{' '}
@@ -116,12 +117,17 @@ function Gallery({
 
         return (
           <li key={character.id} style={{ '--index': index } as React.CSSProperties}>
-            <Link
-              // An owned character's real page is their build; the catalog entry
-              // is reference material, reachable from there.
-              href={owned
-                ? `/${locale}/build/${character.id}`
-                : `/${locale}/characters/${character.id}`}
+            <PrefetchLink
+              // One page per character, owned or not. There used to be two —
+              // the build for yours, a catalogue entry for everyone else's —
+              // and the catalogue one was a stat table and two lists of costs
+              // that the build page now says in a row and seven lines.
+              href={`/${locale}/build/${character.id}`}
+              /* The roster the player owns is the one they walk card by card,
+                 and it is bounded by what they have pulled. The catalogue
+                 below it is a hundred and twenty pages nobody asked for, so
+                 those warm on hover instead. */
+              eager={owned}
               className={`card card-link group relative block overflow-hidden p-3 ${
                 owned ? '' : 'opacity-70'
               }`}
@@ -165,7 +171,7 @@ function Gallery({
                   {owned && pieces > 0 && ` · ${pieces}/5`}
                 </p>
               </div>
-            </Link>
+            </PrefetchLink>
           </li>
         );
       })}

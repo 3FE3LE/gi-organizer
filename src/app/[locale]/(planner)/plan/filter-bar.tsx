@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
+import { HoverLabel } from '@/components/hint';
 import type { Catalog } from '@/lib/data/catalog';
 import type { Team } from '@/lib/player/teams';
 import {
@@ -17,7 +18,19 @@ import {
   toggle,
 } from './filters';
 
-/** One filter value, on or off. */
+/**
+ * One filter value, on or off.
+ *
+ * The explanations these carry — what "todo el backlog" costs, which slots a
+ * team declared — used to be `title` attributes: a second of hover, nothing at
+ * all on a phone, and unreachable from the keyboard. They are drawn labels now,
+ * so the same sentence shows on focus as on hover.
+ *
+ * A chip is a link, and a link is where a tooltip cannot go: closing the bubble
+ * is a React update, and an update landing in the navigation's transition makes
+ * React skip it — the page cuts instead of crossfading. See
+ * `components/hint.tsx`.
+ */
 function Chip({
   to, active, children, title,
 }: {
@@ -26,12 +39,12 @@ function Chip({
   return (
     <Link
       href={to}
-      title={title}
       aria-current={active ? 'true' : undefined}
       data-active={active}
-      className="chip"
+      className={`chip${title ? ' group relative' : ''}`}
     >
       {children}
+      {title && <HoverLabel text={title} />}
     </Link>
   );
 }
