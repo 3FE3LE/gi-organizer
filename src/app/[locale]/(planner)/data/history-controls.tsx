@@ -45,7 +45,7 @@ export function HistoryControls() {
         <button
           type="submit"
           disabled={undoing}
-          className="rounded border border-edge bg-surface px-3 py-1.5 text-sm hover:border-accent disabled:opacity-50"
+          className="card px-3 py-1.5 text-sm hover:border-accent disabled:opacity-50"
         >
           {t('undoButton')} <span className="font-mono text-xs text-muted">⌘Z</span>
         </button>
@@ -54,7 +54,7 @@ export function HistoryControls() {
         <button
           type="submit"
           disabled={redoing}
-          className="rounded border border-edge bg-surface px-3 py-1.5 text-sm hover:border-accent disabled:opacity-50"
+          className="card px-3 py-1.5 text-sm hover:border-accent disabled:opacity-50"
         >
           {t('redoButton')} <span className="font-mono text-xs text-muted">⇧⌘Z</span>
         </button>

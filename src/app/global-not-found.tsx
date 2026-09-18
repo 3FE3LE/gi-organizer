@@ -36,7 +36,7 @@ export default function GlobalNotFound() {
           </p>
           <a
             href={`/${DEFAULT_LOCALE}/characters`}
-            className="inline-block rounded border border-accent px-3 py-1.5 text-sm text-accent transition-colors hover:bg-surface-2"
+            className="btn btn-primary"
           >
             Ir al roster
           </a>

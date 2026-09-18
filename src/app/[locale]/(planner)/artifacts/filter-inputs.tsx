@@ -82,7 +82,7 @@ export function FilterInputs({
             [&::-moz-range-thumb]:h-[13px] [&::-moz-range-thumb]:w-[13px] [&::-moz-range-thumb]:rounded-full
             [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-accent [&::-moz-range-thumb]:bg-ink"
         />
-        <div className="mt-1 flex justify-between font-mono text-[0.55rem] uppercase tracking-wide text-muted">
+        <div className="mt-1 flex justify-between font-mono text-2xs uppercase tracking-wide text-muted">
           <span>—</span>
           {CRIT_FILTERS.map((value, index) => (
             <span key={value} className={step === index + 1 ? 'text-accent' : undefined}>
@@ -154,7 +154,7 @@ export function RankControls() {
       className="flex flex-wrap items-center gap-x-3 gap-y-1.5 transition-opacity data-pending:opacity-50"
     >
       <label className="flex items-center gap-1.5">
-        <span className="font-mono text-[0.6rem] uppercase text-muted">{t('scalerLabel')}</span>
+        <span className="font-mono text-2xs uppercase text-muted">{t('scalerLabel')}</span>
         <Select
           value={filters.scaler ?? ''}
           onChange={(value) =>
@@ -169,7 +169,7 @@ export function RankControls() {
       </label>
 
       <label className="flex items-center gap-1.5">
-        <span className="font-mono text-[0.6rem] uppercase text-muted">{t('sortLabel')}</span>
+        <span className="font-mono text-2xs uppercase text-muted">{t('sortLabel')}</span>
         <Select
           value={filters.sort}
           onChange={(value) => setFilters({ sort: value as typeof filters.sort })}
@@ -195,7 +195,7 @@ function Field({
 }) {
   return (
     <label className="block min-w-0">
-      <span className="flex items-baseline justify-between gap-2 font-mono text-[0.6rem] uppercase text-muted">
+      <span className="flex items-baseline justify-between gap-2 font-mono text-2xs uppercase text-muted">
         {label}
         {hint && <span className="truncate normal-case text-text">{hint}</span>}
       </span>
@@ -219,7 +219,7 @@ function Select({
       {...rest}
       value={value}
       onChange={(event) => onChange(event.target.value)}
-      className="w-full truncate rounded border border-edge bg-ink px-2 py-1 text-xs text-text
+      className="w-full truncate field px-2 py-1 text-xs text-text
         transition-colors hover:border-edge-strong focus:border-accent"
     >
       {children}

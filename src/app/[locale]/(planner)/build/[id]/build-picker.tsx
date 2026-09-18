@@ -49,11 +49,8 @@ export function BuildPicker({
           key={build.id}
           href={`${basePath}?build=${build.id}&tab=${tab}`}
           aria-current={build.id === activeId ? 'true' : undefined}
-          className={`rounded border px-3 py-1 text-xs ${
-            build.id === activeId
-              ? 'border-accent bg-surface-2 text-accent'
-              : 'border-edge text-muted hover:border-accent hover:text-text'
-          }`}
+          data-active={build.id === activeId}
+          className="chip px-3 py-1.5 text-xs"
         >
           {build.label}
           {build.objective && <span className="text-muted"> · {build.objective}</span>}
@@ -66,7 +63,7 @@ export function BuildPicker({
         <button
           type="submit"
           disabled={creating}
-          className="rounded border border-edge px-2 py-1 text-xs text-muted hover:border-accent disabled:opacity-50"
+          className="btn btn-sm"
         >
           {t('addRoleButton')}
         </button>

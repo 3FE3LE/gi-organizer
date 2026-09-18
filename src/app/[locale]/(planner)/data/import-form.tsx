@@ -89,14 +89,14 @@ export function ImportForm() {
           <button
             type="submit"
             disabled={uploading}
-            className="rounded border border-edge bg-surface px-3 py-1.5 text-sm hover:border-accent disabled:opacity-50"
+            className="card px-3 py-1.5 text-sm hover:border-accent disabled:opacity-50"
           >
             {uploading ? t('reading') : t('preview')}
           </button>
         </form>
 
         {uploadError && (
-          <p className="mt-3 rounded border border-edge bg-surface px-3 py-2 text-sm text-accent">
+          <p className="mt-3 card px-3 py-2 text-sm text-accent">
             {uploadError}
           </p>
         )}
@@ -127,7 +127,7 @@ export function ImportForm() {
             {preview.issues.length > 0 && (
               <ul className="space-y-2 text-xs">
                 {preview.issues.map((group) => (
-                  <li key={group.code} className="rounded border border-edge bg-surface px-3 py-2">
+                  <li key={group.code} className="card px-3 py-2">
                     <p className="font-mono">
                       {group.code} <span className="text-muted">×{group.count}</span>
                     </p>
@@ -155,7 +155,7 @@ export function ImportForm() {
               <button
                 type="submit"
                 disabled={applying}
-                className="rounded border border-accent bg-surface px-3 py-1.5 text-sm text-accent disabled:opacity-50"
+                className="btn btn-primary"
               >
                 {applying ? t('applying') : t('apply')}
               </button>
@@ -181,12 +181,12 @@ export function ImportForm() {
             placeholder="UID"
             pattern="[1-9][0-9]{8,9}"
             required
-            className="w-40 rounded border border-edge bg-surface px-2 py-1.5 font-mono text-sm"
+            className="w-40 card px-2 py-1.5 font-mono text-sm"
           />
           <button
             type="submit"
             disabled={seeding}
-            className="rounded border border-edge bg-surface px-3 py-1.5 text-sm hover:border-accent disabled:opacity-50"
+            className="card px-3 py-1.5 text-sm hover:border-accent disabled:opacity-50"
           >
             {seeding ? t('reading') : t('importShowcase')}
           </button>
@@ -200,7 +200,7 @@ export function ImportForm() {
 
 function Counts({ title, entries }: { title: string; entries: [string, number][] }) {
   return (
-    <div className="rounded border border-edge bg-surface p-3">
+    <div className="card p-3">
       <p className="text-sm">{title}</p>
       <dl className="mt-2 grid grid-cols-2 gap-x-4 font-mono text-xs">
         {entries.map(([key, value]) => (

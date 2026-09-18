@@ -47,7 +47,7 @@ export function PieceComparison({
   const rows = mergeRows(equipped, candidate);
 
   return (
-    <table className="w-full border-collapse font-mono text-[0.65rem]">
+    <table className="w-full border-collapse font-mono text-2xs">
       <thead>
         <tr className="text-muted">
           <th className="py-1 text-left font-normal">{t('statHeader')}</th>

@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server';
+import { ViewTransition } from 'react';
 
 import { GameIcon } from '@/components/game-icon';
 import { type Catalog, enkaEntry, propLabel } from '@/lib/data/catalog';
@@ -107,47 +108,52 @@ export async function CharacterPanel({
   const bySlot = new Map(loadout.pieces.map((piece) => [piece.slot, piece]));
 
   return (
-    <section className="overflow-hidden rounded-xl border border-edge bg-surface">
+    <section className="panel overflow-hidden">
       <div className="grid lg:grid-cols-[20rem_1fr]">
         <div className="relative border-b border-edge lg:border-b-0 lg:border-r">
-          <div className="relative h-72 overflow-hidden">
-            <GameIcon
-              filename={character.gachaSplash}
-              kind="splash"
-              className="h-full w-full object-cover object-top"
-              sizes="320px"
-              priority
-            />
-            {/* The art bleeds into the panel instead of ending on a hard edge. */}
-            <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/20 to-transparent" />
+          {/* The other half of the roster's morph: the avatar the player
+              clicked grows into this splash instead of being replaced by it.
+              See `characters/page.tsx` and `globals.css`. */}
+          <ViewTransition name={`character-${character.id}`} share="morph" default="none">
+            <div className="relative h-72 overflow-hidden">
+              <GameIcon
+                filename={character.gachaSplash}
+                kind="splash"
+                className="h-full w-full object-cover object-top"
+                sizes="320px"
+                priority
+              />
+              {/* The art bleeds into the panel instead of ending on a hard edge. */}
+              <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/20 to-transparent" />
 
-            {constellations.length > 0 && (
-              <ol className="absolute right-2 top-3 space-y-1.5">
-                {constellations.map((constellation, index) => (
-                  <li
-                    key={index}
-                    title={`C${index + 1} · ${constellation.name}`}
-                    className={`flex h-8 w-8 items-center justify-center rounded-full border ${
-                      constellation.unlocked
-                        ? 'border-accent bg-ink/80'
-                        : 'border-edge bg-ink/60 opacity-40 grayscale'
-                    }`}
-                  >
-                    {constellation.icon ? (
-                      <GameIcon
-                        filename={constellation.icon}
-                        kind="constellation"
-                        className="h-5 w-5"
-                        sizes="20px"
-                      />
-                    ) : (
-                      <span className="font-mono text-[0.65rem] text-muted">C{index + 1}</span>
-                    )}
-                  </li>
-                ))}
-              </ol>
-            )}
-          </div>
+              {constellations.length > 0 && (
+                <ol className="absolute right-2 top-3 space-y-1.5">
+                  {constellations.map((constellation, index) => (
+                    <li
+                      key={index}
+                      title={`C${index + 1} · ${constellation.name}`}
+                      className={`flex h-8 w-8 items-center justify-center rounded-full border ${
+                        constellation.unlocked
+                          ? 'border-accent bg-ink/80'
+                          : 'border-edge bg-ink/60 opacity-40 grayscale'
+                      }`}
+                    >
+                      {constellation.icon ? (
+                        <GameIcon
+                          filename={constellation.icon}
+                          kind="constellation"
+                          className="h-5 w-5"
+                          sizes="20px"
+                        />
+                      ) : (
+                        <span className="font-mono text-2xs text-muted">C{index + 1}</span>
+                      )}
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
+          </ViewTransition>
 
           {talents.length > 0 && (
             <ul className="flex justify-center gap-2 px-3 pb-3">
@@ -166,12 +172,12 @@ export async function CharacterPanel({
                         sizes="24px"
                       />
                     ) : (
-                      <span className="font-mono text-[0.65rem] text-muted">
+                      <span className="font-mono text-2xs text-muted">
                         {['N', 'E', 'Q'][index]}
                       </span>
                     )}
                   </span>
-                  <span className="tabular font-mono text-[0.65rem]">
+                  <span className="tabular font-mono text-2xs">
                     {talent.level}
                     {talent.bonus > 0 && <span className="text-accent">+{talent.bonus}</span>}
                   </span>
@@ -183,11 +189,14 @@ export async function CharacterPanel({
 
         <div className="min-w-0 p-4">
           <header className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1">
-            <h1 className="text-lg font-medium">{character.name}</h1>
-            <span className="rounded border border-edge bg-surface-2 px-1.5 py-0.5 font-mono text-xs">
+            <h1 className="page-title">{character.name}</h1>
+            <span className="card-2 px-1.5 py-0.5 font-mono text-xs">
               {t('levelPrefix')} {loadout.level}
             </span>
-            <span className="font-mono text-xs" style={{ color: accent }}>
+            <span
+              className="element-tint font-mono text-xs"
+              style={{ '--element': accent } as React.CSSProperties}
+            >
               {'★'.repeat(character.rarity)}
             </span>
             <span className="font-mono text-xs uppercase text-muted">
@@ -274,25 +283,25 @@ export async function CharacterPanel({
             {t('weaponHeading')}
           </h2>
           {loadout.weapon && weaponDefinition ? (
-            <div className="group relative flex items-center gap-3 rounded-lg border border-edge bg-surface-2 p-3">
+            <div className="group relative flex items-center gap-3 card-2 p-3">
               <div className="relative shrink-0">
                 <GameIcon
                   filename={weaponDefinition.icon}
                   kind="weapon"
-                  className="h-14 w-14 rounded border border-edge bg-ink"
+                  className="h-14 w-14 field"
                   sizes="56px"
                 />
-                <span className="absolute -left-1 -top-1 rounded bg-ink px-1 font-mono text-[0.65rem] text-accent">
+                <span className="absolute -left-1 -top-1 rounded bg-ink px-1 font-mono text-2xs text-accent">
                   R{loadout.weapon.refinement}
                 </span>
               </div>
               <div className="min-w-0 flex-1">
                 <p className="flex flex-wrap items-center gap-2">
                   <span className="truncate text-sm">{weaponDefinition.name}</span>
-                  <span className="rounded border border-edge px-1 font-mono text-[0.65rem] text-muted">
+                  <span className="rounded border border-edge px-1 font-mono text-2xs text-muted">
                     {t('levelPrefix')} {loadout.weapon.level}
                   </span>
-                  <span className="font-mono text-[0.65rem] text-accent">
+                  <span className="font-mono text-2xs text-accent">
                     {'★'.repeat(weaponDefinition.rarity)}
                   </span>
                 </p>
@@ -400,14 +409,17 @@ function StatRow({
       <dt className="truncate text-xs text-muted">{label}</dt>
       <dd className="tabular flex items-baseline gap-2 font-mono">
         {base !== undefined && (
-          <span className="flex flex-col items-end text-[0.6rem] leading-tight">
+          <span className="flex flex-col items-end text-2xs leading-tight">
             <span className="text-muted">{Math.round(base).toLocaleString(locale)}</span>
             <span className="text-good">
               +{Math.round(total - base).toLocaleString(locale)}
             </span>
           </span>
         )}
-        <span className="text-sm" style={accent ? { color: accent } : undefined}>
+        <span
+          className="text-sm element-tint"
+          style={accent ? ({ '--element': accent } as React.CSSProperties) : undefined}
+        >
           {formatted}
         </span>
       </dd>
@@ -462,13 +474,13 @@ async function ArtifactCard({
   const critRatingLabel = await getTranslations('common.critRating');
 
   return (
-    <li className="group relative flex flex-col rounded-lg border border-edge bg-surface-2 p-3">
+    <li className="group relative flex flex-col card-2 p-3">
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
           <p className="truncate text-xs" title={set?.name ?? undefined}>
             {set?.pieces[piece.slot]?.name ?? set?.name ?? `#${piece.setId}`}
           </p>
-          <p className="mt-1 flex flex-wrap items-center gap-x-2 font-mono text-[0.65rem]">
+          <p className="mt-1 flex flex-wrap items-center gap-x-2 font-mono text-2xs">
             <span className="rounded bg-ink px-1 text-muted">{t('levelPrefix')} {piece.level}</span>
             <span className="text-accent">{'★'.repeat(piece.rarity)}</span>
             {crit > 0 && (
@@ -500,12 +512,12 @@ async function ArtifactCard({
         {piece.substats.map((substat) => (
           <li key={substat.prop} className="flex items-baseline justify-between gap-2">
             <span className="flex min-w-0 items-baseline gap-1">
-              <span className="truncate text-[0.7rem] text-muted">
+              <span className="truncate text-2xs text-muted">
                 {propLabel(catalog, substat.prop)}
               </span>
               {/* Rolls, not value: the badge the game shows on an upgraded piece. */}
               {substat.rolls >= 1 && (
-                <span className="rounded bg-ink px-1 font-mono text-[0.6rem] text-muted">
+                <span className="rounded bg-ink px-1 font-mono text-2xs text-muted">
                   {Math.floor(substat.rolls)}
                 </span>
               )}

@@ -130,7 +130,7 @@ export function SetPicker({
         aria-expanded={open}
         aria-controls={open ? popupId : undefined}
         aria-describedby={selected && hinting ? `${popupId}-effects` : undefined}
-        className="flex w-full min-w-0 items-center gap-2 rounded border border-edge bg-ink px-2 py-1.5 text-left text-sm transition-colors hover:border-accent focus:border-accent"
+        className="flex w-full min-w-0 items-center gap-2 field px-2 py-1.5 text-left text-sm transition-colors hover:border-accent focus:border-accent"
       >
         {selected ? (
           <>
@@ -188,7 +188,7 @@ export function SetPicker({
 
             {groups.map((group) => (
               <li key={group.label}>
-                <p className="border-y border-edge/40 bg-surface-2 px-2 py-1 font-mono text-[0.6rem] uppercase text-muted">
+                <p className="border-y border-edge/40 bg-surface-2 px-2 py-1 font-mono text-2xs uppercase text-muted">
                   {group.label}
                 </p>
                 <ul aria-label={group.label}>
@@ -202,7 +202,7 @@ export function SetPicker({
                           <>
                             <span className="truncate">{option.name}</span>
                             {option.note && (
-                              <span className="truncate font-mono text-[0.65rem] text-muted">
+                              <span className="truncate font-mono text-2xs text-muted">
                                 {option.note}
                               </span>
                             )}
@@ -280,7 +280,7 @@ function Effects({
       role="tooltip"
       className="absolute z-30 mt-1 w-full min-w-64 rounded border border-edge-strong bg-surface-2 p-3 shadow-xl"
     >
-      <p className="mb-1 font-mono text-[0.6rem] uppercase text-muted">{option.name}</p>
+      <p className="mb-1 font-mono text-2xs uppercase text-muted">{option.name}</p>
       <ul className="space-y-1">
         {option.effects.map((effect) => {
           const active = effect.pieces <= activePieces;
@@ -288,7 +288,7 @@ function Effects({
           return (
             <li key={effect.pieces} className="flex gap-2 text-xs">
               <span
-                className={`shrink-0 font-mono text-[0.65rem] ${
+                className={`shrink-0 font-mono text-2xs ${
                   active ? 'text-accent' : 'text-muted line-through'
                 }`}
               >
@@ -300,7 +300,7 @@ function Effects({
         })}
       </ul>
       {activePieces === 2 && (
-        <p className="mt-2 font-mono text-[0.6rem] text-muted">
+        <p className="mt-2 font-mono text-2xs text-muted">
           {t('twoPlusTwoNote')}
         </p>
       )}

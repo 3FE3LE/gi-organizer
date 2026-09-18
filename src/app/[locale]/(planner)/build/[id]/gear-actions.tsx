@@ -93,7 +93,7 @@ function Action({
     <button
       type="button"
       onClick={onClick}
-      className="pointer-events-auto flex items-center gap-1.5 rounded border border-edge bg-ink/90 px-2 py-1 text-[0.7rem] text-muted shadow-sm transition-colors hover:border-accent hover:text-accent"
+      className="pointer-events-auto flex items-center gap-1.5 field/90 px-2 py-1 text-2xs text-muted shadow-sm transition-colors hover:border-accent hover:text-accent"
     >
       {icon}
       {label}
@@ -205,7 +205,7 @@ function SlotDialog({
             type="button"
             onClick={onClose}
             aria-label={t('closeAria')}
-            className="shrink-0 rounded p-1 text-muted transition-colors hover:bg-surface-2 hover:text-text"
+            className="btn btn-quiet btn-icon shrink-0"
           >
             <X size={16} />
           </button>
@@ -217,7 +217,7 @@ function SlotDialog({
           <p className="border-b border-edge px-4 py-1.5 text-xs text-muted">
             {t('candidatesCount', { count: view.candidates.length })}
             {view.hiddenInUse > 0 && (
-              <span className="font-mono text-[0.65rem]">
+              <span className="font-mono text-2xs">
                 {' · '}{t('hiddenInUse', { count: view.hiddenInUse })}
               </span>
             )}

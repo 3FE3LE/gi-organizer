@@ -8,53 +8,197 @@
  * leaves the scrollwork: a tool someone stares at for an hour needs calm
  * surfaces and a single loud colour, not ornament.
  *
- * Slate carries a blue cast rather than being neutral grey, which is what
- * makes the gold read as gold instead of as beige.
+ * ## Why the tokens are indirected
+ *
+ * Tailwind bakes `@theme` values into the utilities it generates, which is
+ * exactly wrong for a theme that changes at runtime. `@theme inline` makes
+ * `bg-surface` compile to `var(--surface)` instead of to a hex literal, so the
+ * whole palette swaps by redefining eight variables on `<html>` — no duplicate
+ * `dark:` class on every element, and no second copy of the stylesheet.
+ *
+ * Both themes are checked against WCAG AA: every foreground here clears 4.5:1
+ * on every surface it is allowed to sit on. `e2e/accessibility.spec.ts` runs
+ * axe over both, so a colour that drifts under the line fails the suite rather
+ * than shipping.
  */
-@theme {
-  /* Page ground, deepest first. */
-  --color-ink: #10131c;
-  --color-surface: #181c28;
-  --color-surface-2: #212636;
-  /* For the one panel that should feel like the parchment card in-game. */
-  --color-parchment: #2a3042;
+@theme inline {
+  --color-ink: var(--ink);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-raised: var(--raised);
 
-  --color-edge: #2e3446;
-  --color-edge-strong: #3d4560;
+  --color-edge: var(--edge);
+  --color-edge-strong: var(--edge-strong);
 
-  --color-text: #e8e5dc;
-  --color-muted: #8f96ab;
+  --color-text: var(--text);
+  --color-muted: var(--muted);
 
-  /* The game's gold, which is a single accent and never a background. */
-  --color-accent: #e0c187;
-  --color-accent-dim: #a8875199;
+  --color-accent: var(--accent);
+  --color-accent-quiet: var(--accent-quiet);
+  --color-on-accent: var(--on-accent);
 
-  /* Verdicts. Kept close in value so a dense table does not strobe. */
-  --color-good: #7fb98a;
-  --color-warn: #dcae62;
-  --color-bad: #d4776f;
+  --color-good: var(--good);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
 
   --font-sans: var(--font-geist-sans), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /**
+   * The floor of the type scale, and the reason it exists.
+   *
+   * Eighty-odd labels were set in arbitrary rem fractions down to 8.8px —
+   * legible on the author's monitor and nowhere else. One token at 11.5px
+   * replaces all of them: still quiet, still fits the tables, and readable at
+   * arm's length on a phone.
+   */
+  --text-2xs: 0.72rem;
+  --text-2xs--line-height: 1.1rem;
+
+  --radius-card: 0.875rem;
+  --radius-panel: 1.125rem;
+
+  /**
+   * Motion, in three speeds.
+   *
+   * Exits are fast because old content should not compete for attention;
+   * entrances are slower so there is time to register what arrived. The easing
+   * decelerates hard at the end, which is what makes a 200ms move read as
+   * "placed" rather than "slid".
+   */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-exit: 150ms;
+  --duration-enter: 210ms;
+  --duration-move: 400ms;
 }
 
-html {
+/**
+ * Dark is the default, because this is a companion to a game people play at
+ * night. Light exists for the same tool at a desk in daylight, and is a
+ * parchment warm rather than a blue white — the gold has to stay gold.
+ */
+:root {
+  --ink: #0c0f17;
+  --surface: #151a26;
+  --surface-2: #1e2434;
+  --raised: #262d40;
+
+  --edge: #2b3244;
+  --edge-strong: #3d4660;
+
+  --text: #eae7de;
+  --muted: #9aa1b6;
+
+  --accent: #e3c68f;
+  /* For fills and rules, never for text: it does not clear AA as a foreground. */
+  --accent-quiet: color-mix(in oklab, var(--accent) 22%, transparent);
+  --on-accent: #12151d;
+
+  --good: #86c191;
+  --warn: #e0b468;
+  --bad: #dd8077;
+
+  /* The wash behind the page, which keeps a long scroll from being a flat
+     rectangle. Two lights rather than one: warm from the top, cool from the
+     left, both nearly invisible. */
+  --page-glow:
+    radial-gradient(70rem 30rem at 50% -12rem, color-mix(in oklab, var(--accent) 9%, transparent), transparent 70%),
+    radial-gradient(50rem 28rem at 0% 10%, color-mix(in oklab, #4d6fb4 8%, transparent), transparent 70%);
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.35), 0 8px 24px -12px rgb(0 0 0 / 0.55);
+  --shadow-raised: 0 2px 6px rgb(0 0 0 / 0.4), 0 18px 40px -18px rgb(0 0 0 / 0.65);
+  --shadow-accent: 0 6px 20px -8px color-mix(in oklab, var(--accent) 55%, transparent);
+  /* The hairline of light along the top edge of a card, which is what makes a
+     flat fill read as a surface catching a light source. */
+  --sheen: inset 0 1px 0 rgb(255 255 255 / 0.05);
+
   color-scheme: dark;
 }
 
+:root[data-theme='light'] {
+  --ink: #f1eee6;
+  --surface: #ffffff;
+  --surface-2: #f7f4ec;
+  --raised: #ffffff;
+
+  --edge: #e2ddd0;
+  --edge-strong: #c9c2b0;
+
+  --text: #1b1e2a;
+  --muted: #5b6070;
+
+  /* Gold on white is a 1.6:1 stripe. The accent keeps its hue and loses its
+     lightness so it can still carry text. */
+  --accent: #8a6320;
+  --accent-quiet: color-mix(in oklab, var(--accent) 14%, transparent);
+  --on-accent: #fffaf0;
+
+  --good: #2f6f3d;
+  --warn: #8a5d16;
+  --bad: #a53a30;
+
+  --page-glow:
+    radial-gradient(70rem 30rem at 50% -14rem, color-mix(in oklab, var(--accent) 12%, transparent), transparent 70%),
+    radial-gradient(50rem 28rem at 0% 8%, color-mix(in oklab, #6f8bd0 12%, transparent), transparent 70%);
+
+  --shadow-card: 0 1px 2px rgb(31 29 22 / 0.06), 0 10px 24px -14px rgb(31 29 22 / 0.22);
+  --shadow-raised: 0 2px 6px rgb(31 29 22 / 0.08), 0 20px 44px -20px rgb(31 29 22 / 0.3);
+  --shadow-accent: 0 6px 18px -8px color-mix(in oklab, var(--accent) 40%, transparent);
+  --sheen: inset 0 1px 0 rgb(255 255 255 / 0.8);
+
+  color-scheme: light;
+}
+
+/**
+ * Nobody has chosen yet: follow the operating system. Scoped so that an
+ * explicit `data-theme="dark"` still wins in a light OS, which is the whole
+ * point of the toggle.
+ */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    --ink: #f1eee6;
+    --surface: #ffffff;
+    --surface-2: #f7f4ec;
+    --raised: #ffffff;
+
+    --edge: #e2ddd0;
+    --edge-strong: #c9c2b0;
+
+    --text: #1b1e2a;
+    --muted: #5b6070;
+
+    --accent: #8a6320;
+    --accent-quiet: color-mix(in oklab, var(--accent) 14%, transparent);
+    --on-accent: #fffaf0;
+
+    --good: #2f6f3d;
+    --warn: #8a5d16;
+    --bad: #a53a30;
+
+    --page-glow:
+      radial-gradient(70rem 30rem at 50% -14rem, color-mix(in oklab, var(--accent) 12%, transparent), transparent 70%),
+      radial-gradient(50rem 28rem at 0% 8%, color-mix(in oklab, #6f8bd0 12%, transparent), transparent 70%);
+
+    --shadow-card: 0 1px 2px rgb(31 29 22 / 0.06), 0 10px 24px -14px rgb(31 29 22 / 0.22);
+    --shadow-raised: 0 2px 6px rgb(31 29 22 / 0.08), 0 20px 44px -20px rgb(31 29 22 / 0.3);
+    --shadow-accent: 0 6px 18px -8px color-mix(in oklab, var(--accent) 40%, transparent);
+    --sheen: inset 0 1px 0 rgb(255 255 255 / 0.8);
+
+    color-scheme: light;
+  }
+}
+
 body {
-  background:
-    /* A slow warm wash from the top, so a long page is not a flat rectangle. */
-    radial-gradient(120rem 40rem at 50% -20rem, #1d2334 0%, transparent 70%),
-    var(--color-ink);
-  color: var(--color-text);
+  background: var(--page-glow), var(--ink);
+  background-attachment: fixed;
+  color: var(--text);
   font-family: var(--font-sans);
 }
 
 /* Dense pages scroll a lot; a hairline scrollbar keeps the rhythm. */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--color-edge-strong) transparent;
+  scrollbar-color: var(--edge-strong) transparent;
 }
 
 /**
@@ -63,17 +207,436 @@ body {
  * Controls that change a border on focus read fine with a mouse and vanish
  * with a keyboard: a one-pixel edge moving from slate to gold is not a
  * position indicator on a page of forty bordered things. `:focus-visible`
- * means a pointer never sees this ring, so nothing has to opt out of it —
- * which is what the `focus:outline-none` scattered across the forms was for.
+ * means a pointer never sees this ring, so nothing has to opt out of it.
  */
 :focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
 /**
- * The only motion here is a pulse on loading blocks and a few opacity fades,
- * but a vestibular trigger does not care how tasteful the animation is.
+ * Numbers in a table only line up when the digits are the same width, and
+ * almost every number here sits in a column next to another.
+ */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------- surfaces --- */
+
+/**
+ * The shapes the whole app is built from.
+ *
+ * These are classes rather than Tailwind chains because they were already the
+ * same chain repeated fifty times, and a surface treatment that lives in fifty
+ * places is a surface treatment nobody can change. Layout stays in utilities
+ * where it belongs; what a card *is* lives here.
+ */
+@layer components {
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--edge);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card), var(--sheen);
+  }
+
+  /* A card you can click. The lift is small on purpose: one pixel and a
+     warmer edge is enough to say "this responds", and anything more turns a
+     grid of ninety characters into a trampoline. */
+  .card-link {
+    transition:
+      transform var(--duration-exit) var(--ease-out-soft),
+      border-color var(--duration-exit) var(--ease-out-soft),
+      box-shadow var(--duration-exit) var(--ease-out-soft);
+  }
+
+  .card-link:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in oklab, var(--accent) 55%, var(--edge));
+    box-shadow: var(--shadow-raised), var(--sheen);
+  }
+
+  .card-link:active {
+    transform: translateY(0);
+  }
+
+  /* One step up from the page, for the slots and rows that sit inside a card
+     and still have to read as their own object. */
+  .card-2 {
+    background: var(--surface-2);
+    border: 1px solid var(--edge);
+    border-radius: var(--radius-card);
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--edge);
+    border-radius: var(--radius-panel);
+    box-shadow: var(--shadow-raised), var(--sheen);
+  }
+
+  /* The bar that floats over the page: a header, a sticky save row, a sheet. */
+  .glass {
+    background: color-mix(in oklab, var(--ink) 78%, transparent);
+    backdrop-filter: blur(12px) saturate(140%);
+    border-color: var(--edge);
+  }
+
+  /* -------------------------------------------------------- controls --- */
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid var(--edge);
+    border-radius: 0.625rem;
+    background: var(--surface-2);
+    color: var(--text);
+    padding: 0.4rem 0.85rem;
+    font-size: 0.8125rem;
+    line-height: 1.25rem;
+    white-space: nowrap;
+    transition:
+      transform var(--duration-exit) var(--ease-out-soft),
+      background-color var(--duration-exit) var(--ease-out-soft),
+      border-color var(--duration-exit) var(--ease-out-soft),
+      box-shadow var(--duration-exit) var(--ease-out-soft);
+  }
+
+  .btn:hover:not(:disabled) {
+    border-color: color-mix(in oklab, var(--accent) 60%, var(--edge));
+    background: var(--raised);
+  }
+
+  .btn:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  .btn:disabled {
+    opacity: 0.5;
+  }
+
+  /**
+   * The one loud control on a screen.
+   *
+   * A gradient rather than a flat fill, because gold is a metal and a metal
+   * has a light side; the glow underneath is what lifts it off the panel it
+   * sits on. Exactly one of these per view — if two things are primary,
+   * neither is.
+   */
+  .btn-primary {
+    border-color: transparent;
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in oklab, var(--accent) 88%, white),
+        var(--accent)
+      );
+    color: var(--on-accent);
+    font-weight: 500;
+    box-shadow: var(--shadow-accent);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in oklab, var(--accent) 75%, white),
+        color-mix(in oklab, var(--accent) 95%, white)
+      );
+    border-color: transparent;
+  }
+
+  .btn-quiet {
+    background: transparent;
+    border-color: transparent;
+    color: var(--muted);
+  }
+
+  .btn-quiet:hover:not(:disabled) {
+    background: var(--surface-2);
+    color: var(--text);
+    border-color: transparent;
+  }
+
+  .btn-sm {
+    padding: 0.25rem 0.6rem;
+    font-size: var(--text-2xs);
+    border-radius: 0.5rem;
+  }
+
+  .btn-icon {
+    padding: 0.4rem;
+    border-radius: 0.5rem;
+  }
+
+  /** A filter value, a tab, a toggle: round, small, and obviously switchable. */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border: 1px solid var(--edge);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--muted);
+    padding: 0.2rem 0.7rem;
+    font-size: var(--text-2xs);
+    line-height: 1.15rem;
+    white-space: nowrap;
+    transition:
+      background-color var(--duration-exit) var(--ease-out-soft),
+      border-color var(--duration-exit) var(--ease-out-soft),
+      color var(--duration-exit) var(--ease-out-soft);
+  }
+
+  .chip:hover {
+    color: var(--text);
+    border-color: var(--edge-strong);
+  }
+
+  /*
+   * Filled, not tinted. Gold text on a gold tint measures 4.48:1 in the light
+   * theme — under AA by a hair, and the kind of miss that only a machine
+   * notices. The fill is also plainly the selected one at a glance, which the
+   * tint was not.
+   */
+  .chip[data-active='true'] {
+    background: var(--accent);
+    border-color: transparent;
+    color: var(--on-accent);
+    font-weight: 500;
+  }
+
+  .chip[data-active='true']:hover {
+    background: color-mix(in oklab, var(--accent) 88%, white);
+    color: var(--on-accent);
+    border-color: transparent;
+  }
+
+  /**
+   * An element's colour, kept readable.
+   *
+   * The game's palette is built for a dark screen: Cryo on white is a 1.9:1
+   * whisper. Rather than inventing a second set of element colours, the tint
+   * is mixed toward the page's own text colour until it carries — the hue
+   * survives, which is the part that identifies the element.
+   */
+  .element-tint {
+    color: var(--element, currentColor);
+  }
+
+  :root[data-theme='light'] .element-tint {
+    color: color-mix(in oklab, var(--element, currentColor) 45%, var(--text));
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme='dark']) .element-tint {
+      color: color-mix(in oklab, var(--element, currentColor) 45%, var(--text));
+    }
+  }
+
+  /** Inputs and selects, which had six slightly different borders between them. */
+  .field {
+    background: var(--ink);
+    border: 1px solid var(--edge);
+    border-radius: 0.625rem;
+    color: var(--text);
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8125rem;
+    transition: border-color var(--duration-exit) var(--ease-out-soft);
+  }
+
+  .field:hover {
+    border-color: var(--edge-strong);
+  }
+
+  .field:focus {
+    border-color: var(--accent);
+  }
+
+  /** A number with a caption under it: the counts at the top of a section. */
+  .tile {
+    background: var(--surface);
+    border: 1px solid var(--edge);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card), var(--sheen);
+    padding: 0.85rem 1rem;
+  }
+}
+
+/**
+ * The theme switch shows what it will do, and knows it before React does.
+ *
+ * Dark is the default, so the sun — "make it light" — is what ships visible;
+ * the same selectors that choose the palette swap it for the moon. See
+ * `components/theme-toggle.tsx`.
+ */
+.theme-moon {
+  display: none;
+}
+
+:root[data-theme='light'] .theme-sun {
+  display: none;
+}
+
+:root[data-theme='light'] .theme-moon {
+  display: block;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) .theme-sun {
+    display: none;
+  }
+
+  :root:not([data-theme]) .theme-moon {
+    display: block;
+  }
+}
+
+/**
+ * A native select keeps its own arrow, which is the one control on the page
+ * drawn by the operating system instead of by this stylesheet. Replacing it is
+ * the difference between a form that was designed and a form that was
+ * defaulted.
+ */
+select.field {
+  appearance: none;
+  padding-right: 1.85rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa1b6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.55rem center;
+  background-size: 0.8rem;
+}
+
+:root[data-theme='light'] select.field {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235b6070' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) select.field {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235b6070' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  }
+}
+
+/**
+ * The name of the page, which every section states and no two stated the same
+ * way. Big enough to be the first thing read, quiet enough not to shout over
+ * the data underneath it.
+ */
+.page-title {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* ------------------------------------------------------------- motion --- */
+
+/**
+ * Content arriving, rather than appearing.
+ *
+ * A grid that fades up in sequence tells you it was fetched and placed; the
+ * same grid popping in tells you nothing. The stagger is capped — past about
+ * ten items the eye reads it as one wave anyway, and ninety characters each
+ * waiting their turn would be a loading screen.
+ */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rise {
+  animation: rise-in var(--duration-enter) var(--ease-out-soft) both;
+}
+
+.rise-stagger > * {
+  animation: rise-in var(--duration-enter) var(--ease-out-soft) both;
+  animation-delay: calc(min(var(--index, 0), 10) * 25ms);
+}
+
+/**
+ * Navigation, as one object moving instead of two swapping.
+ *
+ * React's `<ViewTransition>` drives these through the browser's own View
+ * Transitions API — no animation library, no measuring, and nothing shipped to
+ * the client that a browser without support has to download anyway.
+ */
+::view-transition-group(.morph) {
+  animation-duration: var(--duration-move);
+}
+
+/* The blur hides pixel interpolation while a 64px avatar becomes a 288px
+   splash, which is a big enough jump to shimmer without it. */
+::view-transition-image-pair(.morph) {
+  animation-name: morph-blur;
+}
+
+@keyframes morph-blur {
+  30% {
+    filter: blur(3px);
+  }
+}
+
+::view-transition-old(.fade-out) {
+  animation: var(--duration-exit) ease-out both fade-through reverse;
+}
+
+::view-transition-new(.fade-in) {
+  animation:
+    var(--duration-enter) ease-in var(--duration-exit) both fade-through,
+    var(--duration-move) var(--ease-out-soft) both slide-y;
+}
+
+@keyframes fade-through {
+  from {
+    opacity: 0;
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+@keyframes slide-y {
+  from {
+    transform: translateY(8px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* The header is the anchor the rest moves against, so it holds still — and
+   both snapshots of it must never be on screen at once. */
+::view-transition-group(site-header) {
+  animation: none;
+  z-index: 100;
+}
+
+::view-transition-old(site-header) {
+  display: none;
+}
+
+::view-transition-new(site-header) {
+  animation: none;
+}
+
+/* A transition's overlay swallows clicks. The page underneath is live and
+   already interactive, so let them through. */
+::view-transition {
+  pointer-events: none;
+}
+
+/**
+ * The only motion here is a few fades and a morph, but a vestibular trigger
+ * does not care how tasteful the animation is.
  */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -84,12 +647,11 @@ body {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-}
 
-/**
- * Numbers in a table only line up when the digits are the same width, and
- * almost every number here sits in a column next to another.
- */
-.tabular {
-  font-variant-numeric: tabular-nums;
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+  }
 }

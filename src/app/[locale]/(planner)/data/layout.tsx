@@ -16,7 +16,7 @@ export default async function DataLayout({ children, params }: LayoutProps<'/[lo
 
   return (
     <div className="space-y-6">
-      <h1 className="text-lg font-medium">{t('title')}</h1>
+      <h1 className="page-title">{t('title')}</h1>
       <SectionTabs
         tabs={[
           { href: `/${locale}/data`, label: t('tabs.inventory.label'), hint: t('tabs.inventory.hint') },

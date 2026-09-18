@@ -33,7 +33,7 @@ export default function PlannerError({
       <button
         type="button"
         onClick={() => retry()}
-        className="inline-flex items-center gap-2 rounded border border-accent px-3 py-1.5 text-sm text-accent transition-colors hover:bg-surface-2"
+        className="btn btn-primary"
       >
         <RotateCw size={14} aria-hidden />
         {t('retry')}

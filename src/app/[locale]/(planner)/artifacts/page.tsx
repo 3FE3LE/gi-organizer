@@ -91,7 +91,7 @@ export default async function ArtifactsPage({
     <div className="space-y-4">
       <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <h1 className="text-lg font-medium">{t('title')}</h1>
+          <h1 className="page-title">{t('title')}</h1>
           <p className="font-mono text-xs text-muted">
             {shown.length === all.length
               ? t('countAll', { count: all.length })

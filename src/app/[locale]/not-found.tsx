@@ -31,7 +31,7 @@ export default async function NotFound() {
       <p className="text-sm text-muted">{t('notFoundBody')}</p>
       <Link
         href={`/${locale}/characters`}
-        className="inline-block rounded border border-accent px-3 py-1.5 text-sm text-accent transition-colors hover:bg-surface-2"
+        className="btn btn-primary"
       >
         {t('notFoundLink')}
       </Link>

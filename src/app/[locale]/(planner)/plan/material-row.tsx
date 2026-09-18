@@ -52,7 +52,7 @@ export async function MaterialRow({
         {need.by.map((entry) => (
           <li
             key={`${entry.characterId}-${entry.reason}`}
-            className="rounded border border-edge/60 bg-surface-2/60 px-1.5 py-0.5 font-mono text-[0.65rem] text-muted"
+            className="rounded border border-edge/60 bg-surface-2/60 px-1.5 py-0.5 font-mono text-2xs text-muted"
           >
             {catalog.characters.get(entry.characterId)?.name ?? entry.characterId}
             {' '}{reasonLabel(entry.reason)} ×{entry.count}

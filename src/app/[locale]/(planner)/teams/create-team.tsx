@@ -25,13 +25,13 @@ export function CreateTeam() {
         required
         placeholder={t('namePlaceholder')}
         aria-label={t('namePlaceholder')}
-        className="w-full rounded border border-edge bg-ink px-2 py-1.5 text-sm"
+        className="w-full field px-2 py-1.5 text-sm"
       />
       <select
         name="mode"
         defaultValue="abyss"
         aria-label={t('modeAria')}
-        className="w-full rounded border border-edge bg-ink px-2 py-1.5 text-sm"
+        className="w-full field px-2 py-1.5 text-sm"
       >
         <option value="abyss">{modeLabel('abyss')}</option>
         <option value="theater">{modeLabel('theater')}</option>
@@ -41,7 +41,7 @@ export function CreateTeam() {
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded border border-edge bg-ink px-3 py-1.5 text-sm hover:border-accent disabled:opacity-50"
+        className="btn btn-primary w-full justify-center"
       >
         {t('createButton')}
       </button>

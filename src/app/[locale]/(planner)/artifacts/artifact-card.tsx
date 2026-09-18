@@ -50,7 +50,7 @@ export async function ArtifactCard({
     : catalog.characters.get(piece.holderId)?.name ?? `#${piece.holderId}`;
 
   return (
-    <li className="flex min-w-0 flex-col rounded-lg border border-edge bg-surface p-3 transition-colors hover:border-edge-strong">
+    <li className="flex min-w-0 flex-col card p-3 transition-colors hover:border-edge-strong">
       <div className="flex items-start gap-2">
         <GameIcon
           filename={set?.pieces[piece.slot]?.icon}
@@ -60,7 +60,7 @@ export async function ArtifactCard({
         />
         <div className="min-w-0 flex-1">
           <p className="truncate text-xs" title={set?.name}>{set?.name ?? `#${piece.setId}`}</p>
-          <p className="mt-0.5 flex flex-wrap items-center gap-x-2 font-mono text-[0.65rem]">
+          <p className="mt-0.5 flex flex-wrap items-center gap-x-2 font-mono text-2xs">
             <span className="rounded bg-ink px-1 text-muted">+{piece.level}</span>
             <span className="text-accent">{'★'.repeat(piece.rarity)}</span>
             <span className="text-muted capitalize">
@@ -105,10 +105,10 @@ export async function ArtifactCard({
               }`}
               title={wasted ? t('deadSubstatHint') : undefined}
             >
-              <span className="truncate text-[0.7rem] text-muted">
+              <span className="truncate text-2xs text-muted">
                 {propLabel(catalog, substat.prop)}
               </span>
-              <span className="flex shrink-0 items-baseline gap-1.5 font-mono text-[0.65rem]">
+              <span className="flex shrink-0 items-baseline gap-1.5 font-mono text-2xs">
                 <span className="tabular">
                   +{formatPropValue(substat.prop, substat.value, 'percent', locale)}
                 </span>
@@ -119,7 +119,7 @@ export async function ArtifactCard({
         })}
       </ul>
 
-      <p className="mt-2 flex flex-wrap items-baseline justify-between gap-x-2 border-t border-edge pt-1.5 font-mono text-[0.65rem]">
+      <p className="mt-2 flex flex-wrap items-baseline justify-between gap-x-2 border-t border-edge pt-1.5 font-mono text-2xs">
         <span className={holder ? 'text-muted' : 'text-good'}>
           {holder ?? t('free')}
         </span>
@@ -147,7 +147,7 @@ export async function ArtifactCard({
           why a mastery piece can rank high without a mastery build on screen;
           the second is the one thing a tier average cannot say. */}
       {(worth.serves !== null || worth.wastedCount > 0) && (
-        <p className="mt-1 flex flex-wrap items-baseline justify-between gap-x-2 font-mono text-[0.6rem] text-muted">
+        <p className="mt-1 flex flex-wrap items-baseline justify-between gap-x-2 font-mono text-2xs text-muted">
           <span>
             {worth.serves !== null && t('servesPrefix', { scaler: scalerLabel(worth.serves) })}
           </span>

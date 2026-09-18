@@ -104,9 +104,9 @@ export async function FilterPanel({
       <details
         open={filters.sub !== null || filters.quality !== null || filters.cv !== null
           || filters.perfect || filters.set !== null || filters.main !== null}
-        className="group rounded-lg border border-edge bg-surface"
+        className="group card"
       >
-        <summary className="flex cursor-pointer list-none items-center gap-1.5 px-3 py-2 font-mono text-[0.65rem] uppercase text-muted hover:text-text">
+        <summary className="flex cursor-pointer list-none items-center gap-1.5 px-3 py-2 font-mono text-2xs uppercase text-muted hover:text-text">
           <ChevronRight size={12} className="transition-transform group-open:rotate-90" />
           {t('moreFilters')}
         </summary>
@@ -163,7 +163,7 @@ export async function FilterPanel({
 
       {active > 0 && (
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="font-mono text-[0.6rem] uppercase text-muted">{t('activeLabel')}</span>
+          <span className="font-mono text-2xs uppercase text-muted">{t('activeLabel')}</span>
           {(await describe(filters, catalog)).map((entry) => (
             <Chip key={entry.key} to={href(base, filters, entry.clear)} active>
               {entry.label}
@@ -173,7 +173,7 @@ export async function FilterPanel({
           ))}
           <Link
             href={href(base, filters, CLEARED)}
-            className="font-mono text-[0.65rem] text-muted underline decoration-edge-strong underline-offset-2 hover:text-accent"
+            className="font-mono text-2xs text-muted underline decoration-edge-strong underline-offset-2 hover:text-accent"
           >
             {t('clearAll')}
           </Link>
@@ -248,7 +248,7 @@ function Segments({ label, children }: { label: string; children: React.ReactNod
   return (
     <div
       aria-label={label}
-      className="flex items-stretch divide-x divide-edge overflow-hidden rounded-lg border border-edge bg-surface"
+      className="flex items-stretch divide-x divide-edge overflow-hidden card"
     >
       {children}
     </div>
@@ -271,7 +271,7 @@ function Segment({
       href={to}
       title={title}
       aria-current={active ? 'true' : undefined}
-      className={`flex items-center gap-1 px-2.5 py-1.5 text-[0.7rem] transition-colors ${
+      className={`flex items-center gap-1 px-2.5 py-1.5 text-2xs transition-colors ${
         active
           ? 'bg-surface-2 text-accent'
           : 'text-muted hover:bg-surface-2 hover:text-text'
@@ -285,7 +285,7 @@ function Segment({
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
-      <span className="w-14 shrink-0 font-mono text-[0.6rem] uppercase text-muted">{label}</span>
+      <span className="w-14 shrink-0 font-mono text-2xs uppercase text-muted">{label}</span>
       {children}
     </div>
   );
@@ -304,11 +304,8 @@ function Chip({
     <Link
       href={to}
       aria-current={active ? 'true' : undefined}
-      className={`rounded border px-2 py-0.5 text-[0.7rem] transition-colors ${
-        active
-          ? 'border-accent bg-surface-2 text-accent'
-          : 'border-edge text-muted hover:border-accent hover:text-text'
-      }`}
+      data-active={active}
+      className="chip"
     >
       {children}
     </Link>

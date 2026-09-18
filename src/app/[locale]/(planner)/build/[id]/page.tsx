@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { ViewTransition } from 'react';
 
 import { CharacterSheet } from '@/components/character-sheet';
 import { getCatalog, propLabel } from '@/lib/data/catalog';
@@ -58,7 +59,7 @@ export default async function BuildPage({
     <div className="space-y-6">
       {/* The panel carries the page's `h1`. Without a loadout there is no
           panel, and the page would have no heading at all. */}
-      {!loadout && <h1 className="text-lg font-medium">{character.name}</h1>}
+      {!loadout && <h1 className="page-title">{character.name}</h1>}
 
       {/* What is equipped now, on every tab: the tabs argue about it. */}
       {loadout && (
@@ -102,11 +103,21 @@ export default async function BuildPage({
         ))}
       </nav>
 
-      {tab === 'objective' && <ObjectiveTab context={context} />}
-      {tab === 'changes' && <ChangesTab context={context} />}
-      {tab === 'sheet' && (
-        <CharacterSheet catalog={catalog} character={character} locale={locale} />
-      )}
+      {/*
+        * The tabs are one route with a parameter, so switching them is not
+        * going anywhere: the panel above stays put and only this crossfades.
+        * `key` is what makes React treat the two tabs as an exit/enter pair
+        * rather than an update in place.
+        */}
+      <ViewTransition key={tab} name="build-tab" share="auto" enter="auto" default="none">
+        <div>
+          {tab === 'objective' && <ObjectiveTab context={context} />}
+          {tab === 'changes' && <ChangesTab context={context} />}
+          {tab === 'sheet' && (
+            <CharacterSheet catalog={catalog} character={character} locale={locale} />
+          )}
+        </div>
+      </ViewTransition>
     </div>
   );
 }

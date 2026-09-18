@@ -2,6 +2,7 @@ import { Target } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { ViewTransition } from 'react';
 
 import { CharacterSheet } from '@/components/character-sheet';
 import { GameIcon } from '@/components/game-icon';
@@ -29,16 +30,25 @@ export default async function CharacterPage({ params }: PageProps<'/[locale]/cha
   return (
     <article className="space-y-10">
       <header className="flex flex-wrap items-start gap-6">
-        <GameIcon
-          filename={character.gachaSplash}
-          kind="splash"
-          className="h-40 w-40 rounded-lg border border-edge object-cover object-top"
-          sizes="160px"
-          // The splash is this page's largest contentful paint.
-          priority
-        />
+        {/* Paired with the roster's avatar, so an unowned character opens by
+            growing out of the card that was clicked. */}
+        <ViewTransition name={`character-${character.id}`} share="morph" default="none">
+          <div className="shrink-0">
+            <GameIcon
+              filename={character.gachaSplash}
+              kind="splash"
+              className="h-44 w-44 rounded-panel border border-edge object-cover object-top shadow-[var(--shadow-raised)]"
+              sizes="176px"
+              // The splash is this page's largest contentful paint.
+              priority
+            />
+          </div>
+        </ViewTransition>
         <div className="min-w-64 flex-1">
-          <p className="font-mono text-xs uppercase tracking-wide" style={{ color: accent }}>
+          <p
+            className="element-tint font-mono text-xs uppercase tracking-wide"
+            style={{ '--element': accent } as React.CSSProperties}
+          >
             {character.elementText} · {character.weaponText} · {character.rarity}★
           </p>
           <h1 className="mt-1 text-2xl font-medium">{character.name}</h1>
@@ -51,7 +61,7 @@ export default async function CharacterPage({ params }: PageProps<'/[locale]/cha
               lives, and it says so itself when the character is not owned. */}
           <Link
             href={`/${locale}/build/${character.id}`}
-            className="mt-4 inline-flex items-center gap-2 rounded border border-accent px-3 py-1.5 text-sm text-accent transition-colors hover:bg-surface-2"
+            className="mt-4 btn btn-primary"
           >
             <Target size={14} />
             {t('objectiveOf', { name: character.name })}
@@ -75,7 +85,7 @@ export default async function CharacterPage({ params }: PageProps<'/[locale]/cha
 function Fact({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-[0.65rem] uppercase text-muted">{label}</dt>
+      <dt className="text-2xs uppercase text-muted">{label}</dt>
       <dd>{value}</dd>
     </div>
   );

@@ -86,9 +86,9 @@ export async function RosterPanel({
   const shown = [...planned, ...dismissed];
 
   return (
-    <section className="rounded-lg border border-edge bg-surface">
+    <section className="card">
       <header className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-edge px-3 py-2 text-xs">
-        <span className="font-mono text-[0.65rem] uppercase text-muted">
+        <span className="font-mono text-2xs uppercase text-muted">
           {t('charactersLabel')}
         </span>
         <span>
@@ -131,7 +131,7 @@ export async function RosterPanel({
             return (
               <li
                 key={entry.characterId}
-                className={`flex items-center overflow-hidden rounded border text-[0.7rem] ${
+                className={`flex items-center overflow-hidden rounded border text-2xs ${
                   picked ? 'border-accent bg-surface-2' : 'border-edge'
                 } ${entry.dismissed ? 'opacity-60' : ''} ${
                   filters.chars.length > 0 && !picked ? 'opacity-50' : ''
@@ -202,7 +202,7 @@ function Face({
       <span className={entry.dismissed ? 'line-through' : ''}>{entry.name}</span>
       {/* A character with a target of their own was planned for on purpose, so
           the assumption is not what is driving them. */}
-      {entry.hasTarget && !entry.dismissed && <span className="text-[0.55rem]">●</span>}
+      {entry.hasTarget && !entry.dismissed && <span className="text-2xs">●</span>}
     </>
   );
 
@@ -236,7 +236,7 @@ function Bulk({
       <button
         type="submit"
         disabled={disabled}
-        className="flex items-center gap-1.5 rounded border border-edge px-2.5 py-1 font-mono text-[0.65rem] uppercase text-muted transition-colors hover:border-accent hover:text-text disabled:opacity-40"
+        className="flex items-center gap-1.5 rounded border border-edge px-2.5 py-1 font-mono text-2xs uppercase text-muted transition-colors hover:border-accent hover:text-text disabled:opacity-40"
       >
         {children}
       </button>

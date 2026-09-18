@@ -79,7 +79,7 @@ export function TeamBoard({
   const state = addState.status !== 'idle' ? addState : removeState;
 
   return (
-    <article className="rounded border border-edge bg-surface">
+    <article className="card">
       <header className="flex flex-wrap items-center gap-3 border-b border-edge px-4 py-2">
         <h2 className="text-sm font-medium">{team.name}</h2>
         <span className="font-mono text-xs uppercase text-muted">{team.mode}</span>
@@ -90,7 +90,7 @@ export function TeamBoard({
             <input type="hidden" name="teamId" value={team.id} />
             <button
               type="submit"
-              className="rounded border border-edge px-2 py-1 text-xs text-muted hover:border-accent hover:text-accent"
+              className="btn btn-sm"
             >
               {t('deleteButton')}
             </button>
@@ -150,7 +150,7 @@ function ObjectivePicker({
         name="objective"
         defaultValue={current ?? ''}
         disabled={saving}
-        className="rounded border border-edge bg-ink px-2 py-1 text-xs"
+        className="field px-2 py-1 text-xs"
       >
         <option value="">{t('noObjective')}</option>
         {objectives.map((objective) => (
@@ -161,7 +161,7 @@ function ObjectivePicker({
         type="submit"
         aria-label={t('saveObjectiveAria')}
         title={t('saveObjectiveAria')}
-        className="rounded border border-edge px-1.5 py-1 text-xs hover:border-accent"
+        className="btn btn-sm"
       >
         <span aria-hidden>✓</span>
       </button>
@@ -200,7 +200,7 @@ function AddMember({
         {ROLES.map((role) => (
           <label
             key={role}
-            className="cursor-pointer rounded border border-edge px-1.5 py-0.5 text-[0.65rem] text-muted hover:border-accent has-checked:border-accent has-checked:text-accent has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent"
+            className="cursor-pointer rounded border border-edge px-1.5 py-0.5 text-2xs text-muted hover:border-accent has-checked:border-accent has-checked:text-accent has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent"
           >
             <input type="checkbox" name="roles" value={role} className="sr-only" />
             {roleLabel(role)}
@@ -214,7 +214,7 @@ function AddMember({
           name="characterId"
           required
           defaultValue=""
-          className="max-w-56 rounded border border-edge bg-ink px-2 py-1 text-xs"
+          className="max-w-56 field px-2 py-1 text-xs"
         >
           <option value="" disabled>{t('fromRoster')}</option>
           {/* One team per character: whoever holds them is named and the option
@@ -236,7 +236,7 @@ function AddMember({
         <button
           type="submit"
           disabled={pending}
-          className="rounded border border-edge px-3 py-1 text-xs hover:border-accent disabled:opacity-50"
+          className="btn btn-sm"
         >
           {t('addButton')}
         </button>
@@ -281,7 +281,7 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
         </form>
       </div>
 
-      <p className="font-mono text-[0.65rem] text-muted">
+      <p className="font-mono text-2xs text-muted">
         {slot.buildName
           ? <span className="text-accent">{slot.buildName}</span>
           : t('noBuildForRole')}
@@ -289,11 +289,11 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
       </p>
 
       {slot.gear.length > 0 && (
-        <p className="font-mono text-[0.65rem] text-muted">{slot.gear.join(' · ')}</p>
+        <p className="font-mono text-2xs text-muted">{slot.gear.join(' · ')}</p>
       )}
 
       {slot.goals.length > 0 && (
-        <ul className="flex flex-wrap gap-x-2 font-mono text-[0.65rem]">
+        <ul className="flex flex-wrap gap-x-2 font-mono text-2xs">
           {slot.goals.map((goal) => (
             <li
               key={goal.label}
@@ -320,7 +320,7 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
           {ROLES.map((role) => (
             <label
               key={role}
-              className={`cursor-pointer rounded border px-1.5 py-0.5 text-[0.65rem] has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent ${
+              className={`cursor-pointer rounded border px-1.5 py-0.5 text-2xs has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent ${
                 slot.roles.includes(role)
                   ? 'border-accent text-accent'
                   : 'border-edge text-muted hover:border-accent/50'
@@ -340,7 +340,7 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
         <button
           type="submit"
           disabled={savingRoles}
-          className="rounded border border-edge px-2 py-0.5 text-[0.65rem] hover:border-accent disabled:opacity-50"
+          className="btn btn-sm"
         >
           {t('saveRolesButton')}
         </button>
@@ -354,7 +354,7 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
           <select
             name="value"
             defaultValue={slot.declarations[declaration.field] ?? ''}
-            className="min-w-0 flex-1 rounded border border-edge bg-ink px-1 py-0.5 text-[0.65rem]"
+            className="min-w-0 flex-1 field px-1 py-0.5 text-2xs"
           >
             <option value="">{t('noDeclaration')}</option>
             {declaration.options.map((option) => (
@@ -365,7 +365,7 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
             type="submit"
             aria-label={t('saveDeclarationAria')}
             title={t('saveDeclarationAria')}
-            className="rounded border border-edge px-1.5 py-0.5 text-[0.65rem] hover:border-accent"
+            className="btn btn-sm"
           >
             <span aria-hidden>✓</span>
           </button>
@@ -392,7 +392,7 @@ function Finding({ finding }: { finding: { severity: string; message: string } }
         : 'text-muted';
 
   return (
-    <li className={`text-[0.7rem] leading-snug ${tone}`}>
+    <li className={`text-2xs leading-snug ${tone}`}>
       <span className="font-mono text-muted">
         {finding.severity === 'error' ? '!!' : finding.severity === 'warning' ? '!' : 'i'}
       </span>{' '}

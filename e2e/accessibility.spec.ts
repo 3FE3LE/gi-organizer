@@ -26,10 +26,28 @@ const PAGES = [
   { name: 'teams', path: '/es/teams' },
   { name: 'data', path: '/es/data' },
   { name: 'build', path: `/es/build/${SEEDED_CHARACTER}?tab=objective` },
+  // The catalogue entry, which is where the element colours are loudest.
+  { name: 'catalogue', path: `/es/characters/${SEEDED_CHARACTER}` },
 ];
 
+/**
+ * Both palettes, because there are two of them now and a contrast failure in
+ * the one nobody developed in is exactly the one that ships. The theme is
+ * stored, not negotiated, so the suite writes the same key the toggle does —
+ * see `components/theme-script.tsx`.
+ */
+const THEMES = ['dark', 'light'] as const;
+
+for (const theme of THEMES) {
 for (const { name, path } of PAGES) {
-  test(`${name} has no axe violations`, async ({ page }) => {
+  test(`${name} has no axe violations (${theme})`, async ({ page }) => {
+    await page.addInitScript((value) => {
+      try {
+        localStorage.setItem('gi-theme', value);
+      } catch {
+        // Nothing stored means the system theme, which is still a valid run.
+      }
+    }, theme);
     await page.goto(path);
 
     // The page is dynamic and streams; waiting for the heading rather than a
@@ -45,6 +63,7 @@ for (const { name, path } of PAGES) {
         violation.nodes.map((node) => `${violation.id}: ${node.target.join(' ')}`)),
     ).toEqual([]);
   });
+}
 }
 
 test('the candidates dialog keeps focus and gives it back', async ({ page }) => {

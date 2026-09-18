@@ -100,7 +100,7 @@ export default async function AgendaPage({ params }: PageProps<'/[locale]/plan/u
 
           <ol className="space-y-1">
             {chains.map((chain, index) => (
-              <li key={chain[0].instanceId} className="rounded border border-edge bg-surface">
+              <li key={chain[0].instanceId} className="card">
                 {chain.map((move, step) => (
                   <p
                     key={move.instanceId}
@@ -142,7 +142,7 @@ export default async function AgendaPage({ params }: PageProps<'/[locale]/plan/u
             ))}
           </ol>
 
-          <ul className="mt-2 flex flex-wrap gap-x-4 font-mono text-[0.65rem] text-muted">
+          <ul className="mt-2 flex flex-wrap gap-x-4 font-mono text-2xs text-muted">
             {cascade.byBuild
               .filter((entry) => entry.after !== entry.before)
               .map((entry) => (
@@ -174,7 +174,7 @@ export default async function AgendaPage({ params }: PageProps<'/[locale]/plan/u
               <li key={item.id}>
                 <Link
                   href={`/${locale}/build/${item.characterId}`}
-                  className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded border border-edge bg-surface px-3 py-2 text-xs hover:border-accent"
+                  className="flex flex-wrap items-center gap-x-3 gap-y-1 card px-3 py-2 text-xs hover:border-accent"
                 >
                   <GameIcon
                     filename={character?.icon}

@@ -23,7 +23,7 @@ export function LocaleSwitcher({ current }: { current: Locale }) {
       aria-label={t('language')}
       value={current}
       onChange={(event) => change(event.target.value)}
-      className="rounded border border-edge bg-surface px-2 py-1 text-sm text-text"
+      className="field py-1.5 text-sm"
     >
       {LOCALE_CODES.map((locale) => (
         <option key={locale} value={locale}>

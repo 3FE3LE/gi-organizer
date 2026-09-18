@@ -55,7 +55,7 @@ export function RosterSheet({
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         aria-expanded={open}
-        className="flex items-center gap-2 rounded-lg border border-edge bg-surface px-3 py-1.5 text-xs hover:border-accent"
+        className="flex items-center gap-2 card px-3 py-1.5 text-xs hover:border-accent"
       >
         <Users size={13} aria-hidden />
         <span>

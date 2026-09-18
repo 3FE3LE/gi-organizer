@@ -71,12 +71,12 @@ export function CandidateRow({
           sizes="24px"
         />
         <span className="min-w-0 flex-1 truncate text-xs">{candidate.label}</span>
-        <span className="font-mono text-[0.65rem] text-muted">{candidate.detail}</span>
+        <span className="font-mono text-2xs text-muted">{candidate.detail}</span>
         {candidate.fit && (
-          <span className="font-mono text-[0.65rem] text-muted">{candidate.fit}</span>
+          <span className="font-mono text-2xs text-muted">{candidate.fit}</span>
         )}
         {candidate.holder && (
-          <span className="font-mono text-[0.65rem] text-accent">
+          <span className="font-mono text-2xs text-accent">
             {t('heldBy', { holder: candidate.holder })}
           </span>
         )}
@@ -85,7 +85,7 @@ export function CandidateRow({
             type="button"
             onClick={() => setOpen((current) => !current)}
             aria-expanded={open}
-            className="shrink-0 rounded border border-edge px-2 py-0.5 font-mono text-[0.65rem] text-muted hover:border-accent hover:text-text"
+            className="btn btn-sm shrink-0 font-mono"
           >
             {open ? t('closeCompare') : t('openCompare')}
           </button>
@@ -140,7 +140,7 @@ export function MoveButton({
       <button
         type="submit"
         disabled={pending}
-        className="shrink-0 rounded border border-edge px-2 py-0.5 text-[0.65rem] hover:border-accent disabled:opacity-50"
+        className="btn btn-sm shrink-0"
       >
         {title}
       </button>

@@ -8,7 +8,10 @@ import { notFound } from 'next/navigation';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 
 import { LocaleSwitcher } from '@/components/locale-switcher';
+import { MainNav } from '@/components/main-nav';
 import { SyncLocaleCookie } from '@/components/sync-locale-cookie';
+import { ThemeScript } from '@/components/theme-script';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { clientMessages } from '@/i18n/client-messages';
 import { LOCALE_CODES, isLocale } from '@/lib/data/locales';
 import { getMeta } from '@/lib/data/registry';
@@ -23,8 +26,13 @@ const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin']
  * page instead of framing a dark tool in white.
  */
 export const viewport: Viewport = {
-  themeColor: '#10131c',
-  colorScheme: 'dark',
+  // One per scheme, so the browser chrome follows the theme the page resolved
+  // rather than framing a light page in a dark bar.
+  themeColor: [
+    { media: '(prefers-color-scheme: dark)', color: '#0c0f17' },
+    { media: '(prefers-color-scheme: light)', color: '#f1eee6' },
+  ],
+  colorScheme: 'dark light',
 };
 
 /**
@@ -88,13 +96,15 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
-        {/* Five nav links, a language picker and an account button sit between
-            the top of the page and the content on every route. Tabbing through
-            them once per navigation is what a skip link exists to spare. It is
-            off-screen until focused. */}
+        <ThemeScript />
+
+        {/* Five nav links, a language picker, a theme switch and an account
+            button sit between the top of the page and the content on every
+            route. Tabbing through them once per navigation is what a skip link
+            exists to spare. It is off-screen until focused. */}
         <a
           href="#content"
-          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded focus:border focus:border-accent focus:bg-ink focus:px-3 focus:py-2 focus:text-sm focus:text-accent"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:border focus:border-accent focus:bg-surface focus:px-3 focus:py-2 focus:text-sm focus:text-accent"
         >
           {tUi('skipToContent')}
         </a>
@@ -105,56 +115,56 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
                 write the query string through nuqs, which needs the router
                 adapter. */}
             <NuqsAdapter>
-              <header className="border-b border-edge">
+              {/*
+                * Sticky and translucent, so the sections stay reachable from
+                * the bottom of a long backlog instead of costing a scroll to
+                * the top. `viewTransitionName` holds it still while the page
+                * under it animates — see `globals.css`; a header that slides
+                * with the content removes the one fixed point the eye has.
+                */}
+              <header
+                style={{ viewTransitionName: 'site-header' }}
+                className="glass sticky top-0 z-40 border-b"
+              >
                 {/* Wraps rather than pushing the page wider than the viewport:
-                    seven links do not fit on a phone, and a header that
+                    the controls do not fit on a phone, and a header that
                     overflows drags every page under it out of alignment too. */}
-                <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-4 sm:px-6">
+                <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3 sm:px-6">
                   <Link
                     href={`/${locale}/characters`}
-                    className="font-mono text-sm tracking-tight"
+                    className="rounded-lg font-mono text-sm tracking-tight"
                   >
                     <span className="text-accent">GI</span> Organizer
                   </Link>
-                  <nav
-                    aria-label={t('primaryNavAria')}
-                    className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted"
-                  >
-                    <Link
-                      href={`/${locale}/characters`}
-                      className="whitespace-nowrap hover:text-text"
-                    >
-                      {t('characters')}
-                    </Link>
-                    <Link href={`/${locale}/teams`} className="whitespace-nowrap hover:text-text">
-                      {t('teams')}
-                    </Link>
-                    <Link
-                      href={`/${locale}/artifacts`}
-                      className="whitespace-nowrap hover:text-text"
-                    >
-                      {t('artifacts')}
-                    </Link>
-                    <Link href={`/${locale}/plan`} className="whitespace-nowrap hover:text-text">
-                      {t('plan')}
-                    </Link>
-                    <Link href={`/${locale}/data`} className="whitespace-nowrap hover:text-text">
-                      {t('data')}
-                    </Link>
-                  </nav>
-                  <div className="ml-auto flex items-center gap-3">
+
+                  <MainNav
+                    label={t('primaryNavAria')}
+                    items={[
+                      { href: `/${locale}/characters`, label: t('characters') },
+                      { href: `/${locale}/teams`, label: t('teams') },
+                      { href: `/${locale}/artifacts`, label: t('artifacts') },
+                      { href: `/${locale}/plan`, label: t('plan') },
+                      { href: `/${locale}/data`, label: t('data') },
+                    ]}
+                  />
+
+                  <div className="ml-auto flex items-center gap-2">
                     <LocaleSwitcher current={locale} />
+                    <ThemeToggle />
                     <UserButton />
                   </div>
                 </div>
               </header>
 
-              <main id="content" className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
+              <main
+                id="content"
+                className="mx-auto w-full max-w-7xl flex-1 px-4 py-10 sm:px-6 lg:py-12"
+              >
                 {children}
               </main>
 
-              <footer className="border-t border-edge px-4 py-4 font-mono text-xs text-muted sm:px-6">
-                <div className="mx-auto max-w-6xl">
+              <footer className="mt-8 border-t border-edge px-4 py-6 font-mono text-2xs text-muted sm:px-6">
+                <div className="mx-auto max-w-7xl">
                   {t('footer', {
                     version: meta.gameVersion,
                     genshinDbVersion: meta.genshinDbVersion,

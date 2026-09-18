@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Suspense } from 'react';
+import { Suspense, ViewTransition } from 'react';
 
 import { GameIcon } from '@/components/game-icon';
 import { PanelsSkeleton, Skeleton } from '@/components/skeleton';
@@ -73,25 +73,34 @@ export default async function PlanPage({ params, searchParams }: PageProps<'/[lo
     <div className="space-y-6">
       <FilterBar base={base} filters={filters} catalog={catalog} teams={teams} region={region} />
 
+      {/*
+        * The skeleton hands over to the plan rather than being replaced by it:
+        * the placeholder fades down and out, the answer fades up and in. The
+        * timings are asymmetric on purpose — see `globals.css`.
+        */}
       <Suspense
         key={href(base, filters)}
         fallback={
-          <div className="space-y-4">
-            <Skeleton className="h-8 w-52" />
-            <PanelsSkeleton count={4} height="h-28" />
-          </div>
+          <ViewTransition exit="fade-out" default="none">
+            <div className="space-y-4">
+              <Skeleton className="h-8 w-52" />
+              <PanelsSkeleton count={4} height="h-28" />
+            </div>
+          </ViewTransition>
         }
       >
-        <PlanContent
-          base={base}
-          catalog={catalog}
-          characterIds={characterIds}
-          filters={filters}
-          locale={locale}
-          team={team}
-          teams={teams}
-          today={today}
-        />
+        <ViewTransition enter="fade-in" default="none">
+          <PlanContent
+            base={base}
+            catalog={catalog}
+            characterIds={characterIds}
+            filters={filters}
+            locale={locale}
+            team={team}
+            teams={teams}
+            today={today}
+          />
+        </ViewTransition>
       </Suspense>
     </div>
   );
@@ -262,7 +271,7 @@ async function DomainCard({
   const waiting = charactersIn([plan]);
 
   return (
-    <section className="rounded border border-edge bg-surface">
+    <section className="card">
       <p className="flex flex-wrap items-baseline gap-x-3 border-b border-edge px-3 py-2">
         <span className="flex-1 text-sm">{plan.label}</span>
         <span className="font-mono text-xs text-muted">
@@ -281,7 +290,7 @@ async function DomainCard({
                 className="h-11 w-11"
                 sizes="44px"
               />
-              <span className="tabular absolute -bottom-1 right-0 rounded bg-surface-2 px-1 font-mono text-[0.6rem] text-accent">
+              <span className="tabular absolute -bottom-1 right-0 rounded bg-surface-2 px-1 font-mono text-2xs text-accent">
                 {need.short.toLocaleString(locale)}
               </span>
             </li>
@@ -345,7 +354,7 @@ async function FullDomainCard({
   const weekdayLabel = await getTranslations('common.weekday');
 
   return (
-    <section className="rounded border border-edge bg-surface">
+    <section className="card">
       <p className="flex flex-wrap items-baseline gap-x-3 border-b border-edge px-3 py-2 text-sm">
         <span className="flex-1">{plan.label}</span>
         <span className="font-mono text-xs text-muted">
@@ -384,7 +393,7 @@ async function AnytimePile({
   const t = await getTranslations('plan');
 
   return (
-    <details className="rounded border border-edge bg-surface">
+    <details className="card">
       <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-xs">
         <span className="min-w-0 flex-1 truncate">{group.label}</span>
 
@@ -401,7 +410,7 @@ async function AnytimePile({
             />
           ))}
           {group.needs.length > 8 && (
-            <span className="self-center font-mono text-[0.65rem] text-muted">
+            <span className="self-center font-mono text-2xs text-muted">
               +{group.needs.length - 8}
             </span>
           )}

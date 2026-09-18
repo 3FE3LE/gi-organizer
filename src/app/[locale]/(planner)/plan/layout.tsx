@@ -16,7 +16,7 @@ export default async function PlanLayout({ children, params }: LayoutProps<'/[lo
 
   return (
     <div className="space-y-6">
-      <h1 className="text-lg font-medium">Plan</h1>
+      <h1 className="page-title">Plan</h1>
       <SectionTabs
         tabs={[
           { href: `/${locale}/plan`, label: t('farmTab'), hint: t('farmHint') },

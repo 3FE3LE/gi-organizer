@@ -56,7 +56,7 @@ export function SlotSwaps({ panel, characterId }: { panel: SlotPanel; characterI
   );
 
   return (
-    <section className="rounded border border-edge bg-surface">
+    <section className="card">
       <header className="flex flex-wrap items-center gap-3 border-b border-edge px-3 py-2">
         <span className="w-16 text-xs uppercase text-muted">{panel.title}</span>
         {panel.equipped ? (
@@ -128,7 +128,7 @@ function SwapItem({
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 px-3 py-2">
               <span
                 title={kindHelp(swap.kind)}
-                className={`w-20 shrink-0 font-mono text-[0.65rem] ${
+                className={`w-20 shrink-0 font-mono text-2xs ${
                   swap.kind === 'upgrade'
                     ? 'text-accent'
                     : swap.kind === 'prospect'
@@ -146,11 +146,11 @@ function SwapItem({
                 <span className="font-mono text-muted">+{swap.level} · {swap.mainStat}</span>
               </span>
 
-              <span className="font-mono text-[0.65rem] text-muted">
+              <span className="font-mono text-2xs text-muted">
                 {swap.substats.join(' · ')}
               </span>
 
-              <span className="w-24 shrink-0 text-right font-mono text-[0.65rem]">
+              <span className="w-24 shrink-0 text-right font-mono text-2xs">
                 {swap.delta >= 0 ? '+' : ''}{swap.delta.toFixed(1)} {t('deltaNowSuffix')}
               </span>
               {/* The expectation, not the ceiling: every roll landing the
@@ -158,7 +158,7 @@ function SwapItem({
                   thousands, and pricing a piece at it made anything unfed look
                   like a bargain. The ceiling stays in the tooltip. */}
               <span
-                className="w-28 shrink-0 text-right font-mono text-[0.65rem] text-muted"
+                className="w-28 shrink-0 text-right font-mono text-2xs text-muted"
                 title={t('bestCaseTitle', {
                   value: `${swap.bestCaseDelta >= 0 ? '+' : ''}${swap.bestCaseDelta.toFixed(1)}`,
                 })}
@@ -168,17 +168,17 @@ function SwapItem({
               </span>
 
               {!swap.keepsSetBonus && (
-                <span className="font-mono text-[0.65rem] text-accent">{t('breaksSet')}</span>
+                <span className="font-mono text-2xs text-accent">{t('breaksSet')}</span>
               )}
               {swap.holder && (
-                <span className="font-mono text-[0.65rem] text-muted">
+                <span className="font-mono text-2xs text-muted">
                   {t('displacesFrom', { holder: swap.holder })}
                 </span>
               )}
               {swap.goalChanges.map((change) => (
                 <span
                   key={change.label}
-                  className={`font-mono text-[0.65rem] ${
+                  className={`font-mono text-2xs ${
                     change.to === 'met' ? 'text-accent' : 'text-text'
                   }`}
                 >
@@ -190,7 +190,7 @@ function SwapItem({
                 type="button"
                 onClick={() => setOpen((current) => !current)}
                 aria-expanded={open}
-                className="shrink-0 rounded border border-edge px-2 py-0.5 font-mono text-[0.65rem] text-muted hover:border-accent hover:text-text"
+                className="btn btn-sm shrink-0 font-mono"
               >
                 {open ? t('closeCompare') : t('openCompare')}
               </button>
@@ -213,7 +213,7 @@ function SwapItem({
                 <button
                   type="submit"
                   disabled={pending}
-                  className="shrink-0 rounded border border-edge px-2 py-0.5 text-[0.65rem] hover:border-accent disabled:opacity-50"
+                  className="btn btn-sm shrink-0"
                 >
                   {t('equipButton')}
                 </button>

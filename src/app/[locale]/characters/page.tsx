@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { ViewTransition } from 'react';
 
 import { GameIcon } from '@/components/game-icon';
 import { getCatalog } from '@/lib/data/catalog';
@@ -48,7 +49,7 @@ export default async function CharactersPage({ params }: PageProps<'/[locale]/ch
   return (
     <div className="space-y-8">
       <header className="flex flex-wrap items-baseline justify-between gap-4">
-        <h1 className="text-lg font-medium">
+        <h1 className="page-title">
           {t('title')}{' '}
           <span className="font-mono text-sm text-muted">
             {mine.length}/{catalog.characters.size}
@@ -108,39 +109,62 @@ function Gallery({
   }
 
   return (
-    <ul className="grid grid-cols-[repeat(auto-fill,minmax(8rem,1fr))] gap-3">
+    <ul className="rise-stagger grid grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))] gap-3 sm:gap-4">
       {characters.map((character, index) => {
         const pieces = gear.get(character.id) ?? 0;
+        const element = elementColor(character.elementType);
 
         return (
-          <li key={character.id}>
+          <li key={character.id} style={{ '--index': index } as React.CSSProperties}>
             <Link
               // An owned character's real page is their build; the catalog entry
               // is reference material, reachable from there.
               href={owned
                 ? `/${locale}/build/${character.id}`
                 : `/${locale}/characters/${character.id}`}
-              className={`block rounded-lg border border-t-2 p-2 transition-colors hover:border-accent ${
-                owned ? 'border-edge bg-surface' : 'border-edge/40 bg-surface/40'
+              className={`card card-link group relative block overflow-hidden p-3 ${
+                owned ? '' : 'opacity-70'
               }`}
-              style={{ borderTopColor: owned ? elementColor(character.elementType) : undefined }}
             >
-              <GameIcon
-                filename={character.icon}
-                kind="avatar"
-                className={`mx-auto h-16 w-16 ${owned ? '' : 'opacity-30 grayscale'}`}
-                sizes="64px"
-                // The first row is above the fold on every viewport; lazy-loading
-                // it means the page paints its own empty grid first.
-                priority={eager && index < 6}
+              {/* The element, as a wash behind the portrait rather than a
+                  stripe on top of it: the same information, and it survives
+                  being looked at for an hour. */}
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-x-0 top-0 h-24 opacity-25 transition-opacity duration-300 group-hover:opacity-45"
+                style={{ background: `radial-gradient(60% 100% at 50% 0%, ${element}, transparent 70%)` }}
               />
-              <p className={`mt-1 truncate text-sm ${owned ? '' : 'text-muted'}`}>
-                {character.name}
-              </p>
-              <p className="font-mono text-[0.65rem] text-muted">
-                {t('versionLine', { version: character.version, rarity: character.rarity })}
-                {owned && pieces > 0 && ` · ${pieces}/5`}
-              </p>
+
+              <div className="relative">
+                {/*
+                  * The same avatar becomes the splash on the page this opens.
+                  * Naming both ends is all the browser needs to move one
+                  * object instead of swapping two — see `globals.css`.
+                  */}
+                <ViewTransition name={`character-${character.id}`} share="morph" default="none">
+                  <div className="mx-auto w-20">
+                    <GameIcon
+                      filename={character.icon}
+                      kind="avatar"
+                      className={`h-20 w-20 rounded-full border border-edge bg-surface-2 ${
+                        owned ? '' : 'grayscale'
+                      }`}
+                      sizes="80px"
+                      // The first row is above the fold on every viewport; lazy-loading
+                      // it means the page paints its own empty grid first.
+                      priority={eager && index < 6}
+                    />
+                  </div>
+                </ViewTransition>
+
+                <p className={`mt-2.5 truncate text-center text-sm ${owned ? '' : 'text-muted'}`}>
+                  {character.name}
+                </p>
+                <p className="mt-0.5 text-center font-mono text-2xs text-muted">
+                  {t('versionLine', { version: character.version, rarity: character.rarity })}
+                  {owned && pieces > 0 && ` · ${pieces}/5`}
+                </p>
+              </div>
             </Link>
           </li>
         );

@@ -19,6 +19,7 @@
     "notFoundTitle": "That does not exist",
     "notFoundBody": "The link points at something this site does not have, or no longer has.",
     "notFoundLink": "Go to the roster",
+    "themeToggle": "Switch theme",
     "skipToContent": "Skip to content",
     "saving": "Saving…",
     "done": "Done"

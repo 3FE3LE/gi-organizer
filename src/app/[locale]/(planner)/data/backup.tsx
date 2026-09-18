@@ -53,14 +53,14 @@ export function Backup() {
         <a
           href="/api/export"
           download
-          className="rounded border border-edge bg-surface px-3 py-1.5 text-sm hover:border-accent"
+          className="card px-3 py-1.5 text-sm hover:border-accent"
         >
           {t('downloadFull')}
         </a>
         <a
           href="/api/export/good"
           download
-          className="rounded border border-edge bg-surface px-3 py-1.5 text-sm hover:border-accent"
+          className="card px-3 py-1.5 text-sm hover:border-accent"
         >
           {t('exportGood')}
         </a>
@@ -85,7 +85,7 @@ export function Backup() {
             <button
               type="submit"
               disabled={busy}
-              className="rounded border border-accent px-3 py-1.5 text-sm text-accent disabled:opacity-50"
+              className="btn btn-primary"
             >
               {busy ? t('restoring') : t('replaceAll')}
             </button>
@@ -102,7 +102,7 @@ export function Backup() {
         <button
           type="button"
           onClick={() => setConfirming(true)}
-          className="rounded border border-edge bg-surface px-3 py-1.5 text-sm text-muted hover:border-accent hover:text-text"
+          className="card px-3 py-1.5 text-sm text-muted hover:border-accent hover:text-text"
         >
           {t('restoreFromBackup')}
         </button>

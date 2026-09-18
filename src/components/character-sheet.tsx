@@ -84,7 +84,7 @@ export async function CharacterSheet({
         <Section title={t('talents')}>
           <ul className="space-y-3">
             {[...detail.talents.combat, ...detail.talents.passive].map((talent) => (
-              <li key={talent.name} className="rounded border border-edge bg-surface p-3">
+              <li key={talent.name} className="card p-3">
                 <p className="text-sm">{talent.name}</p>
                 {talent.description && (
                   <p className="mt-1 whitespace-pre-line text-xs text-muted">
@@ -101,7 +101,7 @@ export async function CharacterSheet({
         <Section title={detail.constellation.name}>
           <ol className="space-y-3">
             {detail.constellation.levels.map((level, index) => (
-              <li key={level.name} className="rounded border border-edge bg-surface p-3">
+              <li key={level.name} className="card p-3">
                 <p className="text-sm">
                   <span className="font-mono text-muted">C{index + 1}</span> {level.name}
                 </p>
@@ -141,7 +141,7 @@ function CostList({
       {costs.map(({ phase, items }) => (
         <li
           key={phase}
-          className="flex flex-wrap items-center gap-3 rounded border border-edge bg-surface px-3 py-2"
+          className="flex flex-wrap items-center gap-3 card px-3 py-2"
         >
           <span className="w-20 font-mono text-xs text-muted">{phase}</span>
           {items.map((item) => (

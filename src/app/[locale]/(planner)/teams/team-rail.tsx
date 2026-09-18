@@ -34,7 +34,7 @@ export async function TeamRail({
 
   return (
     <aside className="space-y-3 lg:sticky lg:top-4 lg:self-start">
-      <h1 className="text-lg font-medium">
+      <h1 className="page-title">
         {t('heading')} <span className="font-mono text-sm text-muted">{teams.length}</span>
       </h1>
 
@@ -57,7 +57,7 @@ export async function TeamRail({
                   <span className="min-w-0 flex-1 truncate text-sm">{team.name}</span>
                   <span className="tabular font-mono text-xs text-muted">{team.members}/4</span>
                 </span>
-                <span className="mt-0.5 flex flex-wrap items-baseline gap-x-2 font-mono text-[0.65rem] text-muted">
+                <span className="mt-0.5 flex flex-wrap items-baseline gap-x-2 font-mono text-2xs text-muted">
                   <span>{modeLabel.has(team.mode) ? modeLabel(team.mode) : team.mode}</span>
                   {team.objectiveLabel && <span className="text-accent">{team.objectiveLabel}</span>}
                   {team.errors > 0 && <span className="text-bad">{team.errors} ✗</span>}
@@ -72,7 +72,7 @@ export async function TeamRail({
         })}
       </ul>
 
-      <div className="rounded border border-edge bg-surface p-3">
+      <div className="card p-3">
         <CreateTeam />
       </div>
     </aside>

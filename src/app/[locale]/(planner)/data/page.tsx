@@ -125,7 +125,7 @@ export default async function InventoryPage({ params }: PageProps<'/[locale]/dat
               return (
                 <li
                   key={`${entry.weaponId}-${entry.refinement}`}
-                  className="flex items-center gap-3 rounded border border-edge bg-surface px-3 py-2"
+                  className="flex items-center gap-3 card px-3 py-2"
                 >
                   <GameIcon filename={weapon?.icon} kind="weapon" className="h-8 w-8" sizes="32px" />
                   <span className="flex-1 truncate text-sm">{weapon?.name ?? `#${entry.weaponId}`}</span>
@@ -145,10 +145,10 @@ export default async function InventoryPage({ params }: PageProps<'/[locale]/dat
 
 function Stat({ label, value, note }: { label: string; value: number; note: string }) {
   return (
-    <div className="rounded border border-edge bg-surface p-3">
-      <dt className="text-xs uppercase text-muted">{label}</dt>
-      <dd className="mt-1 font-mono text-xl">{value.toLocaleString()}</dd>
-      <dd className="font-mono text-xs text-muted">{note}</dd>
+    <div className="tile">
+      <dt className="font-mono text-2xs uppercase tracking-[0.12em] text-muted">{label}</dt>
+      <dd className="mt-2 font-mono text-3xl leading-none tabular">{value.toLocaleString()}</dd>
+      <dd className="mt-2 font-mono text-2xs text-muted">{note}</dd>
     </div>
   );
 }

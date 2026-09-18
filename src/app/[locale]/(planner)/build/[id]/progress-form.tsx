@@ -307,13 +307,13 @@ function ProgressForm({
     <form onSubmit={save} className="space-y-4">
       {/* Identity on its own line: the role decides which goal a team slot
           picks up, and which template fills the rest of this page in. */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border border-edge bg-surface px-4 py-3">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 card px-4 py-3">
         <label className="flex items-center gap-2">
-          <span className="font-mono text-[0.65rem] uppercase tracking-wide text-muted">{t('roleLabel')}</span>
+          <span className="font-mono text-2xs uppercase tracking-wide text-muted">{t('roleLabel')}</span>
           <select
             {...form.register('role')}
             defaultValue={defaults.role}
-            className="rounded border border-edge bg-ink px-2 py-1.5 text-sm focus:border-accent"
+            className="field px-2 py-1.5 text-sm focus:border-accent"
           >
             <option value="">{t('noRole')}</option>
             {options.roles.map((option) => (
@@ -366,7 +366,7 @@ function ProgressForm({
             ))}
           </div>
 
-          <p className="mb-1.5 mt-4 flex items-baseline justify-between gap-2 font-mono text-[0.6rem] uppercase tracking-wide text-muted">
+          <p className="mb-1.5 mt-4 flex items-baseline justify-between gap-2 font-mono text-2xs uppercase tracking-wide text-muted">
             {t('constellationLabel')}
             <span className="text-sm text-text">C{values.current.constellation}</span>
           </p>
@@ -374,7 +374,7 @@ function ProgressForm({
           {/* Where the character is comes from the account's own record of
               itself, so there is nothing to type here — only somewhere to go
               when it is out of date. */}
-          <p className="mt-3 text-[0.7rem] leading-relaxed text-muted">
+          <p className="mt-3 text-2xs leading-relaxed text-muted">
             {t('importHint')}{' '}
             <Link
               href={`/${locale}/data/import`}
@@ -402,7 +402,7 @@ function ProgressForm({
                   defaultValue={defaults.weaponId}
                   placeholder={t('weaponPlaceholder')}
                   options={options.weapons}
-                  className="min-w-48 flex-1 rounded border border-edge bg-ink px-2 py-2 text-sm"
+                  className="min-w-48 flex-1 field px-2 py-2 text-sm"
                 />
                 <Controller
                   control={form.control}
@@ -422,7 +422,7 @@ function ProgressForm({
                 />
               </div>
               {values.equippedWeapon && (
-                <p className="mt-1.5 font-mono text-[0.65rem] text-muted">
+                <p className="mt-1.5 font-mono text-2xs text-muted">
                   {t('equippedNow')} <span className="text-text">{values.equippedWeapon}</span>
                 </p>
               )}
@@ -489,13 +489,13 @@ function ProgressForm({
               <div className="grid min-w-0 grid-cols-3 gap-2">
                 {SLOTS.map((slot) => (
                   <label key={slot.key} className="min-w-0">
-                    <span className="mb-1 block truncate text-[0.65rem] text-muted">
+                    <span className="mb-1 block truncate text-2xs text-muted">
                       {slotLabel(slot.key)}
                     </span>
                     <select
                       {...form.register(`mainStats.${slot.key}`)}
                       defaultValue={defaults.mainStats[slot.key]}
-                      className="w-full min-w-0 rounded border border-edge bg-ink px-2 py-1.5 text-xs focus:border-accent"
+                      className="w-full min-w-0 field px-2 py-1.5 text-xs focus:border-accent"
                     >
                       <option value="">—</option>
                       {(options.mainStatsBySlot[slot.key] ?? []).map((option) => (
@@ -516,14 +516,14 @@ function ProgressForm({
               <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-4">
                 {SUBSTAT_POSITIONS.map((position) => (
                   <div key={position} className="flex min-w-0 items-center gap-1.5">
-                    <span className="w-4 shrink-0 font-mono text-[0.65rem] text-muted">
+                    <span className="w-4 shrink-0 font-mono text-2xs text-muted">
                       {position}º
                     </span>
                     <select
                       {...form.register(`substats.${position - 1}`)}
                       defaultValue={defaults.substats[position - 1]}
                       aria-label={t('substatPositionAria', { position })}
-                      className="w-full min-w-0 rounded border border-edge bg-ink px-1.5 py-1.5 text-xs focus:border-accent"
+                      className="w-full min-w-0 field px-1.5 py-1.5 text-xs focus:border-accent"
                     >
                       <option value="">—</option>
                       {options.substats.map((option) => (
@@ -557,14 +557,14 @@ function ProgressForm({
               return (
                 <li
                   key={row.id}
-                  className="flex min-w-0 items-start gap-2 rounded border border-edge bg-ink/40 p-2"
+                  className="flex min-w-0 items-start gap-2 field/40 p-2"
                 >
                   <div className="min-w-0 flex-1 space-y-1.5">
                     <select
                       {...form.register(`goals.${index}.prop`)}
                       defaultValue={defaults.goals[index]?.prop ?? ''}
                       aria-label={t('goalStatAria', { n: index + 1 })}
-                      className="w-full min-w-0 rounded border border-edge bg-ink px-2 py-1.5 text-xs focus:border-accent"
+                      className="w-full min-w-0 field px-2 py-1.5 text-xs focus:border-accent"
                     >
                       <option value="">{t('chooseStatPlaceholder')}</option>
                       {options.goalProps.map((option) => (
@@ -582,7 +582,7 @@ function ProgressForm({
                         defaultValue={defaults.goals[index]?.min ?? ''}
                         placeholder={t('minPlaceholder')}
                         aria-label={t('goalMinAria', { n: index + 1 })}
-                        className="tabular w-20 shrink-0 rounded border border-edge bg-ink px-2 py-1 text-right font-mono text-xs focus:border-accent"
+                        className="tabular w-20 shrink-0 field px-2 py-1 text-right font-mono text-xs focus:border-accent"
                       />
                       <Verdict status={status} current={prop ? propInfo(prop)?.current : null} />
                     </div>
@@ -593,7 +593,7 @@ function ProgressForm({
                       type="button"
                       onClick={() => goalRows.remove(index)}
                       aria-label={t('removeGoalAria', { n: index + 1 })}
-                      className="shrink-0 rounded p-1 text-muted transition-colors hover:bg-surface-2 hover:text-bad"
+                      className="btn btn-quiet btn-icon shrink-0 hover:text-bad"
                     >
                       <X size={14} />
                     </button>
@@ -619,11 +619,11 @@ function ProgressForm({
 
       {/* Stuck to the bottom on a phone, where the thumb is; a plain panel from
           `sm`, where the end of the form is already on screen. */}
-      <div className="sticky bottom-0 -mx-4 flex flex-wrap items-center gap-2 border-t border-edge bg-ink/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:rounded-lg sm:border sm:bg-surface sm:backdrop-blur-none">
+      <div className="glass sticky bottom-0 -mx-4 flex flex-wrap items-center gap-2 border-t px-4 py-3 sm:static sm:mx-0 sm:rounded-card sm:border sm:px-4">
         <button
           type="submit"
           disabled={form.formState.isSubmitting || busy !== null}
-          className="flex items-center gap-2 rounded border border-accent px-3 py-1.5 text-sm text-accent transition-colors hover:bg-surface-2 disabled:opacity-50"
+          className="btn btn-primary"
         >
           <Save size={14} />
           {form.formState.isSubmitting ? t('saving') : t('saveGoal')}
@@ -683,12 +683,12 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className={`min-w-0 rounded-lg border border-edge bg-surface ${className ?? ''}`}>
+    <section className={`min-w-0 card ${className ?? ''}`}>
       <header className="flex items-baseline gap-2 border-b border-edge px-4 py-2.5">
         <span className="self-center text-accent">{icon}</span>
         <h3 className="font-mono text-xs uppercase tracking-wide text-accent">{title}</h3>
         {summary && (
-          <span className="tabular ml-auto min-w-0 truncate font-mono text-[0.65rem] text-muted">
+          <span className="tabular ml-auto min-w-0 truncate font-mono text-2xs text-muted">
             {summary}
           </span>
         )}
@@ -711,17 +711,17 @@ function FieldLabel({
 }) {
   return (
     <p className={`mb-1.5 flex flex-wrap items-baseline gap-x-2 ${className ?? ''}`}>
-      <span className="font-mono text-[0.6rem] uppercase tracking-wide text-muted">
+      <span className="font-mono text-2xs uppercase tracking-wide text-muted">
         {children}
       </span>
-      {count && <span className="tabular font-mono text-[0.6rem] text-muted">{count}</span>}
-      {hint && <span className="text-[0.65rem] text-muted">{hint}</span>}
+      {count && <span className="tabular font-mono text-2xs text-muted">{count}</span>}
+      {hint && <span className="text-2xs text-muted">{hint}</span>}
     </p>
   );
 }
 
 const Column = ({ children }: { children: React.ReactNode }) => (
-  <span className="text-center font-mono text-[0.6rem] uppercase tracking-wide text-muted">
+  <span className="text-center font-mono text-2xs uppercase tracking-wide text-muted">
     {children}
   </span>
 );
@@ -744,7 +744,7 @@ function Segment({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`border-r border-edge px-2.5 py-1 text-[0.7rem] transition-colors last:border-r-0 ${
+      className={`border-r border-edge px-2.5 py-1 text-2xs transition-colors last:border-r-0 ${
         active ? 'bg-surface-2 text-accent' : 'text-muted hover:text-text'
       }`}
     >
@@ -762,7 +762,7 @@ function Verdict({
   current: string | null | undefined;
 }) {
   const t = useTranslations('build');
-  if (!current) return <span className="text-[0.65rem] text-muted">{t('noStatCurrent')}</span>;
+  if (!current) return <span className="text-2xs text-muted">{t('noStatCurrent')}</span>;
 
   const tone = status === 'met'
     ? 'text-good'
@@ -771,7 +771,7 @@ function Verdict({
       : status === 'short' ? 'text-bad' : 'text-muted';
 
   return (
-    <span className={`flex min-w-0 items-center gap-1 font-mono text-[0.65rem] ${tone}`}>
+    <span className={`flex min-w-0 items-center gap-1 font-mono text-2xs ${tone}`}>
       {status === 'met' && <Check size={12} className="shrink-0" />}
       {status === 'close' && <CircleAlert size={12} className="shrink-0" />}
       {status === 'short' && <X size={12} className="shrink-0" />}
@@ -863,7 +863,7 @@ function LevelCell({
         )}
       />
       {BREAKPOINTS.has(level) && (
-        <label className="mt-1 flex cursor-pointer items-center justify-center gap-1 font-mono text-[0.6rem] text-muted">
+        <label className="mt-1 flex cursor-pointer items-center justify-center gap-1 font-mono text-2xs text-muted">
           <input
             type="checkbox"
             {...ascendedField}
@@ -954,7 +954,7 @@ function Stepper({
 
   return (
     <div
-      className={`flex min-w-0 items-stretch overflow-hidden rounded border border-edge bg-ink focus-within:border-accent ${
+      className={`flex min-w-0 items-stretch overflow-hidden field focus-within:border-accent ${
         className ?? ''
       }`}
     >
@@ -968,7 +968,7 @@ function Stepper({
         <Minus size={12} />
       </button>
       <span className="flex min-w-0 flex-1 items-center justify-center">
-        {prefix && <span className="font-mono text-[0.65rem] text-muted">{prefix}</span>}
+        {prefix && <span className="font-mono text-2xs text-muted">{prefix}</span>}
         <input
           type="number"
           inputMode="numeric"

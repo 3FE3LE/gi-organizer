@@ -28,11 +28,8 @@ function Chip({
       href={to}
       title={title}
       aria-current={active ? 'true' : undefined}
-      className={`rounded border px-2 py-1 text-xs ${
-        active
-          ? 'border-accent bg-surface-2 text-accent'
-          : 'border-edge text-muted hover:border-accent hover:text-text'
-      }`}
+      data-active={active}
+      className="chip"
     >
       {children}
     </Link>
@@ -72,9 +69,9 @@ export async function FilterBar({
   const regionLabel = await getTranslations('common.region');
 
   return (
-    <div className="space-y-3">
+    <div className="card space-y-3 p-4">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <span className="w-16 font-mono text-[0.65rem] uppercase text-muted">
+        <span className="w-16 font-mono text-2xs uppercase text-muted">
           {t('viewLabel')}
         </span>
         <Chip
@@ -103,13 +100,10 @@ export async function FilterBar({
                 key={day}
                 href={href(base, filters, { day })}
                 aria-current={active ? 'page' : undefined}
-                className={`w-12 rounded border px-1 py-1 text-center ${
-                  active
-                    ? 'border-accent bg-surface-2 text-accent'
-                    : 'border-edge text-muted hover:border-accent hover:text-text'
-                }`}
+                data-active={active}
+                className="chip w-12 flex-col gap-0 rounded-xl px-1 py-1.5 text-center"
               >
-                <span className="block font-mono text-[0.6rem] uppercase">
+                <span className="block font-mono text-2xs uppercase">
                   {weekdayShort(day)}
                 </span>
                 <span className="block font-mono text-sm tabular">{date}</span>
@@ -120,7 +114,7 @@ export async function FilterBar({
       )}
 
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <span className="w-16 font-mono text-[0.65rem] uppercase text-muted">
+        <span className="w-16 font-mono text-2xs uppercase text-muted">
           {t('serverLabel')}
         </span>
         {GAME_REGIONS.map((entry) => (
@@ -129,11 +123,8 @@ export async function FilterBar({
               type="submit"
               aria-current={region === entry ? 'true' : undefined}
               title={t('serverTitle')}
-              className={`rounded border px-2 py-1 text-xs ${
-                region === entry
-                  ? 'border-accent bg-surface-2 text-accent'
-                  : 'border-edge text-muted hover:border-accent hover:text-text'
-              }`}
+              data-active={region === entry}
+              className="chip"
             >
               {regionLabel(entry)}
             </button>
@@ -142,7 +133,7 @@ export async function FilterBar({
       </div>
 
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <span className="w-16 font-mono text-[0.65rem] uppercase text-muted">
+        <span className="w-16 font-mono text-2xs uppercase text-muted">
           {t('teamLabel')}
         </span>
         <Chip to={href(base, filters, { team: null, chars: [] })} active={!filters.team}>
@@ -163,7 +154,7 @@ export async function FilterBar({
       </div>
 
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <span className="w-16 font-mono text-[0.65rem] uppercase text-muted">
+        <span className="w-16 font-mono text-2xs uppercase text-muted">
           {t('reasonLabel')}
         </span>
         <Chip to={href(base, filters, { reason: [] })} active={filters.reason.length === 0}>

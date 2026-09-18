@@ -28,7 +28,7 @@ export default function GlobalError({
           <button
             type="button"
             onClick={() => retry()}
-            className="rounded border border-accent px-3 py-1.5 text-sm text-accent transition-colors hover:bg-surface-2"
+            className="btn btn-primary"
           >
             Reintentar
           </button>
