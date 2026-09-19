@@ -137,42 +137,49 @@ async function PlanContent({
 
   return (
     <div className="space-y-6">
-      <RosterSheet
-        total={rosterSummary.total}
-        planned={rosterSummary.planned}
-        teamName={rosterSummary.teamName}
-        charsCount={filters.chars.length}
-        clearCharsHref={filters.chars.length > 0 ? href(base, filters, { chars: [] }) : null}
-      >
-        <RosterPanel base={base} catalog={catalog} filters={filters} roster={roster} teams={teams} />
-      </RosterSheet>
+      {/* The roster trigger used to sit on a row of its own above this one —
+          a whole line for a number nobody reads without the day heading next
+          to it for context. Folded into the same row, pushed to the far
+          side, it costs nothing that heading wasn't already spending. */}
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+          {/* The day, and only the day. The active team was named three times
+              on this screen: the filled chip in the filter bar, the roster
+              trigger that explains why the count is scoped, and here. The
+              chip is the control and the trigger earns its copy by
+              explaining a number; a heading that repeats the filter above it
+              earns nothing. */}
+          <h2 className="text-sm">
+            {filters.range === 'day'
+              ? (filters.day === today
+                ? t('today')
+                : t('otherDay', { day: weekdayLabel(filters.day) }))
+              : t('allBacklogHeading')}
+          </h2>
+          <p className="font-mono text-xs text-muted">
+            {filters.range === 'day'
+              ? t('sourcesCountDay', {
+                  count: sources,
+                  domains: talent.length + weapon.length,
+                  anytime: schedule.anytime.length,
+                })
+              : t('sourcesCountAll', {
+                  count: sources,
+                  domains: schedule.domains.length,
+                  anytime: schedule.anytime.length,
+                })}
+          </p>
+        </div>
 
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        {/* The day, and only the day. The active team was named three times on
-            this screen: the filled chip in the filter bar, the roster trigger
-            that explains why the count is scoped, and here. The chip is the
-            control and the trigger earns its copy by explaining a number; a
-            heading that repeats the filter above it earns nothing. */}
-        <h2 className="text-sm">
-          {filters.range === 'day'
-            ? (filters.day === today
-              ? t('today')
-              : t('otherDay', { day: weekdayLabel(filters.day) }))
-            : t('allBacklogHeading')}
-        </h2>
-        <p className="font-mono text-xs text-muted">
-          {filters.range === 'day'
-            ? t('sourcesCountDay', {
-                count: sources,
-                domains: talent.length + weapon.length,
-                anytime: schedule.anytime.length,
-              })
-            : t('sourcesCountAll', {
-                count: sources,
-                domains: schedule.domains.length,
-                anytime: schedule.anytime.length,
-              })}
-        </p>
+        <RosterSheet
+          total={rosterSummary.total}
+          planned={rosterSummary.planned}
+          teamName={rosterSummary.teamName}
+          charsCount={filters.chars.length}
+          clearCharsHref={filters.chars.length > 0 ? href(base, filters, { chars: [] }) : null}
+        >
+          <RosterPanel base={base} catalog={catalog} filters={filters} roster={roster} teams={teams} />
+        </RosterSheet>
       </div>
 
       {sources === 0 ? (

@@ -82,56 +82,44 @@ export async function FilterBar({
   const weekdayShort = await getTranslations('common.weekdayShort');
   const regionLabel = await getTranslations('common.region');
 
-  // Server, team and cost-type narrow the plan; the view toggle and the day
-  // strip are what nearly every visit actually touches. Opened automatically
-  // whenever one of the folded rows is off its default, so a shared link with
-  // a team or a reason picked never hides the control that picked it.
+  // Server, team and cost-type narrow the plan; the day strip is what nearly
+  // every visit actually touches. Opened automatically whenever one of the
+  // folded rows is off its default, so a shared link with a team or a reason
+  // picked never hides the control that picked it.
   const moreOpen = filters.team !== null || filters.reason.length > 0 || !filters.assume;
 
   return (
     <div className="card space-y-3 p-4">
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <span className="w-16 font-mono text-2xs uppercase text-muted">
-          {t('viewLabel')}
-        </span>
-        <Chip
-          to={href(base, filters, { range: 'day' })}
-          active={filters.range === 'day'}
-          title={t('byDayTitle')}
-        >
-          {t('byDayChip')}
-        </Chip>
-        <Chip
-          to={href(base, filters, { range: 'all' })}
-          active={filters.range === 'all'}
-          title={t('allBacklogTitle')}
-        >
-          {t('allBacklogChip')}
-        </Chip>
-      </div>
+      {/* The day strip is the view toggle: a day is either the one thing this
+          is scoped to, or — tapped again — nothing, which is the whole
+          backlog. A separate "por día"/"todo el backlog" pair said the same
+          thing in a row of its own and doubled the number of controls that
+          answer one question. Horizontal scroll is the fallback for a phone
+          too narrow to fit all seven at once, not the expected way to read
+          it — the strip stays one row rather than wrapping the last day or
+          two beneath the first. */}
+      <nav className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-0.5">
+        {gameWeekStrip(new Date(), region).map(({ day, date }) => {
+          const active = filters.range === 'day' && day === filters.day;
 
-      {filters.range === 'day' && (
-        <nav className="flex flex-wrap gap-1">
-          {gameWeekStrip(new Date(), region).map(({ day, date }) => {
-            const active = day === filters.day;
-
-            return (
-              <Link
-                key={day}
-                href={href(base, filters, { day })}
-                aria-current={active ? 'page' : undefined}
-                data-active={active}
-                className="chip w-12 flex-col gap-0 rounded-xl px-1 py-1.5 text-center"
-              >
-                <span className="block font-mono text-2xs uppercase">
-                  {weekdayShort(day)}
-                </span>
-                <span className="block font-mono text-sm tabular">{date}</span>
-              </Link>
-            );
-          })}
-        </nav>
-      )}
+          return (
+            <Link
+              key={day}
+              href={active
+                ? href(base, filters, { range: 'all' })
+                : href(base, filters, { range: 'day', day })}
+              aria-current={active ? 'page' : undefined}
+              data-active={active}
+              className="chip w-10 shrink-0 flex-col gap-0 rounded-xl px-1 py-1.5 text-center"
+            >
+              <span className="block font-mono text-2xs uppercase">
+                {weekdayShort(day)}
+              </span>
+              <span className="block font-mono text-sm tabular">{date}</span>
+            </Link>
+          );
+        })}
+      </nav>
 
       <details open={moreOpen} className="group card">
         <summary className="flex cursor-pointer list-none items-center gap-1.5 px-3 py-2 font-mono text-2xs uppercase text-muted hover:text-text">

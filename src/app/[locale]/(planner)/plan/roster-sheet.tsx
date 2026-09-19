@@ -54,11 +54,18 @@ export function RosterSheet({
         * this component, which is the trigger carrying the count.
         */}
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetTrigger className="flex items-center gap-2 card px-3 py-1.5 text-xs hover:border-accent">
+        {/* `planned/total` reads at a glance; `aria-label` names the same
+            pair rather than a longer sentence that wouldn't contain the
+            visible text — a mismatch a screen reader user would notice as
+            the control saying something different from what it shows. */}
+        <SheetTrigger
+          aria-label={`${planned}/${total} ${t('charactersLabel')}`}
+          className="flex items-center gap-1.5 card px-2.5 py-1.5 text-xs hover:border-accent"
+        >
           <Users size={13} aria-hidden />
-          <span>
+          <span className="tabular font-mono">
             <span className="text-accent">{planned}</span>
-            <span className="text-muted"> {t('inPlanSuffix', { total })}</span>
+            <span className="text-muted">/{total}</span>
           </span>
           {teamName && <span className="text-muted">{t('onlyTeam', { team: teamName })}</span>}
         </SheetTrigger>
