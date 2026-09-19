@@ -353,7 +353,10 @@ function ProgressForm({
             )}
           />
         </label>
-        <p className="min-w-48 flex-1 text-xs leading-relaxed text-muted">
+        {/* Explains what the role is for, which a phone already has to take
+            on faith once — the selector next to it is the control that
+            actually does something, so it's what stays below `sm`. */}
+        <p className="hidden min-w-48 flex-1 text-xs leading-relaxed text-muted sm:block">
           {t('roleHint')}
         </p>
       </div>
