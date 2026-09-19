@@ -1,3 +1,4 @@
+import { ChevronRight } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
@@ -81,6 +82,12 @@ export async function FilterBar({
   const weekdayShort = await getTranslations('common.weekdayShort');
   const regionLabel = await getTranslations('common.region');
 
+  // Server, team and cost-type narrow the plan; the view toggle and the day
+  // strip are what nearly every visit actually touches. Opened automatically
+  // whenever one of the folded rows is off its default, so a shared link with
+  // a team or a reason picked never hides the control that picked it.
+  const moreOpen = filters.team !== null || filters.reason.length > 0 || !filters.assume;
+
   return (
     <div className="card space-y-3 p-4">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -126,76 +133,85 @@ export async function FilterBar({
         </nav>
       )}
 
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <span className="w-16 font-mono text-2xs uppercase text-muted">
-          {t('serverLabel')}
-        </span>
-        {GAME_REGIONS.map((entry) => (
-          <form key={entry} action={chooseRegion.bind(null, entry)}>
-            <button
-              type="submit"
-              aria-current={region === entry ? 'true' : undefined}
-              title={t('serverTitle')}
-              data-active={region === entry}
-              className="chip"
-            >
-              {regionLabel(entry)}
-            </button>
-          </form>
-        ))}
-      </div>
+      <details open={moreOpen} className="group card">
+        <summary className="flex cursor-pointer list-none items-center gap-1.5 px-3 py-2 font-mono text-2xs uppercase text-muted hover:text-text">
+          <ChevronRight size={12} className="transition-transform group-open:rotate-90" />
+          {t('moreFilters')}
+        </summary>
 
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <span className="w-16 font-mono text-2xs uppercase text-muted">
-          {t('teamLabel')}
-        </span>
-        <Chip to={href(base, filters, { team: null, chars: [] })} active={!filters.team}>
-          {t('allTeams')}
-        </Chip>
-        {teams.map((entry) => (
-          <Chip
-            key={entry.id}
-            to={href(base, filters, { team: entry.id, chars: [] })}
-            active={filters.team === entry.id}
-            title={entry.slots
-              .map((slot) => catalog.characters.get(slot.characterId)?.name ?? slot.characterId)
-              .join(' · ')}
-          >
-            {entry.name}
-          </Chip>
-        ))}
-      </div>
+        <div className="space-y-3 border-t border-edge px-3 py-3">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="w-16 font-mono text-2xs uppercase text-muted">
+              {t('serverLabel')}
+            </span>
+            {GAME_REGIONS.map((entry) => (
+              <form key={entry} action={chooseRegion.bind(null, entry)}>
+                <button
+                  type="submit"
+                  aria-current={region === entry ? 'true' : undefined}
+                  title={t('serverTitle')}
+                  data-active={region === entry}
+                  className="chip"
+                >
+                  {regionLabel(entry)}
+                </button>
+              </form>
+            ))}
+          </div>
 
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <span className="w-16 font-mono text-2xs uppercase text-muted">
-          {t('reasonLabel')}
-        </span>
-        <Chip to={href(base, filters, { reason: [] })} active={filters.reason.length === 0}>
-          {t('allReasons')}
-        </Chip>
-        {REASONS.map((reason) => (
-          <Chip
-            key={reason}
-            to={href(base, filters, { reason: toggle(filters.reason, reason) })}
-            active={filters.reason.includes(reason)}
-          >
-            {reasonLabel(reason)}
-          </Chip>
-        ))}
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="w-16 font-mono text-2xs uppercase text-muted">
+              {t('teamLabel')}
+            </span>
+            <Chip to={href(base, filters, { team: null, chars: [] })} active={!filters.team}>
+              {t('allTeams')}
+            </Chip>
+            {teams.map((entry) => (
+              <Chip
+                key={entry.id}
+                to={href(base, filters, { team: entry.id, chars: [] })}
+                active={filters.team === entry.id}
+                title={entry.slots
+                  .map((slot) => catalog.characters.get(slot.characterId)?.name ?? slot.characterId)
+                  .join(' · ')}
+              >
+                {entry.name}
+              </Chip>
+            ))}
+          </div>
 
-        <span className="ml-2">
-          <Chip
-            to={href(base, filters, {
-              assume: !filters.assume,
-              chars: [],
-            })}
-            active={filters.assume}
-            title={t('assumeTitle')}
-          >
-            {filters.assume ? '✓ ' : ''}{t('assumeToggle')}
-          </Chip>
-        </span>
-      </div>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="w-16 font-mono text-2xs uppercase text-muted">
+              {t('reasonLabel')}
+            </span>
+            <Chip to={href(base, filters, { reason: [] })} active={filters.reason.length === 0}>
+              {t('allReasons')}
+            </Chip>
+            {REASONS.map((reason) => (
+              <Chip
+                key={reason}
+                to={href(base, filters, { reason: toggle(filters.reason, reason) })}
+                active={filters.reason.includes(reason)}
+              >
+                {reasonLabel(reason)}
+              </Chip>
+            ))}
+
+            <span className="ml-2">
+              <Chip
+                to={href(base, filters, {
+                  assume: !filters.assume,
+                  chars: [],
+                })}
+                active={filters.assume}
+                title={t('assumeTitle')}
+              >
+                {filters.assume ? '✓ ' : ''}{t('assumeToggle')}
+              </Chip>
+            </span>
+          </div>
+        </div>
+      </details>
     </div>
   );
 }

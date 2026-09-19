@@ -228,6 +228,7 @@
     "servesPrefix": "for {scaler}"
   },
   "plan": {
+    "moreFilters": "more filters",
     "unsortedLabel": "Other materials",
     "farmTab": "What to farm",
     "farmHint": "Today, or the whole backlog",
