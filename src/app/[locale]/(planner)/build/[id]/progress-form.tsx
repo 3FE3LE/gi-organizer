@@ -630,9 +630,9 @@ function ProgressForm({
               return (
                 <li
                   key={row.id}
-                  className="flex min-w-0 items-start gap-2 field/40 p-2"
+                  className="flex min-w-0 items-center gap-1.5 field/40 p-2"
                 >
-                  <div className="min-w-0 flex-1 space-y-1.5">
+                  <div className="min-w-0 flex-1">
                     <Controller
                       control={form.control}
                       name={`goals.${index}.prop`}
@@ -649,21 +649,26 @@ function ProgressForm({
                         />
                       )}
                     />
+                  </div>
 
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        inputMode="decimal"
-                        {...form.register(`goals.${index}.min`)}
-                        defaultValue={defaults.goals[index]?.min ?? ''}
-                        placeholder={t('minPlaceholder')}
-                        aria-label={t('goalMinAria', { n: index + 1 })}
-                        className="tabular w-20 shrink-0 field px-2 py-1 text-right font-mono text-xs focus:border-accent"
-                      />
-                      <Verdict status={status} current={prop ? propInfo(prop)?.current : null} />
-                    </div>
+                  {/* A threshold is at most five digits — `w-20` already fits
+                      that with room to spare, so it sits beside the picker
+                      instead of on a row of its own with the rest of the
+                      cell empty next to it. */}
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    inputMode="decimal"
+                    {...form.register(`goals.${index}.min`)}
+                    defaultValue={defaults.goals[index]?.min ?? ''}
+                    placeholder={t('minPlaceholder')}
+                    aria-label={t('goalMinAria', { n: index + 1 })}
+                    className="tabular w-20 shrink-0 field px-2 py-1 text-right font-mono text-xs focus:border-accent"
+                  />
+
+                  <div className="min-w-0 shrink">
+                    <Verdict status={status} current={prop ? propInfo(prop)?.current : null} />
                   </div>
 
                   {goalRows.fields.length > 1 && (
