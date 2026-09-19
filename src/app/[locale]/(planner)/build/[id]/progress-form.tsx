@@ -702,31 +702,37 @@ function ProgressForm({
 
       {/* Stuck to the bottom on a phone, where the thumb is; a plain panel from
           `sm`, where the end of the form is already on screen. It stops above
-          the section bar rather than under it — see `--section-nav-height`. */}
-      <div className="glass sticky bottom-[var(--section-nav-height)] -mx-4 flex flex-wrap items-center gap-2 border-t px-4 py-3 sm:static sm:mx-0 sm:rounded-card sm:border sm:px-4">
-        <Button
-          variant="default"
-          type="submit"
-          disabled={form.formState.isSubmitting || busy !== null}
-        >
-          <Save size={14} />
-          {form.formState.isSubmitting ? t('saving') : t('saveGoal')}
-        </Button>
-
-        {values.buildId && (
-          <button
-            type="button"
-            onClick={fillFromRole}
+          the section bar rather than under it — see `--section-nav-height`.
+          The delete button is a sibling of the wrapping group rather than an
+          `ml-auto` item inside it: an auto margin is resolved after `flex-wrap`
+          decides whether a line breaks, so on a narrow phone it could land the
+          button past the edge of the bar instead of pushing it to a new line. */}
+      <div className="glass sticky bottom-[var(--section-nav-height)] -mx-4 flex items-start gap-2 border-t px-4 py-3 sm:static sm:mx-0 sm:rounded-card sm:border sm:px-4">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+          <Button
+            variant="default"
+            type="submit"
             disabled={form.formState.isSubmitting || busy !== null}
-            title={t('fillFromRoleTitle')}
-            className="flex items-center gap-2 rounded border border-edge px-3 py-1.5 text-sm text-muted transition-colors hover:border-accent hover:text-text disabled:opacity-50"
           >
-            <Sparkles size={14} />
-            {busy === 'template' ? t('filling') : t('fillFromRole')}
-          </button>
-        )}
+            <Save size={14} />
+            {form.formState.isSubmitting ? t('saving') : t('saveGoal')}
+          </Button>
 
-        <ActionStatus state={state} className="font-mono text-xs" />
+          {values.buildId && (
+            <button
+              type="button"
+              onClick={fillFromRole}
+              disabled={form.formState.isSubmitting || busy !== null}
+              title={t('fillFromRoleTitle')}
+              className="flex items-center gap-2 rounded border border-edge px-3 py-1.5 text-sm text-muted transition-colors hover:border-accent hover:text-text disabled:opacity-50"
+            >
+              <Sparkles size={14} />
+              {busy === 'template' ? t('filling') : t('fillFromRole')}
+            </button>
+          )}
+
+          <ActionStatus state={state} className="min-w-0 font-mono text-xs" />
+        </div>
 
         {values.buildId && (
           <button
@@ -735,7 +741,7 @@ function ProgressForm({
             disabled={form.formState.isSubmitting || busy !== null}
             aria-label={t('deleteGoalAria')}
             title={t('deleteGoalAria')}
-            className="ml-auto rounded border border-edge p-2 text-muted transition-colors hover:border-bad hover:text-bad disabled:opacity-50"
+            className="shrink-0 rounded border border-edge p-2 text-muted transition-colors hover:border-bad hover:text-bad disabled:opacity-50"
           >
             <Trash2 size={14} />
           </button>
