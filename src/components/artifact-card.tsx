@@ -2,8 +2,9 @@ import { Sparkles } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
 import { GameIcon } from '@/components/game-icon';
+import { Hint } from '@/components/hint';
 import { StatIcon } from '@/components/stat-icon';
-import { statLabel, type Catalog } from '@/lib/data/catalog';
+import { setEffectsHint, statLabel, type Catalog } from '@/lib/data/catalog';
 import type { Locale } from '@/lib/data/locales';
 import { formatPropValue } from '@/lib/data/props';
 import type { ArtifactSlot } from '@/lib/data/types';
@@ -85,6 +86,7 @@ export async function ArtifactCard({
   const set = catalog.artifacts.get(piece.setId);
   const crit = piece.critValue ?? 0;
   const rating = piece.critRating ?? 'ninguno';
+  const setHint = set && setEffectsHint(set);
 
   return (
     <li className={`group relative flex min-w-0 flex-col card p-2.5 ${className ?? ''}`}>
@@ -96,9 +98,21 @@ export async function ArtifactCard({
           sizes="36px"
         />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-xs leading-tight" title={set?.name}>
-            {set?.name ?? `#${piece.setId}`}
-          </p>
+          {/* The bonus this set actually grants, which the game shows twice
+              in its own UI and this one showed nowhere — a tap or a hover
+              away rather than a line every card pays for whether it's read
+              or not. */}
+          {setHint ? (
+            <Hint text={`${set!.name} — ${setHint}`}>
+              <button type="button" className="block w-full truncate text-left text-xs leading-tight">
+                {set!.name}
+              </button>
+            </Hint>
+          ) : (
+            <p className="truncate text-xs leading-tight" title={set?.name}>
+              {set?.name ?? `#${piece.setId}`}
+            </p>
+          )}
           <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 font-mono text-2xs leading-tight">
             <span className="rounded bg-ink px-1 text-muted">+{piece.level}</span>
             <span className="text-accent">{'★'.repeat(piece.rarity)}</span>
@@ -155,7 +169,11 @@ export async function ArtifactCard({
           >
             <StatIcon prop={substat.prop} label={statLabel(catalog, substat.prop)} />
             <span className="flex shrink-0 items-baseline gap-1.5 font-mono text-2xs">
-              <span className="tabular">
+              {/* Fixed width, right-aligned: a flat roll ("+19") and a percent
+                  one ("+5.8%") are different lengths, and without a column to
+                  end at, the roll mark after it drifted left or right row to
+                  row instead of lining up down the card. */}
+              <span className="tabular w-9 text-right">
                 +{formatPropValue(substat.prop, substat.value, 'percent', locale)}
               </span>
               <RollMark substat={substat} />

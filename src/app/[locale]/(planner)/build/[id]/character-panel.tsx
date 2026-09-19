@@ -4,8 +4,9 @@ import { ViewTransition } from 'react';
 
 import { ArtifactCard } from '@/components/artifact-card';
 import { GameIcon } from '@/components/game-icon';
+import { Hint } from '@/components/hint';
 import { Badge } from '@/components/ui/badge';
-import { type Catalog, enkaEntry, propLabel, statLabel } from '@/lib/data/catalog';
+import { type Catalog, enkaEntry, propLabel, setEffectsHint, statLabel } from '@/lib/data/catalog';
 import { elementColor, elementDamageProp } from '@/lib/data/elements';
 import type { Locale } from '@/lib/data/locales';
 import { ASCENSION_BONUS_KEY, formatPropValue, statRowProp } from '@/lib/data/props';
@@ -114,6 +115,14 @@ export async function CharacterPanel({
   const weaponDefinition = loadout.weapon
     ? catalog.weapons.get(loadout.weapon.weaponId)
     : undefined;
+
+  // The passive at the refinement actually equipped, not the level-1 text the
+  // game leads with — a copy nobody has yet is not what this weapon is doing.
+  const weaponHint = weaponDefinition && loadout.weapon
+    ? `${weaponDefinition.effectName} — ${
+      weaponDefinition.refinements[loadout.weapon.refinement - 1] ?? weaponDefinition.refinements[0]
+    }`
+    : null;
 
   const bySlot = new Map(loadout.pieces.map((piece) => [piece.slot, piece]));
 
@@ -464,7 +473,15 @@ export async function CharacterPanel({
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="flex flex-wrap items-center gap-2">
-                    <span className="truncate text-sm">{weaponDefinition.name}</span>
+                    {weaponHint ? (
+                      <Hint text={weaponHint}>
+                        <button type="button" className="max-w-full truncate text-left text-sm">
+                          {weaponDefinition.name}
+                        </button>
+                      </Hint>
+                    ) : (
+                      <span className="truncate text-sm">{weaponDefinition.name}</span>
+                    )}
                     <span className="rounded border border-edge px-1 font-mono text-2xs text-muted">
                       {t('levelPrefix')} {loadout.weapon.level}
                     </span>
@@ -530,12 +547,26 @@ export async function CharacterPanel({
             <h2 className="text-xs font-medium uppercase tracking-wide text-muted">
               {t('artifactsHeading')}
             </h2>
-            {loadout.setCounts.map(([setId, count]) => (
-              <span key={setId} className="font-mono text-xs text-muted">
-                {catalog.artifacts.get(setId)?.name ?? `#${setId}`}{' '}
-                <span className={count >= 2 ? 'text-accent' : ''}>×{count}</span>
-              </span>
-            ))}
+            {loadout.setCounts.map(([setId, count]) => {
+              const set = catalog.artifacts.get(setId);
+              const hint = setEffectsHint(set);
+              const label = (
+                <>
+                  {set?.name ?? `#${setId}`}{' '}
+                  <span className={count >= 2 ? 'text-accent' : ''}>×{count}</span>
+                </>
+              );
+
+              return hint ? (
+                <Hint key={setId} text={`${set!.name} — ${hint}`}>
+                  <button type="button" className="font-mono text-xs text-muted">
+                    {label}
+                  </button>
+                </Hint>
+              ) : (
+                <span key={setId} className="font-mono text-xs text-muted">{label}</span>
+              );
+            })}
           </div>
 
           <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">

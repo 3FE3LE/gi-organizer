@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 
 import { AssetImage } from '@/components/asset-image';
+import type { SetEffect } from '@/lib/data/catalog';
 
 /**
  * Choosing a set, with the set in front of you.
@@ -21,8 +22,6 @@ import { AssetImage } from '@/components/asset-image';
  * actually activates marked — a 2+2 never earns a four-piece bonus, and
  * showing one next to the other is how a plan gets built on a line nobody has.
  */
-
-export type SetEffect = { pieces: 1 | 2 | 4; text: string };
 
 export type SetOption = {
   /** The set id, as a string, because that is what the form holds. */

@@ -226,6 +226,22 @@ export function statLabel(catalog: Catalog, prop: string) {
   return prop.endsWith('_PERCENT') ? `${label}%` : label;
 }
 
+export type SetEffect = { pieces: 1 | 2 | 4; text: string };
+
+/** A set's 1/2/4-piece bonuses, in order, skipping whichever it doesn't have. */
+export function setEffects(set: ArtifactView | undefined): SetEffect[] {
+  return ([[1, set?.effect1Pc], [2, set?.effect2Pc], [4, set?.effect4Pc]] as const)
+    .flatMap(([pieces, text]) => (text ? [{ pieces, text }] : []));
+}
+
+/** A set's bonuses as one line for a hover hint: "2pc: ... · 4pc: ...". */
+export function setEffectsHint(set: ArtifactView | undefined): string | null {
+  const effects = setEffects(set);
+  return effects.length === 0
+    ? null
+    : effects.map((effect) => `${effect.pieces}pc: ${effect.text}`).join(' · ');
+}
+
 /**
  * Enka's per-character table: skill ordering, talent art and constellation art.
  *

@@ -2,7 +2,7 @@ import 'server-only';
 
 import { getTranslations } from 'next-intl/server';
 
-import { propLabel, type Catalog } from '@/lib/data/catalog';
+import { propLabel, setEffects, type Catalog } from '@/lib/data/catalog';
 import { resolveIcon } from '@/lib/data/icon';
 import { getWeaponSources } from '@/lib/data/registry';
 import { formatPropValue } from '@/lib/data/props';
@@ -13,7 +13,7 @@ import { wornMainStats, wornSetPlan, wornSubstats } from '@/lib/rules/worn';
 import type { BuildContext } from './context';
 import { editorOptionsFor, goalPropsFor, type EditorOptions, type Option } from './editor-options';
 import type { ProgressOptions, ProgressValues } from './progress-form';
-import type { SetEffect, SetOption } from './set-picker';
+import type { SetOption } from './set-picker';
 
 /**
  * The objective tab: where this character is, where they are going, and the
@@ -222,15 +222,12 @@ async function setOption(catalog: Catalog, setId: number): Promise<SetOption> {
     ?? Object.values(set?.pieces ?? {}).map((piece) => piece?.icon).find(Boolean)
     ?? null;
 
-  const effects: SetEffect[] = ([[1, set?.effect1Pc], [2, set?.effect2Pc], [4, set?.effect4Pc]] as const)
-    .flatMap(([pieces, text]) => (text ? [{ pieces, text }] : []));
-
   return {
     value: String(setId),
     name: set?.name ?? `#${setId}`,
     note: null,
     icon: await resolveIcon(icon, 'relic'),
-    effects,
+    effects: setEffects(set),
   };
 }
 
