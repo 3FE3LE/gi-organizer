@@ -474,7 +474,8 @@
       "setNotFound": "el set #{id} no existe",
       "notInRoster": "{name} no está en tu cuenta: reimporta tu GOOD",
       "goalRoleTaken": "{name} ya tiene un objetivo con ese rol",
-      "objectiveSaved": "objetivo de {name} guardado"
+      "objectiveSaved": "objetivo de {name} guardado",
+      "targetBelowCurrent": "el objetivo de {name} no puede quedar por debajo de su nivel o talentos actuales"
     }
   },
   "data": {

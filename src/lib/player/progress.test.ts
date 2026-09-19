@@ -6,7 +6,7 @@ import { createMemoryDb } from '@/lib/db/client';
 import { readBuild, readBuildsFor, saveBuild } from './builds';
 import { readRoster, upsertCharacter } from './characters';
 import { getProfileId } from './db';
-import { applyProgress, type ProgressInput } from './progress';
+import { TargetBelowCurrent, applyProgress, type ProgressInput } from './progress';
 import { readTargets, setTarget } from './targets';
 
 const VENTI = 10000022;
@@ -135,6 +135,28 @@ test('fields the build editor owns survive a save from this form', async () => {
   assert.deepEqual(build.substats, ['FIGHT_PROP_CHARGE_EFFICIENCY']);
   assert.equal(build.notes, 'buffer de la rotación');
   assert.deepEqual(build.goals, []);
+});
+
+test('a target below the account\'s own level or talents is rejected, nothing written', async () => {
+  const database = await db();
+
+  await assert.rejects(
+    () => applyProgress(input({
+      target: { level: 70, ascended: false, talents: { auto: 9, skill: 9, burst: 9 } },
+    }), database),
+    TargetBelowCurrent,
+  );
+
+  // Venti's talents are auto 5 / skill 6 / burst 8; asking for skill 3 is a
+  // demotion even though the level target is fine.
+  await assert.rejects(
+    () => applyProgress(input({
+      target: { level: 90, ascended: false, talents: { auto: 9, skill: 3, burst: 9 } },
+    }), database),
+    TargetBelowCurrent,
+  );
+
+  assert.deepEqual(await readBuildsFor(VENTI, database), []);
 });
 
 test('the plan is what the scarcity row records, notes and all', async () => {

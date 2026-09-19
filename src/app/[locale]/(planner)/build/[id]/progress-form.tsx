@@ -144,9 +144,16 @@ function defaultsFrom(values: ProgressValues): ProgressFormValues {
     buildId: values.buildId ?? '',
     role: values.role ?? '',
     substats: SUBSTAT_POSITIONS.map((position) => values.substats[position - 1] ?? ''),
-    targetLevel: values.target.level,
+    // A stored target from before the character last levelled up is not a
+    // choice to undo levelling, it is a target that fell behind — so the form
+    // opens on whichever is higher, same as the Stepper's own floor below.
+    targetLevel: Math.max(values.current.level, values.target.level),
     targetAscended: values.target.ascended,
-    targetTalents: values.target.talents,
+    targetTalents: {
+      auto: Math.max(values.current.talents.auto, values.target.talents.auto),
+      skill: Math.max(values.current.talents.skill, values.target.talents.skill),
+      burst: Math.max(values.current.talents.burst, values.target.talents.burst),
+    },
     weaponId: values.weaponId === null ? '' : String(values.weaponId),
     weaponRefinement: values.weaponRefinement ?? 1,
     setIds: [
@@ -376,6 +383,7 @@ function ProgressForm({
               name="targetLevel"
               label={t('targetLevelAria')}
               level={targetLevel}
+              min={values.current.level}
               ascendedField={form.register('targetAscended')}
               ascendedDefault={defaults.targetAscended}
             />
@@ -864,6 +872,7 @@ function LevelCell({
   name,
   label,
   level,
+  min,
   ascendedField,
   ascendedDefault,
 }: {
@@ -871,6 +880,8 @@ function LevelCell({
   name: 'targetLevel';
   label: string;
   level: number;
+  /** The character's level today: a target cannot undo levelling already done. */
+  min: number;
   ascendedField: UseFormRegisterReturn;
   ascendedDefault: boolean;
 }) {
@@ -886,7 +897,7 @@ function LevelCell({
             value={Number(field.value)}
             onChange={field.onChange}
             onBlur={field.onBlur}
-            min={1}
+            min={min}
             max={90}
           />
         )}
@@ -942,7 +953,7 @@ function TalentRow({
               value={Number(field.value)}
               onChange={field.onChange}
               onBlur={field.onBlur}
-              min={1}
+              min={today}
               max={10}
             />
           )}

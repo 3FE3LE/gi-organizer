@@ -474,7 +474,8 @@
       "setNotFound": "set #{id} doesn't exist",
       "notInRoster": "{name} isn't in your account: reimport your GOOD",
       "goalRoleTaken": "{name} already has a goal with that role",
-      "objectiveSaved": "{name}'s goal saved"
+      "objectiveSaved": "{name}'s goal saved",
+      "targetBelowCurrent": "{name}'s target can't be below their current level or talents"
     }
   },
   "data": {

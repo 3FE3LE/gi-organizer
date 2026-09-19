@@ -178,6 +178,31 @@ export async function setCharacterTarget(
     )).changes;
 }
 
+export type CharacterProgress = {
+  level: number;
+  talents: { auto: number; skill: number; burst: number };
+};
+
+/** Where a character actually is today, for checking a target against it. */
+export async function readCharacterProgress(
+  db: Db,
+  profileId: string,
+  characterId: number,
+): Promise<CharacterProgress | null> {
+  const row = (await db
+    .prepare(`SELECT level, talent_auto, talent_skill, talent_burst
+              FROM character_build WHERE profile_id = ? AND character_id = ?`)
+    .get(profileId, characterId)) as
+    | { level: number; talent_auto: number; talent_skill: number; talent_burst: number }
+    | undefined;
+
+  if (!row) return null;
+  return {
+    level: row.level,
+    talents: { auto: row.talent_auto, skill: row.talent_skill, burst: row.talent_burst },
+  };
+}
+
 export async function deleteCharacter(db: Db, profileId: string, characterId: number) {
   return (await db
     .prepare('DELETE FROM character_build WHERE profile_id = ? AND character_id = ?')

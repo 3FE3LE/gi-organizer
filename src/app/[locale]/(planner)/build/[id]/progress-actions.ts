@@ -16,7 +16,7 @@ import {
   type ProgressFormValues,
 } from '@/lib/forms/build';
 import type { TeamRole } from '@/lib/rules/types';
-import { NotInRoster, applyProgress } from '@/lib/player/progress';
+import { NotInRoster, TargetBelowCurrent, applyProgress } from '@/lib/player/progress';
 
 /**
  * The form behind "progress and target". Validation only: the write is one
@@ -80,6 +80,14 @@ export async function saveProgressAction(values: ProgressFormValues): Promise<Pr
       return {
         status: 'error',
         message: t('notInRoster', { name: character.name }),
+      };
+    }
+    // The client already floors the steppers at today's level and talents, so
+    // this only fires when that got bypassed — a stale tab, a second device.
+    if (error instanceof TargetBelowCurrent) {
+      return {
+        status: 'error',
+        message: t('targetBelowCurrent', { name: character.name }),
       };
     }
     // A character has one goal per role, as a unique index rather than as a

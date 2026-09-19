@@ -5,7 +5,7 @@ import { ascensionForLevel } from '@/lib/data/stats';
 import type { ArtifactSlot } from '@/lib/data/types';
 
 import { readBuild, saveBuild, type Build, type SetPlan, type StatGoal } from './builds';
-import { setCharacterTarget } from './characters';
+import { readCharacterProgress, setCharacterTarget } from './characters';
 import { getProfileId } from './db';
 import { readTargets, setTarget } from './targets';
 
@@ -33,6 +33,23 @@ export class NotInRoster extends Error {
   }
 }
 
+/**
+ * A target that would undo levelling already done.
+ *
+ * The account's own record is the floor: nothing the player types here can
+ * make a character or its talents go backwards, so a target below where they
+ * already are is rejected rather than silently producing zero material demand.
+ */
+export class TargetBelowCurrent extends Error {
+  readonly characterId: number;
+
+  constructor(characterId: number) {
+    super(`target for character ${characterId} is below its current progress`);
+    this.name = 'TargetBelowCurrent';
+    this.characterId = characterId;
+  }
+}
+
 export type ProgressInput = {
   characterId: number;
   /** The goal being edited, or `null` to start the character's first one. */
@@ -56,6 +73,22 @@ export type ProgressInput = {
 
 export async function applyProgress(input: ProgressInput, db: Db = getDb()) {
   const profileId = await getProfileId(db);
+
+  // Checked before anything is written: rejecting the target after the goal's
+  // own fields already landed would save two thirds of the form and call it a
+  // save. The account's own record is the floor — nothing typed here can send
+  // a character or its talents backwards.
+  const current = await readCharacterProgress(db, profileId, input.characterId);
+  if (current === null) throw new NotInRoster(input.characterId);
+
+  if (
+    input.target.level < current.level
+    || input.target.talents.auto < current.talents.auto
+    || input.target.talents.skill < current.talents.skill
+    || input.target.talents.burst < current.talents.burst
+  ) {
+    throw new TargetBelowCurrent(input.characterId);
+  }
 
   const setPlan: SetPlan[] = input.setIds.length === 1
     ? [{ setIds: [input.setIds[0]], pieces: 4 }]
@@ -90,11 +123,6 @@ export async function applyProgress(input: ProgressInput, db: Db = getDb()) {
   }, db);
 
   // Levelling is the character's, not the goal's: one character, one ascension.
-  //
-  // The row it updates is the import's, and there is no longer anything here
-  // that would create one: a target for somebody the account does not own is a
-  // plan for a character you cannot field, and silently writing nothing would
-  // look like a save.
   const targeted = await setCharacterTarget(db, profileId, input.characterId, {
     level: input.target.level,
     ascension: ascensionForLevel(input.target.level, input.target.ascended),
