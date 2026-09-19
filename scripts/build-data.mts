@@ -389,7 +389,11 @@ async function main() {
         baseStatText: weapon.baseStatText,
         effectName: weapon.effectName,
         effectTemplateRaw: weapon.effectTemplateRaw,
-        refinements: [weapon.r1, weapon.r2, weapon.r3, weapon.r4, weapon.r5],
+        // Each rN carries `values` alongside its resolved `description`; only
+        // the description is a string, which is the whole of what `LocalizedWeapon`
+        // declares this field to be.
+        refinements: [weapon.r1, weapon.r2, weapon.r3, weapon.r4, weapon.r5]
+          .map((refinement) => refinement?.description ?? ''),
       }]),
     ));
 
