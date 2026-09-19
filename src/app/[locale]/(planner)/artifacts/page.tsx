@@ -9,6 +9,7 @@ import { filterArtifacts, readArtifacts } from '@/lib/player/artifacts';
 import { CHOOSABLE_SLOTS } from '@/lib/rules/piece-score';
 
 import { OwnedArtifactCard } from './artifact-card';
+import { ArtifactList } from './artifact-list';
 import { FilterPanel } from './filter-panel';
 import { RankControls } from './filter-inputs';
 import { CLEARED, href, loadArtifactFilters } from './filters';
@@ -123,15 +124,18 @@ export default async function ArtifactsPage({
            than named, which took a third off the width each one needs and put
            two more pieces on every row. */
         <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-          {shown.map((piece) => (
-            <OwnedArtifactCard
-              key={piece.instanceId}
-              piece={piece}
-              scaler={filters.scaler}
-              catalog={catalog}
-              locale={locale}
-            />
-          ))}
+          <ArtifactList
+            key={href(base, filters)}
+            items={shown.map((piece) => (
+              <OwnedArtifactCard
+                key={piece.instanceId}
+                piece={piece}
+                scaler={filters.scaler}
+                catalog={catalog}
+                locale={locale}
+              />
+            ))}
+          />
         </ul>
       )}
     </div>
