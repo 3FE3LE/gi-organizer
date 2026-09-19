@@ -1,4 +1,4 @@
-import { Cake } from 'lucide-react';
+import { Cake, Plus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { ViewTransition } from 'react';
 
@@ -20,6 +20,7 @@ import type { Loadout, LoadoutPiece } from '@/lib/player/loadout';
 import { critRating, critValue } from '@/lib/rules/rolls';
 
 import { Abilities, type Ability } from './abilities';
+import { ArtifactSlotSwitcher } from './artifact-slot-switcher';
 import { BaseStats, type BaseStatRow } from './base-stats';
 import { GearActions } from './gear-actions';
 
@@ -61,6 +62,7 @@ export async function CharacterPanel({
   const accent = elementColor(character.elementType);
   const t = await getTranslations('build');
   const common = await getTranslations('common');
+  const slotLabel = await getTranslations('common.slot');
 
   const talentLevels = [loadout.talent.auto, loadout.talent.skill, loadout.talent.burst];
   const talentBonus = loadout.talentBonus
@@ -582,7 +584,28 @@ export async function CharacterPanel({
             })}
           </div>
 
-          <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+          <ArtifactSlotSwitcher
+            slots={SLOT_ORDER.map((slot) => {
+              const piece = bySlot.get(slot) ?? null;
+              return {
+                key: slot,
+                title: slotLabel.has(slot) ? slotLabel(slot) : slot,
+                compact: <CompactSlotChip catalog={catalog} piece={piece} />,
+                full: (
+                  <ArtifactSlotCard
+                    catalog={catalog}
+                    slot={slot}
+                    piece={piece}
+                    locale={locale}
+                    characterId={character.id}
+                    buildId={buildId}
+                  />
+                ),
+              };
+            })}
+          />
+
+          <ul className="hidden gap-2 sm:grid sm:grid-cols-2 lg:grid-cols-5">
             {SLOT_ORDER.map((slot) => (
               <ArtifactSlotCard
                 key={slot}
@@ -647,6 +670,34 @@ function StatRow({
         </span>
       </dd>
     </div>
+  );
+}
+
+/** The slot's icon and level, nothing else — what the mobile row shows before
+    a tap asks for the rest. */
+function CompactSlotChip({ catalog, piece }: { catalog: Catalog; piece: LoadoutPiece | null }) {
+  if (!piece) {
+    return (
+      <span className="flex h-11 w-11 items-center justify-center rounded-lg border border-dashed border-edge text-muted">
+        <Plus size={14} />
+      </span>
+    );
+  }
+
+  const set = catalog.artifacts.get(piece.setId);
+
+  return (
+    <span className="relative flex h-11 w-11 items-center justify-center rounded-lg field">
+      <GameIcon
+        filename={set?.pieces[piece.slot]?.icon}
+        kind="relic"
+        className="h-9 w-9"
+        sizes="36px"
+      />
+      <span className="absolute -bottom-1 -right-1 rounded bg-ink px-1 font-mono text-2xs text-muted">
+        +{piece.level}
+      </span>
+    </span>
   );
 }
 
