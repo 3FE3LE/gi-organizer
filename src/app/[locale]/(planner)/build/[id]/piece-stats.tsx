@@ -47,29 +47,33 @@ export function PieceComparison({
   const rows = mergeRows(equipped, candidate);
 
   return (
-    <table className="w-full border-collapse font-mono text-2xs">
-      <thead>
-        <tr className="text-muted">
-          <th className="py-1 text-left font-normal">{t('statHeader')}</th>
-          <th className="py-1 text-right font-normal">{t('equippedHeader')}</th>
-          <th className="py-1 text-right font-normal">
-            {candidateLabel ?? t('defaultCandidateLabel')}
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((row) => (
-          <tr key={`${row.kind}:${row.prop}`} className="border-t border-edge/40">
-            <td className="py-1 pr-2">
-              <span className={row.wanted ? 'text-accent' : 'text-muted'}>{row.label}</span>
-              {row.kind === 'main' && <span className="text-muted"> {t('mainStatSuffix')}</span>}
-            </td>
-            <Cell line={row.equipped} />
-            <Cell line={row.candidate} direction={row.direction} />
+    // Scrolls sideways rather than clipping: three columns of stat, roll
+    // badge and arrow do not all fit a phone's width once a row is long.
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[20rem] border-collapse font-mono text-2xs">
+        <thead>
+          <tr className="text-muted">
+            <th className="py-1 text-left font-normal">{t('statHeader')}</th>
+            <th className="py-1 text-right font-normal">{t('equippedHeader')}</th>
+            <th className="py-1 text-right font-normal">
+              {candidateLabel ?? t('defaultCandidateLabel')}
+            </th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={`${row.kind}:${row.prop}`} className="border-t border-edge/40">
+              <td className="py-1 pr-2">
+                <span className={row.wanted ? 'text-accent' : 'text-muted'}>{row.label}</span>
+                {row.kind === 'main' && <span className="text-muted"> {t('mainStatSuffix')}</span>}
+              </td>
+              <Cell line={row.equipped} />
+              <Cell line={row.candidate} direction={row.direction} />
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 

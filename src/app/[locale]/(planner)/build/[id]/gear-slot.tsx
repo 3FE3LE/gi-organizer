@@ -64,20 +64,23 @@ export function CandidateRow({
 
   return (
     <li className="border-b border-edge/40 last:border-b-0">
-      <div className="flex items-center gap-2 px-3 py-1.5">
+      {/* Wraps rather than clips: a piece worth taking can carry a fit note
+          *and* a holder badge, and the two together outrun a phone's width
+          next to the icon, label and buttons that share this row. */}
+      <div className="flex flex-wrap items-center gap-1.5 px-3 py-1.5">
         <AssetImage
           src={candidate.icon}
           kind={slot.kind === 'weapon' ? 'weapon' : 'relic'}
-          className="h-6 w-6"
+          className="h-6 w-6 shrink-0"
           sizes="24px"
         />
         <span className="min-w-0 flex-1 truncate text-xs">{candidate.label}</span>
-        <span className="font-mono text-2xs text-muted">{candidate.detail}</span>
+        <span className="shrink-0 font-mono text-2xs text-muted">{candidate.detail}</span>
         {candidate.fit && (
-          <span className="font-mono text-2xs text-muted">{candidate.fit}</span>
+          <span className="shrink-0 font-mono text-2xs text-muted">{candidate.fit}</span>
         )}
         {candidate.holder && (
-          <span className="font-mono text-2xs text-accent">
+          <span className="shrink-0 font-mono text-2xs text-accent">
             {t('heldBy', { holder: candidate.holder })}
           </span>
         )}
