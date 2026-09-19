@@ -25,6 +25,8 @@ import { loadSlotAction } from './slot-actions';
  * Nothing about the card changes. The controls sit on top of it, revealed on
  * hover or keyboard focus, and always visible below `sm` — a phone has no
  * hover, and a control that only exists on a pointer device does not exist.
+ * Below `sm` they also drop their labels: two icons a thumb already knows
+ * cost far less width than "editar" and "comparar" spelled out next to them.
  *
  * The list itself is fetched when the dialog opens. Scoring every owned piece
  * of a shape against the build is real work, and it is work for one slot at a
@@ -55,8 +57,8 @@ export function GearActions({
           group-hover:opacity-100 group-focus-within:opacity-100 max-sm:hidden`}
       />
       <div
-        className={`absolute inset-x-0 bottom-0 flex justify-center gap-2 p-2 opacity-0 transition-opacity
-          group-hover:opacity-100 group-focus-within:opacity-100 max-sm:static max-sm:mt-2 max-sm:opacity-100`}
+        className={`absolute inset-x-0 bottom-0 flex justify-center gap-1 p-1.5 opacity-0 transition-opacity
+          group-hover:opacity-100 group-focus-within:opacity-100 max-sm:static max-sm:mt-1.5 max-sm:justify-end max-sm:opacity-100`}
       >
         <Action icon={<Pencil size={12} />} label={t('editButton')} onClick={() => setMode('edit')} />
         <Action
@@ -102,10 +104,15 @@ function Action({
     <button
       type="button"
       onClick={onClick}
-      className="pointer-events-auto flex items-center gap-1.5 field/90 px-2 py-1 text-2xs text-muted shadow-sm transition-colors hover:border-accent hover:text-accent"
+      aria-label={label}
+      // Icon only below `sm`: the label is what makes this readable with a
+      // mouse hovering it, and dead weight on a screen where these are
+      // already always on. `aria-label` keeps the name for anyone who
+      // can't see the icon either way.
+      className="pointer-events-auto flex items-center gap-1.5 field/90 px-2 py-1 text-2xs text-muted shadow-sm transition-colors hover:border-accent hover:text-accent max-sm:px-1.5"
     >
       {icon}
-      {label}
+      <span className="max-sm:hidden">{label}</span>
     </button>
   );
 }
