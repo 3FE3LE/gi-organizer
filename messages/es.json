@@ -25,6 +25,7 @@
     "done": "Listo"
   },
   "common": {
+    "close": "Cerrar",
     "mode": { "abyss": "Abismo", "theater": "Teatro", "stygian": "Stygian", "other": "Otro" },
     "slot": {
       "flower": "flor", "plume": "pluma", "sands": "arena", "goblet": "cáliz", "circlet": "diadema"

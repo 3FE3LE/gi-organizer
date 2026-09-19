@@ -1,10 +1,10 @@
 import { Sparkles } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
+import { EffectButton } from '@/components/effect-dialog';
 import { GameIcon } from '@/components/game-icon';
-import { Hint } from '@/components/hint';
 import { StatIcon } from '@/components/stat-icon';
-import { setEffectsHint, statLabel, type Catalog } from '@/lib/data/catalog';
+import { formatSetEffect, setEffects, statLabel, type Catalog } from '@/lib/data/catalog';
 import type { Locale } from '@/lib/data/locales';
 import { formatPropValue } from '@/lib/data/props';
 import type { ArtifactSlot } from '@/lib/data/types';
@@ -82,11 +82,12 @@ export async function ArtifactCard({
   const t = await getTranslations('artifacts');
   const slotLabel = await getTranslations('common.slot');
   const critRatingLabel = await getTranslations('common.critRating');
+  const common = await getTranslations('common');
 
   const set = catalog.artifacts.get(piece.setId);
   const crit = piece.critValue ?? 0;
   const rating = piece.critRating ?? 'ninguno';
-  const setHint = set && setEffectsHint(set);
+  const effects = setEffects(set);
 
   return (
     <li className={`group relative flex min-w-0 flex-col card p-2.5 ${className ?? ''}`}>
@@ -99,15 +100,19 @@ export async function ArtifactCard({
         />
         <div className="min-w-0 flex-1">
           {/* The bonus this set actually grants, which the game shows twice
-              in its own UI and this one showed nowhere — a tap or a hover
-              away rather than a line every card pays for whether it's read
-              or not. */}
-          {setHint ? (
-            <Hint text={`${set!.name} — ${setHint}`}>
-              <button type="button" className="block w-full truncate text-left text-xs leading-tight">
-                {set!.name}
-              </button>
-            </Hint>
+              in its own UI and this one showed nowhere — a tap opens it,
+              same as a talent's disc, rather than a line every card pays
+              for whether it's read or not. */}
+          {effects.length > 0 ? (
+            <EffectButton
+              title={set!.name}
+              lines={effects.map(formatSetEffect)}
+              hint={formatSetEffect(effects[0])}
+              closeLabel={common('close')}
+              className="block w-full truncate text-left text-xs leading-tight underline decoration-edge-strong decoration-dotted underline-offset-2"
+            >
+              {set!.name}
+            </EffectButton>
           ) : (
             <p className="truncate text-xs leading-tight" title={set?.name}>
               {set?.name ?? `#${piece.setId}`}

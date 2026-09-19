@@ -25,6 +25,7 @@
     "done": "Done"
   },
   "common": {
+    "close": "Close",
     "mode": { "abyss": "Abyss", "theater": "Theater", "stygian": "Stygian", "other": "Other" },
     "slot": {
       "flower": "flower", "plume": "plume", "sands": "sands", "goblet": "goblet", "circlet": "circlet"

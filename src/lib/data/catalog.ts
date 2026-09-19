@@ -234,12 +234,9 @@ export function setEffects(set: ArtifactView | undefined): SetEffect[] {
     .flatMap(([pieces, text]) => (text ? [{ pieces, text }] : []));
 }
 
-/** A set's bonuses as one line for a hover hint: "2pc: ... · 4pc: ...". */
-export function setEffectsHint(set: ArtifactView | undefined): string | null {
-  const effects = setEffects(set);
-  return effects.length === 0
-    ? null
-    : effects.map((effect) => `${effect.pieces}pc: ${effect.text}`).join(' · ');
+/** One bonus, labelled by the piece count that grants it: "2pc: ...". */
+export function formatSetEffect(effect: SetEffect) {
+  return `${effect.pieces}pc: ${effect.text}`;
 }
 
 /**

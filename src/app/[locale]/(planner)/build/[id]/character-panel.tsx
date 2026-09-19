@@ -3,10 +3,12 @@ import { getTranslations } from 'next-intl/server';
 import { ViewTransition } from 'react';
 
 import { ArtifactCard } from '@/components/artifact-card';
+import { EffectButton } from '@/components/effect-dialog';
 import { GameIcon } from '@/components/game-icon';
-import { Hint } from '@/components/hint';
 import { Badge } from '@/components/ui/badge';
-import { type Catalog, enkaEntry, propLabel, setEffectsHint, statLabel } from '@/lib/data/catalog';
+import {
+  type Catalog, enkaEntry, formatSetEffect, propLabel, setEffects, statLabel,
+} from '@/lib/data/catalog';
 import { elementColor, elementDamageProp } from '@/lib/data/elements';
 import type { Locale } from '@/lib/data/locales';
 import { ASCENSION_BONUS_KEY, formatPropValue, statRowProp } from '@/lib/data/props';
@@ -58,6 +60,7 @@ export async function CharacterPanel({
   const entry = enkaEntry(catalog, character.id, loadout.skillDepotId);
   const accent = elementColor(character.elementType);
   const t = await getTranslations('build');
+  const common = await getTranslations('common');
 
   const talentLevels = [loadout.talent.auto, loadout.talent.skill, loadout.talent.burst];
   const talentBonus = loadout.talentBonus
@@ -118,9 +121,12 @@ export async function CharacterPanel({
 
   // The passive at the refinement actually equipped, not the level-1 text the
   // game leads with — a copy nobody has yet is not what this weapon is doing.
-  const weaponHint = weaponDefinition && loadout.weapon
-    ? `${weaponDefinition.effectName} — ${
-      weaponDefinition.refinements[loadout.weapon.refinement - 1] ?? weaponDefinition.refinements[0]
+  // A handful of the lowest-rarity weapons carry no passive at all, which is
+  // why this checks for one rather than assuming every weapon has a line to
+  // show.
+  const weaponEffect = weaponDefinition?.effectName && loadout.weapon
+    ? `${weaponDefinition.effectName}: ${
+      weaponDefinition.refinements[loadout.weapon.refinement - 1] || weaponDefinition.refinements[0]
     }`
     : null;
 
@@ -473,15 +479,17 @@ export async function CharacterPanel({
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="flex flex-wrap items-center gap-2">
-                    {weaponHint ? (
-                      <Hint text={weaponHint}>
-                        <button type="button" className="max-w-full truncate text-left text-sm">
-                          {weaponDefinition.name}
-                        </button>
-                      </Hint>
-                    ) : (
-                      <span className="truncate text-sm">{weaponDefinition.name}</span>
-                    )}
+                    <EffectButton
+                      title={weaponDefinition.name}
+                      lines={weaponEffect ? [weaponEffect] : []}
+                      hint={weaponEffect ?? weaponDefinition.name}
+                      closeLabel={common('close')}
+                      className={`max-w-full truncate text-left text-sm ${
+                        weaponEffect ? 'underline decoration-edge-strong decoration-dotted underline-offset-2' : ''
+                      }`}
+                    >
+                      {weaponDefinition.name}
+                    </EffectButton>
                     <span className="rounded border border-edge px-1 font-mono text-2xs text-muted">
                       {t('levelPrefix')} {loadout.weapon.level}
                     </span>
@@ -549,7 +557,7 @@ export async function CharacterPanel({
             </h2>
             {loadout.setCounts.map(([setId, count]) => {
               const set = catalog.artifacts.get(setId);
-              const hint = setEffectsHint(set);
+              const effects = setEffects(set);
               const label = (
                 <>
                   {set?.name ?? `#${setId}`}{' '}
@@ -557,14 +565,19 @@ export async function CharacterPanel({
                 </>
               );
 
-              return hint ? (
-                <Hint key={setId} text={`${set!.name} — ${hint}`}>
-                  <button type="button" className="font-mono text-xs text-muted">
-                    {label}
-                  </button>
-                </Hint>
-              ) : (
-                <span key={setId} className="font-mono text-xs text-muted">{label}</span>
+              return (
+                <EffectButton
+                  key={setId}
+                  title={set?.name ?? `#${setId}`}
+                  lines={effects.map(formatSetEffect)}
+                  hint={effects.length > 0 ? formatSetEffect(effects[0]) : ''}
+                  closeLabel={common('close')}
+                  className={`font-mono text-xs text-muted ${
+                    effects.length > 0 ? 'underline decoration-edge-strong decoration-dotted underline-offset-2' : ''
+                  }`}
+                >
+                  {label}
+                </EffectButton>
               );
             })}
           </div>
