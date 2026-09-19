@@ -706,19 +706,23 @@ function ProgressForm({
       {/* Stuck to the bottom on a phone, where the thumb is; a plain panel from
           `sm`, where the end of the form is already on screen. It stops above
           the section bar rather than under it — see `--section-nav-height`.
-          The delete button is a sibling of the wrapping group rather than an
-          `ml-auto` item inside it: an auto margin is resolved after `flex-wrap`
-          decides whether a line breaks, so on a narrow phone it could land the
-          button past the edge of the bar instead of pushing it to a new line. */}
-      <div className="glass sticky bottom-[var(--section-nav-height)] -mx-4 flex items-start gap-2 border-t px-4 py-3 sm:static sm:mx-0 sm:rounded-card sm:border sm:px-4">
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+          One row, never two: nothing here wraps, so every piece is either a
+          fixed-size icon or set to shrink and truncate instead of forcing the
+          bar wider than the screen. The delete button is a sibling of the
+          group rather than an `ml-auto` item inside it for the same reason —
+          see the fix two commits back for the auto-margin/flex-wrap bug that
+          left it hanging off the edge. */}
+      <div className="glass sticky bottom-[var(--section-nav-height)] -mx-4 flex items-center gap-2 border-t px-4 py-3 sm:static sm:mx-0 sm:rounded-card sm:border sm:px-4">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
           <Button
             variant="default"
             type="submit"
+            size="icon"
+            aria-label={form.formState.isSubmitting ? t('saving') : t('saveGoal')}
+            title={form.formState.isSubmitting ? t('saving') : t('saveGoal')}
             disabled={form.formState.isSubmitting || busy !== null}
           >
-            <Save size={14} />
-            {form.formState.isSubmitting ? t('saving') : t('saveGoal')}
+            <Save size={16} />
           </Button>
 
           {values.buildId && (
@@ -726,15 +730,18 @@ function ProgressForm({
               type="button"
               onClick={fillFromRole}
               disabled={form.formState.isSubmitting || busy !== null}
+              aria-label={busy === 'template' ? t('filling') : t('fillFromRole')}
               title={t('fillFromRoleTitle')}
-              className="flex items-center gap-2 rounded border border-edge px-3 py-1.5 text-sm text-muted transition-colors hover:border-accent hover:text-text disabled:opacity-50"
+              className="flex shrink-0 items-center gap-2 rounded border border-edge px-2 py-1.5 text-sm text-muted transition-colors hover:border-accent hover:text-text disabled:opacity-50 sm:px-3"
             >
               <Sparkles size={14} />
-              {busy === 'template' ? t('filling') : t('fillFromRole')}
+              <span className="max-sm:hidden">
+                {busy === 'template' ? t('filling') : t('fillFromRole')}
+              </span>
             </button>
           )}
 
-          <ActionStatus state={state} className="min-w-0 font-mono text-xs" />
+          <ActionStatus state={state} className="min-w-0 truncate font-mono text-xs" />
         </div>
 
         {values.buildId && (
