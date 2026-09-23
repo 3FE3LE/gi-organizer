@@ -1,6 +1,6 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -29,6 +29,7 @@ import {
 
 import { Button, buttonVariants } from '@/components/ui/button';
 import { FieldSelect } from '@/components/field-select';
+import { Slider } from '@/components/ui/slider';
 import { ActionStatus } from '@/components/action-status';
 import {
   BREAKPOINTS,
@@ -325,6 +326,7 @@ function ProgressForm({
   };
 
   const statedGoals = (goals ?? []).filter((goal) => goal?.prop && goal?.min).length;
+  const format = useFormatter();
   const chosenStats = SLOTS.filter((slot) => mainStats?.[slot.key]).length;
   const chosenSubstats = (substats ?? []).filter(Boolean).length;
   const plannedSet = setName(setIds?.[0] ?? '');
@@ -623,67 +625,114 @@ function ProgressForm({
             {t('statGoalsHint')}
           </p>
 
-          {/* A grid, not a list: three thresholds side by side is a plan you
-              read at a glance; three stacked rows is a queue you work through. */}
-          <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          {/* A card per threshold: what it is and a way out on top, the stat
+              across the card, then the number — dragged or typed — and how
+              far today is from it. The old row packed all four across one
+              line, which on a phone left a picker too narrow to read its own
+              choice. */}
+          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {goalRows.fields.map((row, index) => {
               const prop = goals?.[index]?.prop ?? '';
-              const status = verdict(prop, goals?.[index]?.min ?? '');
+              const min = goals?.[index]?.min ?? '';
+              const info = prop ? propInfo(prop) : null;
+              const status = verdict(prop, min);
+              const range = goalRange(prop, info?.currentValue ?? 0);
 
               return (
                 <li
                   key={row.id}
-                  className="flex min-w-0 items-center gap-1.5 field/40 p-2"
+                  className="flex min-w-0 flex-col gap-3 rounded-lg border border-edge bg-surface p-3 transition-colors hover:border-accent/50"
                 >
-                  <div className="min-w-0 flex-1">
-                    <Controller
-                      control={form.control}
-                      name={`goals.${index}.prop`}
-                      render={({ field }) => (
-                        <FieldSelect
-                          name={field.name}
-                          label={t('goalStatAria', { n: index + 1 })}
-                          value={field.value ?? ''}
-                          onValueChange={field.onChange}
-                          onBlur={field.onBlur}
-                          placeholder={t('chooseStatPlaceholder')}
-                          groups={[{ options: options.goalProps }]}
-                          triggerClassName="px-2 py-1.5 text-xs"
-                        />
-                      )}
-                    />
+                  <div className="flex items-center gap-2">
+                    <span className={`min-w-0 flex-1 truncate text-sm ${info ? '' : 'text-muted'}`}>
+                      {info?.label ?? t('newGoal')}
+                    </span>
+                    {goalRows.fields.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => goalRows.remove(index)}
+                        aria-label={t('removeGoalAria', { n: index + 1 })}
+                        className={buttonVariants({ variant: 'ghost', size: 'icon-sm', className: 'shrink-0 text-muted hover:text-bad' })}
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
                   </div>
 
-                  {/* A threshold is at most five digits — `w-20` already fits
-                      that with room to spare, so it sits beside the picker
-                      instead of on a row of its own with the rest of the
-                      cell empty next to it. */}
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    inputMode="decimal"
-                    {...form.register(`goals.${index}.min`)}
-                    defaultValue={defaults.goals[index]?.min ?? ''}
-                    placeholder={t('minPlaceholder')}
-                    aria-label={t('goalMinAria', { n: index + 1 })}
-                    className="tabular w-20 shrink-0 field px-2 py-1 text-right font-mono text-xs focus:border-accent"
+                  <Controller
+                    control={form.control}
+                    name={`goals.${index}.prop`}
+                    render={({ field }) => (
+                      <FieldSelect
+                        name={field.name}
+                        label={t('goalStatAria', { n: index + 1 })}
+                        value={field.value ?? ''}
+                        onValueChange={field.onChange}
+                        onBlur={field.onBlur}
+                        placeholder={t('chooseStatPlaceholder')}
+                        groups={[{ options: options.goalProps }]}
+                        triggerClassName="w-full px-2 py-1.5 text-xs"
+                      />
+                    )}
                   />
 
-                  <div className="min-w-0 shrink">
-                    <Verdict status={status} current={prop ? propInfo(prop)?.current : null} />
-                  </div>
+                  {/* One value, two ways to set it: the slider for a rough
+                      number, the field for an exact one. A typed value past
+                      the slider's end is kept as typed; the thumb just rests
+                      at the end. */}
+                  <Controller
+                    control={form.control}
+                    name={`goals.${index}.min`}
+                    render={({ field }) => {
+                      const typed = Number(field.value);
+                      const position = field.value === '' || !Number.isFinite(typed)
+                        ? range.min
+                        : Math.min(range.max, Math.max(range.min, typed));
 
-                  {goalRows.fields.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => goalRows.remove(index)}
-                      aria-label={t('removeGoalAria', { n: index + 1 })}
-                      className={buttonVariants({ variant: 'ghost', size: 'icon-sm', className: 'shrink-0 hover:text-bad' })}
-                    >
-                      <X size={14} />
-                    </button>
-                  )}
+                      return (
+                        <div className="flex items-center gap-3">
+                          <Slider
+                            aria-label={t('goalMinAria', { n: index + 1 })}
+                            min={range.min}
+                            max={range.max}
+                            step={range.step}
+                            value={position}
+                            disabled={!prop}
+                            onValueChange={(next) => field.onChange(String(next))}
+                            className="min-w-0 flex-1"
+                          />
+                          <span className="field flex w-24 shrink-0 items-center gap-0.5 px-2 py-1 focus-within:border-accent">
+                            <input
+                              type="number"
+                              step="0.1"
+                              min="0"
+                              inputMode="decimal"
+                              name={field.name}
+                              ref={field.ref}
+                              value={field.value ?? ''}
+                              onChange={(event) => field.onChange(event.target.value)}
+                              onBlur={field.onBlur}
+                              placeholder={t('minPlaceholder')}
+                              aria-label={t('goalMinAria', { n: index + 1 })}
+                              className="tabular min-w-0 flex-1 bg-transparent text-right font-mono text-xs outline-none"
+                            />
+                            {prop && range.unit && (
+                              <span className="font-mono text-2xs text-muted">{range.unit}</span>
+                            )}
+                          </span>
+                        </div>
+                      );
+                    }}
+                  />
+
+                  <div className="flex items-center justify-between gap-2">
+                    <Verdict status={status} current={info?.current} />
+                    {prop && (
+                      <span className="tabular shrink-0 font-mono text-2xs text-muted">
+                        {format.number(range.min)}–{format.number(range.max)}{range.unit}
+                      </span>
+                    )}
+                  </div>
                 </li>
               );
             })}
@@ -693,7 +742,7 @@ function ProgressForm({
                 <button
                   type="button"
                   onClick={() => goalRows.append({ prop: '', min: '' })}
-                  className="flex h-full min-h-20 w-full items-center justify-center gap-2 rounded border border-dashed border-edge text-xs text-muted transition-colors hover:border-accent hover:text-accent"
+                  className="flex h-full min-h-36 w-full items-center justify-center gap-2 rounded-lg border border-dashed border-edge text-xs text-muted transition-colors hover:border-accent hover:text-accent"
                 >
                   <Plus size={14} /> {t('addGoal')}
                 </button>
@@ -854,6 +903,28 @@ function Segment({
 }
 
 /** Cumplido, cerca o corto — the three verdicts the planner itself reports. */
+/**
+ * Where a threshold's slider runs, per stat.
+ *
+ * Wide enough for any build worth planning and narrow enough that a drag lands
+ * on a sensible number: a slider from 0 to 60 000 HP moves in steps nobody
+ * could aim. Percentages are in the same scale the field takes — 70 is 70%. A
+ * character already past the end widens it, so today's value is always on it.
+ */
+function goalRange(prop: string, current: number) {
+  const base = prop === 'FIGHT_PROP_HP' ? { min: 10000, max: 60000, step: 500, unit: '' }
+    : prop === 'FIGHT_PROP_ATTACK' || prop === 'FIGHT_PROP_DEFENSE'
+      ? { min: 500, max: 4000, step: 50, unit: '' }
+      : prop === 'FIGHT_PROP_ELEMENT_MASTERY' ? { min: 0, max: 1200, step: 10, unit: '' }
+        : prop === 'FIGHT_PROP_CHARGE_EFFICIENCY' ? { min: 100, max: 300, step: 5, unit: '%' }
+          : prop === 'FIGHT_PROP_CRITICAL' ? { min: 5, max: 100, step: 1, unit: '%' }
+            : prop === 'FIGHT_PROP_CRITICAL_HURT' ? { min: 50, max: 300, step: 1, unit: '%' }
+              : { min: 0, max: 100, step: 1, unit: '%' };
+
+  const reach = Math.ceil(current / base.step) * base.step;
+  return { ...base, max: Math.max(base.max, reach) };
+}
+
 function Verdict({
   status,
   current,

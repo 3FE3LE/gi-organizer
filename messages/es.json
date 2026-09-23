@@ -400,6 +400,7 @@
     "goalMinAria": "Mínimo de la meta {n}",
     "removeGoalAria": "Quitar el objetivo {n}",
     "addGoal": "otro objetivo",
+    "newGoal": "Nueva meta",
     "saving": "Guardando…",
     "saveGoal": "Guardar objetivo",
     "fillFromRoleTitle": "Vuelve a rellenar set, main stats, substats, arma y umbrales con lo que pide el rol elegido",
