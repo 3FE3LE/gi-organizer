@@ -377,18 +377,27 @@ function ObjectivePicker({
   const [, save, saving] = useActionState<TeamActionState, FormData>(
     setObjectiveAction, { status: 'idle' },
   );
+  const [value, setValue] = useState(current ?? '');
 
+  // A field until something is chosen, then a line of text — the same move
+  // the role makes on a member card. It is still the same select, so a click
+  // on the text opens the list to change it.
   return (
     <FieldSelect
       label={t('objectiveLabel')}
-      defaultValue={current ?? ''}
+      value={value}
       disabled={saving}
       placeholder={t('noObjective')}
-      onValueChange={(objective) => send(save, { teamId, objective })}
+      onValueChange={(objective) => {
+        setValue(objective);
+        send(save, { teamId, objective });
+      }}
       groups={[{ options: objectives.map((objective) => ({
         value: objective.id, label: objective.label,
       })) }]}
-      triggerClassName="w-auto px-2 py-1 text-xs"
+      triggerClassName={value
+        ? 'w-auto gap-1 border-transparent bg-transparent px-1 py-0.5 font-mono text-xs text-accent hover:underline [&_svg]:size-3 [&_svg]:opacity-60'
+        : 'w-auto px-2 py-1 text-xs'}
     />
   );
 }

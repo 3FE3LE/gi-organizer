@@ -22,7 +22,8 @@ import { targetKey } from '@/lib/rules/types';
 
 import { TeamBoard, type RosterEntry, type SlotView, type TeamView } from './team-board';
 import { type SynergyView } from './synergy-panel';
-import { TeamRail, type RailEntry } from './team-rail';
+import { CreateTeam } from './create-team';
+import { TeamDrawer, type RailEntry } from './team-drawer';
 
 export const dynamic = 'force-dynamic';
 
@@ -235,7 +236,7 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
   // hand.
   const findingsByTeam = new Map<string, ReturnType<typeof diagnosticsForTeam>>();
 
-  const rail: RailEntry[] = teams.map((team) => {
+  const rail: RailEntry[] = await Promise.all(teams.map(async (team) => {
     const findings = diagnosticsForTeam(team);
     findingsByTeam.set(team.id, findings);
 
@@ -246,11 +247,21 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
       objectiveLabel: team.objective
         ? (mechanicLabelT.has(team.objective) ? mechanicLabelT(team.objective) : team.objective)
         : null,
-      members: team.slots.length,
+      members: await Promise.all([0, 1, 2, 3].map(async (position) => {
+        const slot = team.slots.find((entry) => entry.position === position);
+        const character = slot ? catalog.characters.get(slot.characterId) : undefined;
+        return character
+          ? {
+              name: character.name,
+              icon: await resolveIcon(character.icon, 'avatar'),
+              elementColor: elementColor(character.elementType),
+            }
+          : null;
+      })),
       errors: findings.filter((finding) => finding.severity === 'error').length,
       warnings: findings.filter((finding) => finding.severity === 'warning').length,
     };
-  });
+  }));
 
   const selectedTeam = teams.find((team) => team.id === selectedId) ?? null;
   const selectedDiagnostics = selectedTeam ? findingsByTeam.get(selectedTeam.id) ?? [] : [];
@@ -418,9 +429,21 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)]">
-        <TeamRail locale={locale} teams={rail} selectedId={selectedId} />
+      <header className="flex flex-wrap items-center gap-x-4 gap-y-3">
+        <h1 className="page-title">
+          {tTeams('heading')} <span className="font-mono text-sm text-muted">{rail.length}</span>
+        </h1>
+        <div className="flex w-full flex-wrap items-center gap-2 sm:ml-auto sm:w-auto">
+          <TeamDrawer
+            locale={locale}
+            teams={rail}
+            selectedId={selectedId}
+            create={<CreateTeam locale={locale} hasDraft={rail.some((team) => team.draft)} />}
+          />
+        </div>
+      </header>
 
+      <div>
         {/* Not a `<main>`: the layout already owns that landmark, and two of
             them on a page means neither is the main one. */}
         <div className="min-w-0 space-y-6">

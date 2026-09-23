@@ -178,6 +178,8 @@
     "noRole": "no role",
     "declarationLabel": "Slot declaration",
     "noBuildForRole": "no build for this role",
+    "noTeamOpen": "No team open",
+    "allTeams": "{count, plural, one {# team} other {# teams}}",
     "dragHandle": "Move {name}",
     "dragInstructions": "Press Space to pick the character up, the arrow keys to move them and Space again to drop them on another slot. Escape cancels.",
     "dragPicked": "Picked up {name}.",

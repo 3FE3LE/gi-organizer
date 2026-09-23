@@ -178,6 +178,8 @@
     "noRole": "sin rol",
     "declarationLabel": "Declaración del slot",
     "noBuildForRole": "sin build para este rol",
+    "noTeamOpen": "Ningún equipo abierto",
+    "allTeams": "{count, plural, one {# equipo} other {# equipos}}",
     "dragHandle": "Mover a {name}",
     "dragInstructions": "Pulsa Espacio para tomar al personaje, las flechas para moverlo y Espacio otra vez para soltarlo en otro slot. Escape cancela.",
     "dragPicked": "Tomaste a {name}.",
