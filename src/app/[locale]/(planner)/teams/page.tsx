@@ -19,7 +19,7 @@ import { synergyOf, type SynergyMember } from '@/lib/rules/synergy';
 import { describe, type Naming } from '@/lib/rules/diagnostics';
 import { targetKey } from '@/lib/rules/types';
 
-import { TeamBoard, type SlotView, type TeamView } from './team-board';
+import { TeamBoard, type RosterEntry, type SlotView, type TeamView } from './team-board';
 import { type SynergyView } from './synergy-panel';
 import { TeamRail, type RailEntry } from './team-rail';
 
@@ -350,16 +350,24 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
     }
   }
 
-  const roster = (await readRoster(db, await getProfileId(db)))
+  // Grouped by element in the picker, so the order is the element's first and
+  // the name's second: the same order the game's own party screen filters by.
+  const elementOrder = Object.keys(ELEMENT_COLORS);
+  const owned = (await readRoster(db, await getProfileId(db)))
     .map((entry) => catalog.characters.get(entry.characterId))
     .filter((character) => character !== undefined)
-    .map((character) => ({
-      id: character.id,
-      name: character.name,
-      detail: `${character.elementText} ${character.rarity}★`,
-      inTeam: teamOf.get(character.id) ?? null,
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name, locale));
+    .sort((a, b) =>
+      elementOrder.indexOf(a.elementType) - elementOrder.indexOf(b.elementType)
+      || a.name.localeCompare(b.name, locale));
+  const roster: RosterEntry[] = await Promise.all(owned.map(async (character) => ({
+    id: character.id,
+    name: character.name,
+    icon: await resolveIcon(character.icon, 'avatar'),
+    rarity: character.rarity,
+    element: elementName(character.elementType),
+    elementColor: elementColor(character.elementType),
+    inTeam: teamOf.get(character.id) ?? null,
+  })));
 
   return (
     <div className="space-y-6">

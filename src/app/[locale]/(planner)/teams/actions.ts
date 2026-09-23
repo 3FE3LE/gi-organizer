@@ -5,6 +5,8 @@ import { getTranslations } from 'next-intl/server';
 
 import { getCatalog } from '@/lib/data/catalog';
 import { DEFAULT_LOCALE } from '@/lib/data/locales';
+import { getCharacterDetailStrings } from '@/lib/data/registry';
+import { readBuildsFor } from '@/lib/player/builds';
 import {
   createTeam,
   deleteTeam,
@@ -14,6 +16,8 @@ import {
   setRoles,
   setSlot,
 } from '@/lib/player/teams';
+import { getBuildPriorities } from '@/lib/rules/assemble';
+import { suggestRoles } from '@/lib/rules/suggest-role';
 import { TEAM_ROLES, type EndgameMode, type TeamRole } from '@/lib/rules/types';
 
 export type TeamActionState =
@@ -52,10 +56,12 @@ export async function deleteTeamAction(
 /**
  * Adds a member with their role already set.
  *
- * The role comes first because everything downstream reads it: the suggestions
- * for that slot, the collision resolution when two members want one set, and
- * the coverage rules. A member added without a role is invisible to all three
- * until someone remembers to go back.
+ * Everything downstream reads the role: the suggestions for that slot, the
+ * collision resolution when two members want one set, and the coverage rules.
+ * So a member never arrives without one when one can be found — but it is the
+ * app that finds it (see `suggestRoles`), not a question put to the player
+ * before they are allowed to pick a character. A form that does send roles
+ * still wins.
  */
 export async function addSlotAction(
   _previous: TeamActionState,
@@ -65,24 +71,28 @@ export async function addSlotAction(
   const teamId = String(form.get('teamId') ?? '');
   const characterId = Number(form.get('characterId'));
 
-  const roles = form.getAll('roles')
+  const requested = form.getAll('roles')
     .map(String)
     .filter((role): role is TeamRole => (TEAM_ROLES as string[]).includes(role));
-
-  if (roles.length === 0) {
-    return { status: 'error', message: t('roleRequired') };
-  }
 
   const catalog = await getCatalog(DEFAULT_LOCALE);
   const character = catalog.characters.get(characterId);
   if (!character) return { status: 'error', message: t('characterNotFound') };
 
+  const roles = requested.length > 0 ? requested : await suggestedRoles(characterId);
+
   const result = await setSlot(teamId, characterId, null);
-  if (result.ok) await setRoles(teamId, characterId, roles);
+  if (result.ok && roles.length > 0) await setRoles(teamId, characterId, roles);
   refresh();
 
   if (result.ok) {
-    return { status: 'ok', message: t('memberAdded', { name: character.name, roles: roles.join(', ') }) };
+    const roleLabel = await getTranslations('common.role');
+    return {
+      status: 'ok',
+      message: roles.length > 0
+        ? t('memberAdded', { name: character.name, roles: roles.map((role) => roleLabel(role)).join(', ') })
+        : t('memberAddedNoRole', { name: character.name }),
+    };
   }
 
   return {
@@ -95,6 +105,24 @@ export async function addSlotAction(
           ? t('inAnotherTeam', { name: character.name, team: result.team })
           : t('teamNotFound'),
   };
+}
+
+async function suggestedRoles(characterId: number): Promise<TeamRole[]> {
+  const [own, community, detail] = await Promise.all([
+    readBuildsFor(characterId),
+    getBuildPriorities(),
+    // English, whatever the page's language: the heuristic reads the game's
+    // own English wording, and a translation would need a regex per locale.
+    getCharacterDetailStrings('en', characterId),
+  ]);
+
+  return suggestRoles({
+    ownRoles: own.map((build) => build.role),
+    communityRole: community.get(characterId)?.role ?? null,
+    kitText: [...(detail.talents?.combat ?? []), ...(detail.talents?.passive ?? [])]
+      .map((talent) => talent.description)
+      .join(' '),
+  });
 }
 
 export async function removeSlotAction(
