@@ -2,6 +2,8 @@
 
 import { useTranslations } from 'next-intl';
 
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+
 /**
  * What the team is, beside what is wrong with it.
  *
@@ -56,25 +58,31 @@ export function SynergyPanel({ synergy }: { synergy: SynergyView }) {
         {t('synergyHeading')}
       </h3>
 
-      <div className="grid gap-3 lg:grid-cols-3">
+      {/*
+        * One accordion over the whole panel, so one effect is open at a time.
+        *
+        * The effects are the game's own paragraphs — a four-piece bonus runs
+        * to five lines — and printed open they made the auras column the
+        * tallest thing on the page for text most players already know. Each
+        * is a line now, its wearer beside it, and opens for whoever wants to
+        * read it; opening another closes the last, so the panel never grows
+        * by more than one paragraph.
+        */}
+      <Accordion className="grid gap-3 lg:grid-cols-3">
         <Group title={t('resonanceHeading')}>
           {synergy.resonances.length === 0 ? (
             <Empty>{t('noResonance')}</Empty>
           ) : (
             synergy.resonances.map((resonance) => (
-              <div
+              <Effect
                 key={resonance.id}
-                className="rounded border border-edge border-l-2 bg-surface-2 px-2 py-1.5"
-                style={{ borderLeftColor: resonance.color }}
+                value={`resonance-${resonance.id}`}
+                accent={resonance.color}
+                title={resonanceName(resonance.id)}
+                detail={resonance.members.join(' · ')}
               >
-                <p className="text-xs">{resonanceName(resonance.id)}</p>
-                <p className="mt-0.5 text-2xs leading-snug text-muted">
-                  {resonanceEffect(resonance.id)}
-                </p>
-                <p className="mt-0.5 font-mono text-2xs text-muted">
-                  {resonance.members.join(' · ')}
-                </p>
-              </div>
+                {resonanceEffect(resonance.id)}
+              </Effect>
             ))
           )}
         </Group>
@@ -134,32 +142,65 @@ export function SynergyPanel({ synergy }: { synergy: SynergyView }) {
             <Empty>{t('noAuras')}</Empty>
           ) : (
             synergy.auras.map((aura) => (
-              <div key={aura.key} className="rounded border border-edge bg-surface-2 px-2 py-1.5">
-                <p className="text-xs">
-                  {t('auraPieces', { pieces: aura.pieces, name: aura.setName })}{' '}
-                  <span className="font-mono text-2xs text-muted">
-                    {t('auraWearer', { name: aura.wearer })}
-                  </span>
-                </p>
-                {aura.effect && (
-                  <p className="mt-0.5 text-2xs leading-snug text-muted">{aura.effect}</p>
-                )}
-                {/* The duplicate is already an error under the slot that wears
-                    it; here it is the reason this aura is worth less than it
-                    looks, which is a different thing to know. */}
-                {aura.alsoWornBy.length > 0 && (
-                  <p className="mt-0.5 font-mono text-2xs text-warn">
-                    {t(aura.partitioned ? 'auraPartitioned' : 'auraShared', {
+              <Effect
+                key={aura.key}
+                value={`aura-${aura.key}`}
+                title={t('auraPieces', { pieces: aura.pieces, name: aura.setName })}
+                detail={t('auraWearer', { name: aura.wearer })}
+                // The duplicate is already an error under the slot that wears
+                // it; here it is the reason this aura is worth less than it
+                // looks, so it stays on the closed line where it is seen.
+                warning={aura.alsoWornBy.length > 0
+                  ? t(aura.partitioned ? 'auraPartitioned' : 'auraShared', {
                       names: aura.alsoWornBy.join(' · '),
-                    })}
-                  </p>
-                )}
-              </div>
+                    })
+                  : null}
+              >
+                {aura.effect}
+              </Effect>
             ))
           )}
         </Group>
-      </div>
+      </Accordion>
     </section>
+  );
+}
+
+/** One effect: its name and who brings it on a line, the paragraph behind a tap. */
+function Effect({
+  value,
+  title,
+  detail,
+  accent,
+  warning = null,
+  children,
+}: {
+  value: string;
+  title: string;
+  detail: string;
+  accent?: string;
+  warning?: string | null;
+  children: React.ReactNode;
+}) {
+  return (
+    <AccordionItem
+      value={value}
+      className="rounded border border-edge bg-surface-2 not-last:border-b"
+      style={accent ? { borderLeftWidth: 2, borderLeftColor: accent } : undefined}
+    >
+      <AccordionTrigger className="gap-2 rounded px-2 py-1.5 text-xs font-normal hover:no-underline">
+        <span className="min-w-0 flex-1">
+          <span className="block">{title}</span>
+          <span className="block font-mono text-2xs text-muted">{detail}</span>
+          {warning && <span className="block font-mono text-2xs text-warn">{warning}</span>}
+        </span>
+      </AccordionTrigger>
+      {children && (
+        <AccordionContent className="px-2 pb-2 text-2xs leading-snug text-muted">
+          {children}
+        </AccordionContent>
+      )}
+    </AccordionItem>
   );
 }
 
