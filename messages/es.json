@@ -125,7 +125,23 @@
     "orphanedHint": "o vuelve a escanear con la pantalla de personajes activada.",
     "missingHeading": "Sin conseguir",
     "empty": "Nada aquí todavía.",
-    "versionLine": "v{version} · {rarity}★"
+    "versionLine": "v{version} · {rarity}★",
+    "viewGallery": "Galería",
+    "viewCalendar": "Cumpleaños",
+    "groupBy": "Agrupar por",
+    "grouping": {
+      "owned": "Posesión", "element": "Elemento", "nation": "Nación",
+      "version": "Versión", "weapon": "Arma", "rarity": "Rareza"
+    },
+    "nation": {
+      "mondstadt": "Mondstadt", "liyue": "Liyue", "inazuma": "Inazuma", "sumeru": "Sumeru",
+      "fontaine": "Fontaine", "natlan": "Natlan", "nodkrai": "Nod-Krai",
+      "snezhnaya": "Snezhnaya", "other": "Otros"
+    },
+    "versionGroup": "Versión {version}",
+    "upcomingHeading": "Próximos cumpleaños",
+    "birthdayToday": "¡hoy!",
+    "birthdayIn": "{date} · en {days, plural, one {# día} other {# días}}"
   },
   "teams": {
     "synergyHeading": "Sinergia",

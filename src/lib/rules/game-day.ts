@@ -83,3 +83,11 @@ export function gameWeekStrip(
     return { day: WEEKDAYS[date.getUTCDay()], date: date.getUTCDate() };
   });
 }
+
+/**
+ * Today's date on the game server, which is the day a birthday mail arrives.
+ */
+export function gameDate(now: Date, region: GameRegion): { month: number; day: number } {
+  const today = atGameDay(now, region);
+  return { month: today.getUTCMonth() + 1, day: today.getUTCDate() };
+}
