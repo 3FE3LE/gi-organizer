@@ -4,7 +4,8 @@ import { test } from 'node:test';
 import { createMemoryDb } from '@/lib/db/client';
 
 import {
-  createTeam, isDraft, moveSlot, nameTeam, openDraft, readTeams, removeSlot, setRoles, setSlot,
+  createTeam, isDraft, moveSlot, nameTeam, openDraft, readTeams, removeSlot, reorderTeams, setRoles,
+  setSlot,
 } from './teams';
 
 const VENTI = 10000022;
@@ -111,4 +112,14 @@ test('a list of positions takes the first free one', async () => {
 
   const [after] = await readTeams(database);
   assert.equal(after.slots.find((slot) => slot.characterId === SUCROSE)?.position, 0);
+});
+
+test('the team list keeps the order it was dragged into', async () => {
+  const database = await db();
+  const first = await createTeam('Primero', 'other', database);
+  const second = await createTeam('Segundo', 'other', database);
+  const third = await createTeam('Tercero', 'other', database);
+
+  await reorderTeams([third, first, second], database);
+  assert.deepEqual((await readTeams(database)).map((team) => team.name), ['Tercero', 'Primero', 'Segundo']);
 });

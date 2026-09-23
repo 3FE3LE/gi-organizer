@@ -1,9 +1,26 @@
 'use client';
 
-import { ChevronDown, X } from 'lucide-react';
+import {
+  DndContext,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type Modifier,
+  type UniqueIdentifier,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { ChevronDown, GripVertical, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useState } from 'react';
+import { startTransition, useOptimistic, useState } from 'react';
 
 import { AssetImage } from '@/components/asset-image';
 import { buttonVariants } from '@/components/ui/button';
@@ -15,6 +32,8 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from '@/components/ui/drawer';
+
+import { reorderTeamsAction } from './actions';
 
 export type RailEntry = {
   id: string;
@@ -80,30 +99,172 @@ export function TeamDrawer({
         </DrawerHeader>
 
         <div className="mx-auto w-full max-w-3xl flex-1 space-y-3 overflow-y-auto px-4 py-4">
-          <ul className="space-y-2">
-            {teams.map((team) => (
-              <li key={team.id}>
-                <Link
-                  href={`/${locale}/teams?team=${team.id}`}
-                  onClick={() => setOpen(false)}
-                  aria-current={team.id === selectedId ? 'true' : undefined}
-                  className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors ${
-                    team.draft ? 'border-dashed' : ''
-                  } ${
-                    team.id === selectedId
-                      ? 'border-accent bg-surface-2'
-                      : 'border-edge bg-surface hover:border-edge-strong'
-                  }`}
-                >
-                  <Row team={team} />
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <SortableTeams
+            locale={locale}
+            teams={teams}
+            selectedId={selectedId}
+            onPick={() => setOpen(false)}
+          />
           <div onClick={() => setOpen(false)}>{create}</div>
         </div>
       </DrawerContent>
     </Drawer>
+  );
+}
+
+/** A list only moves up and down; a row dragged sideways stays in its lane. */
+const restrictToVerticalAxis: Modifier = ({ transform }) => ({ ...transform, x: 0 });
+
+/**
+ * The rows, in the order the player keeps them, and a grip to change it.
+ *
+ * Only the grip drags, so a tap on the row still opens the team. It is also
+ * excluded from the drawer's own swipe — without that, pulling a team down
+ * the list would pull the whole sheet closed.
+ */
+function SortableTeams({
+  locale,
+  teams,
+  selectedId,
+  onPick,
+}: {
+  locale: string;
+  teams: RailEntry[];
+  selectedId: string | null;
+  onPick: () => void;
+}) {
+  const t = useTranslations('teams');
+  const [shown, reorder] = useOptimistic(teams, (_, next: RailEntry[]) => next);
+  const [announcement, setAnnouncement] = useState('');
+  // Pointer only. dnd-kit's keyboard sensor listens on the window, and the
+  // drawer stops arrow keys before they get there — so the keyboard moves a
+  // team from its grip instead, one place per arrow, see `step`.
+  const sensors = useSensors(useSensor(PointerSensor));
+
+  const nameOf = (id: UniqueIdentifier) => shown.find((team) => team.id === id)?.name ?? '';
+  const placeOf = (id: UniqueIdentifier | undefined) =>
+    shown.findIndex((team) => team.id === id) + 1;
+
+  const commit = (next: RailEntry[]) => {
+    startTransition(async () => {
+      reorder(next);
+      await reorderTeamsAction(next.map((team) => team.id));
+    });
+  };
+
+  const onDragEnd = ({ active, over }: DragEndEvent) => {
+    if (!over || active.id === over.id) return;
+    commit(arrayMove(
+      shown,
+      shown.findIndex((team) => team.id === active.id),
+      shown.findIndex((team) => team.id === over.id),
+    ));
+  };
+
+  const step = (id: string, by: -1 | 1) => {
+    const from = shown.findIndex((team) => team.id === id);
+    const to = from + by;
+    if (from === -1 || to < 0 || to >= shown.length) return;
+    commit(arrayMove(shown, from, to));
+    setAnnouncement(t('dragListDropped', { name: nameOf(id), n: to + 1 }));
+  };
+
+  return (
+    <DndContext
+      id="team-list"
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      modifiers={[restrictToVerticalAxis]}
+      onDragEnd={onDragEnd}
+      accessibility={{
+        screenReaderInstructions: { draggable: t('dragListInstructions') },
+        announcements: {
+          onDragStart: ({ active }) => t('dragPicked', { name: nameOf(active.id) }),
+          onDragOver: ({ active, over }) =>
+            over ? t('dragListOver', { name: nameOf(active.id), n: placeOf(over.id) }) : '',
+          onDragEnd: ({ active, over }) =>
+            over ? t('dragListDropped', { name: nameOf(active.id), n: placeOf(over.id) }) : t('dragCancelled'),
+          onDragCancel: () => t('dragCancelled'),
+        },
+      }}
+    >
+      <SortableContext items={shown.map((team) => team.id)} strategy={verticalListSortingStrategy}>
+        <ul className="space-y-2">
+          {shown.map((team) => (
+            <SortableTeam
+              key={team.id}
+              locale={locale}
+              team={team}
+              selected={team.id === selectedId}
+              onPick={onPick}
+              onStep={(by) => step(team.id, by)}
+            />
+          ))}
+        </ul>
+      </SortableContext>
+      <p aria-live="polite" className="sr-only">{announcement}</p>
+    </DndContext>
+  );
+}
+
+function SortableTeam({
+  locale,
+  team,
+  selected,
+  onPick,
+  onStep,
+}: {
+  locale: string;
+  team: RailEntry;
+  selected: boolean;
+  onPick: () => void;
+  /** One place up or down, from the keyboard. */
+  onStep: (by: -1 | 1) => void;
+}) {
+  const t = useTranslations('teams');
+  const {
+    attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging,
+  } = useSortable({ id: team.id });
+
+  return (
+    <li
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={`relative flex items-stretch gap-1 ${isDragging ? 'z-10 opacity-90' : ''}`}
+    >
+      <button
+        ref={setActivatorNodeRef}
+        type="button"
+        {...attributes}
+        {...listeners}
+        onKeyDown={(event) => {
+          if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+          event.preventDefault();
+          onStep(event.key === 'ArrowUp' ? -1 : 1);
+        }}
+        aria-keyshortcuts="ArrowUp ArrowDown"
+        data-base-ui-swipe-ignore=""
+        aria-label={t('dragHandle', { name: team.name })}
+        title={t('dragHandle', { name: team.name })}
+        className={`${buttonVariants({ variant: 'ghost', size: 'icon-sm' })} h-auto shrink-0 cursor-grab touch-none text-muted active:cursor-grabbing`}
+      >
+        <GripVertical size={14} aria-hidden />
+      </button>
+      <Link
+        href={`/${locale}/teams?team=${team.id}`}
+        onClick={onPick}
+        aria-current={selected ? 'true' : undefined}
+        className={`flex min-w-0 flex-1 items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors ${
+          team.draft ? 'border-dashed' : ''
+        } ${
+          selected
+            ? 'border-accent bg-surface-2'
+            : 'border-edge bg-surface hover:border-edge-strong'
+        } ${isDragging ? 'shadow-lg' : ''}`}
+      >
+        <Row team={team} />
+      </Link>
+    </li>
   );
 }
 

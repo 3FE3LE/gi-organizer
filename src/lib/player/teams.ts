@@ -107,6 +107,19 @@ export async function openDraft(db: Db = getDb()): Promise<string> {
   return existing?.id ?? createTeam('', 'other', db);
 }
 
+/**
+ * The list's order, as the player dragged it: `ids` first to last. Ids that
+ * are not this profile's are ignored, and teams missing from the list keep
+ * their place after the ones in it.
+ */
+export async function reorderTeams(ids: string[], db: Db = getDb()) {
+  const profileId = await getProfileId(db);
+  const update = db.prepare('UPDATE team SET position = ? WHERE id = ? AND profile_id = ?');
+  await transaction(db, async () => {
+    for (const [position, id] of ids.entries()) await update.run(position, id, profileId);
+  });
+}
+
 export async function nameTeam(teamId: string, name: string, db: Db = getDb()) {
   return (await db
     .prepare('UPDATE team SET name = ? WHERE id = ? AND profile_id = ?')

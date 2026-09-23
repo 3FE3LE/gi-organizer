@@ -13,6 +13,7 @@ import {
   moveSlot,
   nameTeam,
   openDraft,
+  reorderTeams,
   removeSlot,
   setDeclaration,
   setObjective,
@@ -138,6 +139,12 @@ async function suggestedRoles(characterId: number): Promise<TeamRole[]> {
       .map((talent) => talent.description)
       .join(' '),
   });
+}
+
+/** The team list's order, first to last, after a drag in the drawer. */
+export async function reorderTeamsAction(ids: string[]) {
+  await reorderTeams(ids.map(String));
+  refresh();
 }
 
 /** A drag between two positions: a move into an empty one, a swap otherwise. */
