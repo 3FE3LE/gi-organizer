@@ -543,6 +543,8 @@
       "actions": {
         "appliedMessage": "artefactos +{artifactsInserted} ~{artifactsUpdated} -{artifactsDeleted} · armas +{weaponsInserted} ~{weaponsUpdated} -{weaponsDeleted} · {characters, plural, one {# personaje} other {# personajes}}{repaired}",
         "repairsSuffix": "{count, plural, one {; # asignación imposible descartada} other {; # asignaciones imposibles descartadas}}",
+        "unequippedSuffix": "{count, plural, one {; # pieza que ya no aparece quedó desequipada} other {; # piezas que ya no aparecen quedaron desequipadas}}",
+        "weaponSlot": "arma",
         "exclusivityConflicts": "{count, plural, one {# conflicto de exclusividad; no se escribió nada} other {# conflictos de exclusividad; no se escribió nada}}",
         "showcaseAppliedMessage": "semilla de {uid}: artefactos +{artifactsInserted} ~{artifactsUpdated} · armas +{weaponsInserted} ~{weaponsUpdated} · {characters, plural, one {# personaje} other {# personajes}}"
       }

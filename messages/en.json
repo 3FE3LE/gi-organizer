@@ -543,6 +543,8 @@
       "actions": {
         "appliedMessage": "artifacts +{artifactsInserted} ~{artifactsUpdated} -{artifactsDeleted} · weapons +{weaponsInserted} ~{weaponsUpdated} -{weaponsDeleted} · {characters, plural, one {# character} other {# characters}}{repaired}",
         "repairsSuffix": "{count, plural, one {; # impossible assignment dropped} other {; # impossible assignments dropped}}",
+        "unequippedSuffix": "{count, plural, one {; # piece no longer listed was unequipped} other {; # pieces no longer listed were unequipped}}",
+        "weaponSlot": "weapon",
         "exclusivityConflicts": "{count, plural, one {# exclusivity conflict; nothing was written} other {# exclusivity conflicts; nothing was written}}",
         "showcaseAppliedMessage": "seed from {uid}: artifacts +{artifactsInserted} ~{artifactsUpdated} · weapons +{weaponsInserted} ~{weaponsUpdated} · {characters, plural, one {# character} other {# characters}}"
       }

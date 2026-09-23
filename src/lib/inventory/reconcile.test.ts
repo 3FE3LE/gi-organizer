@@ -304,6 +304,39 @@ test('apply refuses an import that would double-assign a slot', () => {
   );
 });
 
+test('a worn piece the file no longer lists gives its slot to the one the file names', () => {
+  // Worn by Amber, then fed to another piece, so this export does not list it —
+  // and Amber is wearing a new flower. Kept by default, the old flower still
+  // claimed her flower slot, and the whole import was refused for it.
+  const gone = own(piece({ equippedTo: 10000021 }), 'gone');
+  const replacement = piece({ setId: 15002, equippedTo: 10000021 });
+  const inventory = { artifacts: [gone], weapons: [] };
+
+  const { inventory: applied } = applyImport(inventory,
+    planImport(inventory, importOf([replacement])), { newId: () => 'new' });
+
+  assert.equal(applied.artifacts.length, 2, 'kept, because the player asked to keep absences');
+  assert.equal(applied.artifacts.find((a) => a.id === 'gone')?.equippedTo, null);
+  assert.equal(applied.artifacts.find((a) => a.id === 'new')?.equippedTo, 10000021);
+});
+
+test('a partial import moves a slot to the piece it saw there', () => {
+  // A showcase sees eight characters. What it saw worn is the truth for those
+  // slots, and the piece that used to be there is simply not on them any more.
+  const before = own(piece({ equippedTo: 10000021 }), 'before');
+  const seen = own(piece({ setId: 15002 }), 'seen');
+  const inventory = { artifacts: [before, seen], weapons: [] };
+
+  const { inventory: applied } = applyImport(inventory, planImport(inventory, {
+    ...importOf([piece({ setId: 15002, equippedTo: 10000021 })]),
+    source: 'enka',
+    coverage: 'partial',
+  }));
+
+  assert.equal(applied.artifacts.find((a) => a.id === 'before')?.equippedTo, null);
+  assert.equal(applied.artifacts.find((a) => a.id === 'seen')?.equippedTo, 10000021);
+});
+
 test('a GOOD import never clears a lock Enka could not see', () => {
   const locked = own(piece({ lock: true }), 'locked');
   const blind = piece({ lock: null });

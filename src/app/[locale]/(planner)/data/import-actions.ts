@@ -1,8 +1,12 @@
 'use server';
 
 import { refresh } from 'next/cache';
-import { getTranslations } from 'next-intl/server';
+import { getLocale, getTranslations } from 'next-intl/server';
 
+import { getCatalog } from '@/lib/data/catalog';
+import { DEFAULT_LOCALE, isLocale } from '@/lib/data/locales';
+import type { AssignmentConflict } from '@/lib/inventory/assignment';
+import type { Repair } from '@/lib/inventory/apply';
 import { AssignmentViolation, applyShowcase, applyStaged } from '@/lib/player/import';
 
 /**
@@ -32,9 +36,7 @@ export async function applyStagedAction(
     refresh();
 
     const { artifacts, weapons } = result.persisted;
-    const repaired = result.repairs.length
-      ? t('repairsSuffix', { count: result.repairs.length })
-      : '';
+    const repaired = repairSuffix(result.repairs, t);
 
     return {
       status: 'ok',
@@ -53,11 +55,43 @@ export async function applyStagedAction(
     if (error instanceof AssignmentViolation) {
       return {
         status: 'error',
-        message: t('exclusivityConflicts', { count: error.conflicts.length }),
+        message: `${t('exclusivityConflicts', { count: error.conflicts.length })}: ${
+          await describeConflicts(error.conflicts, t)}`,
       };
     }
     return { status: 'error', message: (error as Error).message };
   }
+}
+
+type ActionMessages = Awaited<ReturnType<typeof getTranslations<'data.import.actions'>>>;
+
+/** The two kinds of repair say different things, so they are counted apart. */
+function repairSuffix(repairs: Repair[], t: ActionMessages) {
+  const impossible = repairs.filter((repair) => repair.kind === 'weapon-type-mismatch').length;
+  const unequipped = repairs.filter((repair) => repair.kind === 'artifact-unequipped').length;
+
+  return [
+    impossible > 0 ? t('repairsSuffix', { count: impossible }) : '',
+    unequipped > 0 ? t('unequippedSuffix', { count: unequipped }) : '',
+  ].join('');
+}
+
+/**
+ * Who and where, so a refused import can be acted on. A count alone said
+ * something was wrong and nothing about what.
+ */
+async function describeConflicts(conflicts: AssignmentConflict[], t: ActionMessages) {
+  const requested = await getLocale();
+  const catalog = await getCatalog(isLocale(requested) ? requested : DEFAULT_LOCALE);
+  const slot = await getTranslations('common.slot');
+  const name = (id: number) => catalog.characters.get(id)?.name ?? `#${id}`;
+
+  return conflicts
+    .map((conflict) =>
+      conflict.kind === 'slot-occupied'
+        ? `${name(conflict.characterId)} · ${slot.has(conflict.slot) ? slot(conflict.slot) : conflict.slot}`
+        : `${name(conflict.characterId)} · ${t('weaponSlot')}`)
+    .join(', ');
 }
 
 export async function applyShowcaseAction(
