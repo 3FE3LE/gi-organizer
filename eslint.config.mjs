@@ -11,6 +11,8 @@ const eslintConfig = defineConfig([
     ".next/**",
     // The browser suite builds here; see `distDir` in next.config.ts.
     ".next-e2e/**",
+    // Any other distDir a dev server was pointed at; see `.gitignore`.
+    ".next-*/**",
     "test-results/**",
     "playwright-report/**",
     "out/**",
