@@ -17,6 +17,7 @@ import {
 } from '@/lib/forms/build';
 import type { TeamRole } from '@/lib/rules/types';
 import { NotInRoster, TargetBelowCurrent, applyProgress } from '@/lib/player/progress';
+import { refinementResolver } from '@/lib/player/weapon-copies';
 
 /**
  * The form behind "progress and target". Validation only: the write is one
@@ -67,7 +68,10 @@ export async function saveProgressAction(values: ProgressFormValues): Promise<Pr
         talents: input.targetTalents,
       },
       weaponId,
-      weaponRefinement: input.weaponRefinement,
+      // The copy's, whatever the form sent — see `rules/refinement.ts`.
+      weaponRefinement: weaponId === null
+        ? null
+        : (await refinementResolver()).resolve(input.characterId, weaponId, input.weaponRefinement),
       setIds,
       mainStats: statedMainStats(input.mainStats) as Partial<Record<ArtifactSlot, string>>,
       goals: statedGoals(input.goals),

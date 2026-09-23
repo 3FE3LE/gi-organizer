@@ -101,6 +101,8 @@ export type ProgressOptions = {
   weapons: RankedOptions;
   /** Weapon ids whose refinement is farmable — see `objective-view.ts`. */
   forgeable: number[];
+  /** Each owned weapon's refinement on this character — see `rules/refinement.ts`. */
+  ownedRefinements: Record<number, number>;
   /** Richer than the rest: a set is picked by its icon and its bonus. */
   sets: SetOptions;
   mainStatsBySlot: Record<string, Option[]>;
@@ -446,7 +448,16 @@ function ProgressForm({
                       name={field.name}
                       label={t('targetWeaponLabel')}
                       value={field.value}
-                      onValueChange={field.onChange}
+                      onValueChange={(next) => {
+                        field.onChange(next);
+                        // The refinement belongs to the weapon: a new pick
+                        // starts at the copy owned, never at the last one's.
+                        form.setValue(
+                          'weaponRefinement',
+                          options.ownedRefinements[Number(next)] ?? 1,
+                          { shouldDirty: true },
+                        );
+                      }}
                       onBlur={field.onBlur}
                       placeholder={t('weaponPlaceholder')}
                       groups={[

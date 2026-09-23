@@ -23,6 +23,7 @@ import {
 } from '@/lib/player/builds';
 import { readDeployments, readTeams } from '@/lib/player/teams';
 import { readTargets } from '@/lib/player/targets';
+import { refinementResolver } from '@/lib/player/weapon-copies';
 
 import { evaluate, type CharacterGear, type EvaluationInput } from './evaluate';
 import { type AgendaItem, buildAgenda } from './agenda';
@@ -149,6 +150,7 @@ export async function assemble(catalog: Catalog, db: Db = getDb()) {
 
   const gear = await readGearByCharacter(db, profileId);
   const stock = await readWeaponStock(db, profileId);
+  const refinements = await refinementResolver(db);
 
   const input: EvaluationInput = {
     teams: teams.map((team) => ({
@@ -171,7 +173,14 @@ export async function assemble(catalog: Catalog, db: Db = getDb()) {
     stock,
     targets: new Map(
       [...await readTargets(db)].map(([characterId, target]) => [
-        characterId, { weaponId: target.weaponId, refinement: target.refinement },
+        characterId,
+        {
+          weaponId: target.weaponId,
+          // Off the copy, not the stored number — see `rules/refinement.ts`.
+          refinement: target.weaponId === null
+            ? target.refinement
+            : refinements.resolve(characterId, target.weaponId, target.refinement),
+        },
       ]),
     ),
     characters: new Map(

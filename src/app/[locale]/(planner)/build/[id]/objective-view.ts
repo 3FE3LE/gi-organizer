@@ -4,7 +4,7 @@ import { getTranslations } from 'next-intl/server';
 
 import { propLabel, setEffects, type Catalog } from '@/lib/data/catalog';
 import { resolveIcon } from '@/lib/data/icon';
-import { getWeaponSources } from '@/lib/data/registry';
+import { refinementResolver } from '@/lib/player/weapon-copies';
 import { formatPropValue } from '@/lib/data/props';
 import { isAscended } from '@/lib/data/stats';
 import { ASSUMED_TARGET } from '@/lib/rules/materials';
@@ -42,9 +42,12 @@ export type ObjectiveView = {
 
 export async function objectiveViewFor(context: BuildContext): Promise<ObjectiveView> {
   const { catalog, character, characterId, gear, loadout, locale, suggestions, target } = context;
+  const refinements = await refinementResolver(context.db);
   const editor = await editorOptionsFor(catalog, character);
   const t = await getTranslations('build');
   const activeBuild = suggestions.build;
+  const plannedWeaponId =
+    activeBuild?.weaponId ?? target.weaponId ?? gear.weapon?.weaponId ?? null;
   // What the character is already wearing, which is what a goal nobody has
   // written down opens on. See `@/lib/rules/worn`.
   const worn = [...gear.bySlot.values()];
@@ -85,9 +88,13 @@ export async function objectiveViewFor(context: BuildContext): Promise<Objective
     // character wearing a weapon is a character whose plan is that weapon at
     // ninety until the player replaces it, and opening on "sin arma objetivo"
     // asked them to re-enter a decision the account had already recorded.
-    weaponId: activeBuild?.weaponId ?? target.weaponId ?? gear.weapon?.weaponId ?? null,
-    weaponRefinement:
-      activeBuild?.weaponRefinement ?? target.refinement ?? gear.weapon?.refinement ?? null,
+    weaponId: plannedWeaponId,
+    // The weapon's, read off the copy — see `rules/refinement.ts`.
+    weaponRefinement: plannedWeaponId === null
+      ? null
+      : refinements.resolve(
+          characterId, plannedWeaponId, activeBuild?.weaponRefinement ?? target.refinement ?? null,
+        ),
     equippedWeapon: gear.weapon
       ? t('equippedWeaponLine', {
           name: catalog.weapons.get(gear.weapon.weaponId)?.name ?? `#${gear.weapon.weaponId}`,
@@ -122,15 +129,23 @@ export async function objectiveViewFor(context: BuildContext): Promise<Objective
    * counts it: it hands out one copy per cycle on its own schedule, which is a
    * date, not a cost.
    */
-  const forgeable = [...(await getWeaponSources())]
-    .filter(([, entry]) => entry.source === 'forge')
-    .map(([weaponId]) => weaponId);
+  const forgeable = [...refinements.forgeable];
+
+  // What each owned weapon would be at on this character, so picking another
+  // weapon in the form moves the refinement with it instead of keeping the
+  // last one's.
+  const ownedRefinements = Object.fromEntries(
+    [...refinements.copies.keys()].map((weaponId) => [
+      weaponId, refinements.resolve(characterId, weaponId, null),
+    ]),
+  );
 
   const options: ProgressOptions = {
     roles: editor.roles,
     substats: editor.substats,
     weapons: { suggested: suggestedWeaponOptions, all: editor.weapons },
     forgeable,
+    ownedRefinements,
     sets: { suggested, all },
     mainStatsBySlot: editor.mainStatsBySlot,
     goalProps: goalPropsFor(character).map((prop) => ({

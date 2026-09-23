@@ -11,6 +11,7 @@ import { firstIssue, templateSchema } from '@/lib/forms/build';
 import { deleteBuild, readBuild, readBuildsFor, saveBuild } from '@/lib/player/builds';
 import { getDb } from '@/lib/db/client';
 import { getBuildPriorities, suggestionsFor } from '@/lib/rules/assemble';
+import { refinementResolver } from '@/lib/player/weapon-copies';
 import { templateFor } from '@/lib/rules/role-templates';
 import { CHOOSABLE_SLOTS } from '@/lib/rules/piece-score';
 
@@ -127,6 +128,8 @@ export async function applyTemplateAction(
   const set = suggestions.sets.find((entry) => entry.feasible) ?? suggestions.sets[0];
   const weapon = suggestions.weapons.find((entry) => entry.feasible) ?? suggestions.weapons[0];
 
+  const plannedWeaponId = weapon?.weaponId ?? existing.weaponId;
+
   const mainStats: Partial<Record<ArtifactSlot, string[]>> = {};
   for (const [slot, prop] of Object.entries(template.mainStats)) {
     if (prop) mainStats[slot as ArtifactSlot] = [prop];
@@ -135,8 +138,15 @@ export async function applyTemplateAction(
   await saveBuild({
     ...existing,
     id: existing.id,
-    weaponId: weapon?.weaponId ?? existing.weaponId,
-    weaponRefinement: weapon?.minRefinement ?? existing.weaponRefinement,
+    weaponId: plannedWeaponId,
+    // The community's minimum only where a copy can be forged towards it; a
+    // five-star is at the refinement the account holds. See
+    // `rules/refinement.ts`.
+    weaponRefinement: plannedWeaponId === null
+      ? null
+      : (await refinementResolver()).resolve(
+          characterId, plannedWeaponId, weapon?.minRefinement ?? existing.weaponRefinement,
+        ),
     setPlan: set ? [{ setIds: set.setIds, pieces: set.pieces }] : existing.setPlan,
     mainStats,
     substats: template.substats,
