@@ -511,6 +511,21 @@ body {
    * the whole footer sit underneath it — reachable only by overscrolling,
    * which reads as content that is simply missing.
    */
+  /**
+   * The round bed a talent or constellation glyph sits on.
+   *
+   * Edged by an inset shadow, not a border. A 1px border in the page's light
+   * edge colour, drawn round a dark fill, is a two-tone seam one device pixel
+   * wide — at 125% or 150% display scaling it falls between pixels and a GPU
+   * rasterizer draws it as a staircase. A shadow is antialiased as part of the
+   * shape, and an inset one keeps the disc's own fill as its outline.
+   */
+  .disc {
+    border-radius: 9999px;
+    background: var(--icon-bed);
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, white 12%, transparent);
+  }
+
   .section-nav-offset {
     padding-bottom: var(--section-nav-height);
   }

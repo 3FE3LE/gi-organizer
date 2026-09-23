@@ -109,10 +109,10 @@ export function Abilities({
                   /* `bg-icon-bed`, not `bg-ink`: the glyph inside is white line
                      art and `--ink` is parchment in the light theme. See
                      `globals.css`. */
-                  className={`flex h-8 w-8 items-center justify-center rounded-full border bg-icon-bed transition-transform hover:scale-110 ${
+                  className={`flex h-8 w-8 items-center justify-center disc transition-transform hover:scale-110 ${
                     constellation.unlocked
-                      ? 'border-accent'
-                      : 'border-edge opacity-40 grayscale'
+                      ? 'ring-1 ring-accent'
+                      : 'opacity-40 grayscale'
                   }`}
                 >
                   <Glyph ability={constellation} size="h-5 w-5" />
@@ -135,7 +135,7 @@ export function Abilities({
                 aria-label={talent.name}
                 className="flex flex-col items-center gap-1"
               >
-                <span className="flex h-10 w-10 items-center justify-center rounded-full border border-edge bg-icon-bed transition-transform hover:scale-110">
+                <span className="flex h-10 w-10 items-center justify-center disc transition-transform hover:scale-110">
                   <Glyph ability={talent} size="h-6 w-6" />
                 </span>
                 <span className="tabular font-mono text-2xs">
@@ -164,8 +164,8 @@ export function Abilities({
                 className="flex flex-col items-center gap-1"
               >
                 <span
-                  className={`flex h-8 w-8 items-center justify-center rounded-full border bg-icon-bed transition-transform hover:scale-110 ${
-                    passive.unlocked ? 'border-edge' : 'border-edge opacity-40 grayscale'
+                  className={`flex h-8 w-8 items-center justify-center disc transition-transform hover:scale-110 ${
+                    passive.unlocked ? '' : 'opacity-40 grayscale'
                   }`}
                 >
                   <Glyph ability={passive} size="h-5 w-5" />
@@ -233,7 +233,7 @@ function AbilityPanel({ ability, closeLabel }: { ability: Ability; closeLabel: s
   return (
     <div className="flex max-h-[85vh] flex-col">
       <header className="flex items-start gap-3 border-b border-edge px-4 py-3">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-edge bg-icon-bed">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center disc">
           <Glyph ability={ability} size="h-7 w-7" />
         </span>
         <div className="min-w-0 flex-1">
