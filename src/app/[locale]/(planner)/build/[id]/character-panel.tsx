@@ -93,6 +93,23 @@ export async function CharacterPanel({
     bonus: talentBonus[index],
   })));
 
+  const passives: Ability[] = await Promise.all(
+    (detail.talents?.passive ?? []).map(async (passive, index) => {
+      const phase = passive.unlockAscension ?? 0;
+      return {
+        key: `passive-${index}`,
+        // A1 and A4 are what the community calls them; an innate passive has
+        // no phase, and a dot says "always" without another word to translate.
+        fallback: phase > 0 ? `A${phase}` : '·',
+        icon: await resolveIcon(passive.icon ?? null, 'talent'),
+        name: passive.name,
+        description: passive.description,
+        unlocked: loadout.ascension >= phase,
+        unlockAscension: phase,
+      };
+    }),
+  );
+
   const constellationIcons = entry?.constellationIcons ?? [];
   const constellations: Ability[] = await Promise.all(
     (detail.constellation?.levels ?? constellationIcons).map(async (_, index) => ({
@@ -213,7 +230,11 @@ export async function CharacterPanel({
               a talent and a constellation open the same panel, and two roots
               cannot share the state of which one is showing. The portrait is
               still server-rendered and handed in. */}
-          <Abilities constellations={constellations} talents={talents} splash={
+          <Abilities
+            constellations={constellations}
+            talents={talents}
+            passives={passives}
+            splash={
             /*
              * The other half of the roster's morph: the avatar the player
              * clicked grows into this splash instead of being replaced by it.

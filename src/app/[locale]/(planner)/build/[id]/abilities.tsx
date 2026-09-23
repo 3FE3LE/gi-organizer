@@ -37,8 +37,10 @@ export type Ability = {
   /** Talents only. */
   level?: number;
   bonus?: number;
-  /** Constellations only. */
+  /** Constellations and passives: whether the character has it yet. */
   unlocked?: boolean;
+  /** Passives only: the ascension phase that unlocks it, 0 for always. */
+  unlockAscension?: number;
   scaling?: AbilityScaling;
 };
 
@@ -63,11 +65,18 @@ export function Abilities({
   splash,
   constellations,
   talents,
+  passives,
 }: {
   /** The portrait, rendered on the server; the constellations sit over it. */
   splash: React.ReactNode;
   constellations: Ability[];
   talents: Ability[];
+  /**
+   * The passives, under the combat talents. They were in the data all along
+   * and on no screen, which is how a character's heal-over-time or a damage
+   * bonus off Energy Recharge stayed something only a wiki could tell you.
+   */
+  passives: Ability[];
 }) {
   const t = useTranslations('build');
   const [open, setOpen] = useState<Ability | null>(null);
@@ -106,7 +115,7 @@ export function Abilities({
                       : 'border-edge opacity-40 grayscale'
                   }`}
                 >
-                  <Glyph ability={constellation} kind="constellation" size="h-5 w-5" />
+                  <Glyph ability={constellation} size="h-5 w-5" />
                 </button>
                 </Hint>
               </li>
@@ -127,12 +136,41 @@ export function Abilities({
                 className="flex flex-col items-center gap-1"
               >
                 <span className="flex h-10 w-10 items-center justify-center rounded-full border border-edge bg-icon-bed transition-transform hover:scale-110">
-                  <Glyph ability={talent} kind="talent" size="h-6 w-6" />
+                  <Glyph ability={talent} size="h-6 w-6" />
                 </span>
                 <span className="tabular font-mono text-2xs">
                   {talent.level}
                   {(talent.bonus ?? 0) > 0 && <span className="text-accent">+{talent.bonus}</span>}
                 </span>
+              </button>
+              </Hint>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* Smaller than the combat talents, and marked with the phase that
+          unlocks them: a passive has no level to show, only whether the
+          character has reached it. */}
+      {passives.length > 0 && (
+        <ul className="flex justify-center gap-2 px-3 pb-3" aria-label={t('passivesLabel')}>
+          {passives.map((passive) => (
+            <li key={passive.key}>
+              <Hint text={passive.name}>
+              <button
+                type="button"
+                onClick={() => setOpen(passive)}
+                aria-label={passive.name}
+                className="flex flex-col items-center gap-1"
+              >
+                <span
+                  className={`flex h-8 w-8 items-center justify-center rounded-full border bg-icon-bed transition-transform hover:scale-110 ${
+                    passive.unlocked ? 'border-edge' : 'border-edge opacity-40 grayscale'
+                  }`}
+                >
+                  <Glyph ability={passive} size="h-5 w-5" />
+                </span>
+                <span className="font-mono text-2xs text-muted">{passive.fallback}</span>
               </button>
               </Hint>
             </li>
@@ -169,11 +207,10 @@ export function Abilities({
   );
 }
 
-function Glyph({
-  ability, kind, size,
-}: {
-  ability: Ability; kind: 'talent' | 'constellation'; size: string;
-}) {
+function Glyph({ ability, size }: { ability: Ability; size: string }) {
+  // Passive art is talent art: the same host, the same size.
+  const kind = ability.key.startsWith('constellation') ? 'constellation' : 'talent';
+
   if (!ability.icon) {
     return <span className="font-mono text-2xs text-muted">{ability.fallback}</span>;
   }
@@ -197,16 +234,18 @@ function AbilityPanel({ ability, closeLabel }: { ability: Ability; closeLabel: s
     <div className="flex max-h-[85vh] flex-col">
       <header className="flex items-start gap-3 border-b border-edge px-4 py-3">
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-edge bg-icon-bed">
-          <Glyph
-            ability={ability}
-            kind={ability.unlocked === undefined ? 'talent' : 'constellation'}
-            size="h-7 w-7"
-          />
+          <Glyph ability={ability} size="h-7 w-7" />
         </span>
         <div className="min-w-0 flex-1">
           <DialogTitle className="text-sm font-normal">{ability.name}</DialogTitle>
           <p className="font-mono text-2xs uppercase tracking-wide text-muted">
-            {ability.unlocked === undefined
+            {ability.unlockAscension !== undefined
+              ? ability.unlockAscension === 0
+                ? t('passiveInnate')
+                : ability.unlocked
+                  ? t('passiveUnlocked', { phase: ability.unlockAscension })
+                  : t('passiveLocked', { phase: ability.unlockAscension })
+              : ability.unlocked === undefined
               ? t('abilityLevelNow', { level: ability.level ?? 1 })
               : ability.unlocked
                 ? ability.fallback
@@ -221,7 +260,7 @@ function AbilityPanel({ ability, closeLabel }: { ability: Ability; closeLabel: s
       <div className="flex-1 space-y-4 overflow-y-auto px-4 py-3">
         {ability.description && (
           <p className="whitespace-pre-line text-xs leading-relaxed text-muted">
-            {ability.description}
+            <Emphasis text={ability.description} />
           </p>
         )}
 
@@ -265,6 +304,19 @@ function AbilityPanel({ ability, closeLabel }: { ability: Ability; closeLabel: s
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * The game's own emphasis, which `genshin-db` writes as `**term**` where the
+ * client links a term to its glossary. Drawn as the term it is rather than as
+ * asterisks.
+ */
+function Emphasis({ text }: { text: string }) {
+  return text.split(/\*\*(.+?)\*\*/g).map((part, index) =>
+    index % 2 === 1
+      ? <strong key={index} className="font-normal text-text">{part}</strong>
+      : part,
   );
 }
 
