@@ -48,6 +48,9 @@ next-env.d.ts
 genshinData_GOOD_*.json
 e2e/.tmp/
 .next-e2e/
+# any other distDir (NEXT_DIST_DIR): Tailwind scans what git does not ignore,
+# and a Turbopack cache read as source breaks the stylesheet
+.next-*/
 test-results/
 playwright-report/
 
