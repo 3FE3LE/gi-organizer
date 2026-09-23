@@ -30,6 +30,7 @@ export type TeamSlot = {
 
 export type Team = {
   id: string;
+  /** Empty on the draft — see `isDraft`. Shown through a translated label. */
   name: string;
   mode: EndgameMode;
   position: number;
@@ -79,6 +80,39 @@ export async function readTeams(db: Db = getDb()): Promise<Team[]> {
   return teams.map((team) => ({ ...team, slots: byTeam.get(team.id) ?? [] }));
 }
 
+/**
+ * The draft: a team being put together that nobody has named yet.
+ *
+ * A team used to need a name and a mode before it could exist, which put two
+ * questions in front of the only one that matters — who is in it. So a new
+ * team starts as the draft, with no name, and becomes a team proper when it is
+ * saved with one. There is at most one draft; starting another opens it
+ * again. It is kept as it is left, and shown as the reserve team until then.
+ *
+ * An empty name rather than a nullable column, so the schema did not have to
+ * change for it: the column is `NOT NULL`, and nothing but the draft is ever
+ * saved without one.
+ */
+export function isDraft(team: Pick<Team, 'name'>) {
+  return team.name === '';
+}
+
+/** The draft, created if there is none. */
+export async function openDraft(db: Db = getDb()): Promise<string> {
+  const existing = (await db
+    .prepare("SELECT id FROM team WHERE profile_id = ? AND name = '' LIMIT 1")
+    .get(await getProfileId(db))) as { id: string } | undefined;
+
+  // The mode stays in the schema for deployments; a team itself is universal.
+  return existing?.id ?? createTeam('', 'other', db);
+}
+
+export async function nameTeam(teamId: string, name: string, db: Db = getDb()) {
+  return (await db
+    .prepare('UPDATE team SET name = ? WHERE id = ? AND profile_id = ?')
+    .run(name, teamId, await getProfileId(db))).changes;
+}
+
 export async function createTeam(
   name: string,
   mode: EndgameMode,
@@ -123,7 +157,8 @@ export type SlotResult =
 export async function setSlot(
   teamId: string,
   characterId: number,
-  position: number | null,
+  /** One position, positions to try in order, or the first free one. */
+  position: number | readonly number[] | null,
   db: Db = getDb(),
 ): Promise<SlotResult> {
   const profileId = await getProfileId(db);
@@ -153,7 +188,9 @@ export async function setSlot(
       .all(teamId)) as unknown as { position: number }[];
 
     const used = new Set(taken.map((row) => row.position));
-    const target = position ?? [0, 1, 2, 3].find((slot) => !used.has(slot));
+    const target = typeof position === 'number'
+      ? position
+      : (position ?? [0, 1, 2, 3]).find((slot) => !used.has(slot));
 
     if (target === undefined || target > 3) return { ok: false, reason: 'team-full' } as const;
 
@@ -163,6 +200,56 @@ export async function setSlot(
       .run(teamId, characterId, target);
 
     return { ok: true } as const;
+  });
+}
+
+/**
+ * Moves a member to another position, swapping with whoever is there.
+ *
+ * Delete-and-reinsert rather than an `UPDATE`: SQLite checks `UNIQUE
+ * (team_id, position)` row by row, so two rows trading places collide halfway
+ * through a single statement, and the column's range check leaves no spare
+ * position to park one in.
+ */
+export async function moveSlot(
+  teamId: string,
+  characterId: number,
+  to: number,
+  db: Db = getDb(),
+) {
+  if (!Number.isInteger(to) || to < 0 || to > 3) return false;
+  const profileId = await getProfileId(db);
+
+  return transaction(db, async () => {
+    const team = await db
+      .prepare('SELECT id FROM team WHERE id = ? AND profile_id = ?')
+      .get(teamId, profileId);
+    if (!team) return false;
+
+    type Row = { character_id: number; position: number; roles_json: string; declarations_json: string };
+    const rows = (await db
+      .prepare('SELECT character_id, position, roles_json, declarations_json FROM team_slot WHERE team_id = ?')
+      .all(teamId)) as unknown as Row[];
+
+    const moving = rows.find((row) => row.character_id === characterId);
+    if (!moving || moving.position === to) return false;
+    const displaced = rows.find((row) => row.position === to);
+
+    const remove = db.prepare('DELETE FROM team_slot WHERE team_id = ? AND character_id = ?');
+    const insert = db.prepare(`INSERT INTO team_slot
+        (team_id, character_id, position, roles_json, declarations_json) VALUES (?,?,?,?,?)`);
+
+    await remove.run(teamId, moving.character_id);
+    if (displaced) await remove.run(teamId, displaced.character_id);
+
+    await insert.run(teamId, moving.character_id, to, moving.roles_json, moving.declarations_json);
+    if (displaced) {
+      await insert.run(
+        teamId, displaced.character_id, moving.position,
+        displaced.roles_json, displaced.declarations_json,
+      );
+    }
+    return true;
   });
 }
 

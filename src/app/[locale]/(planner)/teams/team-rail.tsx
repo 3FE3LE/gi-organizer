@@ -6,7 +6,8 @@ import { CreateTeam } from './create-team';
 export type RailEntry = {
   id: string;
   name: string;
-  mode: string;
+  /** Not saved yet: named by the page, drawn dashed. */
+  draft: boolean;
   objectiveLabel: string | null;
   members: number;
   errors: number;
@@ -30,7 +31,6 @@ export async function TeamRail({
   selectedId: string | null;
 }) {
   const t = await getTranslations('teams');
-  const modeLabel = await getTranslations('common.mode');
 
   return (
     <aside className="space-y-3 lg:sticky lg:top-4 lg:self-start">
@@ -48,17 +48,21 @@ export async function TeamRail({
                 href={`/${locale}/teams?team=${team.id}`}
                 aria-current={selected ? 'true' : undefined}
                 className={`block rounded border px-3 py-2 transition-colors ${
+                  team.draft ? 'border-dashed' : ''
+                } ${
                   selected
                     ? 'border-accent bg-surface-2'
                     : 'border-edge bg-surface hover:border-edge-strong'
                 }`}
               >
                 <span className="flex items-baseline gap-2">
-                  <span className="min-w-0 flex-1 truncate text-sm">{team.name}</span>
+                  <span className={`min-w-0 flex-1 truncate text-sm ${team.draft ? 'text-muted' : ''}`}>
+                    {team.name}
+                  </span>
                   <span className="tabular font-mono text-xs text-muted">{team.members}/4</span>
                 </span>
                 <span className="mt-0.5 flex flex-wrap items-baseline gap-x-2 font-mono text-2xs text-muted">
-                  <span>{modeLabel.has(team.mode) ? modeLabel(team.mode) : team.mode}</span>
+                  {team.draft && <span>{t('draftTag')}</span>}
                   {team.objectiveLabel && <span className="text-accent">{team.objectiveLabel}</span>}
                   {team.errors > 0 && <span className="text-bad">{team.errors} ✗</span>}
                   {team.warnings > 0 && <span className="text-warn">{team.warnings} !</span>}
@@ -72,9 +76,7 @@ export async function TeamRail({
         })}
       </ul>
 
-      <div className="card p-3">
-        <CreateTeam />
-      </div>
+      <CreateTeam locale={locale} hasDraft={teams.some((team) => team.draft)} />
     </aside>
   );
 }

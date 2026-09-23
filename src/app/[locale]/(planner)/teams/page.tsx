@@ -8,6 +8,7 @@ import { roleLabel } from '@/lib/rules/role-labels';
 import { isLocale } from '@/lib/data/locales';
 import { getDb } from '@/lib/db/client';
 import { readRoster } from '@/lib/player/characters';
+import { isDraft } from '@/lib/player/teams';
 import { resolveBuildForSlot } from '@/lib/player/builds';
 import { readGear } from '@/lib/player/queries';
 import { computeStats, evaluateGoals } from '@/lib/rules/stats';
@@ -38,7 +39,8 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
 
   const catalog = await getCatalog(locale);
   const db = getDb();
-  const { teams, result, input } = await assemble(catalog, db);
+  const assembled = await assemble(catalog, db);
+  const { result, input } = assembled;
   const annotations = await getAnnotations(catalog);
   const mechanics = await getMechanics();
   const t = await getTranslations('diagnostics');
@@ -46,6 +48,14 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
   const slotLabel = await getTranslations('common.slot');
   const roleLabelT = await getTranslations('common.role');
   const mechanicLabelT = await getTranslations('common.mechanic');
+
+  // The draft has no name of its own; every place that shows one reads it
+  // from here. See `isDraft`.
+  const teams = assembled.teams.map((team) => ({
+    ...team,
+    draft: isDraft(team),
+    name: isDraft(team) ? tTeams('reserveTeam') : team.name,
+  }));
 
   // One pass over the catalog rather than one per lookup. `elementName` was a
   // linear scan of every character, and it is called once per element option
@@ -232,7 +242,7 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
     return {
       id: team.id,
       name: team.name,
-      mode: team.mode,
+      draft: team.draft,
       objectiveLabel: team.objective
         ? (mechanicLabelT.has(team.objective) ? mechanicLabelT(team.objective) : team.objective)
         : null,
@@ -330,7 +340,7 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
     .map(async (team) => ({
     id: team.id,
     name: team.name,
-    mode: team.mode,
+    draft: team.draft,
     objective: team.objective,
     findings: findingsFor(targetKey({ kind: 'team', teamId: team.id })),
     synergy: synergyViewFor(team),
@@ -351,6 +361,7 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
 
       return {
         characterId: slot.characterId,
+        position: slot.position,
         name: character?.name ?? `#${slot.characterId}`,
         icon: await resolveIcon(character?.icon, 'avatar'),
         element: character?.elementText ?? '',

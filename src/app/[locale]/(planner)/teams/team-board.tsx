@@ -1,7 +1,19 @@
 'use client';
 
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type UniqueIdentifier,
+} from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
 import { Menu } from '@base-ui/react/menu';
-import { Check, ChevronDown, Plus, Search, X } from 'lucide-react';
+import { Check, ChevronDown, GripVertical, Plus, Search, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { startTransition, useActionState, useOptimistic, useState } from 'react';
@@ -21,7 +33,9 @@ import {
   type TeamActionState,
   addSlotAction,
   deleteTeamAction,
+  moveSlotAction,
   removeSlotAction,
+  saveTeamAction,
   setDeclarationAction,
   setObjectiveAction,
   setRolesAction,
@@ -29,6 +43,8 @@ import {
 
 export type SlotView = {
   characterId: number;
+  /** 0–3. Positions can have gaps: the second slot waits for the carry. */
+  position: number;
   name: string;
   icon: string | null;
   element: string;
@@ -54,7 +70,8 @@ export type SlotView = {
 export type TeamView = {
   id: string;
   name: string;
-  mode: string;
+  /** Not saved yet: `name` is the reserve label, and the header asks for one. */
+  draft: boolean;
   objective: string | null;
   slots: SlotView[];
   findings: { id: string; severity: string; message: string }[];
@@ -115,11 +132,11 @@ export function TeamBoard({
   return (
     <article className="card">
       <header className="flex flex-wrap items-center gap-3 border-b border-edge px-4 py-2">
-        <h2 className="text-sm font-medium">{team.name}</h2>
-        <span className="font-mono text-xs uppercase text-muted">{team.mode}</span>
+        <h2 className={`text-sm font-medium ${team.draft ? 'text-muted' : ''}`}>{team.name}</h2>
         <span className="font-mono text-xs text-muted">{team.slots.length}/4</span>
         <ObjectivePicker teamId={team.id} current={team.objective} objectives={objectives} />
         <div className="ml-auto flex items-center gap-2">
+          {team.draft && <SaveDraft teamId={team.id} />}
           <form action={remove}>
             <input type="hidden" name="teamId" value={team.id} />
             <Button variant="outline" size="sm" type="submit">
@@ -139,30 +156,211 @@ export function TeamBoard({
         </ul>
       )}
 
-      {/* Above the slots, because it is about all four of them: the resonance
-          the elements buy, the reactions they enable, and the auras one
-          member's gear hangs over the rest. */}
-      <SynergyPanel synergy={team.synergy} />
-
-      <div className="grid gap-px bg-edge sm:grid-cols-2 xl:grid-cols-4">
-        {team.slots.map((slot) => (
-          <Slot key={slot.characterId} teamId={team.id} slot={slot} />
-        ))}
-        {/* An empty slot is the way in. The add form used to be a strip above
-            the four slots, which put "add someone" in a different place from
-            "where they go". */}
-        {Array.from({ length: 4 - team.slots.length }, (_, index) => (
+      <SlotGrid
+        teamId={team.id}
+        slots={team.slots}
+        empty={() => (
+          /* An empty slot is the way in. The add form used to be a strip above
+             the four slots, which put "add someone" in a different place from
+             "where they go". */
           <MemberPicker
-            key={`empty-${index}`}
             teamId={team.id}
             roster={roster}
             action={add}
             pending={adding}
             lastAdded={addState}
           />
-        ))}
+        )}
+      />
+
+      {/* Under the slots: the four members are what a team is decided by,
+          and the resonance, reactions and auras they add up to are the
+          reading of that decision, not a step before it. */}
+      <div className="border-t border-edge [&>section]:border-b-0">
+        <SynergyPanel synergy={team.synergy} />
       </div>
     </article>
+  );
+}
+
+/**
+ * Saving the draft, which is naming it.
+ *
+ * The name is the last thing asked, once there is a team to name. Until then
+ * the draft is kept as it is left, under the reserve label.
+ */
+function SaveDraft({ teamId }: { teamId: string }) {
+  const t = useTranslations('teams');
+  const [naming, setNaming] = useState(false);
+  const [state, save, saving] = useActionState<TeamActionState, FormData>(
+    saveTeamAction, { status: 'idle' },
+  );
+
+  if (!naming) {
+    return (
+      <Button variant="default" size="sm" type="button" onClick={() => setNaming(true)}>
+        {t('saveTeamButton')}
+      </Button>
+    );
+  }
+
+  return (
+    <form action={save} className="flex items-center gap-1.5">
+      <input type="hidden" name="teamId" value={teamId} />
+      <input
+        name="name"
+        required
+        autoFocus
+        placeholder={t('namePlaceholder')}
+        aria-label={t('namePlaceholder')}
+        className="field w-40 px-2 py-1 text-xs"
+      />
+      <Button variant="default" size="sm" type="submit" disabled={saving}>
+        {t('saveTeamConfirm')}
+      </Button>
+      <button
+        type="button"
+        onClick={() => setNaming(false)}
+        aria-label={t('closeAria')}
+        className={buttonVariants({ variant: 'ghost', size: 'icon-sm' })}
+      >
+        <X size={14} aria-hidden />
+      </button>
+      {state.status === 'error' && (
+        <span className="font-mono text-2xs text-accent">{state.message}</span>
+      )}
+    </form>
+  );
+}
+
+/**
+ * The four positions, in party order, and a drag to change it.
+ *
+ * Order is the rotation's: a member is placed by role when added (see
+ * `preferredPositions`), and the grip moves them — onto an empty position, or
+ * onto someone, who then takes the mover's place. Only the grip starts a drag,
+ * so the card's own links and buttons still click, a finger can still scroll
+ * the page past it, and a keyboard can pick it up with Space.
+ */
+function SlotGrid({
+  teamId,
+  slots,
+  empty,
+}: {
+  teamId: string;
+  slots: SlotView[];
+  empty: () => React.ReactNode;
+}) {
+  const t = useTranslations('teams');
+  const [shown, move] = useOptimistic(
+    slots,
+    (current, { characterId, to }: { characterId: number; to: number }) => {
+      const from = current.find((slot) => slot.characterId === characterId)?.position;
+      return current.map((slot) =>
+        slot.characterId === characterId
+          ? { ...slot, position: to }
+          : slot.position === to && from !== undefined ? { ...slot, position: from } : slot);
+    },
+  );
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor),
+  );
+
+  const nameOf = (id: UniqueIdentifier) =>
+    shown.find((slot) => slot.characterId === Number(id))?.name ?? '';
+  const positionOf = (id: UniqueIdentifier | undefined) =>
+    id === undefined ? null : Number(String(id).replace('position-', '')) + 1;
+
+  const onDragEnd = ({ active, over }: DragEndEvent) => {
+    if (!over) return;
+    const to = Number(String(over.id).replace('position-', ''));
+    const characterId = Number(active.id);
+    if (shown.find((slot) => slot.characterId === characterId)?.position === to) return;
+
+    startTransition(async () => {
+      move({ characterId, to });
+      await moveSlotAction(teamId, characterId, to);
+    });
+  };
+
+  return (
+    <DndContext
+      // A stable id, so the describedby ids it renders on the server match the
+      // client's and hydration does not warn.
+      id={`team-${teamId}`}
+      sensors={sensors}
+      onDragEnd={onDragEnd}
+      accessibility={{
+        screenReaderInstructions: { draggable: t('dragInstructions') },
+        announcements: {
+          onDragStart: ({ active }) => t('dragPicked', { name: nameOf(active.id) }),
+          onDragOver: ({ active, over }) =>
+            over ? t('dragOver', { name: nameOf(active.id), n: positionOf(over.id) ?? 0 }) : '',
+          onDragEnd: ({ active, over }) =>
+            over ? t('dragDropped', { name: nameOf(active.id), n: positionOf(over.id) ?? 0 }) : t('dragCancelled'),
+          onDragCancel: () => t('dragCancelled'),
+        },
+      }}
+    >
+      <ol className="grid gap-px bg-edge sm:grid-cols-2 xl:grid-cols-4">
+        {[0, 1, 2, 3].map((position) => {
+          const slot = shown.find((entry) => entry.position === position);
+          return (
+            <Position key={position} position={position}>
+              {slot ? <DraggableSlot teamId={teamId} slot={slot} /> : empty()}
+            </Position>
+          );
+        })}
+      </ol>
+    </DndContext>
+  );
+}
+
+function Position({ position, children }: { position: number; children: React.ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({ id: `position-${position}` });
+
+  return (
+    <li
+      ref={setNodeRef}
+      className={`relative grid bg-surface transition-shadow ${isOver ? 'z-10 shadow-[inset_0_0_0_2px_var(--accent)]' : ''}`}
+    >
+      {/* The party slot, as the game numbers it. */}
+      <span aria-hidden className="pointer-events-none absolute left-2 top-2 z-30 font-mono text-2xs text-muted">
+        {position + 1}
+      </span>
+      {children}
+    </li>
+  );
+}
+
+function DraggableSlot({ teamId, slot }: { teamId: string; slot: SlotView }) {
+  const t = useTranslations('teams');
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, isDragging } =
+    useDraggable({ id: slot.characterId });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Translate.toString(transform) }}
+      className={`relative ${isDragging ? 'z-20 opacity-90 shadow-lg ring-1 ring-accent' : ''}`}
+    >
+      <button
+        ref={setActivatorNodeRef}
+        type="button"
+        {...attributes}
+        {...listeners}
+        aria-label={t('dragHandle', { name: slot.name })}
+        title={t('dragHandle', { name: slot.name })}
+        // `touch-none` on the grip alone: a finger on it drags, a finger
+        // anywhere else on the card still scrolls the page.
+        className={`${buttonVariants({ variant: 'ghost', size: 'icon-sm' })} absolute left-5 top-1 z-10 cursor-grab touch-none text-muted active:cursor-grabbing`}
+      >
+        <GripVertical size={14} aria-hidden />
+      </button>
+      <Slot teamId={teamId} slot={slot} />
+    </div>
   );
 }
 

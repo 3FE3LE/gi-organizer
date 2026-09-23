@@ -10,7 +10,7 @@ import { getCatalog, type Catalog } from '@/lib/data/catalog';
 import { isLocale, type Locale } from '@/lib/data/locales';
 import { getDb } from '@/lib/db/client';
 import { readRegion } from '@/lib/player/region';
-import { readTeams, type Team } from '@/lib/player/teams';
+import { isDraft, readTeams, type Team } from '@/lib/player/teams';
 import { farmingPlan } from '@/lib/rules/assemble';
 import { gameWeekday } from '@/lib/rules/game-day';
 import {
@@ -49,7 +49,10 @@ export default async function PlanPage({ params, searchParams }: PageProps<'/[lo
 
   const catalog = await getCatalog(locale);
   const db = getDb();
-  const teams = await readTeams(db);
+  // The draft is named where it is shown; see `isDraft`.
+  const reserveLabel = (await getTranslations('teams'))('reserveTeam');
+  const teams = (await readTeams(db)).map((team) =>
+    isDraft(team) ? { ...team, name: reserveLabel } : team);
 
   // Today on the player's own server, where the rotation turns at 04:00 and
   // not at midnight — and never on the machine's UTC clock, which showed

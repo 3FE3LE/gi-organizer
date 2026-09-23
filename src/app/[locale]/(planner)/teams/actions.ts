@@ -1,15 +1,18 @@
 'use server';
 
 import { refresh } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
 import { getCatalog } from '@/lib/data/catalog';
-import { DEFAULT_LOCALE } from '@/lib/data/locales';
+import { DEFAULT_LOCALE, isLocale } from '@/lib/data/locales';
 import { getCharacterDetailStrings } from '@/lib/data/registry';
 import { readBuildsFor } from '@/lib/player/builds';
 import {
-  createTeam,
   deleteTeam,
+  moveSlot,
+  nameTeam,
+  openDraft,
   removeSlot,
   setDeclaration,
   setObjective,
@@ -17,30 +20,38 @@ import {
   setSlot,
 } from '@/lib/player/teams';
 import { getBuildPriorities } from '@/lib/rules/assemble';
+import { preferredPositions } from '@/lib/rules/slot-order';
 import { suggestRoles } from '@/lib/rules/suggest-role';
-import { TEAM_ROLES, type EndgameMode, type TeamRole } from '@/lib/rules/types';
+import { TEAM_ROLES, type TeamRole } from '@/lib/rules/types';
 
 export type TeamActionState =
   | { status: 'idle' }
   | { status: 'ok'; message: string }
   | { status: 'error'; message: string };
 
-const MODES: EndgameMode[] = ['abyss', 'theater', 'stygian', 'other'];
+/**
+ * Opens the draft — a new team, or the one already being put together — and
+ * shows it. Nothing is asked first: the members and the objective come before
+ * the name, which is asked for on save.
+ */
+export async function newTeamAction(form: FormData) {
+  const locale = String(form.get('locale') ?? DEFAULT_LOCALE);
+  const id = await openDraft();
+  redirect(`/${isLocale(locale) ? locale : DEFAULT_LOCALE}/teams?team=${id}`);
+}
 
-export async function createTeamAction(
+/** Names the draft, which is what saving it means. */
+export async function saveTeamAction(
   _previous: TeamActionState,
   form: FormData,
 ): Promise<TeamActionState> {
   const t = await getTranslations('teams.actions');
   const name = String(form.get('name') ?? '').trim();
-  const raw = String(form.get('mode') ?? 'other');
-  const mode = (MODES as string[]).includes(raw) ? (raw as EndgameMode) : 'other';
-
   if (name.length === 0) return { status: 'error', message: t('nameRequired') };
 
-  await createTeam(name, mode);
+  await nameTeam(String(form.get('teamId') ?? ''), name);
   refresh();
-  return { status: 'ok', message: t('created', { name }) };
+  return { status: 'ok', message: t('saved', { name }) };
 }
 
 export async function deleteTeamAction(
@@ -81,7 +92,8 @@ export async function addSlotAction(
 
   const roles = requested.length > 0 ? requested : await suggestedRoles(characterId);
 
-  const result = await setSlot(teamId, characterId, null);
+  // Placed by role — see `preferredPositions`; a drag moves them after.
+  const result = await setSlot(teamId, characterId, preferredPositions(roles));
   if (result.ok && roles.length > 0) await setRoles(teamId, characterId, roles);
   refresh();
 
@@ -102,7 +114,10 @@ export async function addSlotAction(
       : result.reason === 'already-in-team'
         ? t('alreadyInTeam', { name: character.name })
         : result.reason === 'in-another-team'
-          ? t('inAnotherTeam', { name: character.name, team: result.team })
+          ? t('inAnotherTeam', {
+              name: character.name,
+              team: result.team || (await getTranslations('teams'))('reserveTeam'),
+            })
           : t('teamNotFound'),
   };
 }
@@ -123,6 +138,12 @@ async function suggestedRoles(characterId: number): Promise<TeamRole[]> {
       .map((talent) => talent.description)
       .join(' '),
   });
+}
+
+/** A drag between two positions: a move into an empty one, a swap otherwise. */
+export async function moveSlotAction(teamId: string, characterId: number, to: number) {
+  await moveSlot(teamId, characterId, to);
+  refresh();
 }
 
 export async function removeSlotAction(
