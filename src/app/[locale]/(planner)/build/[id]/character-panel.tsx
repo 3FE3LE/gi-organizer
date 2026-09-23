@@ -2,6 +2,7 @@ import { Cake, Plus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { ViewTransition } from 'react';
 
+import { AnimatedNumber } from '@/components/animated-number';
 import { ArtifactCard } from '@/components/artifact-card';
 import { EffectButton } from '@/components/effect-dialog';
 import { GameIcon } from '@/components/game-icon';
@@ -11,7 +12,7 @@ import {
 } from '@/lib/data/catalog';
 import { elementColor, elementDamageProp } from '@/lib/data/elements';
 import type { Locale } from '@/lib/data/locales';
-import { ASCENSION_BONUS_KEY, formatPropValue, statRowProp } from '@/lib/data/props';
+import { ASCENSION_BONUS_KEY, formatPropValue, isPercentProp, statRowProp } from '@/lib/data/props';
 import { resolveIcon } from '@/lib/data/icon';
 import { getCharacterDetailStrings } from '@/lib/data/registry';
 import { STAT_LEVEL_KEYS, statLevelKey } from '@/lib/data/stats';
@@ -202,6 +203,12 @@ export async function CharacterPanel({
         key: stat,
         label: statLabel(catalog, prop),
         value: formatPropValue(prop, character.stats[key]?.[stat] ?? 0, 'ratio', locale),
+        // The same number unformatted, in the scale it prints in, so the row
+        // can count to it. `formatPropValue` prints a ratio as a percent.
+        raw: isPercentProp(prop)
+          ? (character.stats[key]?.[stat] ?? 0) * 100
+          : character.stats[key]?.[stat] ?? 0,
+        percent: isPercentProp(prop),
         // The one cell that steps at the phase rather than at the level, which
         // is the whole of what "ascends into CRIT DMG" was saying in prose.
         ascension: stat === ASCENSION_BONUS_KEY,
@@ -475,6 +482,7 @@ export async function CharacterPanel({
 
           {/* The stat table the catalogue page used to print in full. */}
           <BaseStats
+            locale={locale}
             rows={baseStatRows}
             ascensionLabel={t('factAscensionMark')}
             startAt={STAT_LEVEL_KEYS.indexOf(statLevelKey(loadout.level, loadout.ascension))}
@@ -667,9 +675,10 @@ function StatRow({
   locale: Locale;
   accent?: string;
 }) {
-  const formatted = prop
-    ? formatPropValue(prop, total, 'percent', locale)
-    : Math.round(total).toLocaleString(locale);
+  // Keyed by the stat, not the character, so a step along the roster counts
+  // from the last character's number — see `AnimatedNumber`.
+  const id = prop ?? label;
+  const percent = prop ? isPercentProp(prop) : false;
 
   return (
     <div className="flex items-center justify-between gap-3 border-b border-edge/50 py-1.5">
@@ -677,9 +686,11 @@ function StatRow({
       <dd className="tabular flex items-baseline gap-2 font-mono">
         {base !== undefined && (
           <span className="flex flex-col items-end text-2xs leading-tight">
-            <span className="text-muted">{Math.round(base).toLocaleString(locale)}</span>
+            <span className="text-muted">
+              <AnimatedNumber id={`base:${id}`} value={base} locale={locale} />
+            </span>
             <span className="text-good">
-              +{Math.round(total - base).toLocaleString(locale)}
+              <AnimatedNumber id={`bonus:${id}`} value={total - base} signed locale={locale} />
             </span>
           </span>
         )}
@@ -687,7 +698,7 @@ function StatRow({
           className="text-sm element-tint"
           style={accent ? ({ '--element': accent } as React.CSSProperties) : undefined}
         >
-          {formatted}
+          <AnimatedNumber id={`total:${id}`} value={total} percent={percent} locale={locale} />
         </span>
       </dd>
     </div>

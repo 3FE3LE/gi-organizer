@@ -1,14 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
+import { AnimatedNumber } from '@/components/animated-number';
 import { Slider } from '@/components/ui/slider';
+
+/**
+ * Where the slider last rested, across characters. The page remounts on each
+ * step along the roster, so the thumb opens where the last character's did and
+ * then glides to this one's level instead of appearing there.
+ */
+let lastIndex: number | null = null;
 
 export type BaseStatRow = {
   /** The game's own row label: `1`, `40`, `40+`, `90`. */
   key: string;
   /** `key` is the stat's column in the table; two cells can share a `label`. */
-  cells: { key: string; label: string; value: string; ascension?: boolean }[];
+  cells: {
+    key: string; label: string; value: string; raw: number; percent: boolean; ascension?: boolean;
+  }[];
 };
 
 /**
@@ -30,6 +40,7 @@ export function BaseStats({
   sliderLabel,
   levelPrefix,
   ascensionLabel,
+  locale,
 }: {
   rows: BaseStatRow[];
   /** Index into `rows`, from the level and phase the character is at. */
@@ -39,8 +50,31 @@ export function BaseStats({
   levelPrefix: string;
   /** Marks the cell that steps at the ascension phase, not at the level. */
   ascensionLabel: string;
+  locale: string;
 }) {
-  const [index, setIndex] = useState(Math.min(Math.max(startAt, 0), rows.length - 1));
+  const start = Math.min(Math.max(startAt, 0), rows.length - 1);
+  const [index, setIndex] = useState(() => lastIndex ?? start);
+  // Off for the first frames: Base UI places the thumb at 0 and then measures
+  // it into place, and a transition on from the start drew that as a sweep
+  // across the track on every load.
+  const [glide, setGlide] = useState(false);
+
+  // Opens at the last position, measured, then glides to this character's.
+  useEffect(() => {
+    let second = 0;
+    const first = requestAnimationFrame(() => {
+      second = requestAnimationFrame(() => {
+        setGlide(true);
+        setIndex(start);
+      });
+    });
+    return () => {
+      cancelAnimationFrame(first);
+      cancelAnimationFrame(second);
+    };
+  }, [start]);
+  useEffect(() => { lastIndex = index; }, [index]);
+
   const row = rows[index];
   if (!row) return null;
 
@@ -58,7 +92,11 @@ export function BaseStats({
             step={1}
             value={index}
             onValueChange={(next) => setIndex(Number(next))}
-            className="min-w-0 flex-1"
+            // Glides when set, follows the finger when dragged: the
+            // transition is off while Base UI marks a drag in progress.
+            className={`min-w-0 flex-1 ${glide
+              ? '[&_[data-slot=slider-range]]:transition-[width] [&_[data-slot=slider-thumb]]:transition-[inset-inline-start,left,color,box-shadow] [&_[data-slot=slider-thumb]]:duration-300 [&_[data-slot=slider-range]]:duration-300 [&[data-dragging]_*]:transition-none'
+              : ''}`}
           />
           <span className="tabular w-16 shrink-0 text-right font-mono text-2xs">
             {levelPrefix} {row.key}
@@ -77,7 +115,14 @@ export function BaseStats({
                 </span>
               )}
             </dt>
-            <dd>{cell.value}</dd>
+            <dd>
+              <AnimatedNumber
+                id={`base-stat:${cell.key}`}
+                value={cell.raw}
+                percent={cell.percent}
+                locale={locale}
+              />
+            </dd>
           </div>
         ))}
       </dl>
