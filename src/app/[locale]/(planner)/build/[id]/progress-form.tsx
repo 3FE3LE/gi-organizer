@@ -625,11 +625,10 @@ function ProgressForm({
             {t('statGoalsHint')}
           </p>
 
-          {/* A card per threshold: what it is and a way out on top, the stat
-              across the card, then the number — dragged or typed — and how
-              far today is from it. The old row packed all four across one
-              line, which on a phone left a picker too narrow to read its own
-              choice. */}
+          {/* A card per threshold: the stat and a way out on top, then the
+              number — dragged or typed — and how far today is from it. The
+              old row packed all four across one line, which on a phone left
+              a picker too narrow to read its own choice. */}
           <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {goalRows.fields.map((row, index) => {
               const prop = goals?.[index]?.prop ?? '';
@@ -643,10 +642,28 @@ function ProgressForm({
                   key={row.id}
                   className="flex min-w-0 flex-col gap-3 rounded-lg border border-edge bg-surface p-3 transition-colors hover:border-accent/50"
                 >
+                  {/* The picker is the card's title: it already says which
+                      stat this is, and a heading repeating it was the same
+                      word twice, one line apart. */}
                   <div className="flex items-center gap-2">
-                    <span className={`min-w-0 flex-1 truncate text-sm ${info ? '' : 'text-muted'}`}>
-                      {info?.label ?? t('newGoal')}
-                    </span>
+                    <div className="min-w-0 flex-1">
+                      <Controller
+                        control={form.control}
+                        name={`goals.${index}.prop`}
+                        render={({ field }) => (
+                          <FieldSelect
+                            name={field.name}
+                            label={t('goalStatAria', { n: index + 1 })}
+                            value={field.value ?? ''}
+                            onValueChange={field.onChange}
+                            onBlur={field.onBlur}
+                            placeholder={t('chooseStatPlaceholder')}
+                            groups={[{ options: options.goalProps }]}
+                            triggerClassName="w-full px-2 py-1.5 text-xs"
+                          />
+                        )}
+                      />
+                    </div>
                     {goalRows.fields.length > 1 && (
                       <button
                         type="button"
@@ -658,23 +675,6 @@ function ProgressForm({
                       </button>
                     )}
                   </div>
-
-                  <Controller
-                    control={form.control}
-                    name={`goals.${index}.prop`}
-                    render={({ field }) => (
-                      <FieldSelect
-                        name={field.name}
-                        label={t('goalStatAria', { n: index + 1 })}
-                        value={field.value ?? ''}
-                        onValueChange={field.onChange}
-                        onBlur={field.onBlur}
-                        placeholder={t('chooseStatPlaceholder')}
-                        groups={[{ options: options.goalProps }]}
-                        triggerClassName="w-full px-2 py-1.5 text-xs"
-                      />
-                    )}
-                  />
 
                   {/* One value, two ways to set it: the slider for a rough
                       number, the field for an exact one. A typed value past
@@ -742,7 +742,7 @@ function ProgressForm({
                 <button
                   type="button"
                   onClick={() => goalRows.append({ prop: '', min: '' })}
-                  className="flex h-full min-h-36 w-full items-center justify-center gap-2 rounded-lg border border-dashed border-edge text-xs text-muted transition-colors hover:border-accent hover:text-accent"
+                  className="flex h-full min-h-28 w-full items-center justify-center gap-2 rounded-lg border border-dashed border-edge text-xs text-muted transition-colors hover:border-accent hover:text-accent"
                 >
                   <Plus size={14} /> {t('addGoal')}
                 </button>
