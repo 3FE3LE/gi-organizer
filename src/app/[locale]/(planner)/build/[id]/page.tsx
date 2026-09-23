@@ -17,6 +17,7 @@ import { CharacterPanel } from './character-panel';
 import { loadBuildContext, type BuildContext } from './context';
 import { upgradeCostFor } from './cost-view';
 import { neighboursOf, type Neighbour as NeighbourEntry } from './neighbours';
+import { SwipeNavigate } from './swipe-navigate';
 import { objectiveViewFor } from './objective-view';
 import { TABS, loadBuildParams, serializeBuildParams, type Tab } from './params';
 import { ProgressPanel } from './progress-form';
@@ -94,6 +95,14 @@ export default async function BuildPage({
         */}
       {loadout && (
         <div className="relative">
+          <SwipeNavigate
+            previousHref={previous
+              ? serializeBuildParams(`/${locale}/build/${previous.id}`, { build: null, tab })
+              : null}
+            nextHref={next
+              ? serializeBuildParams(`/${locale}/build/${next.id}`, { build: null, tab })
+              : null}
+          >
           <CharacterPanel
             catalog={catalog}
             character={character}
@@ -101,6 +110,7 @@ export default async function BuildPage({
             locale={locale}
             buildId={activeBuild?.id ?? null}
           />
+          </SwipeNavigate>
 
           {previous && (
             <Neighbour
