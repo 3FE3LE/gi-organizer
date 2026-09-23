@@ -43,7 +43,12 @@ export type UpgradeCost = {
   from: Progress;
   to: Progress;
   rows: CostRow[];
-  mora: number;
+  /**
+   * Needed, held and missing, like every other row. It used to be the missing
+   * figure alone, which read as the price: 400 000 for two talents 6→8 that
+   * cost 760 000, because the bag's mora had quietly been taken off.
+   */
+  mora: Pick<CostRow, 'needed' | 'owned' | 'short'>;
   /** True when the bag and the character already cover the target. */
   covered: boolean;
 };
@@ -94,11 +99,11 @@ export async function upgradeCostFor(context: BuildContext): Promise<UpgradeCost
 
   const families = familiesOf(catalog, character);
   const rows = new Map<string, CostRow>();
-  let mora = 0;
+  let mora = { needed: 0, owned: 0, short: 0 };
 
   for (const need of needs) {
     if (need.materialId === MORA) {
-      mora = need.short;
+      mora = { needed: need.needed, owned: need.owned, short: need.short };
       continue;
     }
 
@@ -151,7 +156,7 @@ export async function upgradeCostFor(context: BuildContext): Promise<UpgradeCost
    */
   ordered.sort((a, b) => rankOf(catalog, b) - rankOf(catalog, a) || a.key.localeCompare(b.key));
 
-  return { from, to, rows: ordered, mora, covered: ordered.length === 0 && mora === 0 };
+  return { from, to, rows: ordered, mora, covered: ordered.length === 0 && mora.short === 0 };
 }
 
 function rankOf(catalog: Catalog, row: CostRow) {

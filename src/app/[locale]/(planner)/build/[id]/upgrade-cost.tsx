@@ -86,12 +86,12 @@ export async function UpgradeCostPanel({
             </li>
           ))}
 
-          {cost.mora > 0 && (
+          {cost.mora.short > 0 && (
             <li className="flex items-center gap-3 border-t border-edge px-3 pt-3">
               <span className="flex-1 font-mono text-xs uppercase tracking-wide text-muted">
                 {t('costMora')}
               </span>
-              <span className="tabular font-mono text-sm">{number.format(cost.mora)}</span>
+              <Counts tier={cost.mora} t={t} number={number} />
             </li>
           )}
         </ul>
