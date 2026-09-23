@@ -68,14 +68,28 @@ export function CandidateRow({
           *and* a holder badge, and the two together outrun a phone's width
           next to the icon, label and buttons that share this row. */}
       <div className="flex flex-wrap items-center gap-1.5 px-3 py-1.5">
-        <AssetImage
-          src={candidate.icon}
-          kind={slot.kind === 'weapon' ? 'weapon' : 'relic'}
-          className="h-6 w-6 shrink-0"
-          sizes="24px"
-        />
-        <span className="min-w-0 flex-1 truncate text-xs">{candidate.label}</span>
-        <span className="shrink-0 font-mono text-2xs text-muted">{candidate.detail}</span>
+        {/* An artifact's set name is left to the icon, which already draws the
+            set: written out, it was the widest thing in the row and pushed the
+            buttons out of the dialog. A weapon's name is the piece itself. */}
+        <span title={candidate.label} className="shrink-0">
+          <AssetImage
+            src={candidate.icon}
+            kind={slot.kind === 'weapon' ? 'weapon' : 'relic'}
+            alt={slot.kind === 'weapon' ? '' : candidate.label}
+            className="h-6 w-6"
+            sizes="24px"
+          />
+        </span>
+        {slot.kind === 'weapon' && (
+          <span className="min-w-0 flex-1 truncate text-xs">{candidate.label}</span>
+        )}
+        <span
+          className={`font-mono text-2xs text-muted ${
+            slot.kind === 'weapon' ? 'shrink-0' : 'min-w-0 flex-1 truncate'
+          }`}
+        >
+          {candidate.detail}
+        </span>
         {candidate.fit && (
           <span className="shrink-0 font-mono text-2xs text-muted">{candidate.fit}</span>
         )}
