@@ -141,14 +141,49 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
         }).totals
       : {};
 
+    // The piece's art, as the game draws it: a weapon past its second
+    // ascension shows its awakened icon.
+    const weaponAwakened = (gear.weapon?.ascension ?? 0) >= 2 && weaponDefinition?.awakenIcon;
+
     return {
       build,
-      weapon: weaponDefinition
-        ? `${weaponDefinition.name} R${gear.weapon?.refinement ?? 1}`
+      weapon: weaponDefinition && gear.weapon
+        ? {
+            name: weaponDefinition.name,
+            icon: weaponAwakened
+              ? await resolveIcon(weaponDefinition.awakenIcon, 'weaponAwaken')
+              : await resolveIcon(weaponDefinition.icon, 'weapon'),
+            level: gear.weapon.level,
+            refinement: gear.weapon.refinement,
+          }
         : null,
-      gear: [...counts]
+      // Only what is switched on: a set counts once it reaches its two-piece
+      // bonus, so a lone off-set piece is not drawn as an effect it does not
+      // give. Most-worn first, which puts a four-piece before anything else.
+      sets: await Promise.all([...counts]
+        .filter(([, count]) => count >= 2)
         .sort((a, b) => b[1] - a[1])
-        .map(([setId, count]) => `${catalog.artifacts.get(setId)?.name ?? setId} ×${count}`),
+        .map(async ([setId, count]) => {
+          const set = catalog.artifacts.get(setId);
+          return {
+            setId,
+            name: set?.name ?? `#${setId}`,
+            icon: await resolveIcon(set?.pieces.flower?.icon, 'relic'),
+            pieces: count,
+            effect: (count >= 4 ? set?.effect4Pc : set?.effect2Pc) ?? null,
+          };
+        })),
+      // The three slots whose main stat is a choice. Flower and plume are
+      // always flat HP and ATK, so drawing them says nothing.
+      mainStats: (['sands', 'goblet', 'circlet'] as const).map((slot) => {
+        const prop = gear.bySlot.get(slot)?.mainProp ?? null;
+        return {
+          slot,
+          slotLabel: slotLabel.has(slot) ? slotLabel(slot) : slot,
+          prop,
+          label: prop ? propLabel(catalog, prop) : null,
+        };
+      }),
       goals: evaluateGoals(totals, build?.goals ?? []).map((goal) => ({
         label: propLabel(catalog, goal.prop),
         status: goal.status,
@@ -321,8 +356,9 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
         element: character?.elementText ?? '',
         elementColor: elementColor(character?.elementType ?? 'ELEMENT_NONE'),
         buildName: detail.build ? roleLabel(roleLabelT, detail.build.role) : null,
-        gear: detail.gear,
         weapon: detail.weapon,
+        sets: detail.sets,
+        mainStats: detail.mainStats,
         goals: detail.goals,
         buildHref: `/${locale}/build/${slot.characterId}`,
         roles: slot.roles,

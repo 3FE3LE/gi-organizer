@@ -9,6 +9,8 @@ import { startTransition, useActionState, useOptimistic, useState } from 'react'
 import { Button, buttonVariants } from '@/components/ui/button';
 import { ActionStatus } from '@/components/action-status';
 import { AssetImage } from '@/components/asset-image';
+import { Hint } from '@/components/hint';
+import { StatIcon } from '@/components/stat-icon';
 import { FieldSelect } from '@/components/field-select';
 import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { TEAM_ROLES, type TeamRole } from '@/lib/rules/types';
@@ -34,10 +36,12 @@ export type SlotView = {
   roles: TeamRole[];
   /** The build this slot resolved to, which is what everything measures against. */
   buildName: string | null;
-  /** Sets currently worn, as `name ×n`. */
-  gear: string[];
   /** Equipped weapon, if any. */
-  weapon: string | null;
+  weapon: { name: string; icon: string | null; level: number; refinement: number } | null;
+  /** Sets worn at two pieces or more: the effects actually switched on. */
+  sets: { setId: number; name: string; icon: string | null; pieces: number; effect: string | null }[];
+  /** Sands, goblet and circlet: the three main stats that are a choice. */
+  mainStats: { slot: string; slotLabel: string; prop: string | null; label: string | null }[];
   /** Goals of the resolved build, already evaluated. */
   goals: { label: string; status: string; actual: number; min: number }[];
   buildHref: string;
@@ -372,18 +376,18 @@ function RolesMenu({ teamId, characterId, roles }: {
   return (
     <Menu.Root>
       <Menu.Trigger
-        className={`field flex w-full items-center gap-1 px-2 py-1 text-left text-2xs ${
+        className={`mx-auto flex max-w-full items-center justify-center gap-0.5 rounded font-mono text-2xs underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-accent ${
           shown.length === 0 ? 'text-muted' : 'text-accent'
         }`}
         aria-label={t('rolesLabel')}
       >
-        <span className="min-w-0 flex-1 truncate">
+        <span className="min-w-0 truncate">
           {shown.length === 0 ? t('noRole') : shown.map((role) => roleLabel(role)).join(' · ')}
         </span>
-        <ChevronDown size={12} className="shrink-0 text-muted" aria-hidden />
+        <ChevronDown size={10} className="shrink-0 opacity-60" aria-hidden />
       </Menu.Trigger>
       <Menu.Portal>
-        <Menu.Positioner sideOffset={4} align="start" className="isolate z-50">
+        <Menu.Positioner sideOffset={4} align="center" className="isolate z-50">
           <Menu.Popup className="min-w-44 origin-(--transform-origin) rounded-lg bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10 outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95">
             {ROLES.map((role) => (
               <Menu.CheckboxItem
@@ -408,6 +412,16 @@ function RolesMenu({ teamId, characterId, roles }: {
   );
 }
 
+/**
+ * One member, drawn as what they are built as.
+ *
+ * The card used to spell its gear out — a weapon name, sets as `name ×4`, a
+ * role picker — which read as a form about the character rather than the
+ * character. It is a portrait now, with the build as a row of marks under it:
+ * the weapon with its level and refinement, the set effects switched on, and
+ * the three main stats that were a choice. Everything else — thresholds,
+ * declarations, findings — follows, only where there is something to say.
+ */
 function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
   const t = useTranslations('teams');
   const [, drop] = useActionState<TeamActionState, FormData>(
@@ -418,48 +432,94 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
   );
 
   return (
-    <div
-      className="space-y-2 border-t-2 bg-surface p-3"
-      style={{ borderTopColor: slot.elementColor }}
-    >
-      <div className="flex items-center gap-2">
-        <AssetImage src={slot.icon} kind="avatar" className="h-10 w-10 rounded-full bg-icon-bed" sizes="40px" />
-        <div className="min-w-0 flex-1">
-          <Link href={slot.buildHref} className="block truncate text-sm hover:text-accent">
-            {slot.name}
-          </Link>
-          <p className="font-mono text-2xs leading-snug text-muted">
-            {slot.buildName
-              ? <span className="text-accent">{slot.buildName}</span>
-              : t('noBuildForRole')}
-          </p>
-        </div>
-        <form action={drop}>
-          <input type="hidden" name="teamId" value={teamId} />
-          <input type="hidden" name="characterId" value={slot.characterId} />
-          <button
-            type="submit"
-            className={buttonVariants({ variant: 'ghost', size: 'icon-sm', className: 'text-muted hover:text-accent' })}
-            aria-label={t('removeAria', { name: slot.name })}
-            title={t('removeAria', { name: slot.name })}
-          >
-            <X size={14} aria-hidden />
-          </button>
-        </form>
+    <div className="relative flex flex-col items-center gap-3 bg-surface px-3 pb-3 pt-4">
+      <form action={drop} className="absolute right-1.5 top-1.5">
+        <input type="hidden" name="teamId" value={teamId} />
+        <input type="hidden" name="characterId" value={slot.characterId} />
+        <button
+          type="submit"
+          className={buttonVariants({ variant: 'ghost', size: 'icon-sm', className: 'text-muted hover:text-accent' })}
+          aria-label={t('removeAria', { name: slot.name })}
+          title={t('removeAria', { name: slot.name })}
+        >
+          <X size={14} aria-hidden />
+        </button>
+      </form>
+
+      <div className="w-full min-w-0 px-6 text-center">
+        <Link href={slot.buildHref} className="block truncate text-sm hover:text-accent">
+          {slot.name}
+        </Link>
+        {/* The role reads as a line of text, not a field. It still opens on a
+            click, because a suggested role is a guess and a guess has to be
+            correctable where it is shown. */}
+        <RolesMenu teamId={teamId} characterId={slot.characterId} roles={slot.roles} />
       </div>
 
-      {/* The role is per slot, so the same character can be a support here and
-          a sub-dps in another team. */}
-      <RolesMenu teamId={teamId} characterId={slot.characterId} roles={slot.roles} />
+      <Link href={slot.buildHref} aria-hidden tabIndex={-1} className="rounded-full">
+        <span
+          className="block rounded-full p-0.5"
+          style={{ background: slot.elementColor }}
+        >
+          <AssetImage
+            src={slot.icon}
+            kind="avatar"
+            className="block h-20 w-20 rounded-full bg-icon-bed"
+            sizes="80px"
+          />
+        </span>
+      </Link>
 
-      {(slot.weapon || slot.gear.length > 0) && (
-        <p className="font-mono text-2xs leading-relaxed text-muted">
-          {[slot.weapon, ...slot.gear].filter(Boolean).join(' · ')}
-        </p>
+      <ul className="flex flex-wrap items-start justify-center gap-1.5" aria-label={t('buildMarksLabel')}>
+        <li>
+          <Mark
+            label={slot.weapon
+              ? t('weaponMark', { name: slot.weapon.name, level: slot.weapon.level, refinement: slot.weapon.refinement })
+              : t('noWeapon')}
+            badge={slot.weapon ? `${slot.weapon.level}·R${slot.weapon.refinement}` : null}
+          >
+            {slot.weapon && (
+              <AssetImage src={slot.weapon.icon} kind="weapon" className="h-7 w-7" sizes="28px" />
+            )}
+          </Mark>
+        </li>
+        {slot.sets.map((set) => (
+          <li key={set.setId}>
+            <Mark
+              label={`${set.name} · ${set.pieces >= 4 ? 4 : 2}pc${set.effect ? ` — ${set.effect}` : ''}`}
+              // The effect tier, not the piece count: a fifth piece of one
+              // set switches nothing further on.
+              badge={set.pieces >= 4 ? '4' : '2'}
+            >
+              <AssetImage src={set.icon} kind="relic" className="h-7 w-7" sizes="28px" />
+            </Mark>
+          </li>
+        ))}
+        {slot.sets.length === 0 && (
+          <li><Mark label={t('noSetEffect')} badge={null} /></li>
+        )}
+        {slot.mainStats.map((main) => (
+          <li key={main.slot}>
+            <Mark
+              label={main.prop && main.label
+                ? `${main.slotLabel} · ${main.label}`
+                : t('emptyPiece', { slot: main.slotLabel })}
+              badge={null}
+            >
+              {main.prop && main.label && (
+                <StatIcon prop={main.prop} label={main.label} size={15} />
+              )}
+            </Mark>
+          </li>
+        ))}
+      </ul>
+
+      {slot.buildName === null && (
+        <p className="font-mono text-2xs text-muted">{t('noBuildForRole')}</p>
       )}
 
       {slot.goals.length > 0 && (
-        <ul className="flex flex-wrap gap-x-2 font-mono text-2xs">
+        <ul className="flex flex-wrap justify-center gap-x-2 font-mono text-2xs">
           {slot.goals.map((goal) => (
             <li
               key={goal.label}
@@ -497,13 +557,49 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
       ))}
 
       {slot.findings.length > 0 && (
-        <ul>
+        <ul className="w-full">
           {slot.findings.map((finding) => (
             <Finding key={finding.id} finding={finding} />
           ))}
         </ul>
       )}
     </div>
+  );
+}
+
+/**
+ * One mark of the build: a round bed, what fills it, and a badge under it.
+ * An empty mark is drawn too — a missing weapon or a bare slot is part of
+ * what the character is built as.
+ */
+function Mark({
+  label,
+  badge,
+  children,
+}: {
+  label: string;
+  badge: string | null;
+  children?: React.ReactNode;
+}) {
+  return (
+    <Hint text={label}>
+      <span
+        tabIndex={0}
+        aria-label={label}
+        className="relative flex h-9 w-9 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      >
+        {/* Light glyphs on the dark bed in both themes: a stat drawn in the
+            text colour vanished into it on the light one. */}
+        <span className={`disc flex h-9 w-9 items-center justify-center text-white/85 ${children ? '' : 'opacity-40'}`}>
+          {children}
+        </span>
+        {badge && (
+          <span className="tabular absolute -bottom-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-edge bg-surface px-1 font-mono text-[0.6rem] leading-tight text-muted">
+            {badge}
+          </span>
+        )}
+      </span>
+    </Hint>
   );
 }
 
