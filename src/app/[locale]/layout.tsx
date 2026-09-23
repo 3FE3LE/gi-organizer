@@ -12,6 +12,7 @@ import { LocaleSwitcher } from '@/components/locale-switcher';
 import { MainNav, type NavItem } from '@/components/main-nav';
 import { SyncLocaleCookie } from '@/components/sync-locale-cookie';
 import { ThemeScript } from '@/components/theme-script';
+import { BackToTop } from '@/components/back-to-top';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { clientMessages } from '@/i18n/client-messages';
 import { LOCALE_CODES, isLocale } from '@/lib/data/locales';
@@ -197,10 +198,15 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
 
               <main
                 id="content"
-                className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 sm:py-10 lg:py-12"
+                // Focusable from script only, so the skip link and the
+                // back-to-top button can land focus here.
+                tabIndex={-1}
+                className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 outline-none sm:px-6 sm:py-10 lg:py-12"
               >
                 {children}
               </main>
+
+              <BackToTop />
 
               <footer className="mt-8 border-t border-edge px-4 py-6 font-mono text-2xs text-muted sm:px-6">
                 <div className="mx-auto max-w-7xl">

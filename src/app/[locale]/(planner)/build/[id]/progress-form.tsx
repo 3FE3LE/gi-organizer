@@ -712,7 +712,7 @@ function ProgressForm({
           group rather than an `ml-auto` item inside it for the same reason —
           see the fix two commits back for the auto-margin/flex-wrap bug that
           left it hanging off the edge. */}
-      <div className="glass sticky bottom-[var(--section-nav-height)] -mx-4 flex items-center gap-2 border-t px-4 py-3 sm:static sm:mx-0 sm:rounded-card sm:border sm:px-4">
+      <div data-sticky-save className="glass sticky bottom-[var(--section-nav-height)] -mx-4 flex items-center gap-2 border-t px-4 py-3 sm:static sm:mx-0 sm:rounded-card sm:border sm:px-4">
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <Button
             variant="default"

@@ -12,6 +12,7 @@
   },
   "ui": {
     "loading": "Cargando…",
+    "backToTop": "Volver arriba",
     "errorTitle": "Algo se rompió",
     "errorBody": "No se pudo cargar esta sección. Casi siempre es temporal: volvé a intentarlo.",
     "retry": "Reintentar",

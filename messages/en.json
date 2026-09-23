@@ -12,6 +12,7 @@
   },
   "ui": {
     "loading": "Loading…",
+    "backToTop": "Back to top",
     "errorTitle": "Something broke",
     "errorBody": "This section could not load. It is almost always temporary — try again.",
     "retry": "Try again",

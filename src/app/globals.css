@@ -515,6 +515,25 @@ body {
     padding-bottom: var(--section-nav-height);
   }
 
+  /**
+   * The back-to-top button's floor: above the phone's section bar, and above
+   * the build form's save row where that row is sticky — on a phone only; from
+   * 48rem up it is static and the bar is gone.
+   */
+  .back-to-top {
+    bottom: calc(var(--section-nav-height) + var(--back-to-top-lift, 0px) + 1rem);
+  }
+
+  body:has([data-sticky-save]) {
+    --back-to-top-lift: 4.25rem;
+  }
+
+  @media (width >= 48rem) {
+    body:has([data-sticky-save]) {
+      --back-to-top-lift: 0px;
+    }
+  }
+
   .section-nav-link {
     position: relative;
     display: flex;
