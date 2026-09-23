@@ -112,6 +112,10 @@ export type TalentEntry = {
   descriptionRaw: string;
   /** Present on combat talents: per-level scaling parameters. */
   attributes?: { labels: string[]; parameters: Record<string, number[]> };
+  /** Present on passives: the talent's own art. */
+  icon?: string | null;
+  /** Present on passives: the ascension phase that unlocks it, 0 for always. */
+  unlockAscension?: number;
 };
 
 export type CharacterDetailStrings = {

@@ -8,7 +8,7 @@ own. One Favonius Lance cannot be equipped on four polearm supports, and two
 characters on the same team cannot both wear the same 4-piece set. Everything
 below is arranged so those constraints are expressible rather than bolted on.
 
-Current dataset: **game version 7.0** (`genshin-db` 5.2.13).
+Current dataset: **game version 7.1** (`genshin-db` 5.2.14).
 
 ## Layers
 

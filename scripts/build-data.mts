@@ -22,7 +22,6 @@ import genshindb, {
   type Items,
   type Language,
   type Material,
-  type PassiveTalentDetail,
   type StatFunction,
   type Talent,
   type Weapon,
@@ -127,9 +126,24 @@ function combatTalents(talent: Talent) {
     .filter((entry): entry is CombatTalentDetail => Boolean(entry));
 }
 
+/**
+ * The passives, with the ascension phase that unlocks each.
+ *
+ * The game's order is fixed: the first two are the A1 and A4 passives, and
+ * anything after them — the utility perk, or an always-on effect such as
+ * Kokomi's or a Nod-Krai moonsign talent — is there from level 1. `genshin-db`
+ * carries no unlock field, so the phase is read off the position.
+ */
+const PASSIVE_UNLOCK: readonly number[] = [1, 4, 0, 0];
+
 function passiveTalents(talent: Talent) {
+  const images = (talent.images ?? {}) as Record<string, string | undefined>;
   return [talent.passive1, talent.passive2, talent.passive3, talent.passive4]
-    .filter((entry): entry is PassiveTalentDetail => Boolean(entry));
+    .flatMap((entry, index) => entry ? [{
+      ...entry,
+      icon: images[`filename_passive${index + 1}`] ?? null,
+      unlockAscension: PASSIVE_UNLOCK[index],
+    }] : []);
 }
 
 function constellationLevels(constellation: Constellation) {
