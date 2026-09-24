@@ -64,10 +64,6 @@
       "battery": "Battery", "driver": "Driver", "enabler": "Enabler"
     },
     "talent": { "auto": "Normal", "skill": "Skill", "burst": "Burst" },
-    "moveKind": {
-      "equip-artifact": "equipped artifact", "unequip-artifact": "unequipped artifact",
-      "equip-weapon": "equipped weapon", "unequip-weapon": "unequipped weapon"
-    },
     "resonance": {
       "fervent-flames": "Fervent Flames",
       "soothing-water": "Soothing Water",
@@ -515,8 +511,7 @@
       "importExport": {
         "label": "Import & export",
         "hint": "Import, export, backups and manual entry"
-      },
-      "history": { "label": "History", "hint": "What you've moved" }
+      }
     },
     "inventoryPage": {
       "artifactsStat": "Artifacts",
@@ -579,19 +574,6 @@
       "replaceAll": "Replace everything",
       "cancel": "Cancel",
       "restoreFromBackup": "Restore from a backup…"
-    },
-    "history": {
-      "hint": "Every move, and where it came from. Undo returns the piece to whoever was wearing it, not to where it was.",
-      "empty": "Nothing yet.",
-      "undone": "undone",
-      "undoButton": "Undo",
-      "redoButton": "Redo",
-      "undoneMessage": "undone: {op}",
-      "nothingToUndo": "nothing to undo",
-      "undoFailed": "could not undo",
-      "redoneMessage": "redone: {op}",
-      "nothingToRedo": "nothing to redo",
-      "redoFailed": "could not redo"
     }
   },
   "forms": {

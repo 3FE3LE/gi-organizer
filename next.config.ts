@@ -63,7 +63,8 @@ const nextConfig: NextConfig = {
       { source: '/:locale/farming', destination: '/:locale/plan?range=all', permanent: false },
       { source: '/:locale/inventory', destination: '/:locale/data', permanent: false },
       { source: '/:locale/import', destination: '/:locale/data/import', permanent: false },
-      { source: '/:locale/history', destination: '/:locale/data/history', permanent: false },
+      { source: '/:locale/history', destination: '/:locale/data', permanent: false },
+      { source: '/:locale/data/history', destination: '/:locale/data', permanent: false },
     ];
   },
 };

@@ -64,10 +64,6 @@
       "battery": "Batería", "driver": "Conductor", "enabler": "Habilitador"
     },
     "talent": { "auto": "Normal", "skill": "Habilidad", "burst": "Definitiva" },
-    "moveKind": {
-      "equip-artifact": "equipó artefacto", "unequip-artifact": "quitó artefacto",
-      "equip-weapon": "equipó arma", "unequip-weapon": "quitó arma"
-    },
     "resonance": {
       "fervent-flames": "Llamas Fervientes",
       "soothing-water": "Agua Reconfortante",
@@ -515,8 +511,7 @@
       "importExport": {
         "label": "Entrada y salida",
         "hint": "Importar, exportar, copias y entrada manual"
-      },
-      "history": { "label": "Historial", "hint": "Lo que has movido" }
+      }
     },
     "inventoryPage": {
       "artifactsStat": "Artefactos",
@@ -579,19 +574,6 @@
       "replaceAll": "Reemplazar todo",
       "cancel": "Cancelar",
       "restoreFromBackup": "Restaurar desde una copia…"
-    },
-    "history": {
-      "hint": "Cada movimiento, y de dónde salió. Deshacer devuelve la pieza a quien la llevaba, no a donde estaba.",
-      "empty": "Nada todavía.",
-      "undone": "deshecho",
-      "undoButton": "Deshacer",
-      "redoButton": "Rehacer",
-      "undoneMessage": "deshecho: {op}",
-      "nothingToUndo": "nada que deshacer",
-      "undoFailed": "no se pudo deshacer",
-      "redoneMessage": "rehecho: {op}",
-      "nothingToRedo": "nada que rehacer",
-      "redoFailed": "no se pudo rehacer"
     }
   },
   "forms": {
