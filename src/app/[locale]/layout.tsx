@@ -71,7 +71,23 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     metadataBase: new URL(siteUrl),
     title: 'GI Organizer',
+    applicationName: 'GI Organizer',
     description,
+    // The manifest is `app/manifest.ts`. iOS reads neither it nor its icons
+    // for the home screen, so the touch icon and the standalone flag are
+    // stated here for Safari, which is the one browser that still needs them.
+    icons: {
+      // Stated rather than left to the `app/icon` convention: the root layout
+      // is this one, under `[locale]`, and a file at the top of `app` is not
+      // in its segment, so Next would never link it.
+      icon: [{ url: '/icons/favicon-64.png', sizes: '64x64', type: 'image/png' }],
+      apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+    },
+    appleWebApp: {
+      capable: true,
+      title: 'GI Organizer',
+      statusBarStyle: 'default',
+    },
     openGraph: {
       type: 'website',
       siteName: 'GI Organizer',
