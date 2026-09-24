@@ -5,6 +5,7 @@ import { ViewTransition } from 'react';
 import { ArtifactCard } from '@/components/artifact-card';
 import { EffectButton } from '@/components/effect-dialog';
 import { ElementIcon } from '@/components/element-icon';
+import { EmptyArtifactSlot } from '@/components/empty-artifact-slot';
 import { GameIcon } from '@/components/game-icon';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -16,12 +17,14 @@ import { formatPropValue, isPercentProp } from '@/lib/data/props';
 import { resolveIcon } from '@/lib/data/icon';
 import { getCharacterDetailStrings } from '@/lib/data/registry';
 import { STAT_LEVEL_KEYS, statLevelKey } from '@/lib/data/stats';
-import type { CharacterView } from '@/lib/data/types';
+import type { ArtifactSlot, CharacterView } from '@/lib/data/types';
 import type { Loadout, LoadoutPiece } from '@/lib/player/loadout';
+import type { PieceFit } from '@/lib/rules/piece-score';
 import { critRating, critValue } from '@/lib/rules/rolls';
 
 import { Abilities, type Ability } from './abilities';
 import { ArtifactSlotSwitcher } from './artifact-slot-switcher';
+import { EquippedFit } from './equipped-fit';
 import { Attributes, type AttributeLevel, type AttributeRow } from './attributes';
 import { GearActions } from './gear-actions';
 import { MobileCollapsible } from './mobile-collapsible';
@@ -59,6 +62,7 @@ export async function CharacterPanel({
   loadout,
   locale,
   buildId,
+  fits,
 }: {
   catalog: Catalog;
   character: CharacterView;
@@ -66,6 +70,8 @@ export async function CharacterPanel({
   locale: Locale;
   /** The goal the candidate lists are scored against, when one is open. */
   buildId: string | null;
+  /** How each worn piece fits that goal, by instance. See `EquippedFit`. */
+  fits: Map<string, PieceFit>;
 }) {
   const detail = await getCharacterDetailStrings(locale, character.id);
   const entry = enkaEntry(catalog, character.id, loadout.skillDepotId);
@@ -574,6 +580,7 @@ export async function CharacterPanel({
                     locale={locale}
                     characterId={character.id}
                     buildId={buildId}
+                    fits={fits}
                   />
                 ),
               };
@@ -590,6 +597,7 @@ export async function CharacterPanel({
                 locale={locale}
                 characterId={character.id}
                 buildId={buildId}
+                fits={fits}
               />
             ))}
           </ul>
@@ -643,6 +651,7 @@ async function ArtifactSlotCard({
   locale,
   characterId,
   buildId,
+  fits,
 }: {
   catalog: Catalog;
   slot: string;
@@ -650,6 +659,7 @@ async function ArtifactSlotCard({
   locale: Locale;
   characterId: number;
   buildId: string | null;
+  fits: Map<string, PieceFit>;
 }) {
   const t = await getTranslations('build');
   const slotLabel = await getTranslations('common.slot');
@@ -667,10 +677,9 @@ async function ArtifactSlotCard({
 
   if (!piece) {
     return (
-      <li className="group relative rounded-lg border border-dashed border-edge p-3 text-xs text-muted">
-        {title} · {t('emptySlotText')}
+      <EmptyArtifactSlot slot={slot as ArtifactSlot} label={title} emptyText={t('emptySlotText')}>
         {actions}
-      </li>
+      </EmptyArtifactSlot>
     );
   }
 
@@ -694,9 +703,15 @@ async function ArtifactSlotCard({
           value: substat.value,
           rolls: substat.rolls,
         })),
+        pendingSubstats: piece.unactivated,
         critValue: crit,
         critRating: critRating(crit),
       }}
+      footer={fits.has(piece.instanceId) && (
+        <div className="mt-2 flex items-center justify-end border-t border-edge pt-1.5">
+          <EquippedFit fit={fits.get(piece.instanceId)} mainProp={piece.mainProp} catalog={catalog} />
+        </div>
+      )}
     >
       {actions}
     </ArtifactCard>

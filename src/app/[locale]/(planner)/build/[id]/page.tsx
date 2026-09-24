@@ -14,10 +14,15 @@ import { readArtifacts, type OwnedArtifact } from '@/lib/player/artifacts';
 import { roleLabel } from '@/lib/rules/role-labels';
 import { getAccountCatalog } from '@/lib/player/traveler';
 
+import { EmptyArtifactSlot } from '@/components/empty-artifact-slot';
+import type { PieceFit } from '@/lib/rules/piece-score';
+import type { ArtifactSlot } from '@/lib/data/types';
+
 import { OwnedArtifactCard } from '../../artifacts/artifact-card';
 
 import { BuildPicker } from './build-picker';
 import { CharacterPanel } from './character-panel';
+import { EquippedFit, fitsById } from './equipped-fit';
 import { loadBuildContext, type BuildContext } from './context';
 import { upgradeCostFor } from './cost-view';
 import { neighboursOf, type Neighbour as NeighbourEntry } from './neighbours';
@@ -113,6 +118,7 @@ export default async function BuildPage({
             loadout={loadout}
             locale={locale}
             buildId={activeBuild?.id ?? null}
+            fits={fitsById(suggestions)}
           />
           </SwipeNavigate>
 
@@ -232,6 +238,7 @@ async function ChangesTab({ context }: { context: BuildContext }) {
    */
   const [panels, box] = await Promise.all([swapPanelsFor(context), readArtifacts(context.db)]);
   const byId = new Map(box.map((piece) => [piece.instanceId, piece]));
+  const fits = fitsById(context.suggestions);
   const swaps = panels.reduce((total, panel) => total + panel.swaps.length, 0);
 
   return (
@@ -284,6 +291,7 @@ async function ChangesTab({ context }: { context: BuildContext }) {
               key={panel.slot}
               panel={panel}
               byId={byId}
+              fits={fits}
               characterId={characterId}
               catalog={catalog}
               locale={locale}
@@ -307,12 +315,14 @@ async function ChangesTab({ context }: { context: BuildContext }) {
 async function SlotChanges({
   panel,
   byId,
+  fits,
   characterId,
   catalog,
   locale,
 }: {
   panel: SlotPanel;
   byId: Map<string, OwnedArtifact>;
+  fits: Map<string, PieceFit>;
   characterId: number;
   catalog: BuildContext['catalog'];
   locale: string;
@@ -326,15 +336,25 @@ async function SlotChanges({
 
       <ul className="grid grid-cols-2 gap-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
         {equipped ? (
-          <OwnedArtifactCard piece={equipped} scaler={null} catalog={catalog} locale={locale}>
+          <OwnedArtifactCard
+            piece={equipped}
+            scaler={null}
+            catalog={catalog}
+            locale={locale}
+            hideSlot
+            footerExtra={<EquippedFit fit={fits.get(equipped.instanceId)} mainProp={equipped.mainProp} catalog={catalog} />}
+          >
             <p className="mt-2 border-t border-edge pt-1.5 font-mono text-2xs text-accent">
               {t('equippedHeader')}
             </p>
           </OwnedArtifactCard>
         ) : (
-          <li className="self-start rounded-lg border border-dashed border-edge p-3 text-xs text-muted">
-            {t('emptySlotText')}
-          </li>
+          <EmptyArtifactSlot
+            slot={panel.slot as ArtifactSlot}
+            label={panel.title}
+            emptyText={t('emptySlotText')}
+            withFooter
+          />
         )}
 
         {panel.swaps.map((swap) => {
@@ -348,6 +368,7 @@ async function SlotChanges({
               scaler={null}
               catalog={catalog}
               locale={locale}
+              hideSlot
             >
               <SwapVerdict swap={swap} characterId={characterId} />
             </OwnedArtifactCard>

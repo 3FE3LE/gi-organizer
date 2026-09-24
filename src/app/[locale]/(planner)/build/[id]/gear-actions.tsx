@@ -1,13 +1,18 @@
 'use client';
 
-import { ArrowLeftRight, X } from 'lucide-react';
+import { ArrowLeftRight, ArrowUp, ChevronDown, Star, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useActionState, useEffect, useState } from 'react';
+import { useActionState, useEffect, useRef, useState } from 'react';
 
 import { buttonVariants } from '@/components/ui/button';
 import { ActionStatus } from '@/components/action-status';
 import { AssetImage } from '@/components/asset-image';
+import { EmptyArtifactSlot } from '@/components/empty-artifact-slot';
+import { FitIcons } from '@/components/fit-icons';
 import { OwnedArtifactCardView } from '@/components/owned-artifact-card-view';
+import { SetStripView } from '@/components/set-strip-view';
+import { StatIcon } from '@/components/stat-icon';
+import type { ArtifactSlot } from '@/lib/data/types';
 import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog';
 
 import { type MoveState, moveGearAction } from './actions';
@@ -80,7 +85,7 @@ export function GearActions({
             showCloseButton={false}
             // Wider for artifacts, which are a grid of the box's cards; a
             // weapon list is rows and reads best narrow.
-            className={`w-full gap-0 overflow-hidden rounded-xl border border-edge-strong bg-surface p-0 ring-0 ${
+            className={`gap-0 overflow-hidden rounded-xl border border-edge-strong bg-surface p-0 ring-0 ${
               slot === 'weapon' ? 'max-w-3xl sm:max-w-3xl' : 'max-w-5xl sm:max-w-5xl'
             }`}
           >
@@ -151,10 +156,32 @@ function SlotDialog({
   // Which candidate the pinned preview shows. Falls back to the best one, and
   // to it again when a move refetches the list and the pick is gone from it.
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const selected = view?.candidates.find((candidate) => candidate.id === selectedId)
-    ?? view?.candidates[0]
+  // Narrowing inside the dialog, as the box page narrows the whole box: a set,
+  // and — for the three slots whose main stat is a choice — a main stat, which
+  // opens on the one the build asks for when there is a candidate with it.
+  const [setFilter, setSetFilter] = useState<number | null>(null);
+  const [mainFilter, setMainFilter] = useState<string | null | undefined>(undefined);
+  const mainChoices = view?.kind === 'artifact' && CHOOSABLE.has(slot)
+    ? [...new Map(view.candidates
+        .filter((candidate) => candidate.mainProp && candidate.card)
+        .map((candidate) => [candidate.mainProp!, candidate.card!.card.main.label])).entries()]
+    : [];
+  const mainActive = mainFilter === undefined
+    ? (mainChoices.some(([prop]) => prop === view?.preferredMain) ? view?.preferredMain ?? null : null)
+    : mainFilter;
+  const shown = view?.candidates.filter((candidate) =>
+    (setFilter === null || candidate.setId === setFilter)
+    && (mainActive === null || candidate.mainProp === mainActive)) ?? [];
+  const selected = shown.find((candidate) => candidate.id === selectedId)
+    ?? shown[0]
     ?? null;
   const [failed, setFailed] = useState(false);
+  // The comparison folds to one line — the pick and the equip button — so the
+  // list behind it gets the height back; the list offers a way back to its
+  // top once it has been scrolled away from.
+  const [previewOpen, setPreviewOpen] = useState(true);
+  const listRef = useRef<HTMLDivElement>(null);
+  const [scrolled, setScrolled] = useState(false);
 
   const [state, move, pending] = useActionState<MoveState, FormData>(
     moveGearAction, { status: 'idle' },
@@ -173,8 +200,8 @@ function SlotDialog({
   }, [characterId, locale, buildId, slot, state]);
 
   return (
-    <div className="flex max-h-[85vh] flex-col">
-      <header className="flex items-center gap-3 border-b border-edge px-4 py-3">
+    <div className="flex max-h-[85vh] min-w-0 flex-col">
+      <header className="flex items-center gap-3 border-b border-edge px-4 py-2">
         {view?.equipped && (
           <AssetImage
             src={view.equipped.icon}
@@ -217,10 +244,12 @@ function SlotDialog({
         </DialogClose>
       </header>
 
-      <ActionStatus state={state} className="border-b border-edge px-4 py-1.5 font-mono text-xs" />
+      <ActionStatus state={state} className="border-b border-edge px-4 py-1 font-mono text-xs" />
 
       {view && (
-        <p className="border-b border-edge px-4 py-1.5 text-xs text-muted">
+        // Off on a phone, where every line above the list is a line of the
+        // list the player cannot see.
+        <p className="hidden border-b border-edge px-4 py-1 text-xs text-muted sm:block">
           {t('candidatesCount', { count: view.candidates.length })}
           {view.hiddenInUse > 0 && (
             <span className="font-mono text-2xs">
@@ -243,27 +272,112 @@ function SlotDialog({
         * On a phone the two cards would leave no room for the list, so only
         * the table and the button stay.
         */}
+      {/* The same set strip as the box, and the main stat as a row of its
+          icons: "a mastery sands of this set" is the question a swap is. */}
+      {view?.kind === 'artifact' && (view.sets.length > 1 || mainChoices.length > 1) && (
+        <div className="shrink-0 space-y-1.5 border-b border-edge px-3 py-1.5 sm:flex sm:items-end sm:gap-4 sm:space-y-0">
+          {view.sets.length > 1 && (
+            <div className="min-w-0 sm:flex-1">
+              <SetStripView sets={view.sets} selected={setFilter} onSelect={setSetFilter} showEffects={false} />
+            </div>
+          )}
+          {mainChoices.length > 1 && (
+            <div className="shrink-0 space-y-1 sm:pb-1.5">
+              <p className="font-mono text-2xs uppercase tracking-wide text-muted">{t('mainStatLabel')}</p>
+              <div role="group" aria-label={t('mainStatLabel')} className="flex flex-wrap gap-1.5">
+                <FilterButton selected={mainActive === null} onClick={() => setMainFilter(null)}>
+                  {t('allOption')}
+                </FilterButton>
+                {mainChoices.map(([prop, label]) => (
+                  <FilterButton
+                    key={prop}
+                    selected={mainActive === prop}
+                    onClick={() => setMainFilter(prop)}
+                    title={label}
+                  >
+                    <StatIcon prop={prop} label={label} size={14} />
+                    {prop === view.preferredMain && (
+                      <Star size={9} aria-hidden className="fill-accent text-accent" />
+                    )}
+                  </FilterButton>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {view?.kind === 'artifact' && selected?.stats && (
         <section
           aria-label={t('previewAria')}
-          className="shrink-0 border-b border-edge bg-surface-2/60 px-3 py-3"
+          className="shrink-0 border-b border-edge bg-surface-2/60 px-3 py-1.5"
         >
-          <div className="grid gap-3 sm:grid-cols-[minmax(0,11rem)_minmax(0,11rem)_minmax(0,1fr)]">
+          <div className={`flex items-center gap-2 ${previewOpen ? 'mb-1.5' : ''}`}>
+            <button
+              type="button"
+              aria-expanded={previewOpen}
+              onClick={() => setPreviewOpen((open) => !open)}
+              className="flex min-w-0 flex-1 items-center gap-1.5 text-left font-mono text-2xs uppercase tracking-wide text-muted hover:text-text"
+            >
+              <ChevronDown
+                size={14}
+                aria-hidden
+                className={`shrink-0 transition-transform ${previewOpen ? '' : '-rotate-90'}`}
+              />
+              <span className="shrink-0">{previewOpen ? t('previewCollapse') : t('previewExpand')}</span>
+              {!previewOpen && (
+                <span className="min-w-0 truncate normal-case tracking-normal text-text">
+                  · {selected.label} <span className="text-muted">{selected.detail}</span>
+                </span>
+              )}
+            </button>
+            {/* Folded, the button stays: the pick can still be made without
+                unfolding what it was read from. */}
+            {!previewOpen && (
+              <MoveButton
+                action={move}
+                pending={pending}
+                move={{ kind: 'equip-artifact', instanceId: selected.id, toCharacterId: characterId }}
+                expectedHolderId={selected.holderId}
+                title={selected.holder ? t('moveHereButton') : t('equipButton')}
+                className="shrink-0"
+              />
+            )}
+          </div>
+
+          {/* `grid-cols-1` on a phone, not the implicit column: that one sizes to
+              its content, and the comparison table's own minimum width pushed
+              the whole dialog wider than the screen. */}
+          {previewOpen && (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,11rem)_minmax(0,11rem)_minmax(0,1fr)]">
             <ul className="hidden sm:block">
               {view.equipped?.card ? (
-                <OwnedArtifactCardView data={view.equipped.card}>
+                <OwnedArtifactCardView
+                  data={view.equipped.card}
+                  hideSlot
+                  footerExtra={view.equipped.fitParts && view.equipped.mainProp && (
+                    <FitIcons
+                      fit={view.equipped.fitParts}
+                      mainProp={view.equipped.mainProp}
+                      mainLabel={view.equipped.card.card.main.label}
+                    />
+                  )}
+                >
                   <p className="mt-2 border-t border-edge pt-1.5 font-mono text-2xs text-accent">
                     {t('equippedHeader')}
                   </p>
                 </OwnedArtifactCardView>
               ) : (
-                <li className="rounded-lg border border-dashed border-edge p-3 text-xs text-muted">
-                  {t('emptySlotText')}
-                </li>
+                <EmptyArtifactSlot
+                  slot={slot as ArtifactSlot}
+                  label={title}
+                  emptyText={t('emptySlotText')}
+                  withFooter
+                />
               )}
             </ul>
             <ul className="hidden sm:block">
-              {selected.card && <OwnedArtifactCardView data={selected.card} className="border-accent" />}
+              {selected.card && <OwnedArtifactCardView data={selected.card} className="border-accent" hideSlot />}
             </ul>
 
             <div className="flex min-w-0 flex-col gap-2">
@@ -286,6 +400,7 @@ function SlotDialog({
               />
             </div>
           </div>
+          )}
         </section>
       )}
 
@@ -298,7 +413,12 @@ function SlotDialog({
         * numbers and a passive, which a row and its unfolding comparison
         * already say better than a card would.
         */}
-      <div className="min-h-24 flex-1 overflow-y-auto">
+      <div className="relative flex min-h-24 flex-1 flex-col">
+      <div
+        ref={listRef}
+        onScroll={(event) => setScrolled(event.currentTarget.scrollTop > 240)}
+        className="min-h-0 flex-1 overflow-y-auto"
+      >
         {!view && !failed && (
           <p className="px-4 py-6 text-center text-xs text-muted">{t('searchingCandidates')}</p>
         )}
@@ -307,30 +427,33 @@ function SlotDialog({
         )}
 
         {view?.kind === 'artifact' && (
-          <ul className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-3 lg:grid-cols-4">
-            {view.candidates.map((candidate) => candidate.card && (
+          <ul className="grid grid-cols-2 gap-2 p-2 sm:grid-cols-3 lg:grid-cols-4">
+            {shown.map((candidate) => candidate.card && (
               <OwnedArtifactCardView
                 key={candidate.id}
                 data={candidate.card}
+                hideSlot
                 className={candidate.id === selected?.id ? 'border-accent ring-1 ring-accent' : ''}
+                footerExtra={candidate.fitParts && candidate.mainProp && (
+                  <FitIcons
+                    fit={candidate.fitParts}
+                    mainProp={candidate.mainProp}
+                    mainLabel={candidate.card.card.main.label}
+                  />
+                )}
               >
-                <div className="mt-2 space-y-1.5 border-t border-edge pt-1.5">
-                  {candidate.fit && (
-                    <p className="font-mono text-2xs text-muted">{candidate.fit}</p>
-                  )}
-                  <button
-                    type="button"
-                    aria-pressed={candidate.id === selected?.id}
-                    onClick={() => setSelectedId(candidate.id)}
-                    className={buttonVariants({
-                      variant: candidate.id === selected?.id ? 'default' : 'outline',
-                      size: 'sm',
-                      className: 'w-full',
-                    })}
-                  >
-                    {candidate.id === selected?.id ? t('comparing') : t('openCompare')}
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  aria-pressed={candidate.id === selected?.id}
+                  onClick={() => setSelectedId(candidate.id)}
+                  className={buttonVariants({
+                    variant: candidate.id === selected?.id ? 'default' : 'outline',
+                    size: 'sm',
+                    className: 'mt-1.5 w-full',
+                  })}
+                >
+                  {candidate.id === selected?.id ? t('comparing') : t('openCompare')}
+                </button>
               </OwnedArtifactCardView>
             ))}
           </ul>
@@ -354,10 +477,52 @@ function SlotDialog({
           </ul>
         )}
 
-        {view?.candidates.length === 0 && (
+        {view && shown.length === 0 && (
           <p className="px-4 py-6 text-center text-xs text-muted">{t('noMatch')}</p>
         )}
       </div>
+
+      {scrolled && (
+        <button
+          type="button"
+          onClick={() => listRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+          title={t('backToTop')}
+          className="absolute bottom-3 right-3 flex h-9 w-9 items-center justify-center rounded-full border border-edge-strong bg-surface/90 text-text shadow-lg backdrop-blur hover:border-accent hover:text-accent"
+        >
+          <ArrowUp size={16} aria-hidden />
+          <span className="sr-only">{t('backToTop')}</span>
+        </button>
+      )}
+      </div>
     </div>
+  );
+}
+
+/** The slots whose main stat is a choice rather than the game's. */
+const CHOOSABLE = new Set(['sands', 'goblet', 'circlet']);
+
+function FilterButton({
+  selected,
+  onClick,
+  title,
+  children,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  title?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={selected}
+      title={title}
+      onClick={onClick}
+      className={`flex min-h-8 items-center gap-1 rounded-lg border px-2.5 text-xs transition-colors ${
+        selected ? 'border-accent bg-accent text-on-accent' : 'border-edge text-muted hover:border-edge-strong hover:text-text'
+      }`}
+    >
+      {children}
+    </button>
   );
 }

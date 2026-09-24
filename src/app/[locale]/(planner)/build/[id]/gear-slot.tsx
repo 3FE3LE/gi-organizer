@@ -6,8 +6,10 @@ import { useState } from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { AssetImage } from '@/components/asset-image';
 import type { Move } from '@/lib/player/move';
+import type { PieceFit } from '@/lib/rules/piece-score';
 
 import type { OwnedArtifactCardData } from '@/components/owned-artifact-card-view';
+import type { SetChoice } from '@/components/set-strip-view';
 
 import { PieceComparison, type PieceStats } from './piece-stats';
 import { WeaponPassive, type WeaponPassiveText } from './weapon-passive';
@@ -18,6 +20,15 @@ export type CandidateView = {
   detail: string;
   /** Why this piece ranks where it does against the build. */
   fit: string | null;
+  /**
+   * The same verdict as parts, for drawing: whether the main stat is one the
+   * build asks for, and how many rolls landed in substats it wants.
+   * Artifacts only.
+   */
+  fitParts: PieceFit | null;
+  /** Artifacts only: the set and main stat the dialog filters by. */
+  setId: number | null;
+  mainProp: string | null;
   score: number;
   /** Already resolved by the server, which is the only side that knows which
    *  asset names no host serves. */
@@ -42,6 +53,10 @@ export type SlotView = {
   candidates: CandidateView[];
   /** Worn by someone else and off the set plan, so left out of the list. */
   hiddenInUse: number;
+  /** Artifacts only: the sets on offer, for the dialog's set strip. */
+  sets: SetChoice[];
+  /** Artifacts only: the main stat the build asks for in this slot, if any. */
+  preferredMain: string | null;
 };
 
 /**

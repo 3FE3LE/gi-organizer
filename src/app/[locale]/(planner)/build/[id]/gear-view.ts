@@ -2,7 +2,7 @@ import 'server-only';
 
 import { getTranslations } from 'next-intl/server';
 
-import { statLabel } from '@/lib/data/catalog';
+import { formatSetEffect, setEffects, statLabel } from '@/lib/data/catalog';
 import { resolveIcon } from '@/lib/data/icon';
 import { ARTIFACT_SLOTS } from '@/lib/enka/slots';
 import {
@@ -78,6 +78,9 @@ async function candidateViews(context: BuildContext) {
       label: set?.name ?? `#${piece.setId}`,
       detail: `+${piece.level} ${statLabel(catalog, piece.mainProp)}`,
       fit,
+      fitParts: scored?.fit ?? null,
+      setId: piece.setId,
+      mainProp: piece.mainProp,
       score: scored?.score ?? 0,
       icon: await resolveIcon(set?.pieces[piece.slot]?.icon, 'relic'),
       holder: format.holderName(piece.equippedTo),
@@ -101,6 +104,9 @@ async function candidateViews(context: BuildContext) {
       icon: await resolveIcon(definition?.icon, 'weapon'),
       holder: format.holderName(weapon.equippedTo),
       holderId: weapon.equippedTo,
+      fitParts: null,
+      setId: null,
+      mainProp: null,
       stats: format.weaponStats(weapon),
       card: null,
       refinement: weapon.refinement,
@@ -117,7 +123,7 @@ async function artifactSlot(
   context: BuildContext,
   slot: (typeof ARTIFACT_SLOTS)[number],
 ): Promise<SlotView> {
-  const { db, gear, characterId, plannedSetIds } = context;
+  const { catalog, db, gear, characterId, locale, plannedSetIds, suggestions } = context;
   const { pieceView } = await candidateViews(context);
   const slotLabel = await getTranslations('common.slot');
 
@@ -132,14 +138,47 @@ async function artifactSlot(
 
   const worthTaking = taken.filter((piece) => plannedSetIds.has(piece.setId));
 
+  const candidates = (await Promise.all([...free, ...worthTaking].map(pieceView)))
+    .sort((a, b) => b.score - a.score);
+
+  // The dialog's set strip: the sets these candidates come in, each drawn as
+  // its piece for this very slot. The sets the character already wears the
+  // most of lead — the swap that keeps a bonus is the one looked for first —
+  // and then the most on offer.
+  const worn = new Map<number, number>();
+  for (const piece of gear.bySlot.values()) {
+    if (piece) worn.set(piece.setId, (worn.get(piece.setId) ?? 0) + 1);
+  }
+  const bySet = new Map<number, { icon: string | null; count: number }>();
+  for (const candidate of candidates) {
+    if (candidate.setId === null) continue;
+    const entry = bySet.get(candidate.setId) ?? { icon: candidate.icon, count: 0 };
+    entry.count += 1;
+    bySet.set(candidate.setId, entry);
+  }
+  const sets = [...bySet].map(([setId, entry]) => {
+    const set = catalog.artifacts.get(setId);
+    return {
+      setId,
+      name: set?.name ?? `#${setId}`,
+      icon: entry.icon,
+      effects: setEffects(set).map(formatSetEffect),
+      count: entry.count,
+    };
+  }).sort((a, b) =>
+    (worn.get(b.setId) ?? 0) - (worn.get(a.setId) ?? 0)
+    || b.count - a.count
+    || a.name.localeCompare(b.name, locale));
+
   return {
     key: slot,
     title: slotLabel.has(slot) ? slotLabel(slot) : slot,
     kind: 'artifact',
     equipped: equipped ? await pieceView(equipped) : null,
-    candidates: (await Promise.all([...free, ...worthTaking].map(pieceView)))
-      .sort((a, b) => b.score - a.score),
+    candidates,
     hiddenInUse: taken.length - worthTaking.length,
+    sets,
+    preferredMain: suggestions.stats.mainStatsBySlot.get(slot)?.[0] ?? null,
   };
 }
 
@@ -171,5 +210,7 @@ async function weaponSlot(context: BuildContext): Promise<SlotView> {
     equipped: gear.weapon ? await weaponView(gear.weapon) : null,
     candidates: await Promise.all([...free, ...worthTaking].map(weaponView)),
     hiddenInUse: taken.length - worthTaking.length,
+    sets: [],
+    preferredMain: null,
   };
 }
