@@ -81,6 +81,18 @@ export type KeyResolver = {
   knownKeys: (of: 'artifactSets' | 'weapons' | 'characters' | 'materials') => string[];
 };
 
+/**
+ * Names a scanner writes that the GOOD key list does not.
+ *
+ * Inventory Kamera writes the two Manekins as `Manequin1` and `Manequin2`
+ * where the key list has `Manekin` and `Manekina`, so a weapon one of them
+ * holds arrived unassigned, with a warning on every import.
+ */
+const ALIASES: Record<string, string> = {
+  Manequin1: 'Manekin',
+  Manequin2: 'Manekina',
+};
+
 export function createKeyResolver(crosswalk: GoodCrosswalk): KeyResolver {
   const sets = buildTable(crosswalk.artifactSets, crosswalk.excluded.artifactSets);
   const weapons = buildTable(crosswalk.weapons, crosswalk.excluded.weapons);
@@ -92,7 +104,8 @@ export function createKeyResolver(crosswalk: GoodCrosswalk): KeyResolver {
     ...Object.keys(crosswalk.traveler.elementByKey),
   ]);
 
-  function character(key: string): Resolution | TravelerResolution {
+  function character(raw: string): Resolution | TravelerResolution {
+    const key = ALIASES[raw] ?? raw;
     if (travelerKeys.has(key)) {
       return {
         kind: 'traveler',
