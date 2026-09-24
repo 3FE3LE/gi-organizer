@@ -1,4 +1,4 @@
-import { ChevronRight, Crown, Feather, Flower2, Hourglass, Wine, X } from 'lucide-react';
+import { ChevronRight, Crown, Feather, Flower2, Hourglass, SlidersHorizontal, Wine, X } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
@@ -88,9 +88,28 @@ export async function FilterPanel({
     || b.count - a.count
     || a.name.localeCompare(b.name, locale));
 
+  // The narrowing controls behind the disclosure that are on, for its badge:
+  // folded away, they have to say they are doing something.
+  const advanced = [
+    filters.sub !== null, filters.quality !== null, filters.cv !== null,
+    filters.perfect, filters.set !== null, filters.main !== null,
+  ].filter(Boolean).length;
+
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+      {/*
+        * Three levels, drawn as three.
+        *
+        * All the filters used to be the same weight: two strips of small
+        * segments, a flat "más filtros" bar and the view controls, each in
+        * its own grey. So the two a visit starts with — which slot, and whose
+        * — now lead one card with their names on them and a filled choice;
+        * everything finer is the same card's second level, under a heading
+        * that counts what it has on; and pricing and ordering, which never
+        * change which pieces are listed, stay quiet beside the title.
+        */}
+      <div className="card">
+      <div className="flex flex-wrap items-end gap-x-5 gap-y-3 p-3">
         <Segments label={t('pieceLabel')}>
           <Segment to={href(base, filters, { slot: null, main: null })} active={!filters.slot}>
             {t('allSlots')}
@@ -106,7 +125,7 @@ export async function FilterPanel({
                 active={filters.slot === slot}
                 title={label}
               >
-                <Icon size={13} aria-hidden />
+                <Icon size={15} aria-hidden />
                 <span className="sr-only">{label}</span>
               </Segment>
             );
@@ -134,11 +153,17 @@ export async function FilterPanel({
       <details
         open={filters.sub !== null || filters.quality !== null || filters.cv !== null
           || filters.perfect || filters.set !== null || filters.main !== null}
-        className="group card"
+        className="group border-t border-edge"
       >
-        <summary className="flex cursor-pointer list-none items-center gap-1.5 px-3 py-2 font-mono text-2xs uppercase text-muted hover:text-text">
-          <ChevronRight size={12} className="transition-transform group-open:rotate-90" />
-          {t('moreFilters')}
+        <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2.5 text-xs text-text transition-colors hover:bg-surface-2/60">
+          <SlidersHorizontal size={14} aria-hidden className="text-muted" />
+          <span className="font-medium">{t('moreFilters')}</span>
+          {advanced > 0 && (
+            <span className="tabular rounded-full bg-accent px-1.5 font-mono text-2xs leading-4 text-on-accent">
+              {advanced}
+            </span>
+          )}
+          <ChevronRight size={14} aria-hidden className="ml-auto text-muted transition-transform group-open:rotate-90" />
         </summary>
 
         <div className="space-y-4 border-t border-edge px-3 py-3">
@@ -156,6 +181,7 @@ export async function FilterPanel({
           <SetStrip sets={sets} />
         </div>
       </details>
+      </div>
 
       {active > 0 && (
         <div className="flex flex-wrap items-center gap-1.5">
@@ -238,15 +264,20 @@ async function describe(filters: ArtifactFilters, catalog: Catalog) {
 /**
  * A dial rather than loose chips: one bordered strip whose parts are hairline
  * divided, so the five slots read as one choice of five and not as five things
- * to think about.
+ * to think about. Named above, because these two lead the page: a strip of
+ * icons with no word on it was easy to read past as decoration.
  */
 function Segments({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div
-      aria-label={label}
-      className="flex items-stretch divide-x divide-edge overflow-hidden card"
-    >
-      {children}
+    <div className="space-y-1">
+      <p aria-hidden className="font-mono text-2xs uppercase tracking-wide text-muted">{label}</p>
+      <div
+        role="group"
+        aria-label={label}
+        className="flex items-stretch divide-x divide-edge overflow-hidden rounded-lg border border-edge bg-surface-2/50"
+      >
+        {children}
+      </div>
     </div>
   );
 }
@@ -267,9 +298,9 @@ function Segment({
       href={to}
       title={title}
       aria-current={active ? 'true' : undefined}
-      className={`flex items-center gap-1 px-2.5 py-1.5 text-2xs transition-colors ${
+      className={`flex min-h-9 items-center gap-1.5 px-3 text-xs transition-colors ${
         active
-          ? 'bg-surface-2 text-accent'
+          ? 'bg-accent font-medium text-on-accent'
           : 'text-muted hover:bg-surface-2 hover:text-text'
       }`}
     >
