@@ -194,7 +194,7 @@ export function Abilities({
           <DialogContent
             key={open.key}
             showCloseButton={false}
-            className="panel max-h-[85vh] w-full max-w-lg gap-0 overflow-hidden p-0 ring-0 sm:max-w-lg"
+            className="panel max-h-[85vh] max-w-lg gap-0 overflow-hidden p-0 ring-0 sm:max-w-lg"
           >
             <AbilityPanel ability={open} closeLabel={t('abilityClose')} />
           </DialogContent>

@@ -459,7 +459,7 @@ function MemberPicker({
       {open && (
         <DialogContent
           showCloseButton={false}
-          className="w-full max-w-2xl gap-0 overflow-hidden rounded-xl border border-edge-strong bg-surface p-0 ring-0 sm:max-w-2xl"
+          className="max-w-2xl gap-0 overflow-hidden rounded-xl border border-edge-strong bg-surface p-0 ring-0 sm:max-w-2xl"
         >
           <div className="flex max-h-[80vh] flex-col">
             <header className="flex items-center gap-3 border-b border-edge px-4 py-3">
