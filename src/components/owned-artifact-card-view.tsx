@@ -1,11 +1,21 @@
+import { PackageOpen, Star } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { ArtifactCardView, type ArtifactCardData } from '@/components/artifact-card-view';
-import type { Scaler } from '@/lib/rules/worth';
+import { AssetImage } from '@/components/asset-image';
+import { StatIcon } from '@/components/stat-icon';
+import { SCALER_PROPS, type Scaler } from '@/lib/rules/worth';
 
 /**
  * A piece of the box as the artifacts page draws it: the shared card, and
- * under it who wears it, how its rolls landed and what it is for.
+ * under it whose it is and what it is for.
+ *
+ * The footer used to be two lines of text — the holder's name, "9 rolls ·
+ * 88%", "para ATQ%", "4 de 9 rolls perdidos" — and it was the part of the card
+ * nobody read. Two facts are worth a glance: who is wearing it, which is a
+ * face, and which scaler it serves, which is that stat's icon with a star.
+ * The roll count and efficiency say little a player can act on, and the
+ * wasted rolls are already on the card: the dead substats are dimmed.
  *
  * Drawn from data, like `ArtifactCardView`, so the gear dialog — which loads
  * its candidates after the page — shows a piece exactly as the box does. The
@@ -14,14 +24,9 @@ import type { Scaler } from '@/lib/rules/worth';
 export type OwnedArtifactCardData = {
   card: ArtifactCardData;
   /** Who is wearing it, or null when nobody is. */
-  holder: string | null;
-  rolls: number;
-  /** 0–1, or null when the piece has not rolled. */
-  efficiency: number | null;
+  holder: { name: string; icon: string | null } | null;
+  /** The scaler the piece is priced on, when it carries one. */
   serves: Scaler | null;
-  wastedCount: number;
-  /** The total the wasted count is out of. */
-  worthCount: number;
 };
 
 export function OwnedArtifactCardView({
@@ -43,32 +48,35 @@ export function OwnedArtifactCardView({
       card={data.card}
       className={`transition-colors hover:border-edge-strong ${className ?? ''}`}
       footer={
-        <>
-          <p className="mt-2 flex flex-wrap items-baseline justify-between gap-x-2 border-t border-edge pt-1.5 font-mono text-2xs">
-            <span className={data.holder ? 'text-muted' : 'text-good'}>{data.holder ?? t('free')}</span>
-            <span className="tabular text-muted">
-              {data.rolls} {t('rollsCount', { count: data.rolls })}
-              {data.efficiency !== null && ` · ${Math.round(data.efficiency * 100)}%`}
+        <div className="mt-2 flex items-center justify-between gap-2 border-t border-edge pt-1.5">
+          {data.holder ? (
+            <span title={data.holder.name} className="flex min-w-0 items-center gap-1.5">
+              <AssetImage
+                src={data.holder.icon}
+                kind="avatar"
+                alt=""
+                className="h-6 w-6 shrink-0 rounded-full border border-edge bg-surface-2"
+                sizes="24px"
+              />
+              <span className="sr-only">{data.holder.name}</span>
             </span>
-          </p>
-
-          {/* What the piece is for, and what it lost getting there. The first is
-              why a mastery piece can rank high without a mastery build on
-              screen; the second is the one thing a tier average cannot say. */}
-          {(data.serves !== null || data.wastedCount > 0) && (
-            <p className="mt-1 flex flex-wrap items-baseline justify-between gap-x-2 font-mono text-2xs text-muted">
-              <span>
-                {data.serves !== null && t('servesPrefix', { scaler: scalerLabel(data.serves) })}
-              </span>
-              {data.wastedCount > 0 && (
-                <span>
-                  <span className="text-bad">{data.wastedCount}</span>
-                  {` ${t('wastedRolls', { count: data.worthCount })}`}
-                </span>
-              )}
-            </p>
+          ) : (
+            <span title={t('free')} className="flex h-6 items-center text-good">
+              <PackageOpen size={15} aria-hidden />
+              <span className="sr-only">{t('free')}</span>
+            </span>
           )}
-        </>
+
+          {data.serves && (
+            <span
+              title={t('servesPrefix', { scaler: scalerLabel(data.serves) })}
+              className="flex items-center gap-0.5 text-muted"
+            >
+              <StatIcon prop={SCALER_PROPS[data.serves]} label={t('servesPrefix', { scaler: scalerLabel(data.serves) })} />
+              <Star size={10} aria-hidden className="fill-accent text-accent" />
+            </span>
+          )}
+        </div>
       }
     >
       {children}

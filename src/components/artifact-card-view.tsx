@@ -3,7 +3,9 @@ import { useTranslations } from 'next-intl';
 
 import { AssetImage } from '@/components/asset-image';
 import { EffectButton } from '@/components/effect-dialog';
+import { SlotIcon } from '@/components/slot-icon';
 import { StatIcon } from '@/components/stat-icon';
+import type { ArtifactSlot } from '@/lib/data/types';
 import { TIERS, type CritRating, type RollQuality } from '@/lib/rules/rolls';
 
 /**
@@ -38,6 +40,7 @@ export type ArtifactCardData = {
   /** One line per bonus, already formatted. */
   setEffects: string[];
   icon: string | null;
+  slot: ArtifactSlot;
   slotLabel: string;
   rarity: number;
   level: number;
@@ -79,31 +82,35 @@ export function ArtifactCardView({
   return (
     <li className={`group relative flex min-w-0 flex-col card p-2.5 ${className ?? ''}`}>
       <div className="flex items-start gap-2">
-        <AssetImage src={card.icon} kind="relic" className="h-9 w-9 shrink-0" sizes="36px" />
-        <div className="min-w-0 flex-1">
-          {/* The bonus this set actually grants, which the game shows twice
-              in its own UI and this one showed nowhere — a tap opens it,
-              same as a talent's disc, rather than a line every card pays
-              for whether it's read or not. */}
-          {card.setEffects.length > 0 ? (
-            <EffectButton
-              title={card.setName}
-              lines={card.setEffects}
-              hint={card.setEffects[0]}
-              closeLabel={common('close')}
-              className="block w-full truncate text-left text-xs leading-tight underline decoration-edge-strong decoration-dotted underline-offset-2"
-            >
-              {card.setName}
-            </EffectButton>
-          ) : (
-            <p className="truncate text-xs leading-tight" title={card.setName}>
-              {card.setName}
-            </p>
-          )}
-          <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 font-mono text-2xs leading-tight">
+        {/*
+          * The set is its art, not its name.
+          *
+          * Written out, the set's name was the longest line on the card and
+          * the one a player reads least — the flower already says which set it
+          * is, the same way the set strip above the list does. So the icon is
+          * the set: its name on hover and for screen readers, and a tap opens
+          * the bonus it grants, as the name used to.
+          */}
+        {card.setEffects.length > 0 ? (
+          <EffectButton
+            title={card.setName}
+            lines={card.setEffects}
+            hint={card.setName}
+            closeLabel={common('close')}
+            className="shrink-0 rounded-md transition-transform hover:scale-105"
+          >
+            <AssetImage src={card.icon} kind="relic" alt={card.setName} className="h-9 w-9" sizes="36px" />
+          </EffectButton>
+        ) : (
+          <span title={card.setName} className="shrink-0">
+            <AssetImage src={card.icon} kind="relic" alt={card.setName} className="h-9 w-9" sizes="36px" />
+          </span>
+        )}
+        <div className="min-w-0 flex-1 self-center">
+          <p className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 font-mono text-2xs leading-tight">
             <span className="rounded bg-ink px-1 text-muted">+{card.level}</span>
             <span className="text-accent">{'★'.repeat(card.rarity)}</span>
-            <span className="text-muted capitalize">{card.slotLabel}</span>
+            <SlotIcon slot={card.slot} label={card.slotLabel} className="text-muted" />
             {card.critValue > 0 && (
               <span
                 className={`tabular ${CRIT_TONE[card.critRating]}`}
@@ -129,7 +136,7 @@ export function ArtifactCardView({
       {/* The main stat, at the size it deserves: it is the piece's reason for
           existing, and on three of the five slots it is the whole decision. */}
       <p
-        className="mt-2 flex items-baseline justify-between gap-2 border-b border-edge pb-1.5"
+        className="mt-2 flex items-center justify-between gap-2 border-b border-edge pb-1.5"
         title={card.main.label}
       >
         <StatIcon prop={card.main.prop} label={card.main.label} size={15} />
@@ -143,7 +150,7 @@ export function ArtifactCardView({
         {card.substats.map((substat) => (
           <li
             key={substat.prop}
-            className={`flex items-baseline justify-between gap-2 ${
+            className={`flex items-center justify-between gap-2 ${
               substat.dead ? 'opacity-45' : ''
             }`}
             title={substat.dead ? `${substat.label} · ${t('deadSubstatHint')}` : substat.label}
@@ -154,7 +161,7 @@ export function ArtifactCardView({
                   one ("+5.8%") are different lengths, and without a column to
                   end at, the roll mark after it drifted left or right row to
                   row instead of lining up down the card. */}
-              <span className="tabular w-9 text-right">+{substat.text}</span>
+              <span className="tabular w-11 text-right">+{substat.text}</span>
               <RollMark substat={substat} />
             </span>
           </li>

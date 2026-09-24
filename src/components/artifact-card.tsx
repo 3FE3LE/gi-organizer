@@ -68,6 +68,7 @@ export async function artifactCardData(
     setName: set?.name ?? `#${piece.setId}`,
     setEffects: setEffects(set).map(formatSetEffect),
     icon: await resolveIcon(set?.pieces[piece.slot]?.icon, 'relic'),
+    slot: piece.slot,
     slotLabel: slotLabel.has(piece.slot) ? slotLabel(piece.slot) : piece.slot,
     rarity: piece.rarity,
     level: piece.level,

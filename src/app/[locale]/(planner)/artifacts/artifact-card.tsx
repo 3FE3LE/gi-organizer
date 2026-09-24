@@ -1,4 +1,5 @@
 import { artifactCardData } from '@/components/artifact-card';
+import { resolveIcon } from '@/lib/data/icon';
 import {
   OwnedArtifactCardView,
   type OwnedArtifactCardData,
@@ -53,12 +54,11 @@ export async function ownedArtifactCardData(
     }, catalog, locale),
     holder: piece.holderId === null
       ? null
-      : catalog.characters.get(piece.holderId)?.name ?? `#${piece.holderId}`,
-    rolls: piece.quality.count,
-    efficiency: piece.quality.efficiency,
+      : {
+          name: catalog.characters.get(piece.holderId)?.name ?? `#${piece.holderId}`,
+          icon: await resolveIcon(catalog.characters.get(piece.holderId)?.icon, 'avatar'),
+        },
     serves: worth.serves,
-    wastedCount: worth.wastedCount,
-    worthCount: worth.count,
   };
 }
 

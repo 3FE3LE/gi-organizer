@@ -262,7 +262,6 @@
     "deadSubstatHint": "Doesn't scale with anything: these rolls don't count",
     "critValueHint": "Crit value: 2 × crit rate + crit dmg = {value} · {rating}",
     "rollsCount": "{count, plural, one {roll} other {rolls}}",
-    "wastedRolls": "of {count} wasted rolls",
     "servesPrefix": "for {scaler}"
   },
   "plan": {

@@ -262,7 +262,6 @@
     "deadSubstatHint": "No escala con nada: estos rolls no cuentan",
     "critValueHint": "Crit value: 2 × prob. CRIT + daño CRIT = {value} · {rating}",
     "rollsCount": "{count, plural, one {roll} other {rolls}}",
-    "wastedRolls": "de {count} rolls perdidos",
     "servesPrefix": "para {scaler}"
   },
   "plan": {
