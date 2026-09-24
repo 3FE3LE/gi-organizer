@@ -383,7 +383,8 @@
     "progressPanelTitle": "Progreso",
     "progressSummary": "Nv. {level} → {target} · C{constellation}",
     "todayColumn": "hoy",
-    "targetColumn": "meta",
+    "mainStatLabel": "main stat",
+    "crownsLine": "coronas: {used} en esta meta · {free, plural, one {# libre} other {# libres}} de {owned}",
     "levelRow": "Nivel",
     "targetLevelAria": "nivel objetivo",
     "ascendedLabel": "ascendido",
@@ -504,6 +505,7 @@
       "notInRoster": "{name} no está en tu cuenta: reimporta tu GOOD",
       "goalRoleTaken": "{name} ya tiene un objetivo con ese rol",
       "objectiveSaved": "objetivo de {name} guardado",
+      "notEnoughCrowns": "Faltan coronas: la meta pide {needed} y {free, plural, =0 {no queda ninguna libre} one {solo queda # libre} other {solo quedan # libres}}.",
       "targetBelowCurrent": "el objetivo de {name} no puede quedar por debajo de su nivel o talentos actuales"
     }
   },

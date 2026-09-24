@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Check,
   CircleAlert,
+  Crown,
   Gauge,
   Minus,
   Plus,
@@ -116,6 +117,8 @@ export type ProgressValues = {
   setIds: number[];
   mainStats: Record<string, string>;
   goals: { prop: string; min: number }[];
+  /** Crowns of Insight: held, and still unclaimed by other characters' targets. */
+  crowns: { owned: number; free: number };
 };
 
 /** The resolver transforms, so the control carries both shapes. */
@@ -273,10 +276,14 @@ function ProgressForm({
 
   // `useWatch` rather than `form.watch`: the latter hands back a fresh function
   // every render, which makes the React Compiler skip this component entirely.
-  const [targetLevel, setIds, mainStats, substats, goals] = useWatch({
+  const [targetLevel, setIds, mainStats, substats, goals, targetTalents] = useWatch({
     control: form.control,
-    name: ['targetLevel', 'setIds', 'mainStats', 'substats', 'goals'],
+    name: ['targetLevel', 'setIds', 'mainStats', 'substats', 'goals', 'targetTalents'],
   });
+  // Crowns this form's targets would spend: one per talent aimed at 10 from
+  // below it. Capped by what the account holds — see `lib/player/crowns.ts`.
+  const crownsPlanned = TALENTS.filter((talent) =>
+    Number(targetTalents?.[talent]) >= 10 && values.current.talents[talent] < 10).length;
   const twoPlusTwo = (setIds?.[1] ?? '') !== '';
   const [showSecondSet, setShowSecondSet] = useState(twoPlusTwo);
 
@@ -342,37 +349,50 @@ function ProgressForm({
           })}
           className="lg:col-span-5"
         >
-          {/* One grid for level and the three talents: they are the same
-              question — where it is, where it ends — asked four times. */}
-          <div className="grid grid-cols-[minmax(3.5rem,auto)_1fr_1fr] items-start gap-x-2 gap-y-2 sm:gap-x-3">
-            <span />
-            <Column>{t('todayColumn')}</Column>
-            <Column>{t('targetColumn')}</Column>
+          {/* The level as a slider: from where the character is to ninety,
+              with today and the target read off one line above it. */}
+          <LevelCell
+            control={form.control}
+            name="targetLevel"
+            label={t('targetLevelAria')}
+            heading={t('levelRow')}
+            today={`${values.current.level}${values.current.ascended ? '+' : ''}`}
+            level={targetLevel}
+            min={values.current.level}
+            ascendedField={form.register('targetAscended')}
+            ascendedDefault={defaults.targetAscended}
+          />
 
-            <RowLabel>{t('levelRow')}</RowLabel>
-            <Today>
-              {values.current.level}{values.current.ascended && '+'}
-            </Today>
-            <LevelCell
-              control={form.control}
-              name="targetLevel"
-              label={t('targetLevelAria')}
-              level={targetLevel}
-              min={values.current.level}
-              ascendedField={form.register('targetAscended')}
-              ascendedDefault={defaults.targetAscended}
-            />
-
+          {/* The three talents on one row: they are one question — how far
+              each goes — and three full-width rows of the same stepper read
+              as three separate ones. Today's level sits beside each target. */}
+          <div className="mt-3 grid grid-cols-3 gap-3">
             {TALENTS.map((talent) => (
-              <TalentRow
+              <TalentCell
                 key={talent}
                 talent={talent}
                 label={talentLabel(talent)}
                 today={values.current.talents[talent]}
                 control={form.control}
+                // A talent may go to 10 while a crown is left for it: one it
+                // already targets keeps its own, a new one needs a spare.
+                canReachTen={
+                  values.current.talents[talent] >= 10
+                  || Number(targetTalents?.[talent]) >= 10
+                  || crownsPlanned < values.crowns.free
+                }
               />
             ))}
           </div>
+
+          {/* The one talent material that cannot be farmed, stated where it
+              caps the steppers above. */}
+          <p className="mt-2 flex items-center gap-1.5 font-mono text-2xs text-muted">
+            <Crown size={12} aria-hidden className="text-accent" />
+            {t('crownsLine', {
+              used: crownsPlanned, free: values.crowns.free, owned: values.crowns.owned,
+            })}
+          </p>
 
           <p className="mb-1.5 mt-4 flex items-baseline justify-between gap-2 font-mono text-2xs uppercase tracking-wide text-muted">
             {t('constellationLabel')}
@@ -788,16 +808,6 @@ function FieldLabel({
   );
 }
 
-const Column = ({ children }: { children: React.ReactNode }) => (
-  <span className="text-center font-mono text-2xs uppercase tracking-wide text-muted">
-    {children}
-  </span>
-);
-
-const RowLabel = ({ children }: { children: React.ReactNode }) => (
-  <span className="self-center truncate text-xs text-muted">{children}</span>
-);
-
 function Segment({
   active,
   onClick,
@@ -882,6 +892,8 @@ function LevelCell({
   control,
   name,
   label,
+  heading,
+  today,
   level,
   min,
   ascendedField,
@@ -890,6 +902,9 @@ function LevelCell({
   control: ProgressControl;
   name: 'targetLevel';
   label: string;
+  heading: string;
+  /** Where the character is, as the import saw it: `80+` once ascended. */
+  today: string;
   level: number;
   /** The character's level today: a target cannot undo levelling already done. */
   min: number;
@@ -898,23 +913,34 @@ function LevelCell({
 }) {
   const t = useTranslations('build');
   return (
-    <div className="min-w-0">
+    <div className="space-y-1.5">
+      <p className="flex items-baseline justify-between gap-2 font-mono text-2xs uppercase tracking-wide text-muted">
+        {heading}
+        <span className="tabular normal-case">
+          {t('todayColumn')} {today} <span aria-hidden>→</span>{' '}
+          <span className="text-sm text-text">{level}</span>
+        </span>
+      </p>
       <Controller
         control={control}
         name={name}
         render={({ field }) => (
-          <Stepper
-            label={label}
-            value={Number(field.value)}
-            onChange={field.onChange}
-            onBlur={field.onBlur}
+          <Slider
+            aria-label={label}
             min={min}
             max={90}
+            step={1}
+            value={Number(field.value)}
+            // At ninety already there is nowhere to go, and a slider with no
+            // travel is a bar that ignores the finger.
+            disabled={min >= 90}
+            onValueChange={(next) => field.onChange(Number(next))}
+            className="py-1.5"
           />
         )}
       />
       {BREAKPOINTS.has(level) && (
-        <label className="mt-1 flex cursor-pointer items-center justify-center gap-1 font-mono text-2xs text-muted">
+        <label className="flex cursor-pointer items-center justify-end gap-1 font-mono text-2xs text-muted">
           <input
             type="checkbox"
             {...ascendedField}
@@ -928,49 +954,45 @@ function LevelCell({
   );
 }
 
-/** A fact from the last import, shown where its stepper used to be. */
-function Today({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="tabular flex items-center justify-center py-1.5 font-mono text-sm text-muted">
-      {children}
-    </span>
-  );
-}
-
-function TalentRow({
+function TalentCell({
   talent,
   label,
   today,
   control,
+  canReachTen,
 }: {
   talent: (typeof TALENTS)[number];
   label: string;
   today: number;
   control: ProgressControl;
+  /** Whether a Crown of Insight is left for this talent's last level. */
+  canReachTen: boolean;
 }) {
   const t = useTranslations('build');
   return (
-    <>
-      <RowLabel>{label}</RowLabel>
-      <Today>{today}</Today>
-      {(['targetTalents'] as const).map((group) => (
-        <Controller
-          key={group}
-          control={control}
-          name={`${group}.${talent}`}
-          render={({ field }) => (
-            <Stepper
-              label={t('targetTalentAria', { talent: label })}
-              value={Number(field.value)}
-              onChange={field.onChange}
-              onBlur={field.onBlur}
-              min={today}
-              max={10}
-            />
-          )}
-        />
-      ))}
-    </>
+    <div className="min-w-0 space-y-1">
+      <p className="truncate font-mono text-2xs uppercase tracking-wide text-muted">{label}</p>
+      <Controller
+        control={control}
+        name={`targetTalents.${talent}`}
+        render={({ field }) => (
+          <Stepper
+            label={t('targetTalentAria', { talent: label })}
+            value={Number(field.value)}
+            onChange={field.onChange}
+            onBlur={field.onBlur}
+            min={today}
+            max={canReachTen ? 10 : 9}
+            compact
+          />
+        )}
+      />
+      {/* Where it is today, under where it is going: beside the label it
+          crowded "Habilidad" into "Habili…" on a phone. */}
+      <p className="tabular text-center font-mono text-2xs text-muted">
+        {t('todayColumn')} {today}
+      </p>
+    </div>
   );
 }
 
@@ -989,6 +1011,7 @@ function Stepper({
   max,
   prefix,
   className,
+  compact = false,
 }: {
   /** What this one counts. Six steppers sit in one grid and only their column and row tell them apart, which is nothing a screen reader or a test can use. */
   label: string;
@@ -999,9 +1022,14 @@ function Stepper({
   max: number;
   prefix?: string;
   className?: string;
+  /** Tighter buttons, for three steppers sharing one row. */
+  compact?: boolean;
 }) {
   const t = useTranslations('build');
   const set = (next: number) => onChange(Math.min(max, Math.max(min, next)));
+  const button = `flex shrink-0 items-center text-muted transition-colors hover:bg-surface-2 hover:text-text disabled:opacity-30 ${
+    compact ? 'px-1.5' : 'px-2'
+  }`;
 
   return (
     <div
@@ -1013,7 +1041,7 @@ function Stepper({
         type="button"
         onClick={() => set(value - 1)}
         aria-label={t('decreaseAria', { label })}
-        className="flex shrink-0 items-center px-2 text-muted transition-colors hover:bg-surface-2 hover:text-text disabled:opacity-30"
+        className={button}
         disabled={value <= min}
       >
         <Minus size={12} />
@@ -1029,14 +1057,14 @@ function Stepper({
           onBlur={onBlur}
           min={min}
           max={max}
-          className="tabular w-full min-w-0 bg-transparent py-1.5 text-center font-mono text-sm"
+          className={`tabular w-full min-w-0 bg-transparent text-center font-mono text-sm ${compact ? 'py-1' : 'py-1.5'}`}
         />
       </span>
       <button
         type="button"
         onClick={() => set(value + 1)}
         aria-label={t('increaseAria', { label })}
-        className="flex shrink-0 items-center px-2 text-muted transition-colors hover:bg-surface-2 hover:text-text disabled:opacity-30"
+        className={button}
         disabled={value >= max}
       >
         <Plus size={12} />

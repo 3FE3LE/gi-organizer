@@ -18,6 +18,10 @@ import {
 import type { TeamRole } from '@/lib/rules/types';
 import { NotInRoster, TargetBelowCurrent, applyProgress } from '@/lib/player/progress';
 import { refinementResolver } from '@/lib/player/weapon-copies';
+import { getDb } from '@/lib/db/client';
+import { readRoster } from '@/lib/player/characters';
+import { crownBudget, crownsNeeded } from '@/lib/player/crowns';
+import { getProfileId } from '@/lib/player/db';
 
 /**
  * The form behind "progress and target". Validation only: the write is one
@@ -54,6 +58,21 @@ export async function saveProgressAction(values: ProgressFormValues): Promise<Pr
   const unknownSet = setIds.find((setId) => !catalog.artifacts.get(setId));
   if (unknownSet !== undefined) {
     return { status: 'error', message: t('setNotFound', { id: unknownSet }) };
+  }
+
+  // The Crown of Insight is the one talent material that cannot be farmed, so
+  // a target the account cannot pay for is refused rather than costed out —
+  // the form caps it too, this is for the request that skipped the form.
+  const db = getDb();
+  const profileId = await getProfileId(db);
+  const current = (await readRoster(db, profileId))
+    .find((entry) => entry.characterId === input.characterId)?.talent;
+  if (current) {
+    const needed = crownsNeeded(current, input.targetTalents);
+    const { free } = await crownBudget(db, profileId, input.characterId);
+    if (needed > free) {
+      return { status: 'error', message: t('notEnoughCrowns', { needed, free }) };
+    }
   }
 
   try {

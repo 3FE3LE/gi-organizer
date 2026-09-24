@@ -383,7 +383,8 @@
     "progressPanelTitle": "Progress",
     "progressSummary": "Lv. {level} → {target} · C{constellation}",
     "todayColumn": "today",
-    "targetColumn": "target",
+    "mainStatLabel": "main stat",
+    "crownsLine": "crowns: {used} in this goal · {free} free of {owned}",
     "levelRow": "Level",
     "targetLevelAria": "target level",
     "ascendedLabel": "ascended",
@@ -504,6 +505,7 @@
       "notInRoster": "{name} isn't in your account: reimport your GOOD",
       "goalRoleTaken": "{name} already has a goal with that role",
       "objectiveSaved": "{name}'s goal saved",
+      "notEnoughCrowns": "Not enough crowns: the goal needs {needed} and only {free} are free.",
       "targetBelowCurrent": "{name}'s target can't be below their current level or talents"
     }
   },

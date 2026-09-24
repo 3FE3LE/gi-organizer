@@ -9,6 +9,9 @@ import { isAscended } from '@/lib/data/stats';
 import { ASSUMED_TARGET } from '@/lib/rules/materials';
 import { wornMainStats, wornSetPlan, wornSubstats } from '@/lib/rules/worn';
 
+import { crownBudget } from '@/lib/player/crowns';
+import { getProfileId } from '@/lib/player/db';
+
 import type { BuildContext } from './context';
 import { editorOptionsFor, goalPropsFor, type EditorOptions } from './editor-options';
 import type { ProgressOptions, ProgressValues } from './progress-form';
@@ -96,6 +99,7 @@ export async function objectiveViewFor(context: BuildContext): Promise<Objective
       ? buildMainStats
       : wornMainStats(worn),
     goals: activeBuild?.goals ?? [],
+    crowns: await crownBudget(context.db, await getProfileId(context.db), characterId),
   };
 
   const [suggested, all] = await Promise.all([suggestedSets(context), allSets(catalog)]);

@@ -474,6 +474,24 @@ body {
     border-color: var(--accent);
   }
 
+  /*
+   * No spinner arrows on number fields.
+   *
+   * Every number here has its own buttons or a slider beside it, and the
+   * browser's pair of arrows — a few pixels each, half-drawn at small sizes —
+   * was a third control for the same value. `inputMode="numeric"` keeps a
+   * phone's numeric keypad; this only removes the arrows.
+   */
+  input[type='number'] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+  }
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button {
+    appearance: none;
+    margin: 0;
+  }
+
   /* ------------------------------------------------------- section nav --- */
 
   /**
