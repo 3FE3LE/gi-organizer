@@ -1,15 +1,15 @@
 import {
-  ChevronRight, Crown, Feather, Flower2, Hourglass, PackageOpen, SlidersHorizontal, UserCheck, Wine, X,
+  ChevronRight, PackageOpen, SlidersHorizontal, UserCheck, X,
 } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
 import { Segment, Segments } from '@/components/segmented-links';
+import { SLOT_ICONS } from '@/components/slot-icon';
 import { StatIcon } from '@/components/stat-icon';
 import { formatSetEffect, setEffects, statLabel, type Catalog } from '@/lib/data/catalog';
 import { resolveIcon } from '@/lib/data/icon';
 import { ARTIFACT_SLOTS } from '@/lib/enka/slots';
-import type { ArtifactSlot } from '@/lib/data/types';
 import { ROLLABLE } from '@/lib/rules/rolls';
 import { SCALERS, SCALER_PROPS } from '@/lib/rules/worth';
 
@@ -41,18 +41,11 @@ import { SetStrip, type SetChoice } from './set-strip';
  * somewhere, or the next question is why the box looks empty.
  */
 
-const HELD_ICONS: Record<(typeof HELD)[number], typeof Flower2> = {
+const HELD_ICONS: Record<(typeof HELD)[number], typeof PackageOpen> = {
   free: PackageOpen,
   worn: UserCheck,
 };
 
-const SLOT_ICONS: Record<ArtifactSlot, typeof Flower2> = {
-  flower: Flower2,
-  plume: Feather,
-  sands: Hourglass,
-  goblet: Wine,
-  circlet: Crown,
-};
 
 export async function FilterPanel({
   base,
@@ -103,7 +96,11 @@ export async function FilterPanel({
 
   // The narrowing controls behind the disclosure that are on, for its badge:
   // folded away, they have to say they are doing something.
+  // Everything behind the disclosure that is off its default, for its badge
+  // and for opening it: folded away, it has to say it is doing something.
   const advanced = [
+    filters.slot !== null, filters.held !== null, filters.scaler !== null,
+    filters.sort !== 'value',
     filters.sub !== null, filters.quality !== null, filters.cv !== null,
     filters.perfect, filters.main !== null, filters.lvl !== null,
   ].filter(Boolean).length;
@@ -118,100 +115,14 @@ export async function FilterPanel({
         * Laid out in the order a search is actually made.
         *
         * The question this page answers is "of the pieces of this set, which is
-        * best for this kind of build". So the card reads top to bottom as that
-        * sentence: the set first, as a strip of its flowers across the head;
-        * then which piece, what it is being valued for, and whose it may be;
-        * then how the list is ordered. What remains — a substat, the roll
-        * tier, the level band, a crit cut-off, the main stat — narrows an
-        * answer that is already mostly right, so it is folded away.
+        * best for this kind of build". So the set leads, as a strip of its
+        * flowers across the head, and everything else — which piece, what it
+        * is valued for, whose it may be, the ordering, and the finer filters
+        * — folds away under it, first the row of choices and then the rest.
         */}
       <div className="card">
       <div className="px-3 pb-1 pt-2.5">
         <SetStrip sets={sets} />
-      </div>
-
-      {/* Piece, what it is valued for, whose, and in what order: one row on a
-          desktop, wrapping on a phone. The ordering never removes a piece, but
-          it is the last word of the same question, so it sits on the line. */}
-      <div className="flex flex-wrap items-end gap-x-4 gap-y-2.5 border-t border-edge px-3 py-2.5">
-        <Segments label={t('pieceLabel')}>
-          <Segment to={href(base, filters, { slot: null, main: null })} active={!filters.slot}>
-            {t('allSlots')}
-          </Segment>
-          {ARTIFACT_SLOTS.map((slot) => {
-            const Icon = SLOT_ICONS[slot];
-            const label = slotLabel.has(slot) ? slotLabel(slot) : slot;
-
-            return (
-              <Segment
-                key={slot}
-                to={href(base, filters, { slot, main: null })}
-                active={filters.slot === slot}
-                title={label}
-              >
-                <Icon size={15} aria-hidden />
-                <span className="sr-only">{label}</span>
-              </Segment>
-            );
-          })}
-        </Segments>
-
-        {/*
-          * What "best" means: the stat the build scales off. Buttons rather
-          * than a select, because it is half of the question rather than a
-          * setting — and choosing one orders the list by value, which is the
-          * only ordering it prices, so picking a scaler always answers with a
-          * ranking for it.
-          */}
-        <Segments label={t('scalerLabel')} hint={t('scalerHint')}>
-          <Segment
-            to={href(base, filters, { scaler: null, ...valueSort })}
-            active={filters.scaler === null}
-          >
-            {t('generalBest')}
-          </Segment>
-          {SCALERS.map((scaler) => (
-            <Segment
-              key={scaler}
-              to={href(base, filters, { scaler, ...valueSort })}
-              active={filters.scaler === scaler}
-              title={scalerLabel(scaler)}
-            >
-              <StatIcon prop={SCALER_PROPS[scaler]} label={scalerLabel(scaler)} size={14} />
-            </Segment>
-          ))}
-        </Segments>
-
-        {/* Icons, like the slots beside them: "free" and "worn" are two
-            states a player reads at a glance, and spelled out they were the
-            widest thing on the row. */}
-        <Segments label={t('whoLabel')}>
-          <Segment to={href(base, filters, { held: null })} active={!filters.held}>
-            {t('allHolders')}
-          </Segment>
-          {HELD.map((held) => {
-            const Icon = HELD_ICONS[held];
-            return (
-              <Segment
-                key={held}
-                to={href(base, filters, { held })}
-                active={filters.held === held}
-                title={heldLabel(held)}
-              >
-                <Icon size={15} aria-hidden />
-                <span className="sr-only">{heldLabel(held)}</span>
-              </Segment>
-            );
-          })}
-        </Segments>
-
-        <Segments label={t('sortLabel')}>
-          {SORTS.map((sort) => (
-            <Segment key={sort} to={href(base, filters, { sort })} active={filters.sort === sort}>
-              {sortLabel(sort)}
-            </Segment>
-          ))}
-        </Segments>
       </div>
 
       {/* `open` when something inside it is on, so a shared URL does not hide
@@ -231,7 +142,90 @@ export async function FilterPanel({
           <ChevronRight size={14} aria-hidden className="ml-auto text-muted transition-transform group-open:rotate-90" />
         </summary>
 
-        <div className="border-t border-edge px-3 py-2.5">
+        <div className="space-y-3 border-t border-edge px-3 py-2.5">
+          {/* Piece, what it is valued for, whose, and in what order: one row on
+              a desktop, wrapping on a phone, above the finer filters. */}
+          <div className="flex flex-wrap items-end gap-x-4 gap-y-2.5">
+            <Segments label={t('pieceLabel')}>
+              <Segment to={href(base, filters, { slot: null, main: null })} active={!filters.slot}>
+                {t('allSlots')}
+              </Segment>
+              {ARTIFACT_SLOTS.map((slot) => {
+                const Icon = SLOT_ICONS[slot];
+                const label = slotLabel.has(slot) ? slotLabel(slot) : slot;
+
+                return (
+                  <Segment
+                    key={slot}
+                    to={href(base, filters, { slot, main: null })}
+                    active={filters.slot === slot}
+                    title={label}
+                  >
+                    <Icon size={15} aria-hidden />
+                    <span className="sr-only">{label}</span>
+                  </Segment>
+                );
+              })}
+            </Segments>
+
+            {/*
+              * What "best" means: the stat the build scales off. Buttons rather
+              * than a select, because it is half of the question rather than a
+              * setting — and choosing one orders the list by value, which is the
+              * only ordering it prices, so picking a scaler always answers with a
+              * ranking for it.
+              */}
+            <Segments label={t('scalerLabel')} hint={t('scalerHint')}>
+              <Segment
+                to={href(base, filters, { scaler: null, ...valueSort })}
+                active={filters.scaler === null}
+              >
+                {t('generalBest')}
+              </Segment>
+              {SCALERS.map((scaler) => (
+                <Segment
+                  key={scaler}
+                  to={href(base, filters, { scaler, ...valueSort })}
+                  active={filters.scaler === scaler}
+                  title={scalerLabel(scaler)}
+                >
+                  <StatIcon prop={SCALER_PROPS[scaler]} label={scalerLabel(scaler)} size={14} />
+                </Segment>
+              ))}
+            </Segments>
+
+            {/* Icons, like the slots beside them: "free" and "worn" are two
+                states a player reads at a glance, and spelled out they were the
+                widest thing on the row. */}
+            <Segments label={t('whoLabel')}>
+              <Segment to={href(base, filters, { held: null })} active={!filters.held}>
+                {t('allHolders')}
+              </Segment>
+              {HELD.map((held) => {
+                const Icon = HELD_ICONS[held];
+                return (
+                  <Segment
+                    key={held}
+                    to={href(base, filters, { held })}
+                    active={filters.held === held}
+                    title={heldLabel(held)}
+                  >
+                    <Icon size={15} aria-hidden />
+                    <span className="sr-only">{heldLabel(held)}</span>
+                  </Segment>
+                );
+              })}
+            </Segments>
+
+            <Segments label={t('sortLabel')}>
+              {SORTS.map((sort) => (
+                <Segment key={sort} to={href(base, filters, { sort })} active={filters.sort === sort}>
+                  {sortLabel(sort)}
+                </Segment>
+              ))}
+            </Segments>
+          </div>
+
           <FilterInputs
             substats={ROLLABLE.map((prop) => ({ value: prop, label: statLabel(catalog, prop) }))}
             tiers={TIER_FILTERS.map((fraction) => ({

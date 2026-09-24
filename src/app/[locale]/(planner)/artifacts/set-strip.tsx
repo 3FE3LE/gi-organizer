@@ -106,7 +106,9 @@ export function SetStrip({ sets }: { sets: SetChoice[] }) {
 
       {/* What the chosen set does, while the list below shows what you have of
           it. Live, so picking a set by keyboard also reads its bonus. */}
-      <div aria-live="polite">
+      {/* Hidden while the filters are docked over the list: the bonus is
+          read once, and the strip above already marks the chosen set. */}
+      <div aria-live="polite" className="group-data-[stuck]/dock:hidden">
         {active && (
           <div className="flex items-start gap-3 card-2 px-3 py-1.5">
             <AssetImage src={active.icon} kind="relic" alt="" className="h-8 w-8 shrink-0" sizes="32px" />

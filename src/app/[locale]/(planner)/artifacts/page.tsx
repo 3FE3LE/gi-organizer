@@ -10,6 +10,7 @@ import { CHOOSABLE_SLOTS } from '@/lib/rules/piece-score';
 import { ownedArtifactCardData } from './artifact-card';
 import { ArtifactList } from './artifact-list';
 import { FilterPanel } from './filter-panel';
+import { StickyDock } from './sticky-dock';
 import { CLEARED, href, loadArtifactFilters } from './filters';
 import { PAGE_SIZE, queryArtifacts } from './query';
 
@@ -85,14 +86,16 @@ export default async function ArtifactsPage({
         </div>
       </header>
 
-      <FilterPanel
-        base={base}
-        filters={filters}
-        catalog={catalog}
-        setCounts={setCounts}
-        locale={locale}
-        ownedMains={ownedMains}
-      />
+      <StickyDock>
+        <FilterPanel
+          base={base}
+          filters={filters}
+          catalog={catalog}
+          setCounts={setCounts}
+          locale={locale}
+          ownedMains={ownedMains}
+        />
+      </StickyDock>
 
       {shown.length === 0 ? (
         <p className="max-w-prose text-sm text-muted">
