@@ -18,6 +18,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { clientMessages } from '@/i18n/client-messages';
 import { LOCALE_CODES, isLocale } from '@/lib/data/locales';
 import { getMeta } from '@/lib/data/registry';
+import { siteUrl } from '@/lib/site';
 
 import '../globals.css';
 
@@ -54,25 +55,19 @@ export const viewport: Viewport = {
   colorScheme: 'dark light',
 };
 
-/**
- * `metadataBase` is what turns a relative Open Graph image or canonical path
- * into the absolute URL a crawler needs. Vercel states the deployment's own
- * host; locally there is none, and the fallback keeps the value defined rather
- * than leaving Next to warn on every build.
- */
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
-  ?? (process.env.VERCEL_PROJECT_PRODUCTION_URL
-    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-    : 'http://localhost:3000');
-
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('nav');
   const description = t('metaDescription');
 
   return {
     metadataBase: new URL(siteUrl),
-    title: 'GI Organizer',
+    // `metadataBase` is what turns a relative Open Graph image or canonical
+    // path into the absolute URL a crawler needs; see `lib/site.ts`.
+    title: { default: 'GI Organizer', template: '%s · GI Organizer' },
     applicationName: 'GI Organizer',
+    // Every page under here is one player's account unless it says otherwise:
+    // only the landing (`[locale]/page.tsx`) opts back in to being indexed.
+    robots: { index: false, follow: false },
     description,
     // The manifest is `app/manifest.ts`. iOS reads neither it nor its icons
     // for the home screen, so the touch icon and the standalone flag are

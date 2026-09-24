@@ -12,7 +12,17 @@ import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
  * `proxy.ts` rather than `middleware.ts`: the file convention was renamed in
  * Next.js 16, and the old name is deprecated.
  */
-const isPublic = createRouteMatcher(['/sign-in(.*)', '/sign-up(.*)']);
+const isPublic = createRouteMatcher([
+  '/sign-in(.*)',
+  '/sign-up(.*)',
+  // The landing and what crawlers and link previews fetch for it — the only
+  // things a person who has not signed in, or a search engine, should see.
+  /^\/$/,
+  /^\/(es|en|ja|zh-Hans)\/?$/,
+  /^\/(es|en|ja|zh-Hans)\/opengraph-image/,
+  '/robots.txt',
+  '/sitemap.xml',
+]);
 
 /**
  * The browser suite serves a throwaway database and names its own profile, so

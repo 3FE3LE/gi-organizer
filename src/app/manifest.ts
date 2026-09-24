@@ -20,7 +20,9 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'GI Organizer',
     short_name: 'GI Organizer',
     description: 'Builds, artefactos y plan de farmeo para tu cuenta de Genshin Impact.',
-    start_url: '/',
+    // Straight into the app: the installed icon is for someone who already
+    // uses it, not for the landing page a visitor reads first.
+    start_url: '/es/characters',
     scope: '/',
     display: 'standalone',
     orientation: 'any',

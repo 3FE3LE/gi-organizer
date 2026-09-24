@@ -598,5 +598,76 @@
     "roleUnset": "{character} has no declared role on this team",
     "tagOverLimit": "{have} tagged \"{tag}\", maximum {allowed}",
     "tagUnderLimit": "{have} tagged \"{tag}\", you need {need}"
+  },
+  "landing": {
+    "metaTitle": "GI Organizer — Build, artifact and farming planner for Genshin Impact",
+    "metaDescription": "Import your Genshin Impact account from GOOD or Enka and decide which artifact to equip, which character to level and which domain to farm today. Crit value, roll potential, stat goals and a daily material plan.",
+    "eyebrow": "Genshin Impact planner",
+    "title": "Your Genshin account, organized",
+    "lead": "Import your inventory and let the app do the math: which artifact to equip, who to level first and what to farm today, with the game's own numbers.",
+    "ctaOpen": "Open the app",
+    "ctaHow": "How it works",
+    "featuresHeading": "Every decision you make in the game, in one place",
+    "features": {
+      "artifacts": {
+        "title": "Artifacts by set and scaler",
+        "body": "Pick a set, a piece and the stat your build scales on, and the list hands you the best candidate. Crit value, the tier of every roll and the potential of unleveled pieces."
+      },
+      "builds": {
+        "title": "Builds with real goals",
+        "body": "Set the artifact set, main stats, substats and thresholds like 200% recharge or 700 mastery. Every change is judged against them: met, close or short."
+      },
+      "changes": {
+        "title": "What to change, and what it costs",
+        "body": "Compare the equipped piece with each candidate stat by stat before equipping, and see whether it breaks a set or takes it from someone else."
+      },
+      "plan": {
+        "title": "A farming plan per day",
+        "body": "Talent books, weapon and ascension materials grouped by domain and weekday, minus what you already own."
+      },
+      "teams": {
+        "title": "Teams and resonances",
+        "body": "Build teams, check elemental resonances and set effects, and keep two characters from competing for the same piece."
+      },
+      "import": {
+        "title": "Import in seconds",
+        "body": "Works with GOOD exports (Inventory Kamera, Irminsul) and your Enka profile. Your data stays in your account."
+      }
+    },
+    "stepsHeading": "How it works",
+    "steps": {
+      "import": {
+        "title": "Import your account",
+        "body": "Upload your GOOD file or connect your Enka UID."
+      },
+      "goal": {
+        "title": "Set the goal",
+        "body": "Level, talents, set and stats you want for each character."
+      },
+      "follow": {
+        "title": "Follow the plan",
+        "body": "Recommended gear changes and what to farm each day."
+      }
+    },
+    "faqHeading": "Frequently asked questions",
+    "faq": {
+      "free": {
+        "q": "Is it free?",
+        "a": "Yes. GI Organizer is a fan-made project and costs nothing."
+      },
+      "import": {
+        "q": "How do I import my artifacts?",
+        "a": "Export your inventory in GOOD format with a scanner like Inventory Kamera, or use your UID with Enka to read the characters in your showcase."
+      },
+      "potential": {
+        "q": "What is an artifact's potential?",
+        "a": "It reads how well the crit rolls a piece already has landed. A +0 that opened with 3.9% crit rate has more potential than a +20 that needed two low rolls to reach 5.4%."
+      },
+      "cv": {
+        "q": "How is crit value calculated?",
+        "a": "2 × crit rate + crit damage from the substats. The app turns it into rolls and tells you whether the piece is low, good or excellent."
+      }
+    },
+    "disclaimer": "Fan-made project. Not affiliated with or endorsed by HoYoverse. Genshin Impact is a trademark of HoYoverse."
   }
 }
