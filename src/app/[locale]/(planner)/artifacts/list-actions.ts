@@ -3,9 +3,9 @@
 import { notFound } from 'next/navigation';
 
 import type { OwnedArtifactCardData } from '@/components/owned-artifact-card-view';
-import { getCatalog } from '@/lib/data/catalog';
 import { isLocale } from '@/lib/data/locales';
 import { getDb } from '@/lib/db/client';
+import { getAccountCatalog } from '@/lib/player/traveler';
 
 import { ownedArtifactCardData } from './artifact-card';
 import { loadArtifactFilters } from './filters';
@@ -33,7 +33,7 @@ export async function loadArtifactPage(input: {
 
   const params = Object.fromEntries(new URLSearchParams(input.search));
   const filters = await loadArtifactFilters(Promise.resolve(params));
-  const catalog = await getCatalog(input.locale);
+  const catalog = await getAccountCatalog(input.locale);
   const { shown } = await queryArtifacts(filters, getDb());
 
   return Promise.all(

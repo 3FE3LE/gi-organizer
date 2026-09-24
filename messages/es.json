@@ -525,6 +525,7 @@
       "rosterNote": "con ficha",
       "unassignedStat": "Sin asignar",
       "unassignedNote": "piezas libres",
+      "addRoster": {"body": "Cuerpo", "element": "Elemento", "level": "nivel", "constellation": "C", "auto": "normal", "skill": "habilidad", "burst": "definitiva", "ascended": "ascendido", "submit": "Añadir al roster", "added": "{name} añadido al roster", "invalid": "revisa los números", "chooseElement": "elige el elemento del Viajero", "itemsCount": "{count, plural, one {# objeto} other {# objetos}}"},
       "unrosteredTitle": "Equipo sin ficha de personaje",
       "unrosteredHint": "Estos personajes llevan equipo pero no están en el roster, porque el escaneo lee el inventario y la pantalla de personajes por separado. Añádelos abajo para que cuenten en la planificación.",
       "itemsCount": "{count, plural, one {# objeto} other {# objetos}}",

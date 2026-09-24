@@ -2,10 +2,11 @@ import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { getCatalog, statLabel } from '@/lib/data/catalog';
+import { statLabel } from '@/lib/data/catalog';
 import { isLocale } from '@/lib/data/locales';
 import { getDb } from '@/lib/db/client';
 import { CHOOSABLE_SLOTS } from '@/lib/rules/piece-score';
+import { getAccountCatalog } from '@/lib/player/traveler';
 
 import { ownedArtifactCardData } from './artifact-card';
 import { ArtifactList } from './artifact-list';
@@ -39,7 +40,7 @@ export default async function ArtifactsPage({
 
   const t = await getTranslations('artifacts');
   const filters = await loadArtifactFilters(searchParams);
-  const catalog = await getCatalog(locale);
+  const catalog = await getAccountCatalog(locale);
   const db = getDb();
 
   const { all, shown } = await queryArtifacts(filters, db);

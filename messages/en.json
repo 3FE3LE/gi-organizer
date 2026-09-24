@@ -525,6 +525,7 @@
       "rosterNote": "with a sheet",
       "unassignedStat": "Unassigned",
       "unassignedNote": "free pieces",
+      "addRoster": {"body": "Body", "element": "Element", "level": "level", "constellation": "C", "auto": "normal", "skill": "skill", "burst": "burst", "ascended": "ascended", "submit": "Add to roster", "added": "{name} added to the roster", "invalid": "check the numbers", "chooseElement": "pick the Traveler's element", "itemsCount": "{count, plural, one {# item} other {# items}}"},
       "unrosteredTitle": "Gear with no character sheet",
       "unrosteredHint": "These characters carry gear but are not in the roster, because the scan reads the inventory and the character screen separately. Add them below so they count in planning.",
       "itemsCount": "{count, plural, one {# item} other {# items}}",

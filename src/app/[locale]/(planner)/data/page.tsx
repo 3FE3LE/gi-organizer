@@ -2,11 +2,16 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
 import { GameIcon } from '@/components/game-icon';
-import { getCatalog } from '@/lib/data/catalog';
 import { isLocale, type Locale } from '@/lib/data/locales';
 import { getDb } from '@/lib/db/client';
 import { readRoster } from '@/lib/player/characters';
 import { getProfileId, readInventory } from '@/lib/player/db';
+import {
+  TRAVELER_BODIES, elementName, getAccountCatalog, isTravelerId, travelerElements,
+} from '@/lib/player/traveler';
+import { resolveIcon } from '@/lib/data/icon';
+
+import { AddToRoster, type UnrosteredEntry } from './add-to-roster';
 
 
 /**
@@ -28,7 +33,7 @@ export default async function InventoryPage({ params }: PageProps<'/[locale]/dat
   if (!isLocale(locale)) notFound();
   const t = await getTranslations('data.inventoryPage');
 
-  const catalog = await getCatalog(locale);
+  const catalog = await getAccountCatalog(locale);
   const db = getDb();
   const profileId = await getProfileId(db);
   const inventory = await readInventory(db, profileId);
@@ -64,6 +69,27 @@ export default async function InventoryPage({ params }: PageProps<'/[locale]/dat
 
   const name = (id: number) => catalog.characters.get(id)?.name ?? `#${id}`;
 
+  // What each form needs, worded here: the client cannot resolve icons, and
+  // the Traveler's choices come from the catalogue's own tables.
+  const entries: UnrosteredEntry[] = await Promise.all(unrostered.map(async (id) => ({
+    id,
+    name: name(id),
+    icon: await resolveIcon(catalog.characters.get(id)?.icon, 'avatar'),
+    items: [...inventory.artifacts, ...inventory.weapons].filter((item) => item.equippedTo === id).length,
+    traveler: isTravelerId(id)
+      ? {
+          bodies: await Promise.all((['male', 'female'] as const).map(async (body) => ({
+            body,
+            name: name(TRAVELER_BODIES[body]),
+            icon: await resolveIcon(catalog.characters.get(TRAVELER_BODIES[body])?.icon, 'avatar'),
+          }))),
+          elements: travelerElements(catalog, id).map((element) => ({
+            value: element, label: elementName(catalog, element),
+          })),
+        }
+      : null,
+  })));
+
   return (
     <div className="space-y-10">
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -85,27 +111,8 @@ export default async function InventoryPage({ params }: PageProps<'/[locale]/dat
           <p className="mt-2 max-w-prose text-sm text-muted">
             {t('unrosteredHint')}
           </p>
-          <ul className="mt-3 flex flex-wrap gap-2">
-            {unrostered.map((id) => (
-              <li
-                key={id}
-                className="flex items-center gap-2 rounded border border-accent/40 bg-surface px-3 py-1.5 text-sm"
-              >
-                <GameIcon
-                  filename={catalog.characters.get(id)?.icon}
-                  kind="avatar"
-                  className="h-6 w-6"
-                  sizes="24px"
-                />
-                {name(id)}
-                <span className="font-mono text-xs text-muted">
-                  {t('itemsCount', {
-                    count: [...inventory.artifacts, ...inventory.weapons]
-                      .filter((item) => item.equippedTo === id).length,
-                  })}
-                </span>
-              </li>
-            ))}
+          <ul className="mt-3 grid gap-3 lg:grid-cols-2">
+            {entries.map((entry) => <AddToRoster key={entry.id} entry={entry} />)}
           </ul>
         </section>
       )}

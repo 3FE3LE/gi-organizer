@@ -8,10 +8,11 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { GameIcon } from '@/components/game-icon';
 import { HoverLabel } from '@/components/hint';
 import { SectionTabs } from '@/components/section-tabs';
-import { getCatalog, propLabel } from '@/lib/data/catalog';
+import { propLabel } from '@/lib/data/catalog';
 import { isLocale } from '@/lib/data/locales';
 import { readArtifacts, type OwnedArtifact } from '@/lib/player/artifacts';
 import { roleLabel } from '@/lib/rules/role-labels';
+import { getAccountCatalog } from '@/lib/player/traveler';
 
 import { OwnedArtifactCard } from '../../artifacts/artifact-card';
 
@@ -47,7 +48,7 @@ export default async function BuildPage({
   const { locale, id } = await params;
   if (!isLocale(locale)) notFound();
 
-  const catalog = await getCatalog(locale);
+  const catalog = await getAccountCatalog(locale);
   const characterId = Number(id);
   const character = catalog.characters.get(characterId);
   if (!character) notFound();

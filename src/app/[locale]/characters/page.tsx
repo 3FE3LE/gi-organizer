@@ -8,7 +8,6 @@ import { GameIcon } from '@/components/game-icon';
 import { PrefetchLink } from '@/components/prefetch-link';
 import { SectionTabs } from '@/components/section-tabs';
 import { Segment, Segments } from '@/components/segmented-links';
-import { getCatalog } from '@/lib/data/catalog';
 import { elementColor } from '@/lib/data/elements';
 import {
   GROUPINGS,
@@ -25,6 +24,7 @@ import { getProfileId } from '@/lib/player/db';
 import { holdersWithGear } from '@/lib/player/queries';
 import { readRegion } from '@/lib/player/region';
 import { gameDate } from '@/lib/rules/game-day';
+import { getAccountCatalog } from '@/lib/player/traveler';
 
 /**
  * The roster, shown the way the game shows it: what you have first, what you do
@@ -52,7 +52,7 @@ export default async function CharactersPage({
   const grouping: Grouping = isGrouping(query.group) ? query.group : 'owned';
 
   const t = await getTranslations('characters');
-  const catalog = await getCatalog(locale);
+  const catalog = await getAccountCatalog(locale);
   const db = getDb();
   const roster = new Map(
     (await readRoster(db, await getProfileId(db))).map((entry) => [entry.characterId, entry]),
@@ -82,7 +82,7 @@ export default async function CharactersPage({
         <h1 className="page-title">
           {t('title')}{' '}
           <span className="font-mono text-sm text-muted">
-            {mine.length}/{catalog.characters.size}
+            {mine.length}/{byRelease.length}
           </span>
         </h1>
         {view === 'gallery' && <p className="font-mono text-xs text-muted">{t('sortHint')}</p>}
@@ -165,7 +165,7 @@ export default async function CharactersPage({
   );
 }
 
-type CharacterView = Awaited<ReturnType<typeof getCatalog>>['index']['charactersSorted'][number];
+type CharacterView = Awaited<ReturnType<typeof getAccountCatalog>>['index']['charactersSorted'][number];
 type Messages = Awaited<ReturnType<typeof getTranslations<'characters'>>>;
 
 function groupLabel(grouping: Grouping, key: string, sample: CharacterView, t: Messages) {

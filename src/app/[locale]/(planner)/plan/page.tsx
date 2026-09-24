@@ -6,13 +6,14 @@ import { Suspense, ViewTransition } from 'react';
 import { GameIcon } from '@/components/game-icon';
 import { SectionTabs } from '@/components/section-tabs';
 import { PanelsSkeleton, Skeleton } from '@/components/skeleton';
-import { getCatalog, type Catalog } from '@/lib/data/catalog';
+import { type Catalog } from '@/lib/data/catalog';
 import { isLocale, type Locale } from '@/lib/data/locales';
 import { getDb } from '@/lib/db/client';
 import { readRegion } from '@/lib/player/region';
 import { isDraft, readTeams, type Team } from '@/lib/player/teams';
 import { farmingPlan } from '@/lib/rules/assemble';
 import { gameWeekday } from '@/lib/rules/game-day';
+import { getAccountCatalog } from '@/lib/player/traveler';
 import {
   charactersIn,
   domainsByKind,
@@ -47,7 +48,7 @@ export default async function PlanPage({ params, searchParams }: PageProps<'/[lo
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
 
-  const catalog = await getCatalog(locale);
+  const catalog = await getAccountCatalog(locale);
   const db = getDb();
   // The draft is named where it is shown; see `isDraft`.
   const reserveLabel = (await getTranslations('teams'))('reserveTeam');

@@ -3,12 +3,13 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { GameIcon } from '@/components/game-icon';
-import { getCatalog, propLabel } from '@/lib/data/catalog';
+import { propLabel } from '@/lib/data/catalog';
 import { isLocale } from '@/lib/data/locales';
 import { getDb } from '@/lib/db/client';
 import { accountAgenda, accountCascade } from '@/lib/rules/assemble';
 import { chainsOf } from '@/lib/rules/cascade';
 import { summarizeAgenda, type AgendaItem } from '@/lib/rules/agenda';
+import { getAccountCatalog } from '@/lib/player/traveler';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +25,7 @@ export default async function AgendaPage({ params }: PageProps<'/[locale]/plan/u
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
 
-  const catalog = await getCatalog(locale);
+  const catalog = await getAccountCatalog(locale);
   const db = getDb();
   const [items, cascade] = await Promise.all([
     accountAgenda(catalog, db),

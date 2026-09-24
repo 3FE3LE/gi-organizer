@@ -26,6 +26,7 @@ import type { NormalizedImport } from '@/lib/inventory/model';
 import { type ImportPlan, planImport, summarizePlan } from '@/lib/inventory/plan';
 
 import { readOwnedCharacterIds, upsertCharacter } from './characters';
+import { readTravelerBody, travelerDepot } from './traveler';
 import { exportNative } from './export';
 import {
   getProfileId,
@@ -99,7 +100,14 @@ export async function parseStaged(token: string): Promise<NormalizedImport> {
     throw new Error('the staged file is not valid JSON');
   }
 
-  const result = parseGood(json, { resolver: createKeyResolver(await getGoodCrosswalk()) });
+  // GOOD carries no gender, so the file's "Traveler" is the body the account
+  // named — see `lib/player/traveler.ts`. Aether when it has not said.
+  const db = getDb();
+  const travelerBody = (await readTravelerBody(db, await getProfileId(db))) ?? 'male';
+  const result = parseGood(json, {
+    resolver: createKeyResolver(await getGoodCrosswalk()),
+    travelerBody,
+  });
   if (!result.ok) {
     const reason = result.value.issues[0]?.message ?? 'unreadable';
     throw new Error(`not a usable GOOD file: ${reason}`);
@@ -218,8 +226,18 @@ export async function applyNormalized(
       ? new Set(await readOwnedCharacterIds(db, profileId))
       : null;
 
+    // The Traveler's element arrives as a name — GOOD's enum, Enka's `Wind` —
+    // and is stored as the skill depot it selects, which is what the talent
+    // table and every element on screen are read from.
+    const catalog = await getCatalog(DEFAULT_LOCALE);
+
     for (const character of normalized.characters) {
       if (roster && !roster.has(character.characterId)) continue;
+      if (character.travelerElement) {
+        character.skillDepotId = travelerDepot(
+          catalog, character.characterId, character.travelerElement,
+        );
+      }
       await upsertCharacter(db, profileId, character, {
         source: normalized.source,
         observedAt: normalized.observedAt,

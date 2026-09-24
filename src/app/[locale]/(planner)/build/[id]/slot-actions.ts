@@ -2,8 +2,8 @@
 
 import { notFound } from 'next/navigation';
 
-import { getCatalog } from '@/lib/data/catalog';
 import { isLocale } from '@/lib/data/locales';
+import { getAccountCatalog } from '@/lib/player/traveler';
 
 import { loadBuildContext } from './context';
 import type { SlotView } from './gear-slot';
@@ -27,7 +27,7 @@ export async function loadSlotAction(input: {
 }): Promise<SlotView | null> {
   if (!isLocale(input.locale)) notFound();
 
-  const catalog = await getCatalog(input.locale);
+  const catalog = await getAccountCatalog(input.locale);
   const character = catalog.characters.get(input.characterId);
   if (!character) return null;
 

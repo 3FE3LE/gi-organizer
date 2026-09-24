@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
 import { resolveIcon } from '@/lib/data/icon';
-import { getCatalog, propLabel } from '@/lib/data/catalog';
+import { propLabel } from '@/lib/data/catalog';
 import { ELEMENT_COLORS, elementColor } from '@/lib/data/elements';
 import { roleLabel } from '@/lib/rules/role-labels';
 import { isLocale } from '@/lib/data/locales';
@@ -19,6 +19,7 @@ import { assemble, getMechanics } from '@/lib/rules/assemble';
 import { synergyOf, type SynergyMember } from '@/lib/rules/synergy';
 import { describe, type Naming } from '@/lib/rules/diagnostics';
 import { targetKey } from '@/lib/rules/types';
+import { getAccountCatalog } from '@/lib/player/traveler';
 
 import { TeamBoard, type RosterEntry, type SlotView, type TeamView } from './team-board';
 import { type SynergyView } from './synergy-panel';
@@ -38,7 +39,7 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
 
-  const catalog = await getCatalog(locale);
+  const catalog = await getAccountCatalog(locale);
   const db = getDb();
   const assembled = await assemble(catalog, db);
   const { result, input } = assembled;

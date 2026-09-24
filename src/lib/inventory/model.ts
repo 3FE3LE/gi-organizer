@@ -52,6 +52,11 @@ export type NormalizedCharacter = {
   characterId: number;
   /** Only ever set for the Traveler, whose skills change with the element. */
   travelerElement: string | null;
+  /**
+   * The Traveler's skill depot for that element, resolved against the catalog
+   * by the import before it writes. Absent everywhere else.
+   */
+  skillDepotId?: number | null;
   level: number;
   ascension: number;
   constellation: number;

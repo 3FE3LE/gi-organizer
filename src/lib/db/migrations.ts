@@ -334,6 +334,15 @@ const MIGRATIONS: string[] = [
     -- a guess — see \`DEFAULT_REGION\`.
     ALTER TABLE profile ADD COLUMN game_region TEXT;
   `,
+  `
+    -- Which Traveler the account plays, Aether or Lumine.
+    --
+    -- No source says: GOOD carries no gender, and a scan that missed the
+    -- character screen carries no Traveler at all while still assigning their
+    -- gear to "Traveler". Null means nobody has said, which reads as Aether —
+    -- the body an import assigns that gear to. See \`lib/player/traveler.ts\`.
+    ALTER TABLE profile ADD COLUMN traveler_body TEXT;
+  `,
 ];
 
 /**

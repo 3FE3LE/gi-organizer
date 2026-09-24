@@ -146,7 +146,9 @@ export async function upsertCharacter(
     character.talent.skill,
     character.talent.burst,
     character.talentBonus ? JSON.stringify(character.talentBonus) : null,
-    null,
+    // Kept when the source cannot say: `COALESCE` above leaves a known depot
+    // alone rather than blanking it.
+    character.skillDepotId ?? null,
     options.observedAt,
     options.source,
   );
