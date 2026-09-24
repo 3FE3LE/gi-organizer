@@ -11,7 +11,7 @@ import { getAccountCatalog } from '@/lib/player/traveler';
 import { ownedArtifactCardData } from './artifact-card';
 import { ArtifactList } from './artifact-list';
 import { FilterPanel } from './filter-panel';
-import { StickyDock } from './sticky-dock';
+import { StickyDock } from '@/components/sticky-dock';
 import { CLEARED, href, loadArtifactFilters } from './filters';
 import { PAGE_SIZE, queryArtifacts } from './query';
 

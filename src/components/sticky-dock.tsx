@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 
 /**
- * The filters, docked under the header once the list is scrolled past them.
+ * A page's controls, docked under the header once the list is scrolled past
+ * them — the artifact filters, the roster's grouping.
  *
  * Refining a search is something done halfway down the results — the first
  * forty pieces say the scaler was wrong, or the slot — and scrolling back to

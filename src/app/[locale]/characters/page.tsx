@@ -7,6 +7,7 @@ import { ElementIcon } from '@/components/element-icon';
 import { GameIcon } from '@/components/game-icon';
 import { PrefetchLink } from '@/components/prefetch-link';
 import { SectionTabs } from '@/components/section-tabs';
+import { StickyDock } from '@/components/sticky-dock';
 import { Segment, Segments } from '@/components/segmented-links';
 import { elementColor } from '@/lib/data/elements';
 import {
@@ -124,7 +125,11 @@ export default async function CharactersPage({
         />
       ) : (
         <>
-          <GroupPicker locale={locale} current={grouping} t={t} />
+          {/* Docked under the header once the gallery scrolls past it, as the
+              artifact filters are: regrouping is something done mid-list. */}
+          <StickyDock>
+            <GroupPicker locale={locale} current={grouping} t={t} />
+          </StickyDock>
           {grouping === 'owned' && mine.length === 0 && (
             <p className="text-sm text-muted">{t('empty')}</p>
           )}

@@ -27,7 +27,7 @@ export function Segments({
       <div
         role="group"
         aria-label={hint ? `${label}: ${hint}` : label}
-        className="flex w-fit max-w-full items-stretch divide-x divide-edge overflow-x-auto rounded-lg border border-edge bg-surface-2/50 [scrollbar-width:none]"
+        className="flex w-fit max-w-full items-stretch divide-x divide-edge overflow-x-auto rounded-lg border border-edge bg-surface-2/50"
       >
         {children}
       </div>
