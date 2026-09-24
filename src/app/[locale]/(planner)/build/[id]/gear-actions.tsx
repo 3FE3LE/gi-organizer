@@ -7,10 +7,12 @@ import { useActionState, useEffect, useState } from 'react';
 import { buttonVariants } from '@/components/ui/button';
 import { ActionStatus } from '@/components/action-status';
 import { AssetImage } from '@/components/asset-image';
+import { OwnedArtifactCardView } from '@/components/owned-artifact-card-view';
 import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog';
 
 import { type MoveState, moveGearAction } from './actions';
 import { CandidateRow, MoveButton, type SlotView } from './gear-slot';
+import { PieceComparison } from './piece-stats';
 import { loadSlotAction } from './slot-actions';
 
 /**
@@ -76,7 +78,11 @@ export function GearActions({
         {open && (
           <DialogContent
             showCloseButton={false}
-            className="w-full max-w-3xl gap-0 overflow-hidden rounded-xl border border-edge-strong bg-surface p-0 ring-0 sm:max-w-3xl"
+            // Wider for artifacts, which are a grid of the box's cards; a
+            // weapon list is rows and reads best narrow.
+            className={`w-full gap-0 overflow-hidden rounded-xl border border-edge-strong bg-surface p-0 ring-0 ${
+              slot === 'weapon' ? 'max-w-3xl sm:max-w-3xl' : 'max-w-5xl sm:max-w-5xl'
+            }`}
           >
             <SlotDialog
               characterId={characterId}
@@ -142,6 +148,12 @@ function SlotDialog({
 }) {
   const t = useTranslations('build');
   const [view, setView] = useState<SlotView | null>(null);
+  // Which candidate the pinned preview shows. Falls back to the best one, and
+  // to it again when a move refetches the list and the pick is gone from it.
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selected = view?.candidates.find((candidate) => candidate.id === selectedId)
+    ?? view?.candidates[0]
+    ?? null;
   const [failed, setFailed] = useState(false);
 
   const [state, move, pending] = useActionState<MoveState, FormData>(
@@ -218,32 +230,134 @@ function SlotDialog({
         </p>
       )}
 
-      <ul className="min-h-24 flex-1 overflow-y-auto">
+      {/*
+        * The preview, pinned under the header and outside the scroll.
+        *
+        * Equipping used to be one click on a card, with the comparison a
+        * second list away. Now a card only picks what to look at: the worn
+        * piece and the picked one sit here side by side, the table under them
+        * says what changes stat by stat, and the equip button is here — so
+        * the trade is always read before it is made, however far down the
+        * list the pick came from. It opens on the best candidate.
+        *
+        * On a phone the two cards would leave no room for the list, so only
+        * the table and the button stay.
+        */}
+      {view?.kind === 'artifact' && selected?.stats && (
+        <section
+          aria-label={t('previewAria')}
+          className="shrink-0 border-b border-edge bg-surface-2/60 px-3 py-3"
+        >
+          <div className="grid gap-3 sm:grid-cols-[minmax(0,11rem)_minmax(0,11rem)_minmax(0,1fr)]">
+            <ul className="hidden sm:block">
+              {view.equipped?.card ? (
+                <OwnedArtifactCardView data={view.equipped.card}>
+                  <p className="mt-2 border-t border-edge pt-1.5 font-mono text-2xs text-accent">
+                    {t('equippedHeader')}
+                  </p>
+                </OwnedArtifactCardView>
+              ) : (
+                <li className="rounded-lg border border-dashed border-edge p-3 text-xs text-muted">
+                  {t('emptySlotText')}
+                </li>
+              )}
+            </ul>
+            <ul className="hidden sm:block">
+              {selected.card && <OwnedArtifactCardView data={selected.card} className="border-accent" />}
+            </ul>
+
+            <div className="flex min-w-0 flex-col gap-2">
+              <PieceComparison
+                equipped={view.equipped?.stats ?? null}
+                candidate={selected.stats}
+              />
+              {selected.holder && (
+                <p className="font-mono text-2xs text-accent">
+                  {t('heldBy', { holder: selected.holder })}
+                </p>
+              )}
+              <MoveButton
+                action={move}
+                pending={pending}
+                move={{ kind: 'equip-artifact', instanceId: selected.id, toCharacterId: characterId }}
+                expectedHolderId={selected.holderId}
+                title={selected.holder ? t('moveHereButton') : t('equipButton')}
+                className="mt-auto w-full"
+              />
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/*
+        * Artifacts as the box draws them, weapons as rows.
+        *
+        * An artifact candidate is the artifacts page's own card — the same
+        * stats, roll marks and holder line — with the worn piece first, so
+        * every candidate is read against it by looking left. A weapon has two
+        * numbers and a passive, which a row and its unfolding comparison
+        * already say better than a card would.
+        */}
+      <div className="min-h-24 flex-1 overflow-y-auto">
         {!view && !failed && (
-          <li className="px-4 py-6 text-center text-xs text-muted">{t('searchingCandidates')}</li>
+          <p className="px-4 py-6 text-center text-xs text-muted">{t('searchingCandidates')}</p>
         )}
         {failed && (
-          <li className="px-4 py-6 text-center text-xs text-accent">
-            {t('failedToLoad')}
-          </li>
+          <p className="px-4 py-6 text-center text-xs text-accent">{t('failedToLoad')}</p>
         )}
-        {view?.candidates.map((candidate, index) => (
-          <CandidateRow
-            key={candidate.id}
-            candidate={candidate}
-            slot={view}
-            characterId={characterId}
-            action={move}
-            pending={pending}
-            // The argument already made: the best candidate open against
-            // what is worn.
-            defaultOpen={index === 0}
-          />
-        ))}
+
+        {view?.kind === 'artifact' && (
+          <ul className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-3 lg:grid-cols-4">
+            {view.candidates.map((candidate) => candidate.card && (
+              <OwnedArtifactCardView
+                key={candidate.id}
+                data={candidate.card}
+                className={candidate.id === selected?.id ? 'border-accent ring-1 ring-accent' : ''}
+              >
+                <div className="mt-2 space-y-1.5 border-t border-edge pt-1.5">
+                  {candidate.fit && (
+                    <p className="font-mono text-2xs text-muted">{candidate.fit}</p>
+                  )}
+                  <button
+                    type="button"
+                    aria-pressed={candidate.id === selected?.id}
+                    onClick={() => setSelectedId(candidate.id)}
+                    className={buttonVariants({
+                      variant: candidate.id === selected?.id ? 'default' : 'outline',
+                      size: 'sm',
+                      className: 'w-full',
+                    })}
+                  >
+                    {candidate.id === selected?.id ? t('comparing') : t('openCompare')}
+                  </button>
+                </div>
+              </OwnedArtifactCardView>
+            ))}
+          </ul>
+        )}
+
+        {view?.kind === 'weapon' && (
+          <ul>
+            {view.candidates.map((candidate, index) => (
+              <CandidateRow
+                key={candidate.id}
+                candidate={candidate}
+                slot={view}
+                characterId={characterId}
+                action={move}
+                pending={pending}
+                // The argument already made: the best candidate open against
+                // what is worn.
+                defaultOpen={index === 0}
+              />
+            ))}
+          </ul>
+        )}
+
         {view?.candidates.length === 0 && (
-          <li className="px-4 py-6 text-center text-xs text-muted">{t('noMatch')}</li>
+          <p className="px-4 py-6 text-center text-xs text-muted">{t('noMatch')}</p>
         )}
-      </ul>
+      </div>
     </div>
   );
 }

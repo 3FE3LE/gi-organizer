@@ -448,6 +448,8 @@
     "heldBy": "on {holder}",
     "closeCompare": "close",
     "openCompare": "compare",
+    "comparing": "comparing",
+    "previewAria": "Comparison before equipping",
     "moveHereButton": "Move here",
     "equipButton": "Equip",
     "kind": {
@@ -467,7 +469,6 @@
     "bestCaseTitle": "Best case: {value}",
     "expectedSuffix": "expected",
     "breaksSet": "breaks the set",
-    "displacesFrom": "you take it from {holder}",
     "defaultCandidateLabel": "candidate",
     "statHeader": "stat",
     "equippedHeader": "equipped",

@@ -1,21 +1,15 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useActionState, useState } from 'react';
+import { useActionState } from 'react';
 
-import { Button, buttonVariants } from '@/components/ui/button';
-import { AssetImage } from '@/components/asset-image';
+import { ActionStatus } from '@/components/action-status';
+import { Button } from '@/components/ui/button';
 
 import { type MoveState, moveGearAction } from './actions';
-import { PieceComparison, type PieceStats } from './piece-stats';
 
 export type SwapRow = {
   instanceId: string;
-  setName: string;
-  icon: string | null;
-  level: number;
-  mainStat: string;
-  substats: string[];
   kind: 'upgrade' | 'prospect' | 'stopgap' | 'sidegrade';
   delta: number;
   potentialDelta: number;
@@ -23,211 +17,102 @@ export type SwapRow = {
   bestCaseDelta: number;
   remainingRolls: number;
   keepsSetBonus: boolean;
-  holder: string | null;
   holderId: number | null;
   goalChanges: { label: string; from: string; to: string }[];
-  /** The full spread, so the row can be opened rather than trusted. */
-  stats: PieceStats;
 };
 
 export type SlotPanel = {
   slot: string;
   title: string;
-  equipped: {
-    setName: string;
-    icon: string | null;
-    level: number;
-    mainStat: string;
-    stats: PieceStats;
-  } | null;
+  /** The worn piece, drawn first so every card beside it reads against it. */
+  equippedId: string | null;
   swaps: SwapRow[];
 };
 
 /**
- * What to change in one slot, and what changing it buys.
+ * What one swap buys, under the card of the piece it would put on.
  *
- * Each row states the trade in full — now, later, set bonus, who loses it —
- * because the decision the player is making is a trade and showing only the
- * upside would be a different, worse tool.
+ * The card is the box's own — the piece reads here exactly as it does on the
+ * artifacts page — and this is the part that belongs to the changes tab: what
+ * kind of move it is, what it adds now and later, whether it breaks the set,
+ * and the button that makes it. Who is wearing it is already on the card.
+ *
+ * The whole trade is stated because the decision is a trade, and showing only
+ * the upside would be a different, worse tool.
  */
-export function SlotSwaps({ panel, characterId }: { panel: SlotPanel; characterId: number }) {
+export function SwapVerdict({ swap, characterId }: { swap: SwapRow; characterId: number }) {
   const t = useTranslations('build');
+  const kindLabel = useTranslations('build.kind');
+  const kindHelp = useTranslations('build.kindHelp');
   const [state, move, pending] = useActionState<MoveState, FormData>(
     moveGearAction, { status: 'idle' },
   );
 
   return (
-    <section className="card">
-      <header className="flex flex-wrap items-center gap-3 border-b border-edge px-3 py-2">
-        <span className="w-16 text-xs uppercase text-muted">{panel.title}</span>
-        {panel.equipped ? (
-          <>
-            <AssetImage src={panel.equipped.icon} kind="relic" className="h-7 w-7" sizes="28px" />
-            <span className="flex-1 truncate text-sm">{panel.equipped.setName}</span>
-            <span className="font-mono text-xs text-muted">
-              +{panel.equipped.level} · {panel.equipped.mainStat}
-            </span>
-          </>
-        ) : (
-          <span className="flex-1 text-sm text-muted">{t('emptySlotText')}</span>
-        )}
-      </header>
-
-      {state.status !== 'idle' && (
-        <p
-          className={`border-b border-edge px-3 py-1.5 font-mono text-xs ${
-            state.status === 'ok' ? 'text-muted' : 'text-accent'
-          }`}
+    <div className="mt-2 space-y-1.5 border-t border-edge pt-1.5 font-mono text-2xs">
+      <p className="flex flex-wrap items-baseline justify-between gap-x-2">
+        <span
+          title={kindHelp(swap.kind)}
+          className={
+            swap.kind === 'upgrade'
+              ? 'text-accent'
+              : swap.kind === 'prospect' ? 'text-text' : 'text-muted'
+          }
         >
-          {state.message}
-        </p>
-      )}
+          {kindLabel(swap.kind)}
+        </span>
+        <span className="tabular">
+          {signed(swap.delta)} {t('deltaNowSuffix')}
+        </span>
+      </p>
 
-      {panel.swaps.length === 0 ? (
-        <p className="px-3 py-2 text-xs text-muted">
-          {t('noSwapsForSlot')}
-        </p>
-      ) : (
-        <ul>
-          {panel.swaps.map((swap) => (
-            <SwapItem
-              key={swap.instanceId}
-              swap={swap}
-              equipped={panel.equipped?.stats ?? null}
-              characterId={characterId}
-              action={move}
-              pending={pending}
-            />
+      {/* The expectation, not the ceiling: every roll landing the build's
+          first choice at the top tier is one path out of thousands, and
+          pricing a piece at it made anything unfed look like a bargain. The
+          ceiling stays in the tooltip. */}
+      <p
+        className="tabular text-right text-muted"
+        title={t('bestCaseTitle', { value: signed(swap.bestCaseDelta) })}
+      >
+        {signed(swap.potentialDelta)} {t('expectedSuffix')}
+        {swap.remainingRolls > 0 && ` (${swap.remainingRolls})`}
+      </p>
+
+      {(!swap.keepsSetBonus || swap.goalChanges.length > 0) && (
+        <p className="flex flex-wrap gap-x-2">
+          {!swap.keepsSetBonus && <span className="text-accent">{t('breaksSet')}</span>}
+          {swap.goalChanges.map((change) => (
+            <span key={change.label} className={change.to === 'met' ? 'text-accent' : 'text-text'}>
+              {change.label} {change.from}→{change.to}
+            </span>
           ))}
-        </ul>
+        </p>
       )}
-    </section>
+
+      <ActionStatus state={state} />
+
+      <form action={move}>
+        <input
+          type="hidden"
+          name="move"
+          value={JSON.stringify({
+            kind: 'equip-artifact',
+            instanceId: swap.instanceId,
+            toCharacterId: characterId,
+          })}
+        />
+        {/* The holder the card was rendered with. A mismatch is a conflict. */}
+        <input
+          type="hidden"
+          name="expectedHolderId"
+          value={swap.holderId === null ? 'null' : String(swap.holderId)}
+        />
+        <Button variant="outline" size="sm" type="submit" disabled={pending} className="w-full">
+          {t('equipButton')}
+        </Button>
+      </form>
+    </div>
   );
 }
 
-/** One swap, with the spread behind it mounted only when asked for. */
-function SwapItem({
-  swap,
-  equipped,
-  characterId,
-  action,
-  pending,
-}: {
-  swap: SwapRow;
-  equipped: PieceStats | null;
-  characterId: number;
-  action: (form: FormData) => void;
-  pending: boolean;
-}) {
-  const t = useTranslations('build');
-  const kindLabel = useTranslations('build.kind');
-  const kindHelp = useTranslations('build.kindHelp');
-  const [open, setOpen] = useState(false);
-
-  return (
-    <li className="border-b border-edge/40 last:border-b-0">
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 px-3 py-2">
-              <span
-                title={kindHelp(swap.kind)}
-                className={`w-20 shrink-0 font-mono text-2xs ${
-                  swap.kind === 'upgrade'
-                    ? 'text-accent'
-                    : swap.kind === 'prospect'
-                      ? 'text-text'
-                      : 'text-muted'
-                }`}
-              >
-                {kindLabel(swap.kind)}
-              </span>
-
-              <AssetImage src={swap.icon} kind="relic" className="h-6 w-6" sizes="24px" />
-
-              <span className="min-w-40 flex-1 truncate text-xs">
-                {swap.setName}{' '}
-                <span className="font-mono text-muted">+{swap.level} · {swap.mainStat}</span>
-              </span>
-
-              <span className="font-mono text-2xs text-muted">
-                {swap.substats.join(' · ')}
-              </span>
-
-              <span className="w-24 shrink-0 text-right font-mono text-2xs">
-                {swap.delta >= 0 ? '+' : ''}{swap.delta.toFixed(1)} {t('deltaNowSuffix')}
-              </span>
-              {/* The expectation, not the ceiling: every roll landing the
-                  build's first choice at the top tier is one path out of
-                  thousands, and pricing a piece at it made anything unfed look
-                  like a bargain. The ceiling stays in the tooltip. */}
-              <span
-                className="w-28 shrink-0 text-right font-mono text-2xs text-muted"
-                title={t('bestCaseTitle', {
-                  value: `${swap.bestCaseDelta >= 0 ? '+' : ''}${swap.bestCaseDelta.toFixed(1)}`,
-                })}
-              >
-                {swap.potentialDelta >= 0 ? '+' : ''}{swap.potentialDelta.toFixed(1)} {t('expectedSuffix')}
-                {swap.remainingRolls > 0 && ` (${swap.remainingRolls})`}
-              </span>
-
-              {!swap.keepsSetBonus && (
-                <span className="font-mono text-2xs text-accent">{t('breaksSet')}</span>
-              )}
-              {swap.holder && (
-                <span className="font-mono text-2xs text-muted">
-                  {t('displacesFrom', { holder: swap.holder })}
-                </span>
-              )}
-              {swap.goalChanges.map((change) => (
-                <span
-                  key={change.label}
-                  className={`font-mono text-2xs ${
-                    change.to === 'met' ? 'text-accent' : 'text-text'
-                  }`}
-                >
-                  {change.label} {change.from}→{change.to}
-                </span>
-              ))}
-
-              <button
-                type="button"
-                onClick={() => setOpen((current) => !current)}
-                aria-expanded={open}
-                className={buttonVariants({ variant: 'outline', size: 'sm', className: 'shrink-0 font-mono' })}
-              >
-                {open ? t('closeCompare') : t('openCompare')}
-              </button>
-
-              <form action={action} className="contents">
-                <input
-                  type="hidden"
-                  name="move"
-                  value={JSON.stringify({
-                    kind: 'equip-artifact',
-                    instanceId: swap.instanceId,
-                    toCharacterId: characterId,
-                  })}
-                />
-                <input
-                  type="hidden"
-                  name="expectedHolderId"
-                  value={swap.holderId === null ? 'null' : String(swap.holderId)}
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  type="submit"
-                  disabled={pending}
-                  className="shrink-0"
-                >
-                  {t('equipButton')}
-                </Button>
-              </form>
-      </div>
-
-      {open && (
-        <div className="mx-3 mb-2 rounded border border-edge/60 bg-ink/40 px-2 py-1">
-          <PieceComparison equipped={equipped} candidate={swap.stats} />
-        </div>
-      )}
-    </li>
-  );
-}
+const signed = (value: number) => `${value >= 0 ? '+' : ''}${value.toFixed(1)}`;

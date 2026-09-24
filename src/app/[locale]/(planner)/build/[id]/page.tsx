@@ -10,7 +10,10 @@ import { HoverLabel } from '@/components/hint';
 import { SectionTabs } from '@/components/section-tabs';
 import { getCatalog, propLabel } from '@/lib/data/catalog';
 import { isLocale } from '@/lib/data/locales';
+import { readArtifacts, type OwnedArtifact } from '@/lib/player/artifacts';
 import { roleLabel } from '@/lib/rules/role-labels';
+
+import { OwnedArtifactCard } from '../../artifacts/artifact-card';
 
 import { BuildPicker } from './build-picker';
 import { CharacterPanel } from './character-panel';
@@ -21,7 +24,7 @@ import { SwipeNavigate } from './swipe-navigate';
 import { objectiveViewFor } from './objective-view';
 import { TABS, loadBuildParams, serializeBuildParams, type Tab } from './params';
 import { ProgressPanel } from './progress-form';
-import { SlotSwaps } from './swaps';
+import { SwapVerdict, type SlotPanel } from './swaps';
 import { swapPanelsFor } from './swaps-view';
 import { UpgradeCostPanel } from './upgrade-cost';
 
@@ -226,7 +229,8 @@ async function ChangesTab({ context }: { context: BuildContext }) {
    * a line says what it was measured against — which is the honest difference
    * between a goal the player wrote and one the app assumed.
    */
-  const panels = await swapPanelsFor(context);
+  const [panels, box] = await Promise.all([swapPanelsFor(context), readArtifacts(context.db)]);
+  const byId = new Map(box.map((piece) => [piece.instanceId, piece]));
   const swaps = panels.reduce((total, panel) => total + panel.swaps.length, 0);
 
   return (
@@ -273,11 +277,85 @@ async function ChangesTab({ context }: { context: BuildContext }) {
           .
         </p>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-4">
           {panels.map((panel) => (
-            <SlotSwaps key={panel.slot} panel={panel} characterId={characterId} />
+            <SlotChanges
+              key={panel.slot}
+              panel={panel}
+              byId={byId}
+              characterId={characterId}
+              catalog={catalog}
+              locale={locale}
+            />
           ))}
         </div>
+      )}
+    </section>
+  );
+}
+
+/**
+ * One slot of the changes tab: the piece worn, then every piece that beats it.
+ *
+ * Drawn with the box's own card, so a piece reads here exactly as it does on
+ * the artifacts page — the same stats, roll marks and holder line — and the
+ * worn one sits first in the row, so each candidate is read against it by
+ * looking left. What this tab adds goes under each card: the verdict and the
+ * button that acts on it.
+ */
+async function SlotChanges({
+  panel,
+  byId,
+  characterId,
+  catalog,
+  locale,
+}: {
+  panel: SlotPanel;
+  byId: Map<string, OwnedArtifact>;
+  characterId: number;
+  catalog: BuildContext['catalog'];
+  locale: string;
+}) {
+  const t = await getTranslations('build');
+  const equipped = panel.equippedId ? byId.get(panel.equippedId) : undefined;
+
+  return (
+    <section>
+      <h3 className="mb-2 font-mono text-2xs uppercase tracking-wide text-muted">{panel.title}</h3>
+
+      <ul className="grid grid-cols-2 gap-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+        {equipped ? (
+          <OwnedArtifactCard piece={equipped} scaler={null} catalog={catalog} locale={locale}>
+            <p className="mt-2 border-t border-edge pt-1.5 font-mono text-2xs text-accent">
+              {t('equippedHeader')}
+            </p>
+          </OwnedArtifactCard>
+        ) : (
+          <li className="self-start rounded-lg border border-dashed border-edge p-3 text-xs text-muted">
+            {t('emptySlotText')}
+          </li>
+        )}
+
+        {panel.swaps.map((swap) => {
+          const piece = byId.get(swap.instanceId);
+          if (!piece) return null;
+
+          return (
+            <OwnedArtifactCard
+              key={swap.instanceId}
+              piece={piece}
+              scaler={null}
+              catalog={catalog}
+              locale={locale}
+            >
+              <SwapVerdict swap={swap} characterId={characterId} />
+            </OwnedArtifactCard>
+          );
+        })}
+      </ul>
+
+      {panel.swaps.length === 0 && (
+        <p className="mt-2 text-xs text-muted">{t('noSwapsForSlot')}</p>
       )}
     </section>
   );

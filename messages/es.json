@@ -448,6 +448,8 @@
     "heldBy": "en {holder}",
     "closeCompare": "cerrar",
     "openCompare": "comparar",
+    "comparing": "comparando",
+    "previewAria": "Comparación antes de equipar",
     "moveHereButton": "Mover aquí",
     "equipButton": "Equipar",
     "kind": {
@@ -467,7 +469,6 @@
     "bestCaseTitle": "En el mejor de los casos: {value}",
     "expectedSuffix": "esperado",
     "breaksSet": "rompe el set",
-    "displacesFrom": "se lo quitas a {holder}",
     "defaultCandidateLabel": "candidata",
     "statHeader": "stat",
     "equippedHeader": "equipada",

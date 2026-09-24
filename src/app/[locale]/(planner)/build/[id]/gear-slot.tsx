@@ -7,6 +7,8 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { AssetImage } from '@/components/asset-image';
 import type { Move } from '@/lib/player/move';
 
+import type { OwnedArtifactCardData } from '@/components/owned-artifact-card-view';
+
 import { PieceComparison, type PieceStats } from './piece-stats';
 import { WeaponPassive, type WeaponPassiveText } from './weapon-passive';
 
@@ -25,6 +27,8 @@ export type CandidateView = {
   holderId: number | null;
   /** The full spread, for the row that opens into a comparison. */
   stats: PieceStats | null;
+  /** Artifacts only: the piece as the artifacts page draws it. */
+  card: OwnedArtifactCardData | null;
   /** Weapons only: the copy's refinement and the passive it scales. */
   refinement: number | null;
   passive: WeaponPassiveText | null;
@@ -183,12 +187,14 @@ export function MoveButton({
   move,
   expectedHolderId,
   title,
+  className = 'shrink-0',
 }: {
   action: (form: FormData) => void;
   pending: boolean;
   move: Move;
   expectedHolderId: number | null;
   title: string;
+  className?: string;
 }) {
   return (
     <form action={action} className="contents">
@@ -204,7 +210,7 @@ export function MoveButton({
         size="sm"
         type="submit"
         disabled={pending}
-        className="shrink-0"
+        className={className}
       >
         {title}
       </Button>

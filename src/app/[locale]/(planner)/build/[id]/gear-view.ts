@@ -11,7 +11,10 @@ import {
   type GearPiece,
   type GearWeapon,
 } from '@/lib/player/queries';
+import { readArtifacts } from '@/lib/player/artifacts';
 import { MIN_ARTIFACT_RARITY, isRecommendableWeapon } from '@/lib/rules/rarity-floor';
+
+import { ownedArtifactCardData } from '../../artifacts/artifact-card';
 
 import type { BuildContext } from './context';
 import type { CandidateView, SlotView } from './gear-slot';
@@ -38,8 +41,17 @@ export function gearSlotFor(context: BuildContext, key: string): Promise<SlotVie
 }
 
 async function candidateViews(context: BuildContext) {
-  const { catalog, suggestions, format } = context;
+  const { catalog, db, locale, suggestions, format } = context;
   const t = await getTranslations('build');
+
+  // The box's own read, so each candidate is drawn with the artifacts page's
+  // card — rolls, tiers and all — rather than a row of its own. Read once per
+  // slot, and only for an artifact slot.
+  let box: Map<string, Awaited<ReturnType<typeof readArtifacts>>[number]> | null = null;
+  const owned = async (id: string) => {
+    box ??= new Map((await readArtifacts(db)).map((piece) => [piece.instanceId, piece]));
+    return box.get(id) ?? null;
+  };
 
   // How well each owned piece serves this build, so the slot list is ordered by
   // usefulness rather than by rarity. Set membership is not part of it: a
@@ -51,6 +63,7 @@ async function candidateViews(context: BuildContext) {
   const pieceView = async (piece: GearPiece): Promise<CandidateView> => {
     const set = catalog.artifacts.get(piece.setId);
     const scored = scoreById.get(piece.id);
+    const inBox = await owned(piece.id);
 
     const fit = scored
       ? [
@@ -70,6 +83,7 @@ async function candidateViews(context: BuildContext) {
       holder: format.holderName(piece.equippedTo),
       holderId: piece.equippedTo,
       stats: format.artifactStats(piece),
+      card: inBox ? await ownedArtifactCardData(inBox, null, catalog, locale) : null,
       refinement: null,
       passive: null,
     };
@@ -88,6 +102,7 @@ async function candidateViews(context: BuildContext) {
       holder: format.holderName(weapon.equippedTo),
       holderId: weapon.equippedTo,
       stats: format.weaponStats(weapon),
+      card: null,
       refinement: weapon.refinement,
       passive: definition?.effectName
         ? { name: definition.effectName, refinements: definition.refinements }
