@@ -9,6 +9,7 @@ import { NuqsAdapter } from 'nuqs/adapters/next/app';
 
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { LocaleSwitcher } from '@/components/locale-switcher';
+import { LogoMark } from '@/components/logo-mark';
 import { MainNav, type NavItem } from '@/components/main-nav';
 import { SyncLocaleCookie } from '@/components/sync-locale-cookie';
 import { ThemeScript } from '@/components/theme-script';
@@ -191,9 +192,14 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
                 <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-5 gap-y-2 px-4 py-2.5 sm:px-6 sm:py-3">
                   <Link
                     href={`/${locale}/characters`}
-                    className="rounded-lg font-mono text-sm tracking-tight"
+                    className="flex items-center gap-2 rounded-lg font-mono text-sm tracking-tight"
                   >
-                    <span className="text-accent">GI</span> Organizer
+                    {/* The installed app's icon stands in for "GI": the mark
+                        and the name, as the home screen shows them. */}
+                    <LogoMark className="h-6 w-6 shrink-0 rounded-[5px] ring-1 ring-edge-strong" />
+                    <span>
+                      <span className="sr-only">GI </span>Organizer
+                    </span>
                   </Link>
 
                   <MainNav variant="header" label={t('primaryNavAria')} items={sections} />
