@@ -95,6 +95,37 @@ export function scorePiece(
 }
 
 /**
+ * A piece's fit to a build, as the cards draw it: where its main stat sits in
+ * the build's list and how many useful rolls it carries.
+ *
+ * The rank is the part `mainStatWanted` flattens. A build lists its sands,
+ * goblet and circlet stats best first, so an ATK% sands on a build that asks
+ * for Energy Recharge before ATK% is accepted but second-best — worth saying,
+ * because that is exactly the swap a player weighs.
+ */
+export type PieceFit = {
+  mainStatWanted: boolean | null;
+  /** Position in the build's list for the slot, or null when unranked. */
+  mainStatRank: number | null;
+  usefulRolls: number;
+};
+
+export function fitOf(
+  scored: PieceScore,
+  piece: { slot: ArtifactSlot; mainProp: string },
+  build: BuildStats,
+): PieceFit {
+  const index = scored.mainStatWanted
+    ? build.mainStatsBySlot.get(piece.slot)?.indexOf(piece.mainProp) ?? -1
+    : -1;
+  return {
+    mainStatWanted: scored.mainStatWanted,
+    mainStatRank: index === -1 ? null : index,
+    usefulRolls: scored.score,
+  };
+}
+
+/**
  * Builds the stat expectations for one character. Upstream lists only the three
  * choosable slots, in order.
  */

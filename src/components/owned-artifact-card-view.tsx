@@ -32,11 +32,20 @@ export type OwnedArtifactCardData = {
 export function OwnedArtifactCardView({
   data,
   className,
+  footerExtra,
+  hideSlot = false,
   children,
 }: {
   data: OwnedArtifactCardData;
+  /** See `ArtifactCardView`: for a list that is one slot already. */
+  hideSlot?: boolean;
   /** Extra classes for the card, such as a selection ring. */
   className?: string;
+  /**
+   * More marks for the footer's own row — the gear dialog's fit — so a page
+   * that adds a verdict adds it beside the holder rather than a row under it.
+   */
+  footerExtra?: React.ReactNode;
   /** What another page adds under the card — a verdict, an equip button. */
   children?: React.ReactNode;
 }) {
@@ -46,6 +55,7 @@ export function OwnedArtifactCardView({
   return (
     <ArtifactCardView
       card={data.card}
+      hideSlot={hideSlot}
       className={`transition-colors hover:border-edge-strong ${className ?? ''}`}
       footer={
         <div className="mt-2 flex items-center justify-between gap-2 border-t border-edge pt-1.5">
@@ -67,6 +77,8 @@ export function OwnedArtifactCardView({
             </span>
           )}
 
+          <span className="flex min-w-0 items-center gap-2">
+          {footerExtra}
           {data.serves && (
             <span
               title={t('servesPrefix', { scaler: scalerLabel(data.serves) })}
@@ -76,6 +88,7 @@ export function OwnedArtifactCardView({
               <Star size={10} aria-hidden className="fill-accent text-accent" />
             </span>
           )}
+          </span>
         </div>
       }
     >

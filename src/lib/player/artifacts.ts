@@ -28,6 +28,8 @@ export type OwnedArtifact = {
   level: number;
   mainProp: string;
   substats: { prop: string; value: number }[];
+  /** The locked fourth substat, unlocked at +4. Not scored until it is. */
+  unactivated: { prop: string; value: number }[];
   /** Null when nobody is wearing it. */
   holderId: number | null;
   locked: boolean | null;
@@ -41,6 +43,12 @@ export type OwnedArtifact = {
   };
   /** `2 × Prob. CRIT + Daño CRIT`, over substats. Zero for a non-crit piece. */
   critValue: number;
+  /**
+   * The same once the locked fourth line unlocks at +4, when the piece has
+   * one that changes it; `null` otherwise. Orderings and the crit cut-off
+   * read this: the line has rolled already, and reaching +4 only reveals it.
+   */
+  critValueAtFour: number | null;
   critRating: CritRating;
   /**
    * How well its crit rolls landed, line by line: the average tier of each
@@ -57,6 +65,7 @@ type Row = {
   level: number;
   main_prop: string;
   substats_json: string;
+  unactivated_json: string | null;
   locked: number | null;
   assigned_character_id: number | null;
 };
@@ -64,15 +73,21 @@ type Row = {
 export async function readArtifacts(db: Db = getDb()): Promise<OwnedArtifact[]> {
   const rows = (await db
     .prepare(`SELECT id, set_id, slot, rarity, level, main_prop, substats_json,
-                     locked, assigned_character_id
+                     unactivated_json, locked, assigned_character_id
               FROM artifact_instance WHERE profile_id = ?`)
     .all(await getProfileId(db))) as unknown as Row[];
 
   return rows.map((row) => {
     const substats = JSON.parse(row.substats_json) as { prop: string; value: number }[];
-    const piece = { rarity: row.rarity, substats };
+    const unactivated = row.unactivated_json
+      ? (JSON.parse(row.unactivated_json) as { prop: string; value: number }[])
+      : [];
+    // The locked fourth line is part of how the piece rolled, so the quality
+    // and the crit potential read it; only the "now" crit value leaves it out.
+    const piece = { rarity: row.rarity, substats: [...substats, ...unactivated] };
 
     const crit = critValue(substats);
+    const critAtFour = unactivated.length > 0 ? critValue(piece.substats) : null;
     const quality = pieceQuality(piece);
 
     return {
@@ -83,10 +98,12 @@ export async function readArtifacts(db: Db = getDb()): Promise<OwnedArtifact[]> 
       level: row.level,
       mainProp: row.main_prop,
       substats,
+      unactivated,
       holderId: row.assigned_character_id,
       locked: row.locked === null ? null : row.locked === 1,
       quality,
       critValue: crit,
+      critValueAtFour: critAtFour !== null && critAtFour !== crit ? critAtFour : null,
       critRating: critRating(crit),
       critPotential: critPotential(quality),
     };
@@ -158,7 +175,7 @@ export function filterArtifacts(
     if (filter.minEfficiency && (piece.quality.efficiency ?? 0) < filter.minEfficiency) {
       return false;
     }
-    if (filter.minCritValue && piece.critValue < filter.minCritValue) return false;
+    if (filter.minCritValue && effectiveCv(piece) < filter.minCritValue) return false;
     if (filter.levelBand !== null && filter.levelBand !== undefined
       && Math.floor(piece.level / 4) * 4 !== filter.levelBand) return false;
     return true;
@@ -169,18 +186,28 @@ export function filterArtifacts(
   // comparator, which a sort calls a few thousand times for a box this size.
   if (sort === 'value') {
     const value = new Map(kept.map(
-      (piece) => [piece.instanceId, pieceWorth(piece, scaler).value] as const,
+      (piece) => [piece.instanceId, pieceWorth(withLocked(piece), scaler).value] as const,
     ));
 
     return kept.sort((a, b) =>
       (value.get(b.instanceId) ?? 0) - (value.get(a.instanceId) ?? 0)
-      || b.critValue - a.critValue);
+      || effectiveCv(b) - effectiveCv(a));
   }
 
   return kept.sort(comparators[sort]);
 }
 
 type Comparator = (a: OwnedArtifact, b: OwnedArtifact) => number;
+
+/** Crit value counting the locked fourth line, which has already rolled. */
+function effectiveCv(piece: OwnedArtifact) {
+  return piece.critValueAtFour ?? piece.critValue;
+}
+
+/** The piece with its locked fourth line, for readings of how it rolled. */
+function withLocked(piece: OwnedArtifact) {
+  return { rarity: piece.rarity, substats: [...piece.substats, ...piece.unactivated] };
+}
 
 /** `value` is missing on purpose: it needs the scaler, so it is not a pure pair. */
 const comparators: Record<Exclude<ArtifactSort, 'value'>, Comparator> = {
@@ -192,10 +219,10 @@ const comparators: Record<Exclude<ArtifactSort, 'value'>, Comparator> = {
   // How well the crit rolls landed rather than how many there were, so a raw
   // piece that opened on a top crit roll ranks above a finished one whose crit
   // rolls all landed low. Crit value breaks the tie.
-  potential: (a, b) => b.critPotential - a.critPotential || b.critValue - a.critValue,
+  potential: (a, b) => b.critPotential - a.critPotential || effectiveCv(b) - effectiveCv(a),
   // Crit value is a narrower question than quality — it only speaks for crit
   // builds — so it is an ordering you ask for, never the default.
-  cv: (a, b) => b.critValue - a.critValue || b.quality.rolls - a.quality.rolls,
+  cv: (a, b) => effectiveCv(b) - effectiveCv(a) || b.quality.rolls - a.quality.rolls,
   rolls: (a, b) => b.quality.rolls - a.quality.rolls
     || (b.quality.efficiency ?? 0) - (a.quality.efficiency ?? 0),
   level: (a, b) => b.level - a.level || b.quality.rolls - a.quality.rolls,

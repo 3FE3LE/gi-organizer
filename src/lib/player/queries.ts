@@ -23,6 +23,11 @@ export type GearPiece = {
   level: number;
   mainProp: string;
   substats: NormalizedStat[];
+  /**
+   * The fourth substat of a three-line piece, which the scanner can read but
+   * the game has not unlocked: it becomes a real substat at +4.
+   */
+  unactivated: NormalizedStat[];
   lock: boolean | null;
   equippedTo: number | null;
 };
@@ -38,8 +43,8 @@ export type GearWeapon = {
 
 type ArtifactRow = {
   id: string; set_id: number; slot: string; rarity: number; level: number;
-  main_prop: string; substats_json: string; locked: number | null;
-  assigned_character_id: number | null;
+  main_prop: string; substats_json: string; unactivated_json: string | null;
+  locked: number | null; assigned_character_id: number | null;
 };
 
 type WeaponRow = {
@@ -48,7 +53,7 @@ type WeaponRow = {
 };
 
 const ARTIFACT_FIELDS = `id, set_id, slot, rarity, level, main_prop, substats_json,
-                         locked, assigned_character_id`;
+                         unactivated_json, locked, assigned_character_id`;
 const WEAPON_FIELDS = 'id, weapon_id, level, ascension, refinement, assigned_character_id';
 
 function toPiece(row: ArtifactRow): GearPiece {
@@ -60,6 +65,7 @@ function toPiece(row: ArtifactRow): GearPiece {
     level: row.level,
     mainProp: row.main_prop,
     substats: JSON.parse(row.substats_json) as NormalizedStat[],
+    unactivated: row.unactivated_json ? (JSON.parse(row.unactivated_json) as NormalizedStat[]) : [],
     lock: row.locked === null ? null : row.locked === 1,
     equippedTo: row.assigned_character_id,
   };

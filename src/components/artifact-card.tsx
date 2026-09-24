@@ -47,8 +47,12 @@ export type ArtifactPiece = {
   /** The caller's own number: read from the table, or as the game stored it. */
   mainValue: number;
   substats: ArtifactSubstat[];
+  /** The locked fourth substat, shown but marked: it unlocks at +4. */
+  pendingSubstats?: { prop: string; value: number }[];
   /** `2 × CRIT Rate + CRIT DMG`. Omitted or zero on a piece that rolled none. */
   critValue?: number;
+  /** The crit value once the locked fourth line unlocks, when it differs. */
+  critValueAtFour?: number | null;
   critRating?: CritRating;
   /** At least one substat rolled maximum every time. */
   hasPerfect?: boolean;
@@ -84,8 +88,18 @@ export async function artifactCardData(
       rolls: substat.rolls,
       quality: substat.quality ?? null,
       dead: substat.dead ?? false,
-    })),
+      pending: false,
+    })).concat((piece.pendingSubstats ?? []).map((substat) => ({
+      prop: substat.prop,
+      label: statLabel(catalog, substat.prop),
+      text: formatPropValue(substat.prop, substat.value, 'percent', locale),
+      rolls: null,
+      quality: null,
+      dead: false,
+      pending: true,
+    }))),
     critValue: crit,
+    critValueAtFour: piece.critValueAtFour ?? null,
     critRating: piece.critRating ?? 'ninguno',
     hasPerfect: piece.hasPerfect ?? false,
   };

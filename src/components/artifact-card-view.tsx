@@ -33,6 +33,11 @@ export type ArtifactCardSubstat = ArtifactCardLine & {
   rolls: number | null;
   quality: RollQuality | null;
   dead: boolean;
+  /**
+   * The fourth substat of a three-line piece: rolled, and readable by the
+   * scanner, but not active until the piece reaches +4.
+   */
+  pending?: boolean;
 };
 
 export type ArtifactCardData = {
@@ -47,6 +52,8 @@ export type ArtifactCardData = {
   main: ArtifactCardLine;
   substats: ArtifactCardSubstat[];
   critValue: number;
+  /** Once the locked fourth line unlocks at +4, when that changes it. */
+  critValueAtFour?: number | null;
   critRating: CritRating;
   hasPerfect: boolean;
 };
@@ -65,9 +72,15 @@ export function ArtifactCardView({
   card,
   className,
   footer,
+  hideSlot = false,
   children,
 }: {
   card: ArtifactCardData;
+  /**
+   * Leave the slot icon out, for a list that is one slot already — the gear
+   * dialog, a slot of the changes tab — where it says nothing on every card.
+   */
+  hideSlot?: boolean;
   /** The wrapper's own classes; every call site is a list item of some kind. */
   className?: string;
   /** Whatever the page knows that the piece does not: a holder, a verdict. */
@@ -80,7 +93,16 @@ export function ArtifactCardView({
   const common = useTranslations('common');
 
   return (
-    <li className={`group relative flex min-w-0 flex-col card p-2.5 ${className ?? ''}`}>
+    <li className={`group relative isolate flex min-w-0 flex-col overflow-hidden card-glass p-2.5 ${className ?? ''}`}>
+      {/* The rarity, rising from the bottom edge as it does on a roster card:
+          gold for five stars, violet for four. Behind everything else. */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-2/5 opacity-20 transition-opacity duration-300 group-hover:opacity-30"
+        style={{
+          background: `linear-gradient(to top, var(${card.rarity >= 5 ? '--rarity-5' : '--rarity-4'}), transparent)`,
+        }}
+      />
       <div className="flex items-start gap-2">
         {/*
           * The set is its art, not its name.
@@ -110,8 +132,8 @@ export function ArtifactCardView({
           <p className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 font-mono text-2xs leading-tight">
             <span className="rounded bg-ink px-1 text-muted">+{card.level}</span>
             <span className="text-accent">{'★'.repeat(card.rarity)}</span>
-            <SlotIcon slot={card.slot} label={card.slotLabel} className="text-muted" />
-            {card.critValue > 0 && (
+            {!hideSlot && <SlotIcon slot={card.slot} label={card.slotLabel} className="text-muted" />}
+            {(card.critValue > 0 || card.critValueAtFour != null) && (
               <span
                 className={`tabular ${CRIT_TONE[card.critRating]}`}
                 title={t('critValueHint', {
@@ -122,12 +144,22 @@ export function ArtifactCardView({
                 CV {card.critValue.toFixed(1)}
               </span>
             )}
+            {/* Where it lands once the locked line unlocks: certain, not a
+                forecast — that line has rolled already. */}
+            {card.critValueAtFour != null && (
+              <span className="tabular text-accent" title={t('pendingSubstatHint')}>
+                → {card.critValueAtFour.toFixed(1)}
+              </span>
+            )}
           </p>
         </div>
+        {/* Pinned to the corner rather than laid out: in the header row it
+            took the width the level, rarity and crit value share, and pushed
+            the last of them onto a second line. */}
         {card.hasPerfect && (
           <Sparkles
-            size={12}
-            className="shrink-0 text-accent"
+            size={11}
+            className="absolute right-1.5 top-1.5 text-accent"
             aria-label={t('perfectSubstatActive')}
           />
         )}
@@ -151,18 +183,32 @@ export function ArtifactCardView({
           <li
             key={substat.prop}
             className={`flex items-center justify-between gap-2 ${
-              substat.dead ? 'opacity-45' : ''
+              substat.dead ? 'opacity-45' : substat.pending ? 'text-muted' : ''
             }`}
-            title={substat.dead ? `${substat.label} · ${t('deadSubstatHint')}` : substat.label}
+            title={substat.pending
+              ? `${substat.label} · ${t('pendingSubstatHint')}`
+              : substat.dead ? `${substat.label} · ${t('deadSubstatHint')}` : substat.label}
           >
-            <StatIcon prop={substat.prop} label={substat.label} />
+            <StatIcon prop={substat.prop} label={substat.label} className={substat.pending ? 'opacity-60' : undefined} />
             <span className="flex shrink-0 items-baseline gap-1.5 font-mono text-2xs">
               {/* Fixed width, right-aligned: a flat roll ("+19") and a percent
                   one ("+5.8%") are different lengths, and without a column to
                   end at, the roll mark after it drifted left or right row to
                   row instead of lining up down the card. */}
-              <span className="tabular w-11 text-right">+{substat.text}</span>
-              <RollMark substat={substat} />
+              <span className={`tabular w-11 text-right ${substat.pending ? 'italic opacity-70' : ''}`}>
+                +{substat.text}
+              </span>
+              {/* The locked fourth line: drawn, so the piece reads as the
+                  four-line piece it becomes, and marked with the level that
+                  unlocks it where the roll mark would be. */}
+              {substat.pending ? (
+                <span className="rounded border border-dashed border-edge-strong px-1 leading-4 text-muted">
+                  +4
+                  <span className="sr-only"> · {t('pendingSubstatHint')}</span>
+                </span>
+              ) : (
+                <RollMark substat={substat} />
+              )}
             </span>
           </li>
         ))}

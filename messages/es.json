@@ -259,6 +259,7 @@
     "levelAria": "Nivel de la pieza",
     "critValueLabel": "crit value",
     "free": "libre",
+    "pendingSubstatHint": "se activa al subir la pieza a +4",
     "deadSubstatHint": "No escala con nada: estos rolls no cuentan",
     "critValueHint": "Crit value: 2 × prob. CRIT + daño CRIT = {value} · {rating}",
     "rollsCount": "{count, plural, one {roll} other {rolls}}",

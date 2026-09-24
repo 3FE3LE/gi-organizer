@@ -45,6 +45,12 @@ export type ComparablePiece = {
   level: number;
   mainProp: string;
   substats: { prop: string; value: number }[];
+  /**
+   * The locked fourth substat of a three-line piece. It has already rolled and
+   * cannot change — the first upgrade only unlocks it — so the future counts
+   * it as known, while the stats a swap gives today leave it out.
+   */
+  unactivated?: { prop: string; value: number }[];
 };
 
 /** Weight the build puts on a substat, mirroring `scorePiece`. */
@@ -86,10 +92,14 @@ export type Potential = {
  * Together those turned "a level-zero piece with promising substats" into "a
  * better piece than the +20 you are wearing", which is not what the table says.
  */
-export function potentialOf(piece: ComparablePiece, build: BuildStats): Potential {
+export function potentialOf(input: ComparablePiece, build: BuildStats): Potential {
+  // A known fourth line is part of the piece's future for certain, and the
+  // upgrade that unlocks it is spent on unlocking rather than on a roll.
+  const locked = input.unactivated ?? [];
+  const piece = { ...input, substats: [...input.substats, ...locked] };
   const max = MAX_LEVEL[piece.rarity] ?? 20;
-  const remainingRolls = Math.floor(max / LEVELS_PER_ROLL)
-    - Math.floor(Math.min(piece.level, max) / LEVELS_PER_ROLL);
+  const remainingRolls = Math.max(0, Math.floor(max / LEVELS_PER_ROLL)
+    - Math.floor(Math.min(piece.level, max) / LEVELS_PER_ROLL) - locked.length);
 
   const current = scorePiece(piece, build).score;
   if (remainingRolls === 0) {

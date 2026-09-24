@@ -48,7 +48,9 @@ export async function ownedArtifactCardData(
         quality: piece.quality.substats.find((entry) => entry.prop === substat.prop) ?? null,
         dead: dead.has(substat.prop),
       })),
+      pendingSubstats: piece.unactivated,
       critValue: piece.critValue,
+      critValueAtFour: piece.critValueAtFour,
       critRating: piece.critRating,
       hasPerfect: piece.quality.hasPerfect,
     }, catalog, locale),
@@ -67,17 +69,23 @@ export async function OwnedArtifactCard({
   scaler,
   catalog,
   locale,
+  hideSlot = false,
+  footerExtra,
   children,
 }: {
   piece: OwnedArtifact;
   scaler: Scaler | null;
   catalog: Catalog;
   locale: string;
+  /** For a list that is one slot already; see `ArtifactCardView`. */
+  hideSlot?: boolean;
+  /** Marks for the footer row; see `OwnedArtifactCardView`. */
+  footerExtra?: React.ReactNode;
   /** What another page adds under the card — the changes tab's verdict. */
   children?: React.ReactNode;
 }) {
   return (
-    <OwnedArtifactCardView data={await ownedArtifactCardData(piece, scaler, catalog, locale)}>
+    <OwnedArtifactCardView data={await ownedArtifactCardData(piece, scaler, catalog, locale)} hideSlot={hideSlot} footerExtra={footerExtra}>
       {children}
     </OwnedArtifactCardView>
   );

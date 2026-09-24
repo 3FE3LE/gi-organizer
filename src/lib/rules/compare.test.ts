@@ -333,3 +333,32 @@ test('a finished piece has no potential left to argue about', () => {
   assert.equal(potential.min, potential.expected);
   assert.equal(potential.expected, potential.max);
 });
+
+/*
+ * A three-line piece whose fourth line the scanner already read: that line has
+ * rolled and cannot change, so it counts as known, and the first upgrade —
+ * which only unlocks it — is not priced as a random roll.
+ */
+test('a locked fourth substat counts as known, and spends the upgrade that unlocks it', () => {
+  const threeLine: ComparablePiece = {
+    instanceId: 'three', setId: 1, slot: 'sands', rarity: 5, level: 0,
+    mainProp: 'FIGHT_PROP_ATTACK_PERCENT',
+    substats: [
+      { prop: 'FIGHT_PROP_HP', value: 299 },
+      { prop: 'FIGHT_PROP_DEFENSE', value: 23 },
+      { prop: 'FIGHT_PROP_ATTACK', value: 19 },
+    ],
+  };
+  const withCrit = { ...threeLine, unactivated: [{ prop: 'FIGHT_PROP_CRITICAL', value: 3.9 }] };
+  const withFlat = { ...threeLine, unactivated: [{ prop: 'FIGHT_PROP_HP', value: 299 }] };
+
+  const unknown = potentialOf(threeLine, build);
+  const crit = potentialOf(withCrit, build);
+  const flat = potentialOf(withFlat, build);
+
+  assert.equal(unknown.remainingRolls, 5);
+  assert.equal(crit.remainingRolls, 4);
+  // A known crit line beats a guessed one, and a known dead line loses to it.
+  assert.ok(crit.expected > unknown.expected, `${crit.expected} > ${unknown.expected}`);
+  assert.ok(flat.expected < crit.expected);
+});

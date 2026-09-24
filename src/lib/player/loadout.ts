@@ -39,6 +39,8 @@ export type LoadoutPiece = {
   mainValue: number;
   /** Substats with how many top rolls each is worth, as the game's badges. */
   substats: (NormalizedStat & { rolls: number })[];
+  /** The locked fourth substat, unlocked at +4. See `GearPiece`. */
+  unactivated: NormalizedStat[];
 };
 
 export type LoadoutWeapon = {
@@ -186,6 +188,7 @@ export async function readLoadout(
         ...substat,
         rolls: rollsOf(substat.prop, substat.value, piece.rarity),
       })),
+      unactivated: piece.unactivated,
     })),
     setCounts: [...setCounts].sort((a, b) => b[1] - a[1]),
   };

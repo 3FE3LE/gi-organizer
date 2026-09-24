@@ -38,7 +38,9 @@ import {
 } from './materials';
 import { type CascadeBuild, type CascadePlan, planCascade } from './cascade';
 import { type ComparablePiece, type Swap, compareSlot } from './compare';
-import { type BuildStats, type PieceScore, buildStatsFor, scorePiece } from './piece-score';
+import {
+  type BuildStats, type PieceFit, type PieceScore, buildStatsFor, fitOf, scorePiece,
+} from './piece-score';
 import { computeStats, evaluateGoals, type GoalVerdict } from './stats';
 import {
   type BuildPriority,
@@ -247,7 +249,11 @@ async function readWeaponStock(db: Db, profileId: string) {
   );
 }
 
-export type ScoredPiece = PieceScore & { instanceId: string };
+export type ScoredPiece = PieceScore & {
+  instanceId: string;
+  /** The same score, as the cards draw it. See `FitIcons`. */
+  fit: PieceFit;
+};
 
 export type SlotComparison = {
   slot: ArtifactSlot;
@@ -288,13 +294,13 @@ async function scoreOwnedPieces(
   stats: BuildStats,
 ) {
   const rows = (await db
-    .prepare(`SELECT id, slot, rarity, level, main_prop, substats_json
+    .prepare(`SELECT id, slot, rarity, level, main_prop, substats_json, unactivated_json
               FROM artifact_instance
               WHERE profile_id = ?
                 AND (assigned_character_id IS NULL OR assigned_character_id = ?)`)
     .all(profileId, characterId)) as unknown as {
       id: string; slot: string; rarity: number; level: number;
-      main_prop: string; substats_json: string;
+      main_prop: string; substats_json: string; unactivated_json: string | null;
     }[];
 
   const bySlot = new Map<ArtifactSlot, ScoredPiece[]>();
@@ -306,10 +312,16 @@ async function scoreOwnedPieces(
       rarity: row.rarity,
       level: row.level,
       mainProp: row.main_prop,
-      substats: JSON.parse(row.substats_json) as { prop: string; value: number }[],
+      // The locked fourth line counts: it has rolled, and nothing can change
+      // it — reaching +4 only unlocks it. See `ComparablePiece.unactivated`.
+      substats: [
+        ...JSON.parse(row.substats_json) as { prop: string; value: number }[],
+        ...(row.unactivated_json ? JSON.parse(row.unactivated_json) as { prop: string; value: number }[] : []),
+      ],
     }, stats);
 
-    bySlot.set(slot, [...(bySlot.get(slot) ?? []), { ...scored, instanceId: row.id }]);
+    const fit = fitOf(scored, { slot, mainProp: row.main_prop }, stats);
+    bySlot.set(slot, [...(bySlot.get(slot) ?? []), { ...scored, instanceId: row.id, fit }]);
   }
 
   for (const pieces of bySlot.values()) pieces.sort((a, b) => b.score - a.score);
@@ -467,7 +479,8 @@ const ALL_SLOTS: ArtifactSlot[] = ['flower', 'plume', 'sands', 'goblet', 'circle
 
 type PieceRow = {
   id: string; set_id: number; slot: string; rarity: number; level: number;
-  main_prop: string; substats_json: string; assigned_character_id: number | null;
+  main_prop: string; substats_json: string; unactivated_json: string | null;
+  assigned_character_id: number | null;
 };
 
 const toComparable = (row: PieceRow): ComparablePiece => ({
@@ -478,6 +491,9 @@ const toComparable = (row: PieceRow): ComparablePiece => ({
   level: row.level,
   mainProp: row.main_prop,
   substats: JSON.parse(row.substats_json) as { prop: string; value: number }[],
+  unactivated: row.unactivated_json
+    ? JSON.parse(row.unactivated_json) as { prop: string; value: number }[]
+    : [],
 });
 
 /**
@@ -501,7 +517,7 @@ async function compareEverySlot(context: {
 
   const rows = (await db
     .prepare(`SELECT id, set_id, slot, rarity, level, main_prop, substats_json,
-                     assigned_character_id
+                     unactivated_json, assigned_character_id
               FROM artifact_instance WHERE profile_id = ?`)
     .all(profileId)) as unknown as PieceRow[];
 

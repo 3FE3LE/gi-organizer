@@ -390,6 +390,23 @@ body {
     box-shadow: var(--shadow-raised), var(--sheen);
   }
 
+  /*
+   * An artifact, as a pane rather than a slab.
+   *
+   * The same glass the header is made of — the page's glow shows through,
+   * softened — with the card's own edge and sheen kept, so a grid of forty
+   * reads as objects over the page rather than holes cut in it. The rarity
+   * wash that rises from the bottom is drawn by the card itself; see
+   * `artifact-card-view.tsx`.
+   */
+  .card-glass {
+    background: color-mix(in oklab, var(--surface) 70%, transparent);
+    backdrop-filter: blur(10px) saturate(140%);
+    border: 1px solid var(--edge);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card), var(--sheen);
+  }
+
   /* The bar that floats over the page: a header, a sticky save row, a sheet. */
   .glass {
     background: color-mix(in oklab, var(--ink) 78%, transparent);

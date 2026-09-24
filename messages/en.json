@@ -259,6 +259,7 @@
     "levelAria": "Piece level",
     "critValueLabel": "crit value",
     "free": "free",
+    "pendingSubstatHint": "unlocks when the piece reaches +4",
     "deadSubstatHint": "Doesn't scale with anything: these rolls don't count",
     "critValueHint": "Crit value: 2 × crit rate + crit dmg = {value} · {rating}",
     "rollsCount": "{count, plural, one {roll} other {rolls}}",
