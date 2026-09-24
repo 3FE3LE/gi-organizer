@@ -121,7 +121,7 @@
     "title": "My characters",
     "sortHint": "by release, most recent first",
     "orphanedTitle": "No sheet.",
-    "orphanedBody": "{names} {count, plural, one {has} other {have}} gear but {count, plural, one {isn't} other {aren't}} on the roster.",
+    "orphanedBody": "{count, plural, one {# character has} other {# characters have}} gear but {count, plural, one {isn't} other {aren't}} on the roster.",
     "orphanedLink": "Add them",
     "orphanedHint": "or scan again with the character screen turned on.",
     "missingHeading": "Not obtained",

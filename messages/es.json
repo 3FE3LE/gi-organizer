@@ -121,7 +121,7 @@
     "title": "Mis personajes",
     "sortHint": "por lanzamiento, más reciente primero",
     "orphanedTitle": "Sin ficha.",
-    "orphanedBody": "{names} {count, plural, one {lleva} other {llevan}} equipo pero no {count, plural, one {está} other {están}} en el roster.",
+    "orphanedBody": "{count, plural, one {# personaje lleva} other {# personajes llevan}} equipo pero no {count, plural, one {está} other {están}} en el roster.",
     "orphanedLink": "Añádelos",
     "orphanedHint": "o vuelve a escanear con la pantalla de personajes activada.",
     "missingHeading": "Sin conseguir",
