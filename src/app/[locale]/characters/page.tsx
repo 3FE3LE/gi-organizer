@@ -18,7 +18,7 @@ import {
 } from '@/lib/data/grouping';
 import { isLocale } from '@/lib/data/locales';
 import { getDb } from '@/lib/db/client';
-import { readOwnedCharacterIds } from '@/lib/player/characters';
+import { readRoster, type CharacterBuild } from '@/lib/player/characters';
 import { getProfileId } from '@/lib/player/db';
 import { holdersWithGear } from '@/lib/player/queries';
 import { readRegion } from '@/lib/player/region';
@@ -52,7 +52,10 @@ export default async function CharactersPage({
   const t = await getTranslations('characters');
   const catalog = await getCatalog(locale);
   const db = getDb();
-  const owned = await readOwnedCharacterIds(db, await getProfileId(db));
+  const roster = new Map(
+    (await readRoster(db, await getProfileId(db))).map((entry) => [entry.characterId, entry]),
+  );
+  const owned: ReadonlySet<number> = new Set(roster.keys());
   const gear = await holdersWithGear(db);
 
   const byRelease = catalog.index.charactersByRelease;
@@ -144,8 +147,7 @@ export default async function CharactersPage({
                 <Gallery
                   locale={locale}
                   characters={group.characters}
-                  owned={owned}
-                  gear={gear}
+                  roster={roster}
                   t={t}
                   eager={index === 0}
                 />
@@ -320,15 +322,13 @@ function BirthdayCalendar({
 function Gallery({
   locale,
   characters,
-  owned,
-  gear,
+  roster,
   t,
   eager = false,
 }: {
   locale: string;
   characters: CharacterView[];
-  owned: ReadonlySet<number>;
-  gear: Map<number, number>;
+  roster: ReadonlyMap<number, CharacterBuild>;
   t: Messages;
   /** The first gallery holds the largest contentful paint; the second is below it. */
   eager?: boolean;
@@ -340,8 +340,8 @@ function Gallery({
   return (
     <ul className="rise-stagger grid grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))] gap-3 sm:gap-4">
       {characters.map((character, index) => {
-        const pieces = gear.get(character.id) ?? 0;
-        const mine = owned.has(character.id);
+        const entry = roster.get(character.id) ?? null;
+        const mine = entry !== null;
         const element = elementColor(character.elementType);
 
         return (
@@ -370,34 +370,54 @@ function Gallery({
                 style={{ background: `radial-gradient(60% 100% at 50% 0%, ${element}, transparent 70%)` }}
               />
 
+              {/* The rarity, as the footer the game's own cards carry: gold
+                  or violet rising from the bottom edge, under the name. The
+                  element keeps the top, so the two never mix. */}
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-x-0 bottom-0 h-16 opacity-35 transition-opacity duration-300 group-hover:opacity-55"
+                style={{
+                  background: `linear-gradient(to top, var(${
+                    character.rarity >= 5 ? '--rarity-5' : '--rarity-4'
+                  }), transparent)`,
+                }}
+              />
+
               <div className="relative">
-                {/*
-                  * The same avatar becomes the splash on the page this opens.
-                  * Naming both ends is all the browser needs to move one
-                  * object instead of swapping two — see `globals.css`.
-                  */}
-                <ViewTransition name={`character-${character.id}`} share="morph" default="none">
-                  <div className="mx-auto w-20">
-                    <GameIcon
-                      filename={character.icon}
-                      kind="avatar"
-                      className={`h-20 w-20 rounded-full border border-edge bg-surface-2 ${
-                        mine ? '' : 'grayscale'
-                      }`}
-                      sizes="80px"
-                      // The first row is above the fold on every viewport; lazy-loading
-                      // it means the page paints its own empty grid first.
-                      priority={eager && index < 6}
-                    />
-                  </div>
-                </ViewTransition>
+                <div className="relative mx-auto h-20 w-20">
+                  {/*
+                    * The same avatar becomes the splash on the page this opens.
+                    * Naming both ends is all the browser needs to move one
+                    * object instead of swapping two — see `globals.css`. The
+                    * badges stay outside it: they belong to this card, not to
+                    * the portrait that travels.
+                    */}
+                  <ViewTransition name={`character-${character.id}`} share="morph" default="none">
+                    <div className="w-20">
+                      <GameIcon
+                        filename={character.icon}
+                        kind="avatar"
+                        className={`h-20 w-20 rounded-full border border-edge bg-surface-2 ${
+                          mine ? '' : 'grayscale'
+                        }`}
+                        sizes="80px"
+                        // The first row is above the fold on every viewport; lazy-loading
+                        // it means the page paints its own empty grid first.
+                        priority={eager && index < 6}
+                      />
+                    </div>
+                  </ViewTransition>
+
+                  {entry && <ConstellationBadge entry={entry} />}
+                </div>
 
                 <p className={`mt-2.5 truncate text-center text-sm ${mine ? '' : 'text-muted'}`}>
                   {character.name}
                 </p>
                 <p className="mt-0.5 text-center font-mono text-2xs text-muted">
-                  {t('versionLine', { version: character.version, rarity: character.rarity })}
-                  {mine && pieces > 0 && ` · ${pieces}/5`}
+                  {entry && `${t('levelShort', { level: entry.level })} · `}
+                  {t('versionLine', { version: character.version })}
+                  <span className="sr-only">{t('rarityLabel', { rarity: character.rarity })}</span>
                 </p>
               </div>
             </PrefetchLink>
@@ -405,5 +425,54 @@ function Gallery({
         );
       })}
     </ul>
+  );
+}
+
+/** Lower right of the portrait, just outside its 40px radius. */
+const CONSTELLATION_ANGLE = 35;
+/** Just outside the 40px radius, so the badge overlaps the border, not the face. */
+const RIM = 42;
+
+/**
+ * The constellation, on the rim of the portrait.
+ *
+ * The line under the name used to carry how many artifacts were worn — a
+ * number that is five for nearly everyone and says nothing anyone plans
+ * around. The level took its place in that line; the constellation is the one
+ * number that reads as part of the character rather than of the account, so
+ * it sits on the portrait itself, where the game puts it.
+ */
+function ConstellationBadge({ entry }: { entry: CharacterBuild }) {
+  return (
+    <RimBadge
+      angle={CONSTELLATION_ANGLE}
+      className={entry.constellation >= 6 ? 'text-accent' : entry.constellation > 0 ? 'text-text' : 'text-muted'}
+    >
+      C{entry.constellation}
+    </RimBadge>
+  );
+}
+
+function RimBadge({
+  angle,
+  className,
+  children,
+}: {
+  angle: number;
+  className: string;
+  children: React.ReactNode;
+}) {
+  const radians = (angle * Math.PI) / 180;
+
+  return (
+    <span
+      className={`tabular absolute min-w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border border-edge bg-surface px-1 text-center font-mono text-2xs leading-4 shadow-sm ${className}`}
+      style={{
+        left: `calc(50% + ${(Math.cos(radians) * RIM).toFixed(2)}px)`,
+        top: `calc(50% + ${(Math.sin(radians) * RIM).toFixed(2)}px)`,
+      }}
+    >
+      {children}
+    </span>
   );
 }

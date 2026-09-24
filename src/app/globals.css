@@ -162,6 +162,9 @@
   /* For fills and rules, never for text: it does not clear AA as a foreground. */
   --accent-quiet: color-mix(in oklab, var(--accent) 22%, transparent);
   --on-accent: #12151d;
+  /* The game's own rarity colours, for washes only — never text. */
+  --rarity-5: #d08a3a;
+  --rarity-4: #9a74c8;
 
   --good: #86c191;
   --warn: #e0b468;
@@ -201,6 +204,8 @@
   --accent: #8a6320;
   --accent-quiet: color-mix(in oklab, var(--accent) 14%, transparent);
   --on-accent: #fffaf0;
+  --rarity-5: #c07424;
+  --rarity-4: #8a62bd;
 
   --good: #2f6f3d;
   --warn: #8a5d16;
@@ -245,6 +250,8 @@
     --accent: #8a6320;
     --accent-quiet: color-mix(in oklab, var(--accent) 14%, transparent);
     --on-accent: #fffaf0;
+    --rarity-5: #c07424;
+    --rarity-4: #8a62bd;
 
     --good: #2f6f3d;
     --warn: #8a5d16;
