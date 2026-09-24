@@ -11,6 +11,7 @@ import {
   type GearPiece,
   type GearWeapon,
 } from '@/lib/player/queries';
+import { MIN_ARTIFACT_RARITY, isRecommendableWeapon } from '@/lib/rules/rarity-floor';
 
 import type { BuildContext } from './context';
 import type { CandidateView, SlotView } from './gear-slot';
@@ -106,8 +107,12 @@ async function artifactSlot(
   const slotLabel = await getTranslations('common.slot');
 
   const equipped = gear.bySlot.get(slot) ?? null;
-  const free = await artifactCandidates(slot, { limit: 40 }, db);
+  // Four-stars never make the list — see `rarity-floor.ts`. What is worn
+  // still shows in the header, whatever it is.
+  const recommendable = (piece: GearPiece) => piece.rarity >= MIN_ARTIFACT_RARITY;
+  const free = (await artifactCandidates(slot, { limit: 40 }, db)).filter(recommendable);
   const taken = (await artifactCandidates(slot, { includeAssigned: true, limit: 60 }, db))
+    .filter(recommendable)
     .filter((piece) => piece.equippedTo !== null && piece.equippedTo !== characterId);
 
   const worthTaking = taken.filter((piece) => plannedSetIds.has(piece.setId));
@@ -128,8 +133,10 @@ async function weaponSlot(context: BuildContext): Promise<SlotView> {
   const { weaponView } = await candidateViews(context);
 
   // Only weapons this character can hold. The catalog knows; the schema cannot.
+  // Nor three-stars, which are a stopgap and not a choice.
   const usableWeaponIds = (catalog.index.weaponsByType.get(character.weaponType) ?? [])
-    .map((weapon) => weapon.id);
+    .map((weapon) => weapon.id)
+    .filter((weaponId) => isRecommendableWeapon(catalog, weaponId));
 
   const free = await weaponCandidates(usableWeaponIds, { limit: 40 }, db);
   const taken = (await weaponCandidates(usableWeaponIds, { includeAssigned: true, limit: 60 }, db))

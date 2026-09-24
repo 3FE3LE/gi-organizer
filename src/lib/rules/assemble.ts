@@ -48,6 +48,7 @@ import {
   suggestWeapons,
 } from './suggest';
 import type { Rule, TeamRole } from './types';
+import { MIN_ARTIFACT_RARITY, isRecommendableSet, isRecommendableWeapon } from './rarity-floor';
 
 /**
  * Assembles everything the engine needs: teams from the database, gear as
@@ -429,6 +430,7 @@ export async function suggestionsFor(
     goals,
     holderOf,
     pieces: await scoreOwnedPieces(db, profileId, characterId, stats),
+    // Pinned is the player's word and survives; see `rarity-floor.ts`.
     sets: suggestSets({
       characterId,
       teamMembers,
@@ -447,7 +449,9 @@ export async function suggestionsFor(
       setMechanics: new Map(
         Object.entries(mechanics.artifactSets).map(([setId, tags]) => [Number(setId), tags]),
       ),
-    }),
+    }).filter((suggestion) =>
+      suggestion.reasons.some((reason) => reason.kind === 'pinned')
+      || suggestion.setIds.every((setId) => isRecommendableSet(catalog, setId))),
     weapons: suggestWeapons(
       characterId, priorities, stock, claimedByOthers,
       // Only what this character can hold; the catalog knows, the schema cannot.
@@ -455,7 +459,7 @@ export async function suggestionsFor(
         catalog.characters.get(characterId)?.weaponType ?? '',
       ) ?? []).map((weapon) => weapon.id),
       weaponSources,
-    ),
+    ).filter((suggestion) => isRecommendableWeapon(catalog, suggestion.weaponId)),
   };
 }
 
@@ -570,7 +574,8 @@ async function compareEverySlot(context: {
       build: stats,
       plannedSets: build?.setPlan ?? [],
       equipped: equippedBySlot.get(slot) ?? null,
-      candidates: bySlot.get(slot) ?? [],
+      // Below the floor is never a swap worth suggesting; see `rarity-floor.ts`.
+      candidates: (bySlot.get(slot) ?? []).filter((piece) => piece.rarity >= MIN_ARTIFACT_RARITY),
       otherPieces: equipped.filter((piece) => piece.slot !== slot),
       statInput,
       goals: build?.goals ?? [],
