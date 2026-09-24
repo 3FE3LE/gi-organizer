@@ -50,6 +50,18 @@ const nextConfig: NextConfig = {
     // Asset names are immutable within and across patches: a patch adds names,
     // it never repoints an existing one, so an optimized variant cannot go stale.
     minimumCacheTTL: 31_536_000,
+    /*
+     * The widths a `srcset` may offer, cut to the ones this app draws at.
+     *
+     * Every image with a `sizes` lists every width Next knows — sixteen by
+     * default, from 16 to 3840 — and almost everything here is an icon drawn
+     * between 24 and 80 pixels. On the farming plan that was four thousand
+     * image URLs and a third of the page's HTML, for variants no screen would
+     * ever pick. These cover the icons at 1× and 2× and the splash art up to a
+     * wide 2× screen.
+     */
+    imageSizes: [32, 48, 64, 96, 128, 256],
+    deviceSizes: [640, 1080, 1920],
   },
 
   /**
