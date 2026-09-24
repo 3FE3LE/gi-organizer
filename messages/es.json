@@ -34,7 +34,7 @@
     "held": { "free": "libres", "worn": "equipados" },
     "scaler": { "atk": "ATQ%", "hp": "Vida%", "em": "Maestría", "def": "DEF%" },
     "sort": {
-      "value": "valor", "quality": "calidad", "cv": "crit value", "rolls": "rolls",
+      "potential": "potencial", "value": "valor", "quality": "calidad", "cv": "crit value", "rolls": "rolls",
       "level": "nivel", "set": "set"
     },
     "critRating": {
@@ -250,11 +250,13 @@
     "setAria": "Set",
     "mainStatLabel": "main stat",
     "mainStatAria": "Main stat",
-    "scalerLabel": "escala",
-    "generalBest": "general · mejor",
+    "scalerLabel": "valor para",
+    "generalBest": "el que más tenga",
     "scalerAria": "Escalador que cuenta como útil",
-    "sortLabel": "orden",
-    "sortAria": "Orden",
+    "sortLabel": "ordenar por",
+    "scalerHint": "Qué escalador (ATQ%, Vida%, Maestría, DEF%) cuenta al calcular el valor. No filtra: cambia el orden y atenúa las substats que no sirven.",
+    "levelLabel": "nivel",
+    "levelAria": "Nivel de la pieza",
     "critValueLabel": "crit value",
     "free": "libre",
     "deadSubstatHint": "No escala con nada: estos rolls no cuentan",

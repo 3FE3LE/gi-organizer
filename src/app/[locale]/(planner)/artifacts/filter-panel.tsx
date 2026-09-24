@@ -1,18 +1,25 @@
-import { ChevronRight, Crown, Feather, Flower2, Hourglass, SlidersHorizontal, Wine, X } from 'lucide-react';
+import {
+  ChevronRight, Crown, Feather, Flower2, Hourglass, PackageOpen, SlidersHorizontal, UserCheck, Wine, X,
+} from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
+import { Segment, Segments } from '@/components/segmented-links';
+import { StatIcon } from '@/components/stat-icon';
 import { formatSetEffect, setEffects, statLabel, type Catalog } from '@/lib/data/catalog';
 import { resolveIcon } from '@/lib/data/icon';
 import { ARTIFACT_SLOTS } from '@/lib/enka/slots';
 import type { ArtifactSlot } from '@/lib/data/types';
 import { ROLLABLE } from '@/lib/rules/rolls';
+import { SCALERS, SCALER_PROPS } from '@/lib/rules/worth';
+
 
 import {
   CLEARED,
   CRIT_FILTERS,
   CRIT_STEP_LABELS,
   HELD,
+  SORTS,
   TIER_FILTERS,
   activeCount,
   href,
@@ -33,6 +40,11 @@ import { SetStrip, type SetChoice } from './set-strip';
  * important part: with the controls folded away, a filtered view has to say so
  * somewhere, or the next question is why the box looks empty.
  */
+
+const HELD_ICONS: Record<(typeof HELD)[number], typeof Flower2> = {
+  free: PackageOpen,
+  worn: UserCheck,
+};
 
 const SLOT_ICONS: Record<ArtifactSlot, typeof Flower2> = {
   flower: Flower2,
@@ -63,6 +75,7 @@ export async function FilterPanel({
   const slotLabel = await getTranslations('common.slot');
   const heldLabel = await getTranslations('common.held');
   const tierLabel = await getTranslations('common.tier');
+  const sortLabel = await getTranslations('common.sort');
 
   /*
    * Every set in the catalogue, owned first and by how much of it the box
@@ -92,24 +105,35 @@ export async function FilterPanel({
   // folded away, they have to say they are doing something.
   const advanced = [
     filters.sub !== null, filters.quality !== null, filters.cv !== null,
-    filters.perfect, filters.set !== null, filters.main !== null,
+    filters.perfect, filters.main !== null, filters.lvl !== null,
   ].filter(Boolean).length;
+  const scalerLabel = await getTranslations('common.scaler');
+  // A scaler only prices the value ordering, so picking one switches to it —
+  // unless the list is already ordered by value.
+  const valueSort = filters.sort === 'value' ? {} : { sort: 'value' as const };
 
   return (
     <div className="space-y-3">
       {/*
-        * Three levels, drawn as three.
+        * Laid out in the order a search is actually made.
         *
-        * All the filters used to be the same weight: two strips of small
-        * segments, a flat "más filtros" bar and the view controls, each in
-        * its own grey. So the two a visit starts with — which slot, and whose
-        * — now lead one card with their names on them and a filled choice;
-        * everything finer is the same card's second level, under a heading
-        * that counts what it has on; and pricing and ordering, which never
-        * change which pieces are listed, stay quiet beside the title.
+        * The question this page answers is "of the pieces of this set, which is
+        * best for this kind of build". So the card reads top to bottom as that
+        * sentence: the set first, as a strip of its flowers across the head;
+        * then which piece, what it is being valued for, and whose it may be;
+        * then how the list is ordered. What remains — a substat, the roll
+        * tier, the level band, a crit cut-off, the main stat — narrows an
+        * answer that is already mostly right, so it is folded away.
         */}
       <div className="card">
-      <div className="flex flex-wrap items-end gap-x-5 gap-y-3 p-3">
+      <div className="px-3 pb-1 pt-2.5">
+        <SetStrip sets={sets} />
+      </div>
+
+      {/* Piece, what it is valued for, whose, and in what order: one row on a
+          desktop, wrapping on a phone. The ordering never removes a piece, but
+          it is the last word of the same question, so it sits on the line. */}
+      <div className="flex flex-wrap items-end gap-x-4 gap-y-2.5 border-t border-edge px-3 py-2.5">
         <Segments label={t('pieceLabel')}>
           <Segment to={href(base, filters, { slot: null, main: null })} active={!filters.slot}>
             {t('allSlots')}
@@ -132,17 +156,59 @@ export async function FilterPanel({
           })}
         </Segments>
 
+        {/*
+          * What "best" means: the stat the build scales off. Buttons rather
+          * than a select, because it is half of the question rather than a
+          * setting — and choosing one orders the list by value, which is the
+          * only ordering it prices, so picking a scaler always answers with a
+          * ranking for it.
+          */}
+        <Segments label={t('scalerLabel')} hint={t('scalerHint')}>
+          <Segment
+            to={href(base, filters, { scaler: null, ...valueSort })}
+            active={filters.scaler === null}
+          >
+            {t('generalBest')}
+          </Segment>
+          {SCALERS.map((scaler) => (
+            <Segment
+              key={scaler}
+              to={href(base, filters, { scaler, ...valueSort })}
+              active={filters.scaler === scaler}
+              title={scalerLabel(scaler)}
+            >
+              <StatIcon prop={SCALER_PROPS[scaler]} label={scalerLabel(scaler)} size={14} />
+            </Segment>
+          ))}
+        </Segments>
+
+        {/* Icons, like the slots beside them: "free" and "worn" are two
+            states a player reads at a glance, and spelled out they were the
+            widest thing on the row. */}
         <Segments label={t('whoLabel')}>
           <Segment to={href(base, filters, { held: null })} active={!filters.held}>
             {t('allHolders')}
           </Segment>
-          {HELD.map((held) => (
-            <Segment
-              key={held}
-              to={href(base, filters, { held })}
-              active={filters.held === held}
-            >
-              {heldLabel(held)}
+          {HELD.map((held) => {
+            const Icon = HELD_ICONS[held];
+            return (
+              <Segment
+                key={held}
+                to={href(base, filters, { held })}
+                active={filters.held === held}
+                title={heldLabel(held)}
+              >
+                <Icon size={15} aria-hidden />
+                <span className="sr-only">{heldLabel(held)}</span>
+              </Segment>
+            );
+          })}
+        </Segments>
+
+        <Segments label={t('sortLabel')}>
+          {SORTS.map((sort) => (
+            <Segment key={sort} to={href(base, filters, { sort })} active={filters.sort === sort}>
+              {sortLabel(sort)}
             </Segment>
           ))}
         </Segments>
@@ -151,11 +217,10 @@ export async function FilterPanel({
       {/* `open` when something inside it is on, so a shared URL does not hide
           the control that produced it. */}
       <details
-        open={filters.sub !== null || filters.quality !== null || filters.cv !== null
-          || filters.perfect || filters.set !== null || filters.main !== null}
+        open={advanced > 0}
         className="group border-t border-edge"
       >
-        <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2.5 text-xs text-text transition-colors hover:bg-surface-2/60">
+        <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-xs text-text transition-colors hover:bg-surface-2/60">
           <SlidersHorizontal size={14} aria-hidden className="text-muted" />
           <span className="font-medium">{t('moreFilters')}</span>
           {advanced > 0 && (
@@ -166,7 +231,7 @@ export async function FilterPanel({
           <ChevronRight size={14} aria-hidden className="ml-auto text-muted transition-transform group-open:rotate-90" />
         </summary>
 
-        <div className="space-y-4 border-t border-edge px-3 py-3">
+        <div className="border-t border-edge px-3 py-2.5">
           <FilterInputs
             substats={ROLLABLE.map((prop) => ({ value: prop, label: statLabel(catalog, prop) }))}
             tiers={TIER_FILTERS.map((fraction) => ({
@@ -175,10 +240,6 @@ export async function FilterPanel({
             }))}
             ownedMains={ownedMains}
           />
-
-          {/* Always a row of its own: forty-odd flowers do not share a line
-              with anything. */}
-          <SetStrip sets={sets} />
         </div>
       </details>
       </div>
@@ -254,59 +315,18 @@ async function describe(filters: ArtifactFilters, catalog: Catalog) {
       clear: { cv: null },
     });
   }
+  if (filters.lvl !== null) {
+    entries.push({
+      key: 'lvl',
+      label: filters.lvl === 20 ? '+20' : `+${filters.lvl}–${filters.lvl + 3}`,
+      clear: { lvl: null },
+    });
+  }
   if (filters.perfect) {
     entries.push({ key: 'perfect', label: t('perfectSubstatActive'), clear: { perfect: false } });
   }
 
   return entries;
-}
-
-/**
- * A dial rather than loose chips: one bordered strip whose parts are hairline
- * divided, so the five slots read as one choice of five and not as five things
- * to think about. Named above, because these two lead the page: a strip of
- * icons with no word on it was easy to read past as decoration.
- */
-function Segments({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1">
-      <p aria-hidden className="font-mono text-2xs uppercase tracking-wide text-muted">{label}</p>
-      <div
-        role="group"
-        aria-label={label}
-        className="flex items-stretch divide-x divide-edge overflow-hidden rounded-lg border border-edge bg-surface-2/50"
-      >
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function Segment({
-  to,
-  active,
-  title,
-  children,
-}: {
-  to: string;
-  active: boolean;
-  title?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={to}
-      title={title}
-      aria-current={active ? 'true' : undefined}
-      className={`flex min-h-9 items-center gap-1.5 px-3 text-xs transition-colors ${
-        active
-          ? 'bg-accent font-medium text-on-accent'
-          : 'text-muted hover:bg-surface-2 hover:text-text'
-      }`}
-    >
-      {children}
-    </Link>
-  );
 }
 
 function Chip({

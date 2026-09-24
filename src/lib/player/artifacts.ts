@@ -2,7 +2,9 @@ import 'server-only';
 
 import { getDb, type Db } from '@/lib/db/client';
 import type { ArtifactSlot } from '@/lib/data/types';
-import { critRating, critValue, pieceQuality, type CritRating, type RollQuality } from '@/lib/rules/rolls';
+import {
+  CRIT_WEIGHTS, critRating, critValue, pieceQuality, type CritRating, type RollQuality,
+} from '@/lib/rules/rolls';
 import { pieceWorth, type Scaler } from '@/lib/rules/worth';
 
 import { getProfileId } from './db';
@@ -40,6 +42,11 @@ export type OwnedArtifact = {
   /** `2 × Prob. CRIT + Daño CRIT`, over substats. Zero for a non-crit piece. */
   critValue: number;
   critRating: CritRating;
+  /**
+   * How well its crit rolls landed, line by line: the average tier of each
+   * crit substat, summed. See `critPotential`.
+   */
+  critPotential: number;
 };
 
 type Row = {
@@ -66,6 +73,7 @@ export async function readArtifacts(db: Db = getDb()): Promise<OwnedArtifact[]> 
     const piece = { rarity: row.rarity, substats };
 
     const crit = critValue(substats);
+    const quality = pieceQuality(piece);
 
     return {
       instanceId: row.id,
@@ -77,11 +85,32 @@ export async function readArtifacts(db: Db = getDb()): Promise<OwnedArtifact[]> 
       substats,
       holderId: row.assigned_character_id,
       locked: row.locked === null ? null : row.locked === 1,
-      quality: pieceQuality(piece),
+      quality,
       critValue: crit,
       critRating: critRating(crit),
+      critPotential: critPotential(quality),
     };
   });
+}
+
+/**
+ * A piece's crit potential: how well its crit rolls landed, not how many.
+ *
+ * Crit value counts what a piece has, so a finished piece always outscores a
+ * raw one — and says nothing about which raw piece is worth feeding. This
+ * reads the dice instead: each crit substat's average tier, as a fraction of
+ * the top roll, summed over the crit lines. A +0 that opened on a 3.9 crit
+ * rate is 1.0; a +20 whose 5.4 crit rate took two rolls to get there is 0.69.
+ * Both crit lines at the top tier is 2.0, the ceiling.
+ *
+ * It promises nothing about the rolls to come — those are independent of the
+ * ones before — which is the point: it is a reading of what already happened,
+ * not a forecast.
+ */
+export function critPotential(quality: { substats: RollQuality[] }) {
+  return quality.substats
+    .filter((entry) => entry.prop in CRIT_WEIGHTS)
+    .reduce((total, entry) => total + entry.efficiency, 0);
 }
 
 export type ArtifactFilter = {
@@ -99,9 +128,11 @@ export type ArtifactFilter = {
   minEfficiency?: number | null;
   /** Minimum crit value. Narrows the box to what a crit build would want. */
   minCritValue?: number | null;
+  /** The four-level band the piece sits in: 0 is +0–3, 20 is finished. */
+  levelBand?: number | null;
 };
 
-export type ArtifactSort = 'value' | 'quality' | 'cv' | 'rolls' | 'level' | 'set';
+export type ArtifactSort = 'value' | 'potential' | 'quality' | 'cv' | 'rolls' | 'level' | 'set';
 
 /**
  * Filtering and ordering, in one place because the page is a list and the list
@@ -128,6 +159,8 @@ export function filterArtifacts(
       return false;
     }
     if (filter.minCritValue && piece.critValue < filter.minCritValue) return false;
+    if (filter.levelBand !== null && filter.levelBand !== undefined
+      && Math.floor(piece.level / 4) * 4 !== filter.levelBand) return false;
     return true;
   });
 
@@ -156,6 +189,10 @@ const comparators: Record<Exclude<ArtifactSort, 'value'>, Comparator> = {
   quality: (a, b) =>
     (b.quality.efficiency ?? 0) - (a.quality.efficiency ?? 0)
     || b.quality.rolls - a.quality.rolls,
+  // How well the crit rolls landed rather than how many there were, so a raw
+  // piece that opened on a top crit roll ranks above a finished one whose crit
+  // rolls all landed low. Crit value breaks the tie.
+  potential: (a, b) => b.critPotential - a.critPotential || b.critValue - a.critValue,
   // Crit value is a narrower question than quality — it only speaks for crit
   // builds — so it is an ordering you ask for, never the default.
   cv: (a, b) => b.critValue - a.critValue || b.quality.rolls - a.quality.rolls,

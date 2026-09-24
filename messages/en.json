@@ -34,7 +34,7 @@
     "held": { "free": "free", "worn": "worn" },
     "scaler": { "atk": "ATK%", "hp": "HP%", "em": "Mastery", "def": "DEF%" },
     "sort": {
-      "value": "value", "quality": "quality", "cv": "crit value", "rolls": "rolls",
+      "potential": "potential", "value": "value", "quality": "quality", "cv": "crit value", "rolls": "rolls",
       "level": "level", "set": "set"
     },
     "critRating": {
@@ -250,11 +250,13 @@
     "setAria": "Set",
     "mainStatLabel": "main stat",
     "mainStatAria": "Main stat",
-    "scalerLabel": "scale",
-    "generalBest": "general · best",
+    "scalerLabel": "value for",
+    "generalBest": "whichever it has most",
     "scalerAria": "Scaler that counts as useful",
-    "sortLabel": "sort",
-    "sortAria": "Sort",
+    "sortLabel": "sort by",
+    "scalerHint": "Which scaler (ATK%, HP%, Mastery, DEF%) counts towards value. Not a filter: it changes the order and dims substats that serve nothing.",
+    "levelLabel": "level",
+    "levelAria": "Piece level",
     "critValueLabel": "crit value",
     "free": "free",
     "deadSubstatHint": "Doesn't scale with anything: these rolls don't count",

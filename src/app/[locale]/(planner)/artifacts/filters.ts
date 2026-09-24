@@ -23,7 +23,7 @@ import { SCALERS } from '@/lib/rules/worth';
  */
 
 export const SORTS = [
-  'value', 'quality', 'cv', 'rolls', 'level', 'set',
+  'value', 'potential', 'quality', 'cv', 'rolls', 'level', 'set',
 ] as const satisfies readonly ArtifactSort[];
 
 /**
@@ -69,6 +69,8 @@ export const artifactParsers = {
   quality: parseAsInteger,
   /** Minimum crit value, as a whole number. */
   cv: parseAsInteger,
+  /** The four-level band: 0 is +0–3, 16 is +16–19, 20 is finished. */
+  lvl: parseAsInteger,
   sort: parseAsStringLiteral(SORTS).withDefault('value'),
   /**
    * Which scaler `value` counts. Not a filter — it never changes which pieces
@@ -99,8 +101,11 @@ export function href(
 /** Everything a reset has to clear. `sort` is a view, not a narrowing. */
 export const CLEARED: Partial<ArtifactFilters> = {
   slot: null, set: null, sub: null, main: null, held: null, perfect: false,
-  quality: null, cv: null,
+  quality: null, cv: null, lvl: null,
 };
+
+/** The bands the level filter offers, one per upgrade. */
+export const LEVEL_BANDS = [0, 4, 8, 12, 16, 20] as const;
 
 export function activeCount(filters: ArtifactFilters) {
   return Object.entries(CLEARED).filter(

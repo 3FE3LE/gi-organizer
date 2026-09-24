@@ -6,6 +6,7 @@ import { ViewTransition } from 'react';
 import { GameIcon } from '@/components/game-icon';
 import { PrefetchLink } from '@/components/prefetch-link';
 import { SectionTabs } from '@/components/section-tabs';
+import { Segment, Segments } from '@/components/segmented-links';
 import { getCatalog } from '@/lib/data/catalog';
 import { elementColor } from '@/lib/data/elements';
 import {
@@ -174,26 +175,27 @@ function groupLabel(grouping: Grouping, key: string, sample: CharacterView, t: M
   }
 }
 
-/** The partitions, as links: each one is a URL, and the current one says so. */
+/**
+ * The partitions, as links: each one is a URL, and the current one says so.
+ *
+ * The same segmented strip the artifact filters use, so "choose how to see
+ * this list" looks the same on both screens.
+ */
 function GroupPicker({ locale, current, t }: { locale: string; current: Grouping; t: Messages }) {
   return (
-    <nav aria-label={t('groupBy')} className="flex flex-wrap items-center gap-1.5">
-      <span className="mr-1 font-mono text-2xs uppercase tracking-wide text-muted">{t('groupBy')}</span>
-      {GROUPINGS.map((grouping) => (
-        <Link
-          key={grouping}
-          href={`/${locale}/characters${grouping === 'owned' ? '' : `?group=${grouping}`}`}
-          aria-current={grouping === current ? 'page' : undefined}
-          scroll={false}
-          className={`rounded-full border px-2.5 py-0.5 text-xs transition-colors ${
-            grouping === current
-              ? 'border-accent bg-accent/10 text-accent'
-              : 'border-edge text-muted hover:border-accent/50 hover:text-text'
-          }`}
-        >
-          {t(`grouping.${grouping}`)}
-        </Link>
-      ))}
+    <nav aria-label={t('groupBy')}>
+      <Segments label={t('groupBy')}>
+        {GROUPINGS.map((grouping) => (
+          <Segment
+            key={grouping}
+            to={`/${locale}/characters${grouping === 'owned' ? '' : `?group=${grouping}`}`}
+            active={grouping === current}
+            scroll={false}
+          >
+            {t(`grouping.${grouping}`)}
+          </Segment>
+        ))}
+      </Segments>
     </nav>
   );
 }

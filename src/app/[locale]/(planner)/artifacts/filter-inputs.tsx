@@ -7,12 +7,11 @@ import { useQueryStates } from 'nuqs';
 
 import { FieldSelect } from '@/components/field-select';
 import { Slider } from '@/components/ui/slider';
-import { SCALERS } from '@/lib/rules/worth';
 
 import {
   CRIT_FILTERS,
   CRIT_STEP_LABELS,
-  SORTS,
+  LEVEL_BANDS,
   artifactParsers,
 } from './filters';
 
@@ -54,15 +53,15 @@ export function FilterInputs({
 
   // 0 is "any"; the rest index into the cut-offs.
   const step = filters.cv === null ? 0 : CRIT_FILTERS.indexOf(filters.cv) + 1;
-  const reading = step === 0
+  const reading = (step === 0
     ? t('any')
-    : t('cvOrMore', { rating: critRatingLabel(CRIT_STEP_LABELS[step - 1]), value: CRIT_FILTERS[step - 1] });
+    : t('cvOrMore', { rating: critRatingLabel(CRIT_STEP_LABELS[step - 1]), value: CRIT_FILTERS[step - 1] }));
 
   return (
     <div
       data-pending={pending || undefined}
-      className={`grid gap-x-4 gap-y-4 transition-opacity data-pending:opacity-50 sm:grid-cols-2 ${
-        ownedMains.length > 0 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'
+      className={`grid gap-x-4 gap-y-3 transition-opacity data-pending:opacity-50 sm:grid-cols-2 ${
+        ownedMains.length > 0 ? 'lg:grid-cols-5' : 'lg:grid-cols-4'
       }`}
     >
       <Field label={t('substatLabel')}>
@@ -108,6 +107,24 @@ export function FilterInputs({
             <span className="sr-only">{t('perfectSubstatToggle')}</span>
           </button>
         </span>
+      </Field>
+
+      {/* By upgrade, not by level: +5 and +7 have landed the same rolls and
+          are the same question, so the bands are the four-level steps the game
+          upgrades on. With "potencial" as the order, it is how the raw pieces
+          worth feeding are found. */}
+      <Field label={t('levelLabel')}>
+        <FieldSelect
+          label={t('levelAria')}
+          value={filters.lvl === null ? '' : String(filters.lvl)}
+          onValueChange={(value) => setFilters({ lvl: value === '' ? null : Number(value) })}
+          placeholder={t('any')}
+          groups={[{ options: LEVEL_BANDS.map((band) => ({
+            value: String(band),
+            label: band === 20 ? '+20' : `+${band}–${band + 3}`,
+          })) }]}
+          triggerClassName="px-2 py-1 text-xs"
+        />
       </Field>
 
       <Field label={t('critValueLabel')} hint={reading}>
@@ -160,61 +177,6 @@ export function FilterInputs({
           />
         </Field>
       )}
-    </div>
-  );
-}
-
-/**
- * How the list is priced and ordered. Neither is a filter — they never change
- * which pieces are in the list — so they sit with the count rather than behind
- * the disclosure the narrowing controls live in.
- *
- * The scaler is here rather than next to the substat chips because it is the
- * same kind of decision as the ordering: it says what counts as good, and the
- * cards grey out the rolls it prices at nothing.
- */
-export function RankControls() {
-  const t = useTranslations('artifacts');
-  const scalerLabel = useTranslations('common.scaler');
-  const sortLabel = useTranslations('common.sort');
-  const [pending, startTransition] = useTransition();
-  const [filters, setFilters] = useQueryStates(artifactParsers, {
-    shallow: false,
-    startTransition,
-  });
-
-  return (
-    <div
-      data-pending={pending || undefined}
-      className="flex flex-wrap items-center gap-x-3 gap-y-1.5 transition-opacity data-pending:opacity-50"
-    >
-      <label className="flex items-center gap-1.5">
-        <span className="font-mono text-2xs uppercase text-muted">{t('scalerLabel')}</span>
-        <FieldSelect
-          label={t('scalerAria')}
-          value={filters.scaler ?? ''}
-          onValueChange={(value) =>
-            setFilters({ scaler: value === '' ? null : (value as typeof filters.scaler) })}
-          placeholder={t('generalBest')}
-          groups={[{ options: SCALERS.map((scaler) => ({
-            value: scaler, label: scalerLabel(scaler),
-          })) }]}
-          triggerClassName="w-auto px-2 py-1 text-xs"
-        />
-      </label>
-
-      <label className="flex items-center gap-1.5">
-        <span className="font-mono text-2xs uppercase text-muted">{t('sortLabel')}</span>
-        <FieldSelect
-          label={t('sortAria')}
-          value={filters.sort}
-          onValueChange={(value) => setFilters({ sort: value as typeof filters.sort })}
-          groups={[{ options: SORTS.map((sort) => ({
-            value: sort, label: sortLabel(sort),
-          })) }]}
-          triggerClassName="w-auto px-2 py-1 text-xs"
-        />
-      </label>
     </div>
   );
 }

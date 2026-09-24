@@ -5,14 +5,13 @@ import { notFound } from 'next/navigation';
 import { getCatalog, statLabel } from '@/lib/data/catalog';
 import { isLocale } from '@/lib/data/locales';
 import { getDb } from '@/lib/db/client';
-import { filterArtifacts, readArtifacts } from '@/lib/player/artifacts';
 import { CHOOSABLE_SLOTS } from '@/lib/rules/piece-score';
 
-import { OwnedArtifactCard } from './artifact-card';
+import { ownedArtifactCardData } from './artifact-card';
 import { ArtifactList } from './artifact-list';
 import { FilterPanel } from './filter-panel';
-import { RankControls } from './filter-inputs';
 import { CLEARED, href, loadArtifactFilters } from './filters';
+import { PAGE_SIZE, queryArtifacts } from './query';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,25 +41,11 @@ export default async function ArtifactsPage({
   const catalog = await getCatalog(locale);
   const db = getDb();
 
-  // One read and one pass. The whole box is a single round trip, and the
-  // counts in the header are of the box rather than of the slice, so narrowing
-  // it further in SQL would only cost a second trip to answer the same thing.
-  const all = await readArtifacts(db);
-  const shown = filterArtifacts(
-    all,
-    {
-      slot: filters.slot,
-      setId: filters.set,
-      substat: filters.sub,
-      mainProp: filters.main,
-      held: filters.held,
-      perfectOnly: filters.perfect,
-      minEfficiency: filters.quality === null ? null : filters.quality / 100,
-      minCritValue: filters.cv,
-    },
-    filters.sort,
-    filters.scaler,
-  );
+  const { all, shown } = await queryArtifacts(filters, db);
+  const first = await Promise.all(shown.slice(0, PAGE_SIZE).map(async (piece) => ({
+    id: piece.instanceId,
+    data: await ownedArtifactCardData(piece, filters.scaler, catalog, locale),
+  })));
 
   const base = `/${locale}/artifacts`;
   const perfect = all.filter((piece) => piece.quality.hasPerfect).length;
@@ -98,7 +83,6 @@ export default async function ArtifactsPage({
             <span className="text-accent">{perfect}</span> {t('perfectSuffix')}
           </p>
         </div>
-        <RankControls />
       </header>
 
       <FilterPanel
@@ -124,15 +108,10 @@ export default async function ArtifactsPage({
         <ul className="grid grid-cols-2 gap-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
           <ArtifactList
             key={href(base, filters)}
-            items={shown.map((piece) => (
-              <OwnedArtifactCard
-                key={piece.instanceId}
-                piece={piece}
-                scaler={filters.scaler}
-                catalog={catalog}
-                locale={locale}
-              />
-            ))}
+            initial={first}
+            total={shown.length}
+            locale={locale}
+            search={href('', filters).replace(/^\?/, '')}
           />
         </ul>
       )}

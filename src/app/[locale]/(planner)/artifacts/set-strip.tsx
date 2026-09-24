@@ -53,7 +53,7 @@ export function SetStrip({ sets }: { sets: SetChoice[] }) {
   return (
     <div
       data-pending={pending || undefined}
-      className="min-w-0 space-y-2 transition-opacity data-pending:opacity-60"
+      className="min-w-0 space-y-1.5 transition-opacity data-pending:opacity-60"
     >
       <p className="font-mono text-2xs uppercase text-muted">{t('setLabel')}</p>
 
@@ -70,7 +70,7 @@ export function SetStrip({ sets }: { sets: SetChoice[] }) {
       <ul
         ref={rowRef}
         aria-label={t('setAria')}
-        className="-mx-1 flex snap-x gap-1.5 overflow-x-auto px-1 pb-2 pt-1 [scrollbar-width:thin] md:cursor-grab md:active:cursor-grabbing"
+        className="-mx-1 flex snap-x gap-1.5 overflow-x-auto px-1 pb-1.5 pt-1 [scrollbar-width:thin] md:cursor-grab md:active:cursor-grabbing"
       >
         {sets.map((set) => {
           const selected = set.setId === filters.set;
@@ -84,13 +84,13 @@ export function SetStrip({ sets }: { sets: SetChoice[] }) {
                   aria-pressed={selected}
                   aria-label={`${set.name} (${set.count})`}
                   onClick={() => setFilters({ set: selected ? null : set.setId })}
-                  className={`relative flex h-12 w-12 items-center justify-center rounded-lg border transition-colors ${
+                  className={`relative flex h-11 w-11 items-center justify-center rounded-lg border transition-colors ${
                     selected
                       ? 'border-accent bg-accent/10'
                       : 'border-edge bg-surface hover:border-edge-strong'
                   } ${set.count === 0 && !selected ? 'opacity-40 grayscale' : ''}`}
                 >
-                  <AssetImage src={set.icon} kind="relic" alt="" className="h-9 w-9" sizes="36px" />
+                  <AssetImage src={set.icon} kind="relic" alt="" className="h-8 w-8" sizes="32px" />
                   {set.count > 0 && (
                     <span className="tabular absolute -bottom-1 -right-1 rounded bg-ink px-1 font-mono text-2xs leading-4 text-muted">
                       {set.count}
@@ -108,7 +108,7 @@ export function SetStrip({ sets }: { sets: SetChoice[] }) {
           it. Live, so picking a set by keyboard also reads its bonus. */}
       <div aria-live="polite">
         {active && (
-          <div className="flex items-start gap-3 card-2 px-3 py-2">
+          <div className="flex items-start gap-3 card-2 px-3 py-1.5">
             <AssetImage src={active.icon} kind="relic" alt="" className="h-8 w-8 shrink-0" sizes="32px" />
             <div className="min-w-0 flex-1 space-y-1">
               <p className="text-sm">
@@ -262,7 +262,7 @@ function StripArrow({
       type="button"
       onClick={onClick}
       aria-label={label}
-      className={`absolute top-1 z-10 hidden h-12 w-8 items-center justify-center text-muted transition-colors hover:text-text md:flex ${
+      className={`absolute top-1 z-10 hidden h-11 w-8 items-center justify-center text-muted transition-colors hover:text-text md:flex ${
         side === 'left'
           ? '-left-1 bg-gradient-to-r from-surface via-surface/90 to-transparent'
           : '-right-1 bg-gradient-to-l from-surface via-surface/90 to-transparent'
