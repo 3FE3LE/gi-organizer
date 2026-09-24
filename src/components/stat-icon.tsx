@@ -91,16 +91,19 @@ export function StatIcon({
   const element = ELEMENT_OF_PROP[prop];
 
   return (
-    <span className={`inline-flex shrink-0 items-baseline gap-px ${className ?? ''}`}>
+    // Centred, not baseline-aligned: the drawing has no baseline, and lining
+    // the percent sign up with one left it floating above the icon like an
+    // exponent.
+    <span className={`inline-flex shrink-0 items-center gap-0.5 ${className ?? ''}`}>
       {/* An elemental bonus is drawn with the game's own emblem for its
           element — the one mark every player already reads as "Pyro". The
           line icon is kept for everything the game draws no emblem for. */}
       {element ? (
-        <span aria-hidden className="inline-flex self-center" style={{ width: size + 2, height: size + 2 }}>
+        <span aria-hidden className="inline-flex" style={{ width: size + 2, height: size + 2 }}>
           <ElementIcon element={element} className="h-full w-full" sizes="32px" />
         </span>
       ) : (
-        <Icon size={size} aria-hidden className="translate-y-[0.1em] self-center" />
+        <Icon size={size} aria-hidden />
       )}
       {/* The one thing the drawing cannot say, and the only reason the pair of
           them is unambiguous. */}
