@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 
 import { AnimatedNumber } from '@/components/animated-number';
+import { ElementIcon } from '@/components/element-icon';
 import { Slider } from '@/components/ui/slider';
 
 /**
@@ -20,6 +21,8 @@ export type AttributeRow = {
   accent?: string;
   /** The stat the character ascends into: it steps at the phase, not the level. */
   ascension: boolean;
+  /** For an elemental damage bonus, the element whose emblem leads the row. */
+  element?: string | null;
 };
 
 export type AttributeLevel = {
@@ -126,7 +129,8 @@ export function Attributes({
               key={row.prop}
               className="flex items-center justify-between gap-3 border-b border-edge/50 py-1.5"
             >
-              <dt className="truncate text-xs text-muted">
+              <dt className="flex min-w-0 items-center gap-1.5 truncate text-xs text-muted">
+                {row.element && <ElementIcon element={row.element} className="h-3.5 w-3.5" />}
                 {row.label}
                 {row.ascension && (
                   <span className="ml-1 text-2xs uppercase text-accent" title={ascensionLabel}>

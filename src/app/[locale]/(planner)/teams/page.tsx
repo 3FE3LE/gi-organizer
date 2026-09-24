@@ -314,6 +314,7 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
       resonances: synergy.resonances.map((resonance) => ({
         id: resonance.id,
         color: elementColor(resonance.elementType ?? 'ELEMENT_NONE'),
+        element: resonance.elementType,
         members: resonance.members.map(name),
       })),
       mechanics: synergy.mechanics.map((mechanic) => ({

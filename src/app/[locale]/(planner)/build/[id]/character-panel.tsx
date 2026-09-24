@@ -4,12 +4,13 @@ import { ViewTransition } from 'react';
 
 import { ArtifactCard } from '@/components/artifact-card';
 import { EffectButton } from '@/components/effect-dialog';
+import { ElementIcon } from '@/components/element-icon';
 import { GameIcon } from '@/components/game-icon';
 import { Badge } from '@/components/ui/badge';
 import {
   type Catalog, enkaEntry, formatSetEffect, propLabel, setEffects,
 } from '@/lib/data/catalog';
-import { elementColor, elementDamageProp } from '@/lib/data/elements';
+import { elementColor, elementDamageProp, elementOfDamageProp } from '@/lib/data/elements';
 import type { Locale } from '@/lib/data/locales';
 import { formatPropValue, isPercentProp } from '@/lib/data/props';
 import { resolveIcon } from '@/lib/data/icon';
@@ -207,6 +208,7 @@ export async function CharacterPanel({
     label: propLabel(catalog, prop),
     percent: isPercentProp(prop),
     accent: prop === damageProp ? accent : undefined,
+    element: elementOfDamageProp(prop),
     // A percent ascension lands in its flat row's total — ATK% in ATK — so
     // that is the row it marks.
     ascension: prop === (ASCENDS_INTO[character.substatType] ?? character.substatType),
@@ -381,7 +383,13 @@ export async function CharacterPanel({
               {'★'.repeat(character.rarity)}
             </span>
             <span className="font-mono text-xs uppercase text-muted">
-              {character.elementText} · {character.weaponText}
+              {/* The emblem stands for the element; its name stays for the
+                  reader who cannot see it. */}
+              <span className="inline-flex items-center gap-1 align-middle">
+                <ElementIcon element={character.elementType} className="h-4 w-4" />
+                {character.elementText}
+              </span>
+              {' · '}{character.weaponText}
               {/* `normal-case`: the line is uppercased and a version is not a
                   word — `V1.0` reads as a name, `v1.0` as a number. */}
               <span className="normal-case"> · {t('factVersion', { version: character.version })}</span>

@@ -19,6 +19,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { type AssetKind, iconUrl } from '../src/lib/data/assets.ts';
+import { ELEMENT_COLORS, elementIcon } from '../src/lib/data/elements.ts';
 import type {
   ById,
   CoreArtifact,
@@ -83,6 +84,9 @@ async function collect(): Promise<Target[]> {
     // catalog, so it is collected from that table instead.
     talent: Object.values(enka).flatMap((entry) => Object.values(entry.skills)),
     constellation: Object.values(enka).flatMap((entry) => entry.constellationIcons),
+    // The seven emblems, named by hand in `elements.ts` — checked like the rest
+    // so a host dropping one fails here rather than as a blank on screen.
+    element: Object.keys(ELEMENT_COLORS).map(elementIcon).filter(nonNull),
   };
 
   return (Object.entries(groups) as [AssetKind, string[]][]).flatMap(([kind, names]) =>

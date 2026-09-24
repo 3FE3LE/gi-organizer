@@ -36,3 +36,28 @@ const ELEMENT_DAMAGE_PROPS: Record<string, string> = {
 export function elementDamageProp(elementType: string): string | null {
   return ELEMENT_DAMAGE_PROPS[elementType] ?? null;
 }
+
+/**
+ * The game's own emblem per element, as it names them internally — the
+ * internal names are older than the public ones, so Electro is `Electric`,
+ * Anemo `Wind`, Geo `Rock`, Dendro `Grass` and Cryo `Ice`.
+ */
+const ELEMENT_ICONS: Record<string, string> = {
+  ELEMENT_ANEMO: 'UI_Buff_Element_Wind',
+  ELEMENT_GEO: 'UI_Buff_Element_Rock',
+  ELEMENT_ELECTRO: 'UI_Buff_Element_Electric',
+  ELEMENT_DENDRO: 'UI_Buff_Element_Grass',
+  ELEMENT_HYDRO: 'UI_Buff_Element_Water',
+  ELEMENT_PYRO: 'UI_Buff_Element_Fire',
+  ELEMENT_CRYO: 'UI_Buff_Element_Ice',
+};
+
+/** `null` for the elementless — the Traveler before a statue, and physical. */
+export function elementIcon(elementType: string): string | null {
+  return ELEMENT_ICONS[elementType] ?? null;
+}
+
+/** The element a damage-bonus stat belongs to, for drawing its emblem. */
+export function elementOfDamageProp(prop: string): string | null {
+  return Object.entries(ELEMENT_DAMAGE_PROPS).find(([, damage]) => damage === prop)?.[0] ?? null;
+}

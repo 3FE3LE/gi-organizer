@@ -19,7 +19,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
-import { ELEMENT_COLORS } from '@/lib/data/elements';
+import { ElementIcon } from '@/components/element-icon';
 import { isPercentProp } from '@/lib/data/props';
 
 /**
@@ -92,12 +92,16 @@ export function StatIcon({
 
   return (
     <span className={`inline-flex shrink-0 items-baseline gap-px ${className ?? ''}`}>
-      <Icon
-        size={size}
-        aria-hidden
-        className="translate-y-[0.1em] self-center"
-        style={element ? { color: ELEMENT_COLORS[element] } : undefined}
-      />
+      {/* An elemental bonus is drawn with the game's own emblem for its
+          element — the one mark every player already reads as "Pyro". The
+          line icon is kept for everything the game draws no emblem for. */}
+      {element ? (
+        <span aria-hidden className="inline-flex self-center" style={{ width: size + 2, height: size + 2 }}>
+          <ElementIcon element={element} className="h-full w-full" sizes="32px" />
+        </span>
+      ) : (
+        <Icon size={size} aria-hidden className="translate-y-[0.1em] self-center" />
+      )}
       {/* The one thing the drawing cannot say, and the only reason the pair of
           them is unambiguous. */}
       {isPercentProp(prop) && (

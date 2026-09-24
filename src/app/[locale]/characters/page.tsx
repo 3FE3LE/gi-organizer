@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ViewTransition } from 'react';
 
+import { ElementIcon } from '@/components/element-icon';
 import { GameIcon } from '@/components/game-icon';
 import { PrefetchLink } from '@/components/prefetch-link';
 import { SectionTabs } from '@/components/section-tabs';
@@ -138,7 +139,10 @@ export default async function CharactersPage({
             return (
               <section key={group.key}>
                 {heading && (
-                  <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-muted">
+                  <h2 className="mb-3 flex items-center gap-1.5 text-sm font-medium uppercase tracking-wide text-muted">
+                    {grouping === 'element' && (
+                      <ElementIcon element={group.characters[0].elementType} className="h-5 w-5" sizes="20px" />
+                    )}
                     {heading}{' '}
                     <span className="font-mono">
                       {grouping === 'owned' ? group.characters.length : `${count}/${group.characters.length}`}
@@ -410,6 +414,7 @@ function Gallery({
                     </div>
                   </ViewTransition>
 
+                  <ElementBadge element={character.elementType} label={character.elementText} />
                   {entry && <ConstellationBadge entry={entry} />}
                 </div>
 
@@ -432,6 +437,8 @@ function Gallery({
 
 /** Lower right of the portrait, just outside its 40px radius. */
 const CONSTELLATION_ANGLE = 35;
+/** Upper left, across the portrait from the constellation. */
+const ELEMENT_ANGLE = 215;
 /** Just outside the 40px radius, so the badge overlaps the border, not the face. */
 const RIM = 42;
 
@@ -452,6 +459,27 @@ function ConstellationBadge({ entry }: { entry: CharacterBuild }) {
     >
       C{entry.constellation}
     </RimBadge>
+  );
+}
+
+/**
+ * The element's emblem on the rim, for every character, owned or not: it is
+ * a fact about who they are, and the one a team is built around.
+ */
+function ElementBadge({ element, label }: { element: string; label: string }) {
+  const radians = (ELEMENT_ANGLE * Math.PI) / 180;
+
+  return (
+    <span
+      title={label}
+      className="absolute flex h-6 w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-edge bg-surface shadow-sm"
+      style={{
+        left: `calc(50% + ${(Math.cos(radians) * RIM).toFixed(2)}px)`,
+        top: `calc(50% + ${(Math.sin(radians) * RIM).toFixed(2)}px)`,
+      }}
+    >
+      <ElementIcon element={element} label={label} className="h-4 w-4" />
+    </span>
   );
 }
 

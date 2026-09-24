@@ -52,6 +52,11 @@ const ASSETS = {
   talent: { host: 'enka', width: 128, height: 128 },
   /** Constellation icons (`UI_Talent_S_Lisa_01`). Enka only. */
   constellation: { host: 'enka', width: 100, height: 100 },
+  /**
+   * The seven element emblems (`UI_Buff_Element_Fire`). Amber, because Enka
+   * is missing Cryo's; see `elementIcon` for the names.
+   */
+  element: { host: 'amber', width: 64, height: 64 },
 } as const satisfies Record<
   string,
   { host: keyof typeof HOSTS; width: number; height: number }

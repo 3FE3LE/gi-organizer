@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 
+import { ElementIcon } from '@/components/element-icon';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 /**
@@ -22,6 +23,8 @@ export type SynergyView = {
     id: string;
     /** The element's accent, or the neutral one for Protective Canopy. */
     color: string;
+    /** The game's element enum, for its emblem. `null` for Protective Canopy. */
+    element: string | null;
     members: string[];
   }[];
   mechanics: {
@@ -78,6 +81,7 @@ export function SynergyPanel({ synergy }: { synergy: SynergyView }) {
                 key={resonance.id}
                 value={`resonance-${resonance.id}`}
                 accent={resonance.color}
+                icon={resonance.element ? <ElementIcon element={resonance.element} /> : null}
                 title={resonanceName(resonance.id)}
                 detail={resonance.members.join(' · ')}
               >
@@ -172,6 +176,7 @@ function Effect({
   title,
   detail,
   accent,
+  icon = null,
   warning = null,
   children,
 }: {
@@ -179,6 +184,8 @@ function Effect({
   title: string;
   detail: string;
   accent?: string;
+  /** Drawn before the title: a resonance's element. */
+  icon?: React.ReactNode;
   warning?: string | null;
   children: React.ReactNode;
 }) {
@@ -189,6 +196,7 @@ function Effect({
       style={accent ? { borderLeftWidth: 2, borderLeftColor: accent } : undefined}
     >
       <AccordionTrigger className="gap-2 rounded px-2 py-1.5 text-xs font-normal hover:no-underline">
+        {icon && <span className="self-start pt-px">{icon}</span>}
         <span className="min-w-0 flex-1">
           <span className="block">{title}</span>
           <span className="block font-mono text-2xs text-muted">{detail}</span>
