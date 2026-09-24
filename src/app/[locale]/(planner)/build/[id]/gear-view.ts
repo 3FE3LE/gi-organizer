@@ -69,6 +69,8 @@ async function candidateViews(context: BuildContext) {
       holder: format.holderName(piece.equippedTo),
       holderId: piece.equippedTo,
       stats: format.artifactStats(piece),
+      refinement: null,
+      passive: null,
     };
   };
 
@@ -85,6 +87,10 @@ async function candidateViews(context: BuildContext) {
       holder: format.holderName(weapon.equippedTo),
       holderId: weapon.equippedTo,
       stats: format.weaponStats(weapon),
+      refinement: weapon.refinement,
+      passive: definition?.effectName
+        ? { name: definition.effectName, refinements: definition.refinements }
+        : null,
     };
   };
 

@@ -75,7 +75,7 @@ for (const { name, path } of PAGES) {
 test('the candidates dialog keeps focus and gives it back', async ({ page }) => {
   await page.goto(`/es/build/${SEEDED_CHARACTER}`);
 
-  const opener = page.getByRole('button', { name: 'Editar' }).first();
+  const opener = page.getByRole('button', { name: 'Cambiar', exact: true }).first();
   await opener.click();
 
   const dialog = page.getByRole('dialog');

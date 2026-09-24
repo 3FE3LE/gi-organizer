@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeftRight, Pencil, X } from 'lucide-react';
+import { ArrowLeftRight, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useActionState, useEffect, useState } from 'react';
 
@@ -19,14 +19,19 @@ import { loadSlotAction } from './slot-actions';
  * The candidate lists used to be a tab of their own — six slots, all of them
  * built on every render, shown in a layout that repeated what the character
  * panel above already said. The panel is where a player looks at their gear, so
- * it is where changing it belongs: hover a card and the two things you can do
- * to it appear over it.
+ * it is where changing it belongs: hover a card and the control appears over it.
  *
- * Nothing about the card changes. The controls sit on top of it, revealed on
+ * One control, not two. There used to be "editar" and "comparar" side by side,
+ * opening the same list — the second with its best row already unfolded. In
+ * practice they showed the same thing, so the list now always opens that way:
+ * the best candidate laid against what is worn, every other row one click from
+ * the same comparison, and the equip button on each.
+ *
+ * Nothing about the card changes. The control sits on top of it, revealed on
  * hover or keyboard focus, and always visible below `sm` — a phone has no
  * hover, and a control that only exists on a pointer device does not exist.
- * Below `sm` they also drop their labels: two icons a thumb already knows
- * cost far less width than "editar" and "comparar" spelled out next to them.
+ * Below `sm` it also drops its label: an icon a thumb already knows costs far
+ * less width than the word spelled out next to it.
  *
  * The list itself is fetched when the dialog opens. Scoring every owned piece
  * of a shape against the build is real work, and it is work for one slot at a
@@ -48,7 +53,7 @@ export function GearActions({
   title: string;
 }) {
   const t = useTranslations('build');
-  const [mode, setMode] = useState<'edit' | 'compare' | null>(null);
+  const [open, setOpen] = useState(false);
 
   return (
     <>
@@ -60,18 +65,15 @@ export function GearActions({
         className={`absolute inset-x-0 bottom-0 flex justify-center gap-1 p-1.5 opacity-0 transition-opacity
           group-hover:opacity-100 group-focus-within:opacity-100 max-sm:static max-sm:mt-1.5 max-sm:justify-end max-sm:opacity-100`}
       >
-        <Action icon={<Pencil size={12} />} label={t('editButton')} onClick={() => setMode('edit')} />
         <Action
           icon={<ArrowLeftRight size={12} />}
-          label={t('compareButton')}
-          onClick={() => setMode('compare')}
+          label={t('changeButton')}
+          onClick={() => setOpen(true)}
         />
       </div>
 
-      {/* One dialog, two ways in: "editar" opens the list, "comparar" opens it
-          with the best candidate already unfolded against what is worn. */}
-      <Dialog open={mode !== null} onOpenChange={(next) => { if (!next) setMode(null); }}>
-        {mode && (
+      <Dialog open={open} onOpenChange={setOpen}>
+        {open && (
           <DialogContent
             showCloseButton={false}
             className="w-full max-w-3xl gap-0 overflow-hidden rounded-xl border border-edge-strong bg-surface p-0 ring-0 sm:max-w-3xl"
@@ -82,7 +84,6 @@ export function GearActions({
               buildId={buildId}
               slot={slot}
               title={title}
-              compare={mode === 'compare'}
             />
           </DialogContent>
         )}
@@ -106,9 +107,9 @@ function Action({
       onClick={onClick}
       aria-label={label}
       // Icon only below `sm`: the label is what makes this readable with a
-      // mouse hovering it, and dead weight on a screen where these are
-      // already always on. `aria-label` keeps the name for anyone who
-      // can't see the icon either way.
+      // mouse hovering it, and dead weight on a screen where it is already
+      // always on. `aria-label` keeps the name for anyone who can't see the
+      // icon either way.
       className="pointer-events-auto flex items-center gap-1.5 field/90 px-2 py-1 text-2xs text-muted shadow-sm transition-colors hover:border-accent hover:text-accent max-sm:px-1.5"
     >
       {icon}
@@ -132,14 +133,12 @@ function SlotDialog({
   buildId,
   slot,
   title,
-  compare,
 }: {
   characterId: number;
   locale: string;
   buildId: string | null;
   slot: string;
   title: string;
-  compare: boolean;
 }) {
   const t = useTranslations('build');
   const [view, setView] = useState<SlotView | null>(null);
@@ -177,8 +176,12 @@ function SlotDialog({
             {title}
           </DialogTitle>
           <p className="truncate text-sm">
+            {/* An artifact is read by its icon and its main stat, the same as
+                the rows below; a weapon's name is the piece itself. */}
             {view?.equipped
-              ? <>{view.equipped.label} <span className="text-muted">{view.equipped.detail}</span></>
+              ? view.kind === 'weapon'
+                ? <>{view.equipped.label} <span className="text-muted">{view.equipped.detail}</span></>
+                : <span className="font-mono text-xs text-muted">{view.equipped.detail}</span>
               : <span className="text-muted">{t('emptySlotText')}</span>}
           </p>
         </div>
@@ -232,9 +235,9 @@ function SlotDialog({
             characterId={characterId}
             action={move}
             pending={pending}
-            // "Compare" is the same list with the argument already made: the
-            // best candidate open against what is worn.
-            defaultOpen={compare && index === 0}
+            // The argument already made: the best candidate open against
+            // what is worn.
+            defaultOpen={index === 0}
           />
         ))}
         {view?.candidates.length === 0 && (

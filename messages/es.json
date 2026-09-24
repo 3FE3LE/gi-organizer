@@ -63,10 +63,6 @@
       "shielder": "Escudero", "buffer": "Potenciador", "debuffer": "Debilitador",
       "battery": "Batería", "driver": "Conductor", "enabler": "Habilitador"
     },
-    "weaponSource": {
-      "forge": "forjable", "battlepass": "pase de batalla",
-      "starglitter": "tienda de estelarita", "event": "de evento"
-    },
     "talent": { "auto": "Normal", "skill": "Habilidad", "burst": "Definitiva" },
     "moveKind": {
       "equip-artifact": "equipó artefacto", "unequip-artifact": "quitó artefacto",
@@ -393,11 +389,6 @@
     "importHintSuffix": "para actualizarlos.",
     "gearPanelTitle": "Equipamiento",
     "gearSummaryNoSet": "sin set",
-    "targetWeaponLabel": "Arma objetivo",
-    "weaponPlaceholder": "sin arma objetivo…",
-    "weaponRefinementAria": "refinamiento del arma objetivo",
-    "refinementNotPlannable": "no forjable — el refinamiento son copias que te tocan, no trabajo que hagas",
-    "equippedNow": "lleva ahora:",
     "artifactSetLabel": "Set de artefactos",
     "fourPieces": "4 piezas",
     "twoPlusTwo": "2 + 2",
@@ -444,8 +435,10 @@
     "artifactsHeading": "Artefactos",
     "levelPrefix": "Nv.",
     "emptySlotText": "vacío",
-    "editButton": "Editar",
-    "compareButton": "Comparar",
+    "changeButton": "Cambiar",
+    "refinementSlider": "refinamiento a previsualizar",
+    "weaponGoalLabel": "Arma",
+    "weaponGoalHint": "la equipada, a nivel 90 — cámbiala desde la vista de detalle",
     "candidatesForAria": "Candidatas para {title}",
     "removeButton": "Quitar",
     "closeAria": "Cerrar",
@@ -489,9 +482,6 @@
     "missingToFarm": " · {available}/{needed} · a farmear",
     "pairingTwoPlusTwo": " · 2+2 con {names}",
     "pairingPieces": " · {pieces}pc",
-    "weaponFree": "{spare} libre",
-    "weaponCommitted": "ya comprometida",
-    "equippedWeaponLine": "{name} Nv.{level} R{refinement}",
     "actions": {
       "unreadableMove": "movimiento ilegible",
       "nowHeldByNobody": "ya no lo lleva nadie; vuelve a intentarlo",

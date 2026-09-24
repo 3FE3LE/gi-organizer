@@ -63,10 +63,6 @@
       "shielder": "Shielder", "buffer": "Buffer", "debuffer": "Debuffer",
       "battery": "Battery", "driver": "Driver", "enabler": "Enabler"
     },
-    "weaponSource": {
-      "forge": "forgeable", "battlepass": "battle pass",
-      "starglitter": "starglitter shop", "event": "event"
-    },
     "talent": { "auto": "Normal", "skill": "Skill", "burst": "Burst" },
     "moveKind": {
       "equip-artifact": "equipped artifact", "unequip-artifact": "unequipped artifact",
@@ -393,11 +389,6 @@
     "importHintSuffix": "to update them.",
     "gearPanelTitle": "Gear",
     "gearSummaryNoSet": "no set",
-    "targetWeaponLabel": "Target weapon",
-    "weaponPlaceholder": "no target weapon…",
-    "weaponRefinementAria": "target weapon refinement",
-    "refinementNotPlannable": "not forgeable — refinement is copies you draw, not work you do",
-    "equippedNow": "currently equipped:",
     "artifactSetLabel": "Artifact set",
     "fourPieces": "4 pieces",
     "twoPlusTwo": "2 + 2",
@@ -444,8 +435,10 @@
     "artifactsHeading": "Artifacts",
     "levelPrefix": "Lv.",
     "emptySlotText": "empty",
-    "editButton": "Edit",
-    "compareButton": "Compare",
+    "changeButton": "Change",
+    "refinementSlider": "refinement to preview",
+    "weaponGoalLabel": "Weapon",
+    "weaponGoalHint": "the equipped one, to level 90 — swap it from the detail view",
     "candidatesForAria": "Candidates for {title}",
     "removeButton": "Remove",
     "closeAria": "Close",
@@ -489,9 +482,6 @@
     "missingToFarm": " · {available}/{needed} · to farm",
     "pairingTwoPlusTwo": " · 2+2 with {names}",
     "pairingPieces": " · {pieces}pc",
-    "weaponFree": "{spare} free",
-    "weaponCommitted": "already committed",
-    "equippedWeaponLine": "{name} Lv.{level} R{refinement}",
     "actions": {
       "unreadableMove": "unreadable move",
       "nowHeldByNobody": "nobody's holding it anymore; try again",

@@ -38,7 +38,7 @@ const BUILD = `/es/build/${CHARACTER}?tab=objective`;
  *
  * Scoped through the trigger's `aria-controls` rather than by taking the first
  * list on the page: the build page has six, and picking buttons out of "the"
- * list quietly selected a Comparar from the artifact slots instead.
+ * list quietly selected a Cambiar from the artifact slots instead.
  *
  * Addressed by its label and not by its text, because its text is the set it
  * holds — so a test that ran after one which chose a set could not find it.
@@ -143,7 +143,7 @@ test('the levelling target reaches the farming plan', async ({ page }) => {
   await expect(page.getByText(/guardado/)).toBeVisible();
 
   await page.goto('/es/plan?range=all');
-  await expect(page.getByText(/build con objetivo de nivel/)).toBeVisible();
+  await expect(page.getByText(/builds? con objetivo de nivel/)).toBeVisible();
 });
 
 test('the goal rows start at three and grow on request', async ({ page }) => {
@@ -174,40 +174,16 @@ test('a role and its priority save together with the rest', async ({ page }) => 
 });
 
 /**
- * Refinement is copies, and copies are only a plan where they can be forged.
+ * The goal does not pick a weapon.
  *
- * A five-star or an off-banner four-star is a wish: nothing the player does
- * between now and the next copy changes anything, so the field states what the
- * account holds instead of asking for a target. The forged bows here are
- * Prototype Crescent and Hamayumi; the five-star is Elegy for the End and the
- * battle-pass one is The Viridescent Hunt.
+ * Naming a weapon the account may not hold is the same wish as a goal for a
+ * character nobody owns. The objective reads the equipped one — its passive,
+ * with the refinement slider — and swapping it lives in the detail view.
  */
-test('the refinement target asks only for weapons that can be forged', async ({ page }) => {
+test('the objective shows the equipped weapon instead of a picker', async ({ page }) => {
   await page.goto(BUILD);
 
-  const weapon = page.getByRole('combobox', { name: 'Arma objetivo', exact: true });
-  const refinement = page.getByRole('spinbutton', { name: 'refinamiento del arma objetivo' });
-  const stated = page.getByText('no forjable');
-
-  const pick = async (name: string) => {
-    await weapon.click();
-    await page.getByRole('option', { name, exact: false }).first().click();
-  };
-
-  // Forged, so the copies are farmable and the stepper is there.
-  await pick('Arco Compuesto');
-  await expect(refinement).toBeVisible();
-  await expect(stated).toHaveCount(0);
-
-  // A five-star: copies are wishes, so the field states what the account holds.
-  await pick('Alas Celestiales');
-  await expect(refinement).toHaveCount(0);
-  await expect(stated).toBeVisible();
-
-  await pick('Masacrademonios');
-  await expect(refinement).toBeVisible();
-
-  // The battle pass hands out one copy per cycle: a date, not a cost.
-  await pick('Cazadora Esmeralda');
-  await expect(refinement).toHaveCount(0);
+  await expect(page.getByRole('combobox', { name: 'Arma objetivo', exact: true })).toHaveCount(0);
+  await expect(page.getByText('la equipada, a nivel 90')).toBeVisible();
+  await expect(page.getByRole('slider', { name: 'refinamiento a previsualizar' }).first()).toBeVisible();
 });

@@ -67,7 +67,8 @@ export type UpgradeCost = {
  * cannot drift apart. It already drops anything the bag covers.
  */
 export async function upgradeCostFor(context: BuildContext): Promise<UpgradeCost> {
-  const { catalog, character, characterId, db, loadout } = context;
+  const { catalog, character, characterId, db, gear, loadout } = context;
+  const weapon = gear.weapon ? catalog.weapons.get(gear.weapon.weaponId) : undefined;
 
   const from: Progress = {
     level: loadout?.level ?? 1,
@@ -91,13 +92,22 @@ export async function upgradeCostFor(context: BuildContext): Promise<UpgradeCost
     target: to,
     ascensionCosts: character.costs,
     talentCosts: character.talentCosts,
-    weapon: null,
+    // The weapon in hand, to ninety: the goal no longer names a different one,
+    // so the one equipped is the one this plan is for. Six is the last phase.
+    weapon: gear.weapon && weapon
+      ? {
+          weaponId: weapon.id,
+          costs: weapon.costs,
+          ascension: gear.weapon.ascension,
+          target: 6,
+        }
+      : null,
   };
 
   const stock = await readMaterialStock(db, await getProfileId(db));
   const needs = computeDemand([source], stock);
 
-  const families = familiesOf(catalog, character);
+  const families = familiesOf(catalog, character, weapon ? [weapon.costs] : []);
   const rows = new Map<string, CostRow>();
   let mora = { needed: 0, owned: 0, short: 0 };
 
@@ -182,10 +192,15 @@ function rankOf(catalog: Catalog, row: CostRow) {
  * tables when they share an id — which is exactly the mob drop, the one family
  * that really does pay for both.
  */
-export function familiesOf(catalog: Catalog, character: CharacterView): Map<number, string> {
+export function familiesOf(
+  catalog: Catalog,
+  character: CharacterView,
+  /** Any other table billed to the same plan — the weapon's, when there is one. */
+  extra: CostsByPhase[] = [],
+): Map<number, string> {
   const groups: Set<number>[] = [];
 
-  for (const table of [character.costs, character.talentCosts] as CostsByPhase[]) {
+  for (const table of [character.costs, character.talentCosts, ...extra] as CostsByPhase[]) {
     const byRank = new Map<number, Set<number>>();
 
     for (const items of Object.values(table)) {

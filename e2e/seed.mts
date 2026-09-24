@@ -13,7 +13,7 @@ import { rmSync } from 'node:fs';
 
 import { getDb } from '@/lib/db/client';
 import { upsertCharacter } from '@/lib/player/characters';
-import { getProfileId } from '@/lib/player/db';
+import { getProfileId, persistInventory } from '@/lib/player/db';
 import { saveBuild } from '@/lib/player/builds';
 
 /** Venti. Anemo, four-star weapon, present in every version of the catalog. */
@@ -36,6 +36,24 @@ await upsertCharacter(db, profileId, {
   talent: { auto: 1, skill: 1, burst: 1 },
   talentBonus: null,
 }, { source: 'manual', observedAt: new Date().toISOString() });
+
+// A weapon in hand, because the objective reads the equipped one rather than
+// offering a picker: without it that half of the tab never renders. Favonius
+// Warbow at R3, so the refinement slider opens somewhere other than its ends.
+await persistInventory(db, profileId, { artifacts: [], weapons: [] }, {
+  artifacts: [],
+  weapons: [{
+    id: 'e2e-weapon',
+    weaponId: 15401,
+    level: 70,
+    ascension: 4,
+    refinement: 3,
+    lock: null,
+    source: 'manual',
+    equippedTo: SEEDED_CHARACTER,
+    seenAt: new Date().toISOString(),
+  }],
+});
 
 // One goal, deliberately blank: the tests are about filling it in and having
 // what they filled still be there afterwards.

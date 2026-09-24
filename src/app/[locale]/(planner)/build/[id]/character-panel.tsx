@@ -24,6 +24,7 @@ import { Abilities, type Ability } from './abilities';
 import { ArtifactSlotSwitcher } from './artifact-slot-switcher';
 import { BaseStats, type BaseStatRow } from './base-stats';
 import { GearActions } from './gear-actions';
+import { WeaponButton, type WeaponInfo } from './weapon-passive';
 
 /**
  * The character screen: what is equipped right now and what it adds up to.
@@ -139,15 +140,34 @@ export async function CharacterPanel({
     ? catalog.weapons.get(loadout.weapon.weaponId)
     : undefined;
 
-  // The passive at the refinement actually equipped, not the level-1 text the
-  // game leads with — a copy nobody has yet is not what this weapon is doing.
-  // A handful of the lowest-rarity weapons carry no passive at all, which is
-  // why this checks for one rather than assuming every weapon has a line to
-  // show.
-  const weaponEffect = weaponDefinition?.effectName && loadout.weapon
-    ? `${weaponDefinition.effectName}: ${
-      weaponDefinition.refinements[loadout.weapon.refinement - 1] || weaponDefinition.refinements[0]
-    }`
+  // The weapon as its dialog reads it: the numbers on the card, and the passive
+  // with a slider over every refinement. The slider opens on the copy equipped
+  // — a copy nobody has yet is not what this weapon is doing. A handful of the
+  // lowest-rarity weapons carry no passive at all, which is why this checks
+  // for one rather than assuming every weapon has a line to show.
+  const weaponInfo: WeaponInfo | null = loadout.weapon && weaponDefinition
+    ? {
+        name: weaponDefinition.name,
+        icon: await resolveIcon(weaponDefinition.icon, 'weapon'),
+        rarity: weaponDefinition.rarity,
+        level: loadout.weapon.level,
+        refinement: loadout.weapon.refinement,
+        stats: [
+          {
+            label: propLabel(catalog, 'FIGHT_PROP_ATTACK'),
+            text: String(Math.round(loadout.weapon.baseAttack)),
+          },
+          ...(loadout.weapon.prop
+            ? [{
+                label: propLabel(catalog, loadout.weapon.prop),
+                text: formatPropValue(loadout.weapon.prop, loadout.weapon.value, 'ratio', locale),
+              }]
+            : []),
+        ],
+        passive: weaponDefinition.effectName
+          ? { name: weaponDefinition.effectName, refinements: weaponDefinition.refinements }
+          : null,
+      }
     : null;
 
   const bySlot = new Map(loadout.pieces.map((piece) => [piece.slot, piece]));
@@ -510,17 +530,16 @@ export async function CharacterPanel({
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="flex flex-wrap items-center gap-2">
-                    <EffectButton
-                      title={weaponDefinition.name}
-                      lines={weaponEffect ? [weaponEffect] : []}
-                      hint={weaponEffect ?? weaponDefinition.name}
-                      closeLabel={common('close')}
-                      className={`max-w-full truncate text-left text-sm ${
-                        weaponEffect ? 'underline decoration-edge-strong decoration-dotted underline-offset-2' : ''
-                      }`}
-                    >
-                      {weaponDefinition.name}
-                    </EffectButton>
+                    {weaponInfo && (
+                      <WeaponButton
+                        weapon={weaponInfo}
+                        className={`max-w-full truncate text-left text-sm ${
+                          weaponInfo.passive ? 'underline decoration-edge-strong decoration-dotted underline-offset-2' : ''
+                        }`}
+                      >
+                        {weaponDefinition.name}
+                      </WeaponButton>
+                    )}
                     <span className="rounded border border-edge px-1 font-mono text-2xs text-muted">
                       {t('levelPrefix')} {loadout.weapon.level}
                     </span>

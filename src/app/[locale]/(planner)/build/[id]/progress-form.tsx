@@ -30,6 +30,7 @@ import {
 import { Button, buttonVariants } from '@/components/ui/button';
 import { FieldSelect } from '@/components/field-select';
 import { Slider } from '@/components/ui/slider';
+import { AssetImage } from '@/components/asset-image';
 import { ActionStatus } from '@/components/action-status';
 import {
   BREAKPOINTS,
@@ -44,6 +45,7 @@ import {
 import { applyTemplateAction, deleteBuildAction } from './build-actions';
 import { type ProgressState, saveProgressAction } from './progress-actions';
 import { SetPicker, type SetOptions } from './set-picker';
+import { WeaponPassive, type WeaponInfo } from './weapon-passive';
 
 /**
  * Where this character is, and where they are going.
@@ -86,23 +88,9 @@ export type GoalProp = Option & {
   currentValue: number;
 };
 
-/**
- * Ranked first, then everything else.
- *
- * The suggestions used to be a separate list further down the page, which made
- * choosing a weapon a two-step act: read the ranking there, find the name here.
- * They are the same decision, so they are the same control.
- */
-export type RankedOptions = { suggested: Option[]; all: Option[] };
-
 export type ProgressOptions = {
   roles: Option[];
   substats: Option[];
-  weapons: RankedOptions;
-  /** Weapon ids whose refinement is farmable — see `objective-view.ts`. */
-  forgeable: number[];
-  /** Each owned weapon's refinement on this character — see `rules/refinement.ts`. */
-  ownedRefinements: Record<number, number>;
   /** Richer than the rest: a set is picked by its icon and its bonus. */
   sets: SetOptions;
   mainStatsBySlot: Record<string, Option[]>;
@@ -125,10 +113,11 @@ export type ProgressValues = {
     ascended: boolean;
     talents: { auto: number; skill: number; burst: number };
   };
+  /** The equipped weapon, which is what the goal saves — never picked here. */
   weaponId: number | null;
   weaponRefinement: number | null;
-  /** What is on the character right now, for the line under the picker. */
-  equippedWeapon: string | null;
+  /** The same weapon as the panel shows it. */
+  weapon: WeaponInfo | null;
   setIds: number[];
   mainStats: Record<string, string>;
   goals: { prop: string; min: number }[];
@@ -293,22 +282,6 @@ function ProgressForm({
     control: form.control,
     name: ['targetLevel', 'setIds', 'mainStats', 'substats', 'goals'],
   });
-  const weaponId = useWatch({ control: form.control, name: 'weaponId' });
-
-  /*
-   * A refinement is only a target when copies can be worked towards.
-   *
-   * Forged weapons take a billet and ore whenever the player wants another
-   * copy, so R1 → R5 is a plan. Everything else — every five-star, every
-   * four-star off a banner, the gacha-shop and event weapons — is copies you
-   * either have or wish for, and typing a number here would have the planner
-   * cost out a wish. So it reads what the account holds and stops being a
-   * control. The stored value is left exactly as it is: nothing is rewritten
-   * because a field went quiet.
-   */
-  const plannableRefinement =
-    weaponId !== '' && options.forgeable.includes(Number(weaponId));
-
   const twoPlusTwo = (setIds?.[1] ?? '') !== '';
   const [showSecondSet, setShowSecondSet] = useState(twoPlusTwo);
 
@@ -433,78 +406,9 @@ function ProgressForm({
           className="lg:col-span-7"
         >
           <div className="space-y-4">
-            <div>
-              <FieldLabel>{t('targetWeaponLabel')}</FieldLabel>
-              <div className="flex flex-wrap items-end gap-2">
-                {/* Controlled, unlike a registered field: the refinement
-                    control beside it changes shape with what is picked here,
-                    and a registered select only tells the form its value on
-                    submit — the render next to it never hears about it. */}
-                <Controller
-                  control={form.control}
-                  name="weaponId"
-                  render={({ field }) => (
-                    <FieldSelect
-                      name={field.name}
-                      label={t('targetWeaponLabel')}
-                      value={field.value}
-                      onValueChange={(next) => {
-                        field.onChange(next);
-                        // The refinement belongs to the weapon: a new pick
-                        // starts at the copy owned, never at the last one's.
-                        form.setValue(
-                          'weaponRefinement',
-                          options.ownedRefinements[Number(next)] ?? 1,
-                          { shouldDirty: true },
-                        );
-                      }}
-                      onBlur={field.onBlur}
-                      placeholder={t('weaponPlaceholder')}
-                      groups={[
-                        ...(options.weapons.suggested.length > 0
-                          ? [{ label: t('suggestedForCharacter'), options: options.weapons.suggested }]
-                          : []),
-                        { label: t('allOption'), options: options.weapons.all },
-                      ]}
-                      triggerClassName="min-w-48 flex-1"
-                    />
-                  )}
-                />
-                <Controller
-                  control={form.control}
-                  name="weaponRefinement"
-                  render={({ field }) => (plannableRefinement ? (
-                    <Stepper
-                      label={t('weaponRefinementAria')}
-                      value={Number(field.value)}
-                      onChange={field.onChange}
-                      onBlur={field.onBlur}
-                      min={1}
-                      max={5}
-                      prefix="R"
-                      className="w-24"
-                    />
-                  ) : (
-                    <span
-                      className="tabular card-2 w-24 px-2 py-2 text-center font-mono text-sm text-muted"
-                      title={t('refinementNotPlannable')}
-                    >
-                      R{Number(field.value)}
-                    </span>
-                  ))}
-                />
-              </div>
-              {weaponId !== '' && !plannableRefinement && (
-                <p className="mt-1.5 font-mono text-2xs text-muted">
-                  {t('refinementNotPlannable')}
-                </p>
-              )}
-              {values.equippedWeapon && (
-                <p className="mt-1.5 font-mono text-2xs text-muted">
-                  {t('equippedNow')} <span className="text-text">{values.equippedWeapon}</span>
-                </p>
-              )}
-            </div>
+            {/* Read, not chosen: the goal for a weapon is the one in hand at
+                ninety. Swapping it is the detail view's job, out of the bag. */}
+            {values.weapon && <WeaponGoal weapon={values.weapon} />}
 
             <div>
               <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
@@ -857,6 +761,59 @@ function Panel({
     </section>
   );
 }
+
+/**
+ * The weapon the goal is for: the one equipped, taken to ninety.
+ *
+ * Its passive sits here with the refinement slider because this is where the
+ * question "is this weapon enough" gets asked — and the answer is the passive
+ * as much as the numbers.
+ */
+function WeaponGoal({ weapon }: { weapon: WeaponInfo }) {
+  const t = useTranslations('build');
+
+  return (
+    <div>
+      <FieldLabel hint={t('weaponGoalHint')}>{t('weaponGoalLabel')}</FieldLabel>
+      <div className="space-y-3 card-2 p-3">
+        <div className="flex items-center gap-3">
+          <AssetImage
+            src={weapon.icon}
+            kind="weapon"
+            alt=""
+            className="h-11 w-11 shrink-0 field"
+            sizes="44px"
+          />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm">{weapon.name}</p>
+            <p className="tabular font-mono text-2xs text-muted">
+              <span className="text-accent">{'★'.repeat(weapon.rarity)}</span>
+              {' · '}R{weapon.refinement}
+              {' · '}{t('levelPrefix')} {weapon.level}
+              {weapon.level < WEAPON_TARGET_LEVEL && (
+                <span className="text-text"> → {WEAPON_TARGET_LEVEL}</span>
+              )}
+            </p>
+            <p className="tabular font-mono text-2xs text-muted">
+              {weapon.stats.map((stat, index) => (
+                <span key={stat.label}>
+                  {index > 0 && ' · '}
+                  {stat.label} <span className="text-text">{stat.text}</span>
+                </span>
+              ))}
+            </p>
+          </div>
+        </div>
+        {weapon.passive && (
+          <WeaponPassive passive={weapon.passive} refinement={weapon.refinement} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Where every weapon plan ends, the same as the character's `ASSUMED_TARGET`. */
+const WEAPON_TARGET_LEVEL = 90;
 
 function FieldLabel({
   children,

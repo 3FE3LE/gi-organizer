@@ -10,9 +10,9 @@ import { TEAM_ROLES } from '@/lib/rules/types';
 /**
  * What the build editor is allowed to offer.
  *
- * Only the props a slot can actually roll as a main stat, and only the weapons
- * this character can hold — so the form cannot express a build the game could
- * never produce. The schema cannot state any of this; the catalog can.
+ * Only the props a slot can actually roll as a main stat — so the form cannot
+ * express a build the game could never produce. The schema cannot state any
+ * of this; the catalog can.
  */
 
 export type Option = { value: string; label: string };
@@ -38,7 +38,7 @@ const BASE_MAIN_STATS = [
 
 export type EditorOptions = Awaited<ReturnType<typeof editorOptionsFor>>;
 
-export async function editorOptionsFor(catalog: Catalog, character: CharacterView) {
+export async function editorOptionsFor(catalog: Catalog) {
   // `statLabel`, not `propLabel`: several of these lists pair a flat stat with
   // its percent twin (ATK/ATK%, HP/HP%, DEF/DEF%), and the game names both
   // identically — a picker needs the "%" to tell them apart.
@@ -48,9 +48,6 @@ export async function editorOptionsFor(catalog: Catalog, character: CharacterVie
 
   return {
     roles: TEAM_ROLES.map((role) => ({ value: role, label: roleLabel(t, role) })),
-    weapons: (catalog.index.weaponsByType.get(character.weaponType) ?? []).map((weapon) => ({
-      value: String(weapon.id), label: `${weapon.rarity}★ ${weapon.name}`,
-    })),
     mainStatsBySlot: {
       sands: [...BASE_MAIN_STATS, 'FIGHT_PROP_CHARGE_EFFICIENCY'].map(propOption),
       goblet: [...BASE_MAIN_STATS, ...ELEMENTAL].map(propOption),

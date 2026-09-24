@@ -4,16 +4,16 @@ import { getTranslations } from 'next-intl/server';
 
 import { propLabel, setEffects, type Catalog } from '@/lib/data/catalog';
 import { resolveIcon } from '@/lib/data/icon';
-import { refinementResolver } from '@/lib/player/weapon-copies';
 import { formatPropValue } from '@/lib/data/props';
 import { isAscended } from '@/lib/data/stats';
 import { ASSUMED_TARGET } from '@/lib/rules/materials';
 import { wornMainStats, wornSetPlan, wornSubstats } from '@/lib/rules/worn';
 
 import type { BuildContext } from './context';
-import { editorOptionsFor, goalPropsFor, type EditorOptions, type Option } from './editor-options';
+import { editorOptionsFor, goalPropsFor, type EditorOptions } from './editor-options';
 import type { ProgressOptions, ProgressValues } from './progress-form';
 import type { SetOption } from './set-picker';
+import type { WeaponInfo } from './weapon-passive';
 
 /**
  * The objective tab: where this character is, where they are going, and the
@@ -41,13 +41,9 @@ export type ObjectiveView = {
 };
 
 export async function objectiveViewFor(context: BuildContext): Promise<ObjectiveView> {
-  const { catalog, character, characterId, gear, loadout, locale, suggestions, target } = context;
-  const refinements = await refinementResolver(context.db);
-  const editor = await editorOptionsFor(catalog, character);
-  const t = await getTranslations('build');
+  const { catalog, character, characterId, gear, loadout, locale, suggestions } = context;
+  const editor = await editorOptionsFor(catalog);
   const activeBuild = suggestions.build;
-  const plannedWeaponId =
-    activeBuild?.weaponId ?? target.weaponId ?? gear.weapon?.weaponId ?? null;
   // What the character is already wearing, which is what a goal nobody has
   // written down opens on. See `@/lib/rules/worn`.
   const worn = [...gear.bySlot.values()];
@@ -84,24 +80,19 @@ export async function objectiveViewFor(context: BuildContext): Promise<Objective
       ),
       talents: loadout?.target.talents ?? ASSUMED_TARGET.talents,
     },
-    // What they are already holding, when nobody has said otherwise. A
-    // character wearing a weapon is a character whose plan is that weapon at
-    // ninety until the player replaces it, and opening on "sin arma objetivo"
-    // asked them to re-enter a decision the account had already recorded.
-    weaponId: plannedWeaponId,
-    // The weapon's, read off the copy — see `rules/refinement.ts`.
-    weaponRefinement: plannedWeaponId === null
-      ? null
-      : refinements.resolve(
-          characterId, plannedWeaponId, activeBuild?.weaponRefinement ?? target.refinement ?? null,
-        ),
-    equippedWeapon: gear.weapon
-      ? t('equippedWeaponLine', {
-          name: catalog.weapons.get(gear.weapon.weaponId)?.name ?? `#${gear.weapon.weaponId}`,
-          level: gear.weapon.level,
-          refinement: gear.weapon.refinement,
-        })
-      : null,
+    /*
+     * The weapon is the one being held, not a choice made here.
+     *
+     * This form used to carry a weapon picker and a refinement stepper, which
+     * made the goal a place to name a weapon the account might not have — as
+     * absurd as a goal for a character nobody owns. The objective for a weapon
+     * is levelling the one equipped to ninety; swapping it for another is done
+     * from the detail view, out of what is actually in the bag. So the goal
+     * saves whatever is equipped, at the copy's own refinement.
+     */
+    weaponId: gear.weapon?.weaponId ?? null,
+    weaponRefinement: gear.weapon?.refinement ?? null,
+    weapon: gear.weapon ? await weaponInfo(context, gear.weapon) : null,
     setIds: activeBuild?.setPlan.flatMap((plan) => plan.setIds) ?? wornSetPlan(worn),
     mainStats: Object.values(buildMainStats).some(Boolean)
       ? buildMainStats
@@ -109,43 +100,11 @@ export async function objectiveViewFor(context: BuildContext): Promise<Objective
     goals: activeBuild?.goals ?? [],
   };
 
-  const [suggested, all, suggestedWeaponOptions] = await Promise.all([
-    suggestedSets(context),
-    allSets(catalog),
-    suggestedWeapons(context),
-  ]);
-
-  /*
-   * Which weapons a refinement can be *planned* for.
-   *
-   * Refinement is copies, and copies of a five-star or of an off-banner
-   * four-star are a wish, not a plan — nothing the player does between now and
-   * then changes the odds, so a target there is a wish list entry the planner
-   * would then cost out as if it were farmable. Forging is the one source that
-   * answers to work: a billet and ore, on demand, whenever the player wants
-   * another copy.
-   *
-   * The battle pass is deliberately not here even though `isAlwaysReachable`
-   * counts it: it hands out one copy per cycle on its own schedule, which is a
-   * date, not a cost.
-   */
-  const forgeable = [...refinements.forgeable];
-
-  // What each owned weapon would be at on this character, so picking another
-  // weapon in the form moves the refinement with it instead of keeping the
-  // last one's.
-  const ownedRefinements = Object.fromEntries(
-    [...refinements.copies.keys()].map((weaponId) => [
-      weaponId, refinements.resolve(characterId, weaponId, null),
-    ]),
-  );
+  const [suggested, all] = await Promise.all([suggestedSets(context), allSets(catalog)]);
 
   const options: ProgressOptions = {
     roles: editor.roles,
     substats: editor.substats,
-    weapons: { suggested: suggestedWeaponOptions, all: editor.weapons },
-    forgeable,
-    ownedRefinements,
     sets: { suggested, all },
     mainStatsBySlot: editor.mainStatsBySlot,
     goalProps: goalPropsFor(character).map((prop) => ({
@@ -246,27 +205,27 @@ async function setOption(catalog: Catalog, setId: number): Promise<SetOption> {
   };
 }
 
-async function suggestedWeapons({ catalog, suggestions }: BuildContext): Promise<Option[]> {
-  const t = await getTranslations('build');
-  const sourceLabel = await getTranslations('common.weaponSource');
-  const seen = new Set<number>();
+/** The equipped weapon as the objective shows it: where it is, and its passive. */
+async function weaponInfo(
+  { catalog, format }: BuildContext,
+  weapon: NonNullable<BuildContext['gear']['weapon']>,
+): Promise<WeaponInfo | null> {
+  const definition = catalog.weapons.get(weapon.weaponId);
+  if (!definition) return null;
 
-  return suggestions.weapons.slice(0, 8).flatMap((suggestion) => {
-    if (seen.has(suggestion.weaponId)) return [];
-    seen.add(suggestion.weaponId);
+  const stats = format.weaponStats(weapon);
 
-    const rank = suggestion.externalRank === null ? '·' : `#${suggestion.externalRank + 1}`;
-    // Only reachable weapons are suggested now, so "not owned" always comes
-    // with the way to get it.
-    const stock = suggestion.owned === 0
-      ? sourceLabel(suggestion.source ?? 'forge')
-      : suggestion.spare > 0 ? t('weaponFree', { spare: suggestion.spare }) : t('weaponCommitted');
-    const refinement = suggestion.minRefinement > 1 ? ` R${suggestion.minRefinement}+` : '';
-
-    return [{
-      value: String(suggestion.weaponId),
-      label: `${rank} ${catalog.weapons.get(suggestion.weaponId)?.name ?? suggestion.weaponId}`
-        + `${refinement} · ${stock}`,
-    }];
-  });
+  return {
+    name: definition.name,
+    icon: await resolveIcon(definition.icon, 'weapon'),
+    rarity: definition.rarity,
+    level: weapon.level,
+    refinement: weapon.refinement,
+    stats: [stats?.main, ...(stats?.substats ?? [])]
+      .filter((line) => line !== null && line !== undefined)
+      .map((line) => ({ label: line.label, text: line.text })),
+    passive: definition.effectName
+      ? { name: definition.effectName, refinements: definition.refinements }
+      : null,
+  };
 }

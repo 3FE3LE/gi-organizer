@@ -8,6 +8,7 @@ import { AssetImage } from '@/components/asset-image';
 import type { Move } from '@/lib/player/move';
 
 import { PieceComparison, type PieceStats } from './piece-stats';
+import { WeaponPassive, type WeaponPassiveText } from './weapon-passive';
 
 export type CandidateView = {
   id: string;
@@ -24,6 +25,9 @@ export type CandidateView = {
   holderId: number | null;
   /** The full spread, for the row that opens into a comparison. */
   stats: PieceStats | null;
+  /** Weapons only: the copy's refinement and the passive it scales. */
+  refinement: number | null;
+  passive: WeaponPassiveText | null;
 };
 
 export type SlotView = {
@@ -56,7 +60,7 @@ export function CandidateRow({
   characterId: number;
   action: (form: FormData) => void;
   pending: boolean;
-  /** "Comparar" opens the best candidate against what is worn, straight away. */
+  /** The best candidate opens against what is worn, straight away. */
   defaultOpen?: boolean;
 }) {
   const t = useTranslations('build');
@@ -71,7 +75,7 @@ export function CandidateRow({
         {/* An artifact's set name is left to the icon, which already draws the
             set: written out, it was the widest thing in the row and pushed the
             buttons out of the dialog. A weapon's name is the piece itself. */}
-        <span title={candidate.label} className="shrink-0">
+        <span className="shrink-0">
           <AssetImage
             src={candidate.icon}
             kind={slot.kind === 'weapon' ? 'weapon' : 'relic'}
@@ -98,7 +102,7 @@ export function CandidateRow({
             {t('heldBy', { holder: candidate.holder })}
           </span>
         )}
-        {candidate.stats && (
+        {(candidate.stats || candidate.passive) && (
           <button
             type="button"
             onClick={() => setOpen((current) => !current)}
@@ -121,15 +125,55 @@ export function CandidateRow({
         />
       </div>
 
-      {open && candidate.stats && (
-        <div className="mx-3 mb-2 rounded border border-edge/60 bg-ink/40 px-2 py-1">
-          <PieceComparison
-            equipped={slot.equipped?.stats ?? null}
-            candidate={candidate.stats}
-          />
+      {open && (candidate.stats || candidate.passive) && (
+        <div className="mx-3 mb-2 space-y-3 rounded border border-edge/60 bg-ink/40 px-2 py-2">
+          {candidate.stats && (
+            <PieceComparison
+              equipped={slot.equipped?.stats ?? null}
+              candidate={candidate.stats}
+            />
+          )}
+          {/* A weapon is its passive as much as its numbers, and two passives
+              are the comparison the table above cannot make. Each opens on its
+              own copy's refinement. */}
+          {slot.kind === 'weapon' && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {slot.equipped?.passive && (
+                <PassiveColumn
+                  heading={t('equippedHeader')}
+                  passive={slot.equipped.passive}
+                  refinement={slot.equipped.refinement ?? 1}
+                />
+              )}
+              {candidate.passive && (
+                <PassiveColumn
+                  heading={t('defaultCandidateLabel')}
+                  passive={candidate.passive}
+                  refinement={candidate.refinement ?? 1}
+                />
+              )}
+            </div>
+          )}
         </div>
       )}
     </li>
+  );
+}
+
+function PassiveColumn({
+  heading,
+  passive,
+  refinement,
+}: {
+  heading: string;
+  passive: WeaponPassiveText;
+  refinement: number;
+}) {
+  return (
+    <div className="min-w-0 space-y-1">
+      <p className="font-mono text-2xs text-muted">{heading}</p>
+      <WeaponPassive passive={passive} refinement={refinement} />
+    </div>
   );
 }
 
