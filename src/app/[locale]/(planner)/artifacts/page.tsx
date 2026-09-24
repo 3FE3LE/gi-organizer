@@ -65,11 +65,8 @@ export default async function ArtifactsPage({
   const base = `/${locale}/artifacts`;
   const perfect = all.filter((piece) => piece.quality.hasPerfect).length;
 
-  // Only the sets the player actually owns: the catalogue has sixty-three and
-  // a picker listing the ones you have none of is a picker that lies.
-  const ownedSets = [...new Set(all.map((piece) => piece.setId))]
-    .map((setId) => ({ setId, name: catalog.artifacts.get(setId)?.name ?? `#${setId}` }))
-    .sort((a, b) => a.name.localeCompare(b.name, locale));
+  const setCounts = new Map<number, number>();
+  for (const piece of all) setCounts.set(piece.setId, (setCounts.get(piece.setId) ?? 0) + 1);
 
   /*
    * Main stats to choose from, which only exist once a slot is chosen.
@@ -108,7 +105,8 @@ export default async function ArtifactsPage({
         base={base}
         filters={filters}
         catalog={catalog}
-        ownedSets={ownedSets}
+        setCounts={setCounts}
+        locale={locale}
         ownedMains={ownedMains}
       />
 

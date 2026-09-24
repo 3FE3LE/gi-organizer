@@ -1,5 +1,6 @@
 'use client';
 
+import { Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTransition } from 'react';
 import { useQueryStates } from 'nuqs';
@@ -16,12 +17,14 @@ import {
 } from './filters';
 
 /**
- * The controls that are inputs rather than links.
+ * The narrowing controls that are inputs rather than links.
  *
- * A set picker listing every set you own is the single heaviest thing on this
- * page, a crit-value cut-off is a scale and reads as one, and an ordering is a
- * choice of one from five. All three are what a native control is for. They
- * write to the same query string the links do, so the view is still a URL.
+ * Substat and roll tier were rows of chips — eleven stats and four tiers
+ * spread over two lines — for what is a choice of one from a list, which is
+ * what a select is. With them as selects, the four questions a search is
+ * phrased in (a substat, how well it rolled, how much crit, which main stat)
+ * sit in one row on a desktop and wrap on a phone. The sets are a row of their
+ * own under them; see `set-strip.tsx`.
  *
  * `shallow: false` because the filtering happens on the server: the list is a
  * thousand pieces and narrowing it in the browser would mean shipping all of
@@ -29,10 +32,14 @@ import {
  * server answers instead of the control feeling stuck.
  */
 export function FilterInputs({
-  ownedSets,
+  substats,
+  tiers,
   ownedMains,
 }: {
-  ownedSets: { setId: number; name: string }[];
+  /** Every rollable substat, worded by the server. */
+  substats: { value: string; label: string }[];
+  /** The roll-tier cut-offs, as percentages, worded by the server. */
+  tiers: { value: string; label: string }[];
   /** Only the main stats the box actually holds for the slot in view. */
   /** Empty for a slot whose main stat the game fixed, and before one is picked. */
   ownedMains: { prop: string; name: string }[];
@@ -54,8 +61,55 @@ export function FilterInputs({
   return (
     <div
       data-pending={pending || undefined}
-      className="grid gap-x-6 gap-y-4 transition-opacity data-pending:opacity-50 sm:grid-cols-2"
+      className={`grid gap-x-4 gap-y-4 transition-opacity data-pending:opacity-50 sm:grid-cols-2 ${
+        ownedMains.length > 0 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'
+      }`}
     >
+      <Field label={t('substatLabel')}>
+        <FieldSelect
+          label={t('substatAria')}
+          value={filters.sub ?? ''}
+          onValueChange={(value) => setFilters({ sub: value === '' ? null : value })}
+          placeholder={t('any')}
+          groups={[{ options: substats }]}
+          triggerClassName="px-2 py-1 text-xs"
+        />
+      </Field>
+
+      {/* "quality" named nothing in particular. What it cuts on is the average
+          tier of a piece's rolls, which is the vocabulary the cards below
+          already use. A maxed roll is a toggle beside it rather than a fifth
+          tier, because it is a different question: not how the piece rolled on
+          average, but whether one roll hit the ceiling. */}
+      <Field label={t('rollsLabel')}>
+        <span className="flex items-center gap-1.5">
+          <span className="min-w-0 flex-1">
+            <FieldSelect
+              label={t('rollsAria')}
+              value={filters.quality === null ? '' : String(filters.quality)}
+              onValueChange={(value) => setFilters({ quality: value === '' ? null : Number(value) })}
+              placeholder={t('any')}
+              groups={[{ options: tiers }]}
+              triggerClassName="px-2 py-1 text-xs"
+            />
+          </span>
+          <button
+            type="button"
+            aria-pressed={filters.perfect}
+            title={t('perfectSubstatToggle')}
+            onClick={() => setFilters({ perfect: !filters.perfect })}
+            className={`flex h-[1.875rem] shrink-0 items-center gap-1 rounded-md border px-2 text-2xs transition-colors ${
+              filters.perfect
+                ? 'border-accent bg-accent/10 text-accent'
+                : 'border-edge text-muted hover:border-edge-strong hover:text-text'
+            }`}
+          >
+            <Sparkles size={11} aria-hidden />
+            <span className="sr-only">{t('perfectSubstatToggle')}</span>
+          </button>
+        </span>
+      </Field>
+
       <Field label={t('critValueLabel')} hint={reading}>
         {/*
           * The cut-off, as a scale.
@@ -78,49 +132,34 @@ export function FilterInputs({
           }}
           className="py-1.5"
         />
-        <div className="mt-1 flex justify-between font-mono text-2xs uppercase tracking-wide text-muted">
+        <span className="mt-1 flex justify-between font-mono text-2xs uppercase tracking-wide text-muted">
           <span>—</span>
           {CRIT_FILTERS.map((value, index) => (
             <span key={value} className={step === index + 1 ? 'text-accent' : undefined}>
               {value}
             </span>
           ))}
-        </div>
+        </span>
       </Field>
 
-      <div className={`grid gap-4 ${ownedMains.length > 0 ? 'sm:grid-cols-2' : ''}`}>
-        <Field label={t('setLabel')}>
+      {/* The main stat is how a search is actually phrased — "a mastery
+          sands" — and it is the one thing `worth` refuses to score, because
+          which main stat is right is the build's decision and not the box's.
+          Absent until a slot makes it a question with more than one answer. */}
+      {ownedMains.length > 0 && (
+        <Field label={t('mainStatLabel')}>
           <FieldSelect
-            label={t('setAria')}
-            value={filters.set === null ? '' : String(filters.set)}
-            onValueChange={(value) => setFilters({ set: value === '' ? null : Number(value) })}
-            placeholder={t('allSetsWithCount', { count: ownedSets.length })}
-            groups={[{ options: ownedSets.map((set) => ({
-              value: String(set.setId), label: set.name,
+            label={t('mainStatAria')}
+            value={filters.main ?? ''}
+            onValueChange={(value) => setFilters({ main: value === '' ? null : value })}
+            placeholder={t('anyWithCount', { count: ownedMains.length })}
+            groups={[{ options: ownedMains.map((main) => ({
+              value: main.prop, label: main.name,
             })) }]}
             triggerClassName="px-2 py-1 text-xs"
           />
         </Field>
-
-        {/* The main stat is how a search is actually phrased — "a mastery
-            sands" — and it is the one thing `worth` refuses to score, because
-            which main stat is right is the build's decision and not the box's.
-            Absent until a slot makes it a question with more than one answer. */}
-        {ownedMains.length > 0 && (
-          <Field label={t('mainStatLabel')}>
-            <FieldSelect
-              label={t('mainStatAria')}
-              value={filters.main ?? ''}
-              onValueChange={(value) => setFilters({ main: value === '' ? null : value })}
-              placeholder={t('anyWithCount', { count: ownedMains.length })}
-              groups={[{ options: ownedMains.map((main) => ({
-                value: main.prop, label: main.name,
-              })) }]}
-              triggerClassName="px-2 py-1 text-xs"
-            />
-          </Field>
-        )}
-      </div>
+      )}
     </div>
   );
 }

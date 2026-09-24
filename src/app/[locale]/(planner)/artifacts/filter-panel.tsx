@@ -1,8 +1,9 @@
-import { ChevronRight, Crown, Feather, Flower2, Hourglass, Sparkles, Wine, X } from 'lucide-react';
+import { ChevronRight, Crown, Feather, Flower2, Hourglass, Wine, X } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
-import { statLabel, type Catalog } from '@/lib/data/catalog';
+import { formatSetEffect, setEffects, statLabel, type Catalog } from '@/lib/data/catalog';
+import { resolveIcon } from '@/lib/data/icon';
 import { ARTIFACT_SLOTS } from '@/lib/enka/slots';
 import type { ArtifactSlot } from '@/lib/data/types';
 import { ROLLABLE } from '@/lib/rules/rolls';
@@ -19,14 +20,16 @@ import {
   type ArtifactFilters,
 } from './filters';
 import { FilterInputs } from './filter-inputs';
+import { SetStrip, type SetChoice } from './set-strip';
 
 /**
  * Seven rows of chips was the whole filter surface, open at once, and most of
  * it is not what anybody reaches for: slot and holder narrow the box on almost
  * every visit, and the rest is a second thought.
  *
- * So the ones that get used are a toolbar and the rest is behind a disclosure,
- * and what is currently on is stated in one line underneath. That line is the
+ * So the ones that get used are a toolbar and the rest is behind a disclosure —
+ * four selects in a row, then every set as a strip of its flowers — and what
+ * is currently on is stated in one line underneath. That line is the
  * important part: with the controls folded away, a filtered view has to say so
  * somewhere, or the next question is why the box looks empty.
  */
@@ -43,13 +46,16 @@ export async function FilterPanel({
   base,
   filters,
   catalog,
-  ownedSets,
+  setCounts,
+  locale,
   ownedMains,
 }: {
   base: string;
   filters: ArtifactFilters;
   catalog: Catalog;
-  ownedSets: { setId: number; name: string }[];
+  /** Pieces per set in the box. */
+  setCounts: Map<number, number>;
+  locale: string;
   ownedMains: { prop: string; name: string }[];
 }) {
   const active = activeCount(filters);
@@ -57,6 +63,30 @@ export async function FilterPanel({
   const slotLabel = await getTranslations('common.slot');
   const heldLabel = await getTranslations('common.held');
   const tierLabel = await getTranslations('common.tier');
+
+  /*
+   * Every set in the catalogue, owned first and by how much of it the box
+   * holds, then the rest by name. The flower stands for the set — the piece
+   * every set has — falling back to whatever piece exists for circlet-only
+   * sets.
+   */
+  const sets: SetChoice[] = (await Promise.all(
+    catalog.index.artifactsSorted.map(async (set) => ({
+      setId: set.id,
+      name: set.name,
+      icon: await resolveIcon(
+        set.pieces.flower?.icon
+          ?? Object.values(set.pieces).map((piece) => piece?.icon).find(Boolean)
+          ?? null,
+        'relic',
+      ),
+      effects: setEffects(set).map(formatSetEffect),
+      count: setCounts.get(set.id) ?? 0,
+    })),
+  )).sort((a, b) =>
+    Number(b.count > 0) - Number(a.count > 0)
+    || b.count - a.count
+    || a.name.localeCompare(b.name, locale));
 
   return (
     <div className="space-y-3">
@@ -112,52 +142,18 @@ export async function FilterPanel({
         </summary>
 
         <div className="space-y-4 border-t border-edge px-3 py-3">
-          <Row label={t('substatLabel')}>
-            <Chip to={href(base, filters, { sub: null })} active={!filters.sub}>
-              {t('any')}
-            </Chip>
-            {ROLLABLE.map((prop) => (
-              <Chip
-                key={prop}
-                to={href(base, filters, { sub: prop })}
-                active={filters.sub === prop}
-              >
-                {statLabel(catalog, prop)}
-              </Chip>
-            ))}
-          </Row>
+          <FilterInputs
+            substats={ROLLABLE.map((prop) => ({ value: prop, label: statLabel(catalog, prop) }))}
+            tiers={TIER_FILTERS.map((fraction) => ({
+              value: String(Math.round(fraction * 100)),
+              label: t('tierOrBetter', { tier: tierLabel(tierAt(fraction)) }),
+            }))}
+            ownedMains={ownedMains}
+          />
 
-          {/* "quality" named nothing in particular. What it cuts on is the
-              average tier of a piece's rolls, which is the vocabulary the cards
-              below already use, so the row says that instead. */}
-          <Row label={t('rollsLabel')}>
-            <Chip
-              to={href(base, filters, { quality: null })}
-              active={filters.quality === null}
-            >
-              {t('any')}
-            </Chip>
-            {TIER_FILTERS.map((fraction) => {
-              const percent = Math.round(fraction * 100);
-              return (
-                <Chip
-                  key={percent}
-                  to={href(base, filters, { quality: percent })}
-                  active={filters.quality === percent}
-                >
-                  {t('tierOrBetter', { tier: tierLabel(tierAt(fraction)) })}
-                </Chip>
-              );
-            })}
-            <Chip
-              to={href(base, filters, { perfect: !filters.perfect })}
-              active={filters.perfect}
-            >
-              <Sparkles size={11} className="inline" /> {t('perfectSubstatToggle')}
-            </Chip>
-          </Row>
-
-          <FilterInputs ownedSets={ownedSets} ownedMains={ownedMains} />
+          {/* Always a row of its own: forty-odd flowers do not share a line
+              with anything. */}
+          <SetStrip sets={sets} />
         </div>
       </details>
 
@@ -279,15 +275,6 @@ function Segment({
     >
       {children}
     </Link>
-  );
-}
-
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
-      <span className="w-14 shrink-0 font-mono text-2xs uppercase text-muted">{label}</span>
-      {children}
-    </div>
   );
 }
 
