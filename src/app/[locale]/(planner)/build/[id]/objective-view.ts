@@ -13,7 +13,6 @@ import type { BuildContext } from './context';
 import { editorOptionsFor, goalPropsFor, type EditorOptions } from './editor-options';
 import type { ProgressOptions, ProgressValues } from './progress-form';
 import type { SetOption } from './set-picker';
-import type { WeaponInfo } from './weapon-passive';
 
 /**
  * The objective tab: where this character is, where they are going, and the
@@ -92,7 +91,6 @@ export async function objectiveViewFor(context: BuildContext): Promise<Objective
      */
     weaponId: gear.weapon?.weaponId ?? null,
     weaponRefinement: gear.weapon?.refinement ?? null,
-    weapon: gear.weapon ? await weaponInfo(context, gear.weapon) : null,
     setIds: activeBuild?.setPlan.flatMap((plan) => plan.setIds) ?? wornSetPlan(worn),
     mainStats: Object.values(buildMainStats).some(Boolean)
       ? buildMainStats
@@ -202,30 +200,5 @@ async function setOption(catalog: Catalog, setId: number): Promise<SetOption> {
     note: null,
     icon: await resolveIcon(icon, 'relic'),
     effects: setEffects(set),
-  };
-}
-
-/** The equipped weapon as the objective shows it: where it is, and its passive. */
-async function weaponInfo(
-  { catalog, format }: BuildContext,
-  weapon: NonNullable<BuildContext['gear']['weapon']>,
-): Promise<WeaponInfo | null> {
-  const definition = catalog.weapons.get(weapon.weaponId);
-  if (!definition) return null;
-
-  const stats = format.weaponStats(weapon);
-
-  return {
-    name: definition.name,
-    icon: await resolveIcon(definition.icon, 'weapon'),
-    rarity: definition.rarity,
-    level: weapon.level,
-    refinement: weapon.refinement,
-    stats: [stats?.main, ...(stats?.substats ?? [])]
-      .filter((line) => line !== null && line !== undefined)
-      .map((line) => ({ label: line.label, text: line.text })),
-    passive: definition.effectName
-      ? { name: definition.effectName, refinements: definition.refinements }
-      : null,
   };
 }

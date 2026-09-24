@@ -11,7 +11,6 @@ import {
   Minus,
   Plus,
   Save,
-  Shield,
   Sparkles,
   Target,
   Trash2,
@@ -30,7 +29,6 @@ import {
 import { Button, buttonVariants } from '@/components/ui/button';
 import { FieldSelect } from '@/components/field-select';
 import { Slider } from '@/components/ui/slider';
-import { AssetImage } from '@/components/asset-image';
 import { ActionStatus } from '@/components/action-status';
 import {
   BREAKPOINTS,
@@ -45,7 +43,6 @@ import {
 import { applyTemplateAction, deleteBuildAction } from './build-actions';
 import { type ProgressState, saveProgressAction } from './progress-actions';
 import { SetPicker, type SetOptions } from './set-picker';
-import { WeaponPassive, type WeaponInfo } from './weapon-passive';
 
 /**
  * Where this character is, and where they are going.
@@ -116,8 +113,6 @@ export type ProgressValues = {
   /** The equipped weapon, which is what the goal saves — never picked here. */
   weaponId: number | null;
   weaponRefinement: number | null;
-  /** The same weapon as the panel shows it. */
-  weapon: WeaponInfo | null;
   setIds: number[];
   mainStats: Record<string, string>;
   goals: { prop: string; min: number }[];
@@ -155,8 +150,8 @@ function defaultsFrom(values: ProgressValues): ProgressFormValues {
     mainStats: Object.fromEntries(SLOTS.map((slot) => [
       slot.key, values.mainStats[slot.key] ?? '',
     ])),
-    // Three rows, or as many as this goal already states. An empty row is a
-    // question; three of them is a form, six was an interrogation.
+    // One row, or as many as this goal already states. An empty row is a
+    // question, and one is enough to show where the answer goes.
     goals: Array.from(
       { length: Math.max(DEFAULT_GOAL_ROWS, values.goals.length) },
       (_, index) => ({
@@ -400,151 +395,19 @@ function ProgressForm({
         </Panel>
 
         <Panel
-          icon={<Shield size={14} />}
-          title={t('gearPanelTitle')}
-          summary={plannedSet ? `${plannedSet} · ${showSecondSet ? '2+2' : '4pc'}` : t('gearSummaryNoSet')}
-          className="lg:col-span-7"
-        >
-          <div className="space-y-4">
-            {/* Read, not chosen: the goal for a weapon is the one in hand at
-                ninety. Swapping it is the detail view's job, out of the bag. */}
-            {values.weapon && <WeaponGoal weapon={values.weapon} />}
-
-            <div>
-              <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
-                <FieldLabel className="mb-0">{t('artifactSetLabel')}</FieldLabel>
-                <div className="flex overflow-hidden rounded border border-edge">
-                  <Segment
-                    active={!showSecondSet}
-                    onClick={() => {
-                      setShowSecondSet(false);
-                      // The picker is gone, so the value behind it has to go
-                      // too, or a 2+2 stays saved with one half invisible.
-                      form.setValue('setIds.1', '', { shouldDirty: true });
-                    }}
-                    label={t('fourPieces')}
-                  />
-                  <Segment
-                    active={showSecondSet}
-                    onClick={() => setShowSecondSet(true)}
-                    label={t('twoPlusTwo')}
-                  />
-                </div>
-              </div>
-
-              <div className="grid min-w-0 gap-2 sm:grid-cols-2">
-                <Controller
-                  control={form.control}
-                  name="setIds.0"
-                  render={({ field }) => (
-                    <SetPicker
-                      label={t('firstSetAria')}
-                      options={options.sets}
-                      value={field.value}
-                      onChange={field.onChange}
-                      placeholder={t('chooseSetPlaceholder')}
-                      activePieces={showSecondSet ? 2 : 4}
-                    />
-                  )}
-                />
-                {showSecondSet && (
-                  <Controller
-                    control={form.control}
-                    name="setIds.1"
-                    render={({ field }) => (
-                      <SetPicker
-                        label={t('secondSetAria')}
-                        options={options.sets}
-                        value={field.value}
-                        onChange={field.onChange}
-                        placeholder={t('secondSetPlaceholder')}
-                        activePieces={2}
-                      />
-                    )}
-                  />
-                )}
-              </div>
-            </div>
-
-            <div>
-              <FieldLabel count={`${chosenStats}/3`}>{t('mainStatsLabel')}</FieldLabel>
-              <div className="grid min-w-0 grid-cols-3 gap-2">
-                {SLOTS.map((slot) => (
-                  <label key={slot.key} className="min-w-0">
-                    <span className="mb-1 block truncate text-2xs text-muted">
-                      {slotLabel(slot.key)}
-                    </span>
-                    <Controller
-                      control={form.control}
-                      name={`mainStats.${slot.key}`}
-                      render={({ field }) => (
-                        <FieldSelect
-                          name={field.name}
-                          label={t('mainStatSlotAria', { slot: slotLabel(slot.key) })}
-                          value={field.value ?? ''}
-                          onValueChange={field.onChange}
-                          onBlur={field.onBlur}
-                          placeholder="—"
-                          groups={[{ options: options.mainStatsBySlot[slot.key] ?? [] }]}
-                          triggerClassName="px-2 py-1.5 text-xs"
-                        />
-                      )}
-                    />
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <FieldLabel count={`${chosenSubstats}/4`} hint={t('substatsHint')}>
-                {t('substatsLabel')}
-              </FieldLabel>
-              {/* Two by two on a phone, four across from `sm`: four stacked
-                  selects is the shape that read as a questionnaire. */}
-              <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-4">
-                {SUBSTAT_POSITIONS.map((position) => (
-                  <div key={position} className="flex min-w-0 items-center gap-1.5">
-                    <span className="w-4 shrink-0 font-mono text-2xs text-muted">
-                      {position}º
-                    </span>
-                    <Controller
-                      control={form.control}
-                      name={`substats.${position - 1}`}
-                      render={({ field }) => (
-                        <FieldSelect
-                          name={field.name}
-                          label={t('substatPositionAria', { position })}
-                          value={field.value ?? ''}
-                          onValueChange={field.onChange}
-                          onBlur={field.onBlur}
-                          placeholder="—"
-                          groups={[{ options: options.substats }]}
-                          triggerClassName="px-1.5 py-1.5 text-xs"
-                        />
-                      )}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </Panel>
-
-        <Panel
           icon={<Target size={14} />}
           title={t('statGoalsTitle')}
-          summary={statedGoals === 0 ? t('noneGoals') : t('thresholdsCount', { count: statedGoals })}
-          className="lg:col-span-12"
+          summary={[
+            statedGoals === 0 ? t('noneGoals') : t('thresholdsCount', { count: statedGoals }),
+            plannedSet ? `${plannedSet} · ${showSecondSet ? '2+2' : '4pc'}` : t('gearSummaryNoSet'),
+          ].join(' · ')}
+          className="lg:col-span-7"
         >
-          <p className="mb-3 max-w-prose text-xs leading-relaxed text-muted">
-            {t('statGoalsHint')}
-          </p>
-
           {/* A card per threshold: the stat and a way out on top, then the
               number — dragged or typed — and how far today is from it. The
               old row packed all four across one line, which on a phone left
               a picker too narrow to read its own choice. */}
-          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="grid gap-3 sm:grid-cols-2">
             {goalRows.fields.map((row, index) => {
               const prop = goals?.[index]?.prop ?? '';
               const min = goals?.[index]?.min ?? '';
@@ -664,6 +527,147 @@ function ProgressForm({
               </li>
             )}
           </ul>
+
+          {/*
+            * What the pieces should be, under what they should add up to.
+            *
+            * These sat in an "equipamiento" panel beside a copy of the equipped
+            * weapon — the one thing on this screen the detail card above
+            * already says. With the weapon gone the panel held only these, and
+            * they are the other half of the same goal: the thresholds say what
+            * the totals must reach, the set and stats say which pieces get
+            * them there. Every candidate and every change is scored against
+            * both.
+            */}
+          <div className="mt-4 space-y-4 border-t border-edge pt-4">
+            {/* Set and main stats side by side from `lg`: both are "which
+                pieces", and stacked they were two short rows reading as two
+                separate questions. Bottom-aligned, so the set picker lines up
+                with the selects under their slot names. */}
+            <div className={`grid min-w-0 gap-4 lg:items-end ${
+              showSecondSet
+                ? 'lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]'
+                : 'lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]'
+            }`}>
+            <div className="min-w-0">
+              <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+                <FieldLabel className="mb-0">{t('artifactSetLabel')}</FieldLabel>
+                <div className="flex overflow-hidden rounded border border-edge">
+                  <Segment
+                    active={!showSecondSet}
+                    onClick={() => {
+                      setShowSecondSet(false);
+                      // The picker is gone, so the value behind it has to go
+                      // too, or a 2+2 stays saved with one half invisible.
+                      form.setValue('setIds.1', '', { shouldDirty: true });
+                    }}
+                    label={t('fourPieces')}
+                  />
+                  <Segment
+                    active={showSecondSet}
+                    onClick={() => setShowSecondSet(true)}
+                    label={t('twoPlusTwo')}
+                  />
+                </div>
+              </div>
+
+              <div className={`grid min-w-0 gap-2 ${showSecondSet ? 'grid-cols-2' : ''}`}>
+                <Controller
+                  control={form.control}
+                  name="setIds.0"
+                  render={({ field }) => (
+                    <SetPicker
+                      label={t('firstSetAria')}
+                      options={options.sets}
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder={t('chooseSetPlaceholder')}
+                      activePieces={showSecondSet ? 2 : 4}
+                    />
+                  )}
+                />
+                {showSecondSet && (
+                  <Controller
+                    control={form.control}
+                    name="setIds.1"
+                    render={({ field }) => (
+                      <SetPicker
+                        label={t('secondSetAria')}
+                        options={options.sets}
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder={t('secondSetPlaceholder')}
+                        activePieces={2}
+                      />
+                    )}
+                  />
+                )}
+              </div>
+            </div>
+
+            <div className="min-w-0">
+              <FieldLabel count={`${chosenStats}/3`}>{t('mainStatsLabel')}</FieldLabel>
+              <div className="grid min-w-0 grid-cols-3 gap-2">
+                {SLOTS.map((slot) => (
+                  <label key={slot.key} className="min-w-0">
+                    <span className="mb-1 block truncate text-2xs text-muted">
+                      {slotLabel(slot.key)}
+                    </span>
+                    <Controller
+                      control={form.control}
+                      name={`mainStats.${slot.key}`}
+                      render={({ field }) => (
+                        <FieldSelect
+                          name={field.name}
+                          label={t('mainStatSlotAria', { slot: slotLabel(slot.key) })}
+                          value={field.value ?? ''}
+                          onValueChange={field.onChange}
+                          onBlur={field.onBlur}
+                          placeholder="—"
+                          groups={[{ options: options.mainStatsBySlot[slot.key] ?? [] }]}
+                          triggerClassName="px-2 py-1.5 text-xs"
+                        />
+                      )}
+                    />
+                  </label>
+                ))}
+              </div>
+            </div>
+            </div>
+
+            <div>
+              <FieldLabel count={`${chosenSubstats}/4`} hint={t('substatsHint')}>
+                {t('substatsLabel')}
+              </FieldLabel>
+              {/* Two by two on a phone, four across from `sm`: four stacked
+                  selects is the shape that read as a questionnaire. */}
+              <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-4">
+                {SUBSTAT_POSITIONS.map((position) => (
+                  <div key={position} className="flex min-w-0 items-center gap-1.5">
+                    <span className="w-4 shrink-0 font-mono text-2xs text-muted">
+                      {position}º
+                    </span>
+                    <Controller
+                      control={form.control}
+                      name={`substats.${position - 1}`}
+                      render={({ field }) => (
+                        <FieldSelect
+                          name={field.name}
+                          label={t('substatPositionAria', { position })}
+                          value={field.value ?? ''}
+                          onValueChange={field.onChange}
+                          onBlur={field.onBlur}
+                          placeholder="—"
+                          groups={[{ options: options.substats }]}
+                          triggerClassName="px-1.5 py-1.5 text-xs"
+                        />
+                      )}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </Panel>
       </div>
 
@@ -761,59 +765,6 @@ function Panel({
     </section>
   );
 }
-
-/**
- * The weapon the goal is for: the one equipped, taken to ninety.
- *
- * Its passive sits here with the refinement slider because this is where the
- * question "is this weapon enough" gets asked — and the answer is the passive
- * as much as the numbers.
- */
-function WeaponGoal({ weapon }: { weapon: WeaponInfo }) {
-  const t = useTranslations('build');
-
-  return (
-    <div>
-      <FieldLabel hint={t('weaponGoalHint')}>{t('weaponGoalLabel')}</FieldLabel>
-      <div className="space-y-3 card-2 p-3">
-        <div className="flex items-center gap-3">
-          <AssetImage
-            src={weapon.icon}
-            kind="weapon"
-            alt=""
-            className="h-11 w-11 shrink-0 field"
-            sizes="44px"
-          />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm">{weapon.name}</p>
-            <p className="tabular font-mono text-2xs text-muted">
-              <span className="text-accent">{'★'.repeat(weapon.rarity)}</span>
-              {' · '}R{weapon.refinement}
-              {' · '}{t('levelPrefix')} {weapon.level}
-              {weapon.level < WEAPON_TARGET_LEVEL && (
-                <span className="text-text"> → {WEAPON_TARGET_LEVEL}</span>
-              )}
-            </p>
-            <p className="tabular font-mono text-2xs text-muted">
-              {weapon.stats.map((stat, index) => (
-                <span key={stat.label}>
-                  {index > 0 && ' · '}
-                  {stat.label} <span className="text-text">{stat.text}</span>
-                </span>
-              ))}
-            </p>
-          </div>
-        </div>
-        {weapon.passive && (
-          <WeaponPassive passive={weapon.passive} refinement={weapon.refinement} />
-        )}
-      </div>
-    </div>
-  );
-}
-
-/** Where every weapon plan ends, the same as the character's `ASSUMED_TARGET`. */
-const WEAPON_TARGET_LEVEL = 90;
 
 function FieldLabel({
   children,

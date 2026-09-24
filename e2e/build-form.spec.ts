@@ -146,17 +146,17 @@ test('the levelling target reaches the farming plan', async ({ page }) => {
   await expect(page.getByText(/builds? con objetivo de nivel/)).toBeVisible();
 });
 
-test('the goal rows start at three and grow on request', async ({ page }) => {
+test('the goal rows start at one and grow on request', async ({ page }) => {
   await page.goto(BUILD);
 
   const rows = page.getByRole('combobox', { name: /Estadística de la meta/ });
-  await expect(rows).toHaveCount(3);
+  await expect(rows).toHaveCount(1);
 
   await page.getByRole('button', { name: 'otro objetivo' }).click();
-  await expect(rows).toHaveCount(4);
+  await expect(rows).toHaveCount(2);
 
-  await page.getByRole('button', { name: 'Quitar el objetivo 4' }).click();
-  await expect(rows).toHaveCount(3);
+  await page.getByRole('button', { name: 'Quitar el objetivo 2' }).click();
+  await expect(rows).toHaveCount(1);
 });
 
 test('a role and its priority save together with the rest', async ({ page }) => {
@@ -177,13 +177,12 @@ test('a role and its priority save together with the rest', async ({ page }) => 
  * The goal does not pick a weapon.
  *
  * Naming a weapon the account may not hold is the same wish as a goal for a
- * character nobody owns. The objective reads the equipped one — its passive,
- * with the refinement slider — and swapping it lives in the detail view.
+ * character nobody owns. The weapon is read once, on the detail card — its
+ * passive with the refinement slider — and swapping it lives there too.
  */
-test('the objective shows the equipped weapon instead of a picker', async ({ page }) => {
+test('the weapon is read on the detail card, not picked in the objective', async ({ page }) => {
   await page.goto(BUILD);
 
   await expect(page.getByRole('combobox', { name: 'Arma objetivo', exact: true })).toHaveCount(0);
-  await expect(page.getByText('la equipada, a nivel 90')).toBeVisible();
-  await expect(page.getByRole('slider', { name: 'refinamiento a previsualizar' }).first()).toBeVisible();
+  await expect(page.getByRole('slider', { name: 'refinamiento a previsualizar' })).toHaveCount(1);
 });

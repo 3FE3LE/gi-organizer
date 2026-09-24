@@ -28,12 +28,12 @@ export const BREAKPOINTS = new Set([20, 40, 50, 60, 70, 80]);
 /**
  * How many stat goals a form starts with, and how many it will hold.
  *
- * Three, because three is what a plan actually is: Furina is HP, crit rate and
- * crit damage; Sucrose is a thousand mastery and not much else. Six empty rows
- * asked a question nobody had six answers to, and an empty row reads as work
- * left undone. The rest are one button away for the builds that need them.
+ * One. Three empty rows was the old default, on the theory that three is what
+ * a plan usually is, but a goal nobody has written yet read as three blanks
+ * waiting to be filled — an empty row reads as work left undone. One row says
+ * where a threshold goes; the rest are one button away.
  */
-export const DEFAULT_GOAL_ROWS = 3;
+export const DEFAULT_GOAL_ROWS = 1;
 export const MAX_GOAL_ROWS = 8;
 
 /** Four substats, in priority order, is the whole weighting the scorer reads. */

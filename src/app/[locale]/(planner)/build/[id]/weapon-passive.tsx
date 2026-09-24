@@ -1,13 +1,8 @@
 'use client';
 
-import { X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
-import { AssetImage } from '@/components/asset-image';
-import { Hint } from '@/components/hint';
-import { buttonVariants } from '@/components/ui/button';
-import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Slider } from '@/components/ui/slider';
 
 /**
@@ -23,18 +18,6 @@ export type WeaponPassiveText = {
   name: string;
   /** One string per refinement, R1 first. */
   refinements: string[];
-};
-
-/** A weapon as the detail view and the objective both read it. */
-export type WeaponInfo = {
-  name: string;
-  icon: string | null;
-  rarity: number;
-  level: number;
-  refinement: number;
-  /** Base ATK, then the secondary stat, already formatted. */
-  stats: { label: string; text: string }[];
-  passive: WeaponPassiveText | null;
 };
 
 export function WeaponPassive({
@@ -91,86 +74,5 @@ function Numbers({ text }: { text: string }) {
     index % 2 === 1
       ? <span key={index} className="tabular text-text">{part}</span>
       : part,
-  );
-}
-
-/**
- * A weapon's name that opens into the weapon: its numbers and its passive.
- *
- * It replaces a plain effect dialog that printed the passive at one
- * refinement and nothing else — the stats were on the card behind it, but a
- * dialog that covers the card has to say them again.
- */
-export function WeaponButton({
-  weapon,
-  className,
-  children,
-}: {
-  weapon: WeaponInfo;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  const t = useTranslations('build');
-  const [open, setOpen] = useState(false);
-
-  return (
-    <>
-      <Hint text={weapon.passive?.name ?? weapon.name}>
-        <button type="button" onClick={() => setOpen(true)} className={className}>
-          {children}
-        </button>
-      </Hint>
-
-      <Dialog open={open} onOpenChange={setOpen}>
-        {open && (
-          <DialogContent
-            showCloseButton={false}
-            className="panel max-h-[85vh] w-full max-w-md gap-0 overflow-hidden p-0 ring-0 sm:max-w-md"
-          >
-            <header className="flex items-start gap-3 border-b border-edge px-4 py-3">
-              <AssetImage
-                src={weapon.icon}
-                kind="weapon"
-                alt=""
-                className="h-11 w-11 shrink-0 field"
-                sizes="44px"
-              />
-              <div className="min-w-0 flex-1">
-                <DialogTitle className="text-sm font-normal">{weapon.name}</DialogTitle>
-                <p className="font-mono text-2xs text-muted">
-                  <span className="text-accent">{'★'.repeat(weapon.rarity)}</span>
-                  {' · '}{t('levelPrefix')} {weapon.level} · R{weapon.refinement}
-                </p>
-              </div>
-              <DialogClose
-                aria-label={t('closeAria')}
-                className={buttonVariants({ variant: 'ghost', size: 'icon-sm' })}
-              >
-                <X size={16} aria-hidden />
-              </DialogClose>
-            </header>
-            <div className="flex-1 space-y-4 overflow-y-auto px-4 py-3">
-              <WeaponStats stats={weapon.stats} />
-              {weapon.passive && (
-                <WeaponPassive passive={weapon.passive} refinement={weapon.refinement} />
-              )}
-            </div>
-          </DialogContent>
-        )}
-      </Dialog>
-    </>
-  );
-}
-
-export function WeaponStats({ stats }: { stats: WeaponInfo['stats'] }) {
-  return (
-    <dl className="divide-y divide-edge/60 border-y border-edge/60">
-      {stats.map((stat) => (
-        <div key={stat.label} className="flex items-baseline gap-3 py-1.5">
-          <dt className="min-w-0 flex-1 text-xs text-muted">{stat.label}</dt>
-          <dd className="tabular shrink-0 font-mono text-xs">{stat.text}</dd>
-        </div>
-      ))}
-    </dl>
   );
 }

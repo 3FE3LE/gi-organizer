@@ -122,6 +122,32 @@ export function Abilities({
             ))}
           </ol>
         )}
+
+        {/* The passives, down the other edge of the art as the
+            constellations run down this one. Nothing to label: a passive has
+            no level, only whether the character has reached it, and the dimmed
+            disc already says that — the name and the phase are a hover or a
+            tap away. */}
+        {passives.length > 0 && (
+          <ul className="absolute left-2 top-3 space-y-1.5" aria-label={t('passivesLabel')}>
+            {passives.map((passive) => (
+              <li key={passive.key}>
+                <Hint text={passive.name} side="right">
+                  <button
+                    type="button"
+                    onClick={() => setOpen(passive)}
+                    aria-label={passive.name}
+                    className={`flex h-8 w-8 items-center justify-center disc transition-transform hover:scale-110 ${
+                      passive.unlocked ? '' : 'opacity-40 grayscale'
+                    }`}
+                  >
+                    <Glyph ability={passive} size="h-5 w-5" />
+                  </button>
+                </Hint>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {talents.length > 0 && (
@@ -142,35 +168,6 @@ export function Abilities({
                   {talent.level}
                   {(talent.bonus ?? 0) > 0 && <span className="text-accent">+{talent.bonus}</span>}
                 </span>
-              </button>
-              </Hint>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {/* Smaller than the combat talents, and marked with the phase that
-          unlocks them: a passive has no level to show, only whether the
-          character has reached it. */}
-      {passives.length > 0 && (
-        <ul className="flex justify-center gap-2 px-3 pb-3" aria-label={t('passivesLabel')}>
-          {passives.map((passive) => (
-            <li key={passive.key}>
-              <Hint text={passive.name}>
-              <button
-                type="button"
-                onClick={() => setOpen(passive)}
-                aria-label={passive.name}
-                className="flex flex-col items-center gap-1"
-              >
-                <span
-                  className={`flex h-8 w-8 items-center justify-center disc transition-transform hover:scale-110 ${
-                    passive.unlocked ? '' : 'opacity-40 grayscale'
-                  }`}
-                >
-                  <Glyph ability={passive} size="h-5 w-5" />
-                </span>
-                <span className="font-mono text-2xs text-muted">{passive.fallback}</span>
               </button>
               </Hint>
             </li>

@@ -4,7 +4,7 @@ import type { Db } from '@/lib/db/client';
 
 
 import type { Catalog } from '@/lib/data/catalog';
-import { statsAtLevel } from '@/lib/data/stats';
+import { STAT_LEVEL_KEYS, type StatLevelKey, statsAtLevel } from '@/lib/data/stats';
 import type { ArtifactSlot } from '@/lib/data/types';
 import type { NormalizedStat } from '@/lib/inventory/model';
 import { getAnnotations } from '@/lib/rules/assemble';
@@ -68,6 +68,20 @@ export type Loadout = {
   totals: StatTotals;
   /** Pre-multiplier values, so a total can be shown as `base + bonus`. */
   base: { hp: number; attack: number; defense: number };
+  /**
+   * The same sums at every row of the stat table, with the gear held fixed.
+   *
+   * What the level slider previews: the character at another level, wearing
+   * what they wear now. `naked` is the character alone — innate crit and
+   * recharge plus the ascension stat — which is the base every row other than
+   * HP, ATK and DEF splits its total against.
+   */
+  byLevel: {
+    key: StatLevelKey;
+    totals: StatTotals;
+    base: { hp: number; attack: number; defense: number };
+    naked: StatTotals;
+  }[];
   weapon: LoadoutWeapon | null;
   pieces: LoadoutPiece[];
   /** Equipped pieces per set, most-worn first. */
@@ -125,16 +139,26 @@ export async function readLoadout(
     .filter(([, count]) => count >= 2)
     .flatMap(([setId]) => annotations.sets.get(setId)?.bonus2pc ?? []);
 
-  const { totals, base } = computeStats({
+  const sumAt = (stats: Record<string, number>, withGear: boolean) => computeStats({
     character: {
-      hp: characterStats.hp ?? 0,
-      attack: characterStats.attack ?? 0,
-      defense: characterStats.defense ?? 0,
+      hp: stats.hp ?? 0,
+      attack: stats.attack ?? 0,
+      defense: stats.defense ?? 0,
     },
-    ascension: { prop: character.substatType, value: characterStats.specialized ?? 0 },
-    weapon: weapon && { baseAttack: weapon.baseAttack, prop: weapon.prop, value: weapon.value },
-    pieces: equipped,
-    setBonuses,
+    ascension: { prop: character.substatType, value: stats.specialized ?? 0 },
+    weapon: withGear && weapon
+      ? { baseAttack: weapon.baseAttack, prop: weapon.prop, value: weapon.value }
+      : null,
+    pieces: withGear ? equipped : [],
+    setBonuses: withGear ? setBonuses : [],
+  });
+
+  const { totals, base } = sumAt(characterStats, true);
+
+  const byLevel = STAT_LEVEL_KEYS.map((key) => {
+    const stats = character.stats[key] ?? {};
+    const full = sumAt(stats, true);
+    return { key, totals: full.totals, base: full.base, naked: sumAt(stats, false).totals };
   });
 
   return {
@@ -148,6 +172,7 @@ export async function readLoadout(
     target: entry?.target ?? { level: null, ascension: null, talents: null },
     totals,
     base,
+    byLevel,
     weapon,
     pieces: equipped.map((piece) => ({
       instanceId: piece.id,

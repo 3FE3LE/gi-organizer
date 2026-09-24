@@ -2,17 +2,16 @@ import { Cake, Plus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { ViewTransition } from 'react';
 
-import { AnimatedNumber } from '@/components/animated-number';
 import { ArtifactCard } from '@/components/artifact-card';
 import { EffectButton } from '@/components/effect-dialog';
 import { GameIcon } from '@/components/game-icon';
 import { Badge } from '@/components/ui/badge';
 import {
-  type Catalog, enkaEntry, formatSetEffect, propLabel, setEffects, statLabel,
+  type Catalog, enkaEntry, formatSetEffect, propLabel, setEffects,
 } from '@/lib/data/catalog';
 import { elementColor, elementDamageProp } from '@/lib/data/elements';
 import type { Locale } from '@/lib/data/locales';
-import { ASCENSION_BONUS_KEY, formatPropValue, isPercentProp, statRowProp } from '@/lib/data/props';
+import { formatPropValue, isPercentProp } from '@/lib/data/props';
 import { resolveIcon } from '@/lib/data/icon';
 import { getCharacterDetailStrings } from '@/lib/data/registry';
 import { STAT_LEVEL_KEYS, statLevelKey } from '@/lib/data/stats';
@@ -22,9 +21,10 @@ import { critRating, critValue } from '@/lib/rules/rolls';
 
 import { Abilities, type Ability } from './abilities';
 import { ArtifactSlotSwitcher } from './artifact-slot-switcher';
-import { BaseStats, type BaseStatRow } from './base-stats';
+import { Attributes, type AttributeLevel, type AttributeRow } from './attributes';
 import { GearActions } from './gear-actions';
-import { WeaponButton, type WeaponInfo } from './weapon-passive';
+import { MobileCollapsible } from './mobile-collapsible';
+import { WeaponPassive, type WeaponPassiveText } from './weapon-passive';
 
 /**
  * The character screen: what is equipped right now and what it adds up to.
@@ -43,6 +43,13 @@ import { WeaponButton, type WeaponInfo } from './weapon-passive';
  */
 
 const SLOT_ORDER = ['flower', 'plume', 'sands', 'goblet', 'circlet'] as const;
+
+/** The attribute row a percent ascension stat is counted in. */
+const ASCENDS_INTO: Record<string, string> = {
+  FIGHT_PROP_HP_PERCENT: 'FIGHT_PROP_HP',
+  FIGHT_PROP_ATTACK_PERCENT: 'FIGHT_PROP_ATTACK',
+  FIGHT_PROP_DEFENSE_PERCENT: 'FIGHT_PROP_DEFENSE',
+};
 
 
 export async function CharacterPanel({
@@ -134,40 +141,17 @@ export async function CharacterPanel({
     )
     .sort();
 
-  const value = (prop: string) => loadout.totals[prop] ?? 0;
-
   const weaponDefinition = loadout.weapon
     ? catalog.weapons.get(loadout.weapon.weaponId)
     : undefined;
 
-  // The weapon as its dialog reads it: the numbers on the card, and the passive
-  // with a slider over every refinement. The slider opens on the copy equipped
-  // — a copy nobody has yet is not what this weapon is doing. A handful of the
-  // lowest-rarity weapons carry no passive at all, which is why this checks
-  // for one rather than assuming every weapon has a line to show.
-  const weaponInfo: WeaponInfo | null = loadout.weapon && weaponDefinition
-    ? {
-        name: weaponDefinition.name,
-        icon: await resolveIcon(weaponDefinition.icon, 'weapon'),
-        rarity: weaponDefinition.rarity,
-        level: loadout.weapon.level,
-        refinement: loadout.weapon.refinement,
-        stats: [
-          {
-            label: propLabel(catalog, 'FIGHT_PROP_ATTACK'),
-            text: String(Math.round(loadout.weapon.baseAttack)),
-          },
-          ...(loadout.weapon.prop
-            ? [{
-                label: propLabel(catalog, loadout.weapon.prop),
-                text: formatPropValue(loadout.weapon.prop, loadout.weapon.value, 'ratio', locale),
-              }]
-            : []),
-        ],
-        passive: weaponDefinition.effectName
-          ? { name: weaponDefinition.effectName, refinements: weaponDefinition.refinements }
-          : null,
-      }
+  // The passive at every refinement, for the slider under the weapon card. It
+  // opens on the copy equipped — a copy nobody has yet is not what this weapon
+  // is doing. A handful of the lowest-rarity weapons carry no passive at all,
+  // which is why this checks for one rather than assuming every weapon has a
+  // line to show.
+  const weaponPassive: WeaponPassiveText | null = weaponDefinition?.effectName
+    ? { name: weaponDefinition.effectName, refinements: weaponDefinition.refinements }
     : null;
 
   const bySlot = new Map(loadout.pieces.map((piece) => [piece.slot, piece]));
@@ -203,37 +187,39 @@ export async function CharacterPanel({
   const facts = [...new Set([character.region].filter(Boolean))];
 
   /*
-   * The stat table, formatted once on the server and handed over as fourteen
-   * rows the slider indexes into. The client component never sees a prop id or
-   * a locale: it moves a number between 0 and 13.
+   * The attribute rows, and their values at every row of the stat table.
    *
-   * `genshin-db` reports the ascension bonus as a ratio, which is why the
-   * `'ratio'` argument is here and not a guess inside `formatPropValue`.
+   * HP, ATK and DEF split against the game's own white number — the
+   * character's base plus the weapon's ATK — and every other row against the
+   * character alone: innate crit and recharge, and the ascension stat. The
+   * client component only moves an index; it never sees a table.
    */
-  const statKeys = Object.keys(character.stats['90'] ?? {}).filter(
-    (key) => key !== 'level' && key !== 'ascension',
-  );
-  const baseStatRows: BaseStatRow[] = STAT_LEVEL_KEYS.map((key) => ({
-    key,
-    cells: statKeys.map((stat) => {
-      const prop = statRowProp(stat, character.substatType);
-      return {
-        // The table's own column name, which is unique; the label is not,
-        // since a character who ascends into ATK% has two cells reading `ATQ`.
-        key: stat,
-        label: statLabel(catalog, prop),
-        value: formatPropValue(prop, character.stats[key]?.[stat] ?? 0, 'ratio', locale),
-        // The same number unformatted, in the scale it prints in, so the row
-        // can count to it. `formatPropValue` prints a ratio as a percent.
-        raw: isPercentProp(prop)
-          ? (character.stats[key]?.[stat] ?? 0) * 100
-          : character.stats[key]?.[stat] ?? 0,
-        percent: isPercentProp(prop),
-        // The one cell that steps at the phase rather than at the level, which
-        // is the whole of what "ascends into CRIT DMG" was saying in prose.
-        ascension: stat === ASCENSION_BONUS_KEY,
-      };
-    }),
+  const rowProps = [
+    'FIGHT_PROP_HP', 'FIGHT_PROP_CRITICAL',
+    'FIGHT_PROP_ATTACK', 'FIGHT_PROP_CRITICAL_HURT',
+    'FIGHT_PROP_DEFENSE', 'FIGHT_PROP_HEAL_ADD',
+    'FIGHT_PROP_ELEMENT_MASTERY', 'FIGHT_PROP_CHARGE_EFFICIENCY',
+    ...(damageProp ? [damageProp] : []),
+    ...otherDamage,
+  ];
+  const attributeRows: AttributeRow[] = rowProps.map((prop) => ({
+    prop,
+    label: propLabel(catalog, prop),
+    percent: isPercentProp(prop),
+    accent: prop === damageProp ? accent : undefined,
+    // A percent ascension lands in its flat row's total — ATK% in ATK — so
+    // that is the row it marks.
+    ascension: prop === (ASCENDS_INTO[character.substatType] ?? character.substatType),
+  }));
+  const splitBase = { FIGHT_PROP_HP: 'hp', FIGHT_PROP_ATTACK: 'attack', FIGHT_PROP_DEFENSE: 'defense' } as const;
+  const attributeLevels: AttributeLevel[] = loadout.byLevel.map((entry) => ({
+    key: entry.key,
+    values: Object.fromEntries(rowProps.map((prop) => [prop, {
+      base: prop in splitBase
+        ? entry.base[splitBase[prop as keyof typeof splitBase]]
+        : entry.naked[prop] ?? 0,
+      total: entry.totals[prop] ?? 0,
+    }])),
   }));
 
   return (
@@ -426,97 +412,30 @@ export async function CharacterPanel({
             <p className="mb-4 max-w-prose text-sm text-muted">{character.description}</p>
           )}
 
-          {loadout.known && (<>
-            <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">
-              {t('characterAttributes')}
-            </h2>
-            <dl className="grid gap-x-6 sm:grid-cols-2">
-              <StatRow
-                label={propLabel(catalog, 'FIGHT_PROP_HP')}
-                total={value('FIGHT_PROP_HP')}
-                base={loadout.base.hp}
-                locale={locale}
-              />
-              <StatRow
-                label={propLabel(catalog, 'FIGHT_PROP_CRITICAL')}
-                prop="FIGHT_PROP_CRITICAL"
-                total={value('FIGHT_PROP_CRITICAL')}
-                locale={locale}
-              />
-              <StatRow
-                label={propLabel(catalog, 'FIGHT_PROP_ATTACK')}
-                total={value('FIGHT_PROP_ATTACK')}
-                base={loadout.base.attack}
-                locale={locale}
-              />
-              <StatRow
-                label={propLabel(catalog, 'FIGHT_PROP_CRITICAL_HURT')}
-                prop="FIGHT_PROP_CRITICAL_HURT"
-                total={value('FIGHT_PROP_CRITICAL_HURT')}
-                locale={locale}
-              />
-              <StatRow
-                label={propLabel(catalog, 'FIGHT_PROP_DEFENSE')}
-                total={value('FIGHT_PROP_DEFENSE')}
-                base={loadout.base.defense}
-                locale={locale}
-              />
-              <StatRow
-                label={propLabel(catalog, 'FIGHT_PROP_HEAL_ADD')}
-                prop="FIGHT_PROP_HEAL_ADD"
-                total={value('FIGHT_PROP_HEAL_ADD')}
-                locale={locale}
-              />
-              <StatRow
-                label={propLabel(catalog, 'FIGHT_PROP_ELEMENT_MASTERY')}
-                prop="FIGHT_PROP_ELEMENT_MASTERY"
-                total={value('FIGHT_PROP_ELEMENT_MASTERY')}
-                locale={locale}
-              />
-              <StatRow
-                label={propLabel(catalog, 'FIGHT_PROP_CHARGE_EFFICIENCY')}
-                prop="FIGHT_PROP_CHARGE_EFFICIENCY"
-                total={value('FIGHT_PROP_CHARGE_EFFICIENCY')}
-                locale={locale}
-              />
-              {damageProp && (
-                <StatRow
-                  label={propLabel(catalog, damageProp)}
-                  prop={damageProp}
-                  total={value(damageProp)}
-                  locale={locale}
-                  accent={accent}
-                />
-              )}
-              {otherDamage.map((prop) => (
-                <StatRow
-                  key={prop}
-                  label={propLabel(catalog, prop)}
-                  prop={prop}
-                  total={value(prop)}
-                  locale={locale}
-                />
-              ))}
-            </dl>
-          </>)}
-
-          {/* The stat table the catalogue page used to print in full. */}
-          <BaseStats
-            locale={locale}
-            rows={baseStatRows}
-            ascensionLabel={t('factAscensionMark')}
-            startAt={STAT_LEVEL_KEYS.indexOf(statLevelKey(loadout.level, loadout.ascension))}
-            heading={t('baseStats')}
-            sliderLabel={t('baseStatsSlider')}
-            levelPrefix={t('levelPrefix')}
-          />
+          {/* Every character, owned or not: a character nobody holds is the
+              same table with no gear on it, which is what their base is. */}
+          <MobileCollapsible title={t('characterAttributes')}>
+            <Attributes
+              rows={attributeRows}
+              levels={attributeLevels}
+              startAt={STAT_LEVEL_KEYS.indexOf(statLevelKey(loadout.level, loadout.ascension))}
+              sliderLabel={t('baseStatsSlider')}
+              levelPrefix={t('levelPrefix')}
+              ascensionLabel={t('factAscensionMark')}
+              previewLabel={t('levelPreview')}
+              locale={locale}
+            />
+          </MobileCollapsible>
 
           {loadout.known && (<>
             <h2 className="mb-2 mt-5 text-xs font-medium uppercase tracking-wide text-muted">
               {t('weaponHeading')}
             </h2>
             {loadout.weapon && weaponDefinition ? (
-              <div className="group relative flex items-center gap-3 card-2 p-3">
+              <div className="card-2">
+              {/* The controls cover the top half only: the passive under it has
+                  a slider of its own, and an overlay over it would eat the drag. */}
+              <div className="group relative flex items-center gap-3 p-3">
                 <div className="relative shrink-0">
                   <GameIcon
                     filename={weaponDefinition.icon}
@@ -530,16 +449,7 @@ export async function CharacterPanel({
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="flex flex-wrap items-center gap-2">
-                    {weaponInfo && (
-                      <WeaponButton
-                        weapon={weaponInfo}
-                        className={`max-w-full truncate text-left text-sm ${
-                          weaponInfo.passive ? 'underline decoration-edge-strong decoration-dotted underline-offset-2' : ''
-                        }`}
-                      >
-                        {weaponDefinition.name}
-                      </WeaponButton>
-                    )}
+                    <span className="max-w-full truncate text-sm">{weaponDefinition.name}</span>
                     <span className="rounded border border-edge px-1 font-mono text-2xs text-muted">
                       {t('levelPrefix')} {loadout.weapon.level}
                     </span>
@@ -573,6 +483,15 @@ export async function CharacterPanel({
                   slot="weapon"
                   title={character.weaponText}
                 />
+              </div>
+              {/* The passive, open rather than behind the name: the objective
+                  used to print it a second time, with the slider, and this is
+                  the one place a weapon is read now. */}
+              {weaponPassive && (
+                <div className="border-t border-edge px-3 py-2.5">
+                  <WeaponPassive passive={weaponPassive} refinement={loadout.weapon.refinement} />
+                </div>
+              )}
               </div>
             ) : (
               <div className="group relative rounded-lg border border-dashed border-edge px-3 py-4">
@@ -669,58 +588,6 @@ export async function CharacterPanel({
         </div>
       )}
     </section>
-  );
-}
-
-/**
- * One attribute row.
- *
- * `base` splits the total the way the game does — the white base and the green
- * bonus stacked next to the final number — which is the only way to see whether
- * a total comes from the character or from the gear.
- */
-function StatRow({
-  label,
-  prop,
-  total,
-  base,
-  locale,
-  accent,
-}: {
-  label: string;
-  prop?: string;
-  total: number;
-  base?: number;
-  locale: Locale;
-  accent?: string;
-}) {
-  // Keyed by the stat, not the character, so a step along the roster counts
-  // from the last character's number — see `AnimatedNumber`.
-  const id = prop ?? label;
-  const percent = prop ? isPercentProp(prop) : false;
-
-  return (
-    <div className="flex items-center justify-between gap-3 border-b border-edge/50 py-1.5">
-      <dt className="truncate text-xs text-muted">{label}</dt>
-      <dd className="tabular flex items-baseline gap-2 font-mono">
-        {base !== undefined && (
-          <span className="flex flex-col items-end text-2xs leading-tight">
-            <span className="text-muted">
-              <AnimatedNumber id={`base:${id}`} value={base} locale={locale} />
-            </span>
-            <span className="text-good">
-              <AnimatedNumber id={`bonus:${id}`} value={total - base} signed locale={locale} />
-            </span>
-          </span>
-        )}
-        <span
-          className="text-sm element-tint"
-          style={accent ? ({ '--element': accent } as React.CSSProperties) : undefined}
-        >
-          <AnimatedNumber id={`total:${id}`} value={total} percent={percent} locale={locale} />
-        </span>
-      </dd>
-    </div>
   );
 }
 
