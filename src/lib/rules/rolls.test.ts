@@ -3,6 +3,7 @@ import { test } from 'node:test';
 
 import {
   MAX_CRIT_VALUE,
+  critCeilingRolls,
   critRating,
   critRolls,
   critValue,
@@ -184,4 +185,18 @@ test('the ratings land where the guides put them', () => {
   // Five rolls is around forty, the figure quoted as rare.
   assert.equal(critRating(40), 'excelente');
   assert.equal(critRating(50), 'excelente');
+});
+
+test('a crit circlet is rated against the six crit rolls it can carry', () => {
+  assert.equal(critCeilingRolls('FIGHT_PROP_CRITICAL'), 6);
+  assert.equal(critCeilingRolls('FIGHT_PROP_CRITICAL_HURT'), 6);
+  assert.equal(critCeilingRolls('FIGHT_PROP_ATTACK_PERCENT'), 7);
+  assert.equal(critCeilingRolls(null), 7);
+
+  // 35 is 4.5 rolls: short of excellent out of seven, past it out of six.
+  assert.equal(critRating(35), 'muy bueno');
+  assert.equal(critRating(35, 'FIGHT_PROP_ATTACK_PERCENT'), 'muy bueno');
+  assert.equal(critRating(35, 'FIGHT_PROP_CRITICAL'), 'excelente');
+  // The value itself is untouched: only the reading of it moves.
+  assert.equal(critRating(0, 'FIGHT_PROP_CRITICAL_HURT'), 'ninguno');
 });

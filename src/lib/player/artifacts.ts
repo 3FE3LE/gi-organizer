@@ -104,8 +104,8 @@ export async function readArtifacts(db: Db = getDb()): Promise<OwnedArtifact[]> 
       quality,
       critValue: crit,
       critValueAtFour: critAtFour !== null && critAtFour !== crit ? critAtFour : null,
-      critRating: critRating(crit),
-      critPotential: critPotential(quality),
+      critRating: critRating(crit, row.main_prop),
+      critPotential: critPotential(quality, row.main_prop),
     };
   });
 }
@@ -123,11 +123,17 @@ export async function readArtifacts(db: Db = getDb()): Promise<OwnedArtifact[]> 
  * It promises nothing about the rolls to come — those are independent of the
  * ones before — which is the point: it is a reading of what already happened,
  * not a forecast.
+ *
+ * A crit circlet can hold one crit line, not two, so its sum is out of 1.0.
+ * It is doubled to read on the same 2.0 scale as everything else: a crit rate
+ * circlet whose crit damage line is at the top tier is as good as that piece
+ * can start, and sorts with the other pieces that are.
  */
-export function critPotential(quality: { substats: RollQuality[] }) {
-  return quality.substats
+export function critPotential(quality: { substats: RollQuality[] }, mainProp?: string | null) {
+  const sum = quality.substats
     .filter((entry) => entry.prop in CRIT_WEIGHTS)
     .reduce((total, entry) => total + entry.efficiency, 0);
+  return mainProp && mainProp in CRIT_WEIGHTS ? sum * 2 : sum;
 }
 
 export type ArtifactFilter = {

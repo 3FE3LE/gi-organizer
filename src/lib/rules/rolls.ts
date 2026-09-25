@@ -243,6 +243,18 @@ export const CRIT_VALUE_PER_ROLL = (
  */
 export const MAX_CRIT_VALUE = 7 * CRIT_VALUE_PER_ROLL;
 
+/**
+ * How many crit rolls a piece can ever carry, which its main stat decides.
+ *
+ * A substat is never the piece's own main stat, so a crit rate circlet cannot
+ * roll crit rate and a crit damage one cannot roll crit damage: one crit line
+ * and its five upgrades, six rolls, against the seven of every other piece.
+ * The crit value is the same sum either way; only what it is out of changes.
+ */
+export function critCeilingRolls(mainProp?: string | null) {
+  return mainProp && mainProp in CRIT_WEIGHTS ? 6 : 7;
+}
+
 /** Crit value expressed in the unit it is made of. */
 export function critRolls(value: number) {
   return value / CRIT_VALUE_PER_ROLL;
@@ -257,9 +269,14 @@ export type CritRating = 'ninguno' | 'bajo' | 'normal' | 'bueno' | 'muy bueno' |
  * two and a half crit rolls, which lands on the 20-ish figure guides quote as
  * the point a piece is worth keeping, and "excelente" starts at five, near the
  * 40 they call rare.
+ *
+ * The bands are for a piece that can carry seven crit rolls. A crit circlet
+ * can carry six (see `critCeilingRolls`), so its rolls are read against that:
+ * "excelente" starts near 4.3 rolls, the same share of what it could reach.
+ * Without its main stat the reading is the seven-roll one.
  */
-export function critRating(value: number): CritRating {
-  const rolls = critRolls(value);
+export function critRating(value: number, mainProp?: string | null): CritRating {
+  const rolls = critRolls(value) * (7 / critCeilingRolls(mainProp));
   if (rolls < 0.5) return 'ninguno';
   if (rolls < 1.5) return 'bajo';
   if (rolls < 2.5) return 'normal';

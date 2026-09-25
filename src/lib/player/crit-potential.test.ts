@@ -26,3 +26,17 @@ test('both crit lines at the top tier is the ceiling, and no crit is zero', () =
   assert.ok(Math.abs(potential([['FIGHT_PROP_CRITICAL', 3.9], ['FIGHT_PROP_CRITICAL_HURT', 7.8]]) - 2) < 0.01);
   assert.equal(potential([['FIGHT_PROP_HP', 299], ['FIGHT_PROP_ATTACK_PERCENT', 5.8]]), 0);
 });
+
+test('a crit circlet reads its one crit line on the same 2.0 scale', () => {
+  const quality = pieceQuality({
+    rarity: 5,
+    substats: [
+      { prop: 'FIGHT_PROP_CRITICAL_HURT', value: 7.8 },
+      { prop: 'FIGHT_PROP_HP', value: 299 },
+    ],
+  });
+
+  assert.ok(Math.abs(critPotential(quality) - 1) < 0.01);
+  assert.ok(Math.abs(critPotential(quality, 'FIGHT_PROP_CRITICAL') - 2) < 0.01);
+  assert.ok(Math.abs(critPotential(quality, 'FIGHT_PROP_ATTACK_PERCENT') - 1) < 0.01);
+});

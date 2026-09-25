@@ -706,7 +706,7 @@ async function ArtifactSlotCard({
         })),
         pendingSubstats: piece.unactivated,
         critValue: crit,
-        critRating: critRating(crit),
+        critRating: critRating(crit, piece.mainProp),
       }}
       footer={fits.has(piece.instanceId) && (
         <div className="mt-2 flex items-center justify-end border-t border-edge pt-1.5">
