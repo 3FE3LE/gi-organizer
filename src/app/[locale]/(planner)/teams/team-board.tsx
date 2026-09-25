@@ -456,94 +456,94 @@ function MemberPicker({
         {t('addMember')}
       </button>
 
-      {open && (
-        <DialogContent
-          showCloseButton={false}
-          className="max-w-2xl gap-0 overflow-hidden rounded-xl border border-edge-strong bg-surface p-0 ring-0 sm:max-w-2xl"
-        >
-          <div className="flex max-h-[80vh] flex-col">
-            <header className="flex items-center gap-3 border-b border-edge px-4 py-3">
-              <DialogTitle className="font-mono text-xs font-normal uppercase tracking-wide text-accent">
-                {t('addMember')}
-              </DialogTitle>
-              <label className="field ml-auto flex min-w-0 flex-1 items-center gap-2 px-2 py-1 sm:max-w-64">
-                <Search size={14} className="shrink-0 text-muted" aria-hidden />
-                <span className="sr-only">{t('searchRoster')}</span>
-                <input
-                  autoFocus
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder={t('searchRoster')}
-                  className="min-w-0 flex-1 bg-transparent text-xs outline-none"
-                />
-              </label>
-              <DialogClose
-                aria-label={t('closeAria')}
-                className={buttonVariants({ variant: 'ghost', size: 'icon-sm', className: 'shrink-0' })}
-              >
-                <X size={16} />
-              </DialogClose>
-            </header>
+      {/* Not gated on `open`: the portal mounts it only while open, and a
+          gate here unmounted it before it could animate out. */}
+      <DialogContent
+        showCloseButton={false}
+        className="max-w-2xl gap-0 overflow-hidden rounded-xl border border-edge-strong bg-surface p-0 ring-0 sm:max-w-2xl"
+      >
+        <div className="flex max-h-[80vh] flex-col">
+          <header className="flex items-center gap-3 border-b border-edge px-4 py-3">
+            <DialogTitle className="font-mono text-xs font-normal uppercase tracking-wide text-accent">
+              {t('addMember')}
+            </DialogTitle>
+            <label className="field ml-auto flex min-w-0 flex-1 items-center gap-2 px-2 py-1 sm:max-w-64">
+              <Search size={14} className="shrink-0 text-muted" aria-hidden />
+              <span className="sr-only">{t('searchRoster')}</span>
+              <input
+                autoFocus
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder={t('searchRoster')}
+                className="min-w-0 flex-1 bg-transparent text-xs outline-none"
+              />
+            </label>
+            <DialogClose
+              aria-label={t('closeAria')}
+              className={buttonVariants({ variant: 'ghost', size: 'icon-sm', className: 'shrink-0' })}
+            >
+              <X size={16} />
+            </DialogClose>
+          </header>
 
-            {lastAdded !== openedOn && lastAdded.status === 'error' && (
-              <p className="border-b border-edge px-4 py-1.5 font-mono text-xs text-accent">
-                {lastAdded.message}
-              </p>
+          {lastAdded !== openedOn && lastAdded.status === 'error' && (
+            <p className="border-b border-edge px-4 py-1.5 font-mono text-xs text-accent">
+              {lastAdded.message}
+            </p>
+          )}
+
+          <div className="flex-1 space-y-4 overflow-y-auto px-4 py-3">
+            {groups.size === 0 && (
+              <p className="py-6 text-center text-xs text-muted">{t('noRosterMatch')}</p>
             )}
+            {[...groups].map(([element, characters]) => (
+              <section key={element}>
+                <h3 className="mb-2 font-mono text-2xs uppercase tracking-wide text-muted">{element}</h3>
+                <ul className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+                  {characters.map((character) => {
+                    const here = character.inTeam?.id === teamId;
+                    const busy = character.inTeam !== null;
 
-            <div className="flex-1 space-y-4 overflow-y-auto px-4 py-3">
-              {groups.size === 0 && (
-                <p className="py-6 text-center text-xs text-muted">{t('noRosterMatch')}</p>
-              )}
-              {[...groups].map(([element, characters]) => (
-                <section key={element}>
-                  <h3 className="mb-2 font-mono text-2xs uppercase tracking-wide text-muted">{element}</h3>
-                  <ul className="grid grid-cols-4 gap-2 sm:grid-cols-6">
-                    {characters.map((character) => {
-                      const here = character.inTeam?.id === teamId;
-                      const busy = character.inTeam !== null;
-
-                      return (
-                        <li key={character.id}>
-                          <button
-                            type="button"
-                            disabled={busy || pending}
-                            onClick={() => send(action, { teamId, characterId: String(character.id) })}
-                            title={busy
-                              ? here
-                                ? t('alreadyInThisTeam')
-                                : t('inOtherTeam', { name: character.inTeam!.name })
-                              : character.name}
-                            className="flex w-full flex-col items-center gap-1 rounded-lg p-1 text-center transition-colors hover:bg-ink/50 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-accent"
+                    return (
+                      <li key={character.id}>
+                        <button
+                          type="button"
+                          disabled={busy || pending}
+                          onClick={() => send(action, { teamId, characterId: String(character.id) })}
+                          title={busy
+                            ? here
+                              ? t('alreadyInThisTeam')
+                              : t('inOtherTeam', { name: character.inTeam!.name })
+                            : character.name}
+                          className="flex w-full flex-col items-center gap-1 rounded-lg p-1 text-center transition-colors hover:bg-ink/50 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-accent"
+                        >
+                          <span
+                            className="rounded-full border-2 bg-icon-bed"
+                            style={{ borderColor: character.elementColor }}
                           >
-                            <span
-                              className="rounded-full border-2 bg-icon-bed"
-                              style={{ borderColor: character.elementColor }}
-                            >
-                              <AssetImage
-                                src={character.icon}
-                                kind="avatar"
-                                className="h-12 w-12 rounded-full"
-                                sizes="48px"
-                              />
-                            </span>
-                            <span className="w-full truncate text-2xs">{character.name}</span>
-                            <span className="w-full truncate font-mono text-2xs text-muted">
-                              {busy
-                                ? here ? t('alreadyInThisTeam') : character.inTeam!.name
-                                : '★'.repeat(character.rarity)}
-                            </span>
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </section>
-              ))}
-            </div>
+                            <AssetImage
+                              src={character.icon}
+                              kind="avatar"
+                              className="h-12 w-12 rounded-full"
+                              sizes="48px"
+                            />
+                          </span>
+                          <span className="w-full truncate text-2xs">{character.name}</span>
+                          <span className="w-full truncate font-mono text-2xs text-muted">
+                            {busy
+                              ? here ? t('alreadyInThisTeam') : character.inTeam!.name
+                              : '★'.repeat(character.rarity)}
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            ))}
           </div>
-        </DialogContent>
-      )}
+        </div>
+      </DialogContent>
     </Dialog>
   );
 }
@@ -714,7 +714,7 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
               badge={null}
             >
               {main.prop && main.label && (
-                <StatIcon prop={main.prop} label={main.label} size={15} />
+                <StatIcon prop={main.prop} label={main.label} size={15} showPercent={false} />
               )}
             </Mark>
           </li>

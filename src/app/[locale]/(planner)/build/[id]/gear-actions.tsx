@@ -7,6 +7,7 @@ import { useActionState, useEffect, useRef, useState } from 'react';
 import { buttonVariants } from '@/components/ui/button';
 import { ActionStatus } from '@/components/action-status';
 import { AssetImage } from '@/components/asset-image';
+import { Collapse } from '@/components/collapse';
 import { EmptyArtifactSlot } from '@/components/empty-artifact-slot';
 import { FitIcons } from '@/components/fit-icons';
 import { OwnedArtifactCardView } from '@/components/owned-artifact-card-view';
@@ -79,25 +80,26 @@ export function GearActions({
         />
       </div>
 
+      {/* No `open &&` around the content: the portal already mounts it only
+          while open, and gating it here unmounted it before it could animate
+          out. */}
       <Dialog open={open} onOpenChange={setOpen}>
-        {open && (
-          <DialogContent
-            showCloseButton={false}
-            // Wider for artifacts, which are a grid of the box's cards; a
-            // weapon list is rows and reads best narrow.
-            className={`gap-0 overflow-hidden rounded-xl border border-edge-strong bg-surface p-0 ring-0 ${
-              slot === 'weapon' ? 'max-w-3xl sm:max-w-3xl' : 'max-w-5xl sm:max-w-5xl'
-            }`}
-          >
-            <SlotDialog
-              characterId={characterId}
-              locale={locale}
-              buildId={buildId}
-              slot={slot}
-              title={title}
-            />
-          </DialogContent>
-        )}
+        <DialogContent
+          showCloseButton={false}
+          // Wider for artifacts, which are a grid of the box's cards; a
+          // weapon list is rows and reads best narrow.
+          className={`gap-0 overflow-hidden rounded-xl border border-edge-strong bg-surface p-0 ring-0 ${
+            slot === 'weapon' ? 'max-w-3xl sm:max-w-3xl' : 'max-w-5xl sm:max-w-5xl'
+          }`}
+        >
+          <SlotDialog
+            characterId={characterId}
+            locale={locale}
+            buildId={buildId}
+            slot={slot}
+            title={title}
+          />
+        </DialogContent>
       </Dialog>
     </>
   );
@@ -312,7 +314,7 @@ function SlotDialog({
           aria-label={t('previewAria')}
           className="shrink-0 border-b border-edge bg-surface-2/60 px-3 py-1.5"
         >
-          <div className={`flex items-center gap-2 ${previewOpen ? 'mb-1.5' : ''}`}>
+          <div className="flex items-center gap-2">
             <button
               type="button"
               aria-expanded={previewOpen}
@@ -348,8 +350,8 @@ function SlotDialog({
           {/* `grid-cols-1` on a phone, not the implicit column: that one sizes to
               its content, and the comparison table's own minimum width pushed
               the whole dialog wider than the screen. */}
-          {previewOpen && (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,11rem)_minmax(0,11rem)_minmax(0,1fr)]">
+          <Collapse open={previewOpen}>
+          <div className="grid grid-cols-1 gap-3 pt-1.5 sm:grid-cols-[minmax(0,11rem)_minmax(0,11rem)_minmax(0,1fr)]">
             <ul className="hidden sm:block">
               {view.equipped?.card ? (
                 <OwnedArtifactCardView
@@ -400,7 +402,7 @@ function SlotDialog({
               />
             </div>
           </div>
-          )}
+          </Collapse>
         </section>
       )}
 

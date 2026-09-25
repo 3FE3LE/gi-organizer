@@ -113,9 +113,16 @@ export function Attributes({
             ? '[&_[data-slot=slider-range]]:transition-[width] [&_[data-slot=slider-thumb]]:transition-[inset-inline-start,left,color,box-shadow] [&_[data-slot=slider-thumb]]:duration-300 [&_[data-slot=slider-range]]:duration-300 [&[data-dragging]_*]:transition-none'
             : ''}`}
         />
+        {/* A fixed width, so the track under the finger never resizes. The
+            key runs from `1` to `90+`, and the preview mark used to come and
+            go: back on the character's own level the label shrank, the track
+            widened, and the thumb jumped out from under the drag. The mark is
+            always laid out now, and only hidden. */}
         <span className={`tabular shrink-0 text-right font-mono text-2xs ${previewing ? 'text-accent' : ''}`}>
-          {levelPrefix} {level.key}
-          {previewing && <span className="ml-1 uppercase">· {previewLabel}</span>}
+          {levelPrefix} <span className="inline-block min-w-[3ch] text-left">{level.key}</span>
+          <span className={`ml-1 uppercase ${previewing ? '' : 'invisible'}`} aria-hidden={!previewing}>
+            · {previewLabel}
+          </span>
         </span>
       </label>
 

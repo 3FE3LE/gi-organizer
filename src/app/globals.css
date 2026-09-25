@@ -898,6 +898,30 @@ select.field {
   }
 }
 
+/* A swipe along the roster: the next panel slides in from the side the
+   finger threw the last one away from. See `swipe-navigate.tsx`. */
+::view-transition-new(.swipe-from-right) {
+  animation: 260ms var(--ease-out-soft) both swipe-from-right;
+}
+
+::view-transition-new(.swipe-from-left) {
+  animation: 260ms var(--ease-out-soft) both swipe-from-left;
+}
+
+@keyframes swipe-from-right {
+  from {
+    opacity: 0;
+    transform: translate3d(40%, 0, 0);
+  }
+}
+
+@keyframes swipe-from-left {
+  from {
+    opacity: 0;
+    transform: translate3d(-40%, 0, 0);
+  }
+}
+
 /* The header is the anchor the rest moves against, so it holds still — and
    both snapshots of it must never be on screen at once. */
 ::view-transition-group(site-header) {
@@ -917,6 +941,58 @@ select.field {
    already interactive, so let them through. */
 ::view-transition {
   pointer-events: none;
+}
+
+/**
+ * Folds, opening and shutting instead of appearing and vanishing.
+ *
+ * `.collapse-grid` is the `<Collapse>` component: a one-row grid whose row runs
+ * from `0fr` to `1fr`, which is a height transition to the content's own size
+ * with nothing measured. Visibility waits out the fold on the way shut, so the
+ * content is hidden from focus and screen readers only once it is out of sight.
+ *
+ * A `<details>` gets the same through `::details-content`, where the browser
+ * has it; `interpolate-size` is what lets its height run to `auto`. Where
+ * either is missing it opens as it always did, which is the whole fallback.
+ */
+:root {
+  interpolate-size: allow-keywords;
+}
+
+@layer components {
+  .collapse-grid {
+    display: grid;
+    grid-template-rows: 0fr;
+    visibility: hidden;
+    transition:
+      grid-template-rows var(--duration-enter) var(--ease-out-soft),
+      visibility 0s linear var(--duration-enter);
+  }
+
+  .collapse-grid[data-open] {
+    grid-template-rows: 1fr;
+    visibility: visible;
+    transition:
+      grid-template-rows var(--duration-enter) var(--ease-out-soft),
+      visibility 0s;
+  }
+
+  details::details-content {
+    block-size: 0;
+    opacity: 0;
+    overflow: clip;
+    /* Room for a focus ring on the content's edge. */
+    overflow-clip-margin: 4px;
+    transition:
+      block-size var(--duration-enter) var(--ease-out-soft),
+      opacity var(--duration-enter) var(--ease-out-soft),
+      content-visibility var(--duration-enter) allow-discrete;
+  }
+
+  details[open]::details-content {
+    block-size: auto;
+    opacity: 1;
+  }
 }
 
 /**

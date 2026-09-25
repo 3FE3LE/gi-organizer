@@ -79,7 +79,14 @@ export function Abilities({
   passives: Ability[];
 }) {
   const t = useTranslations('build');
-  const [open, setOpen] = useState<Ability | null>(null);
+  // Which ability the dialog shows, and whether it is open, apart: closing
+  // clears only the second, so the panel stays on screen while it animates out.
+  const [shown, setShown] = useState<Ability | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
+  const setOpen = (ability: Ability) => {
+    setShown(ability);
+    setIsOpen(true);
+  };
 
   return (
     /*
@@ -189,14 +196,14 @@ export function Abilities({
         * `key` remounts the body per ability, so the level slider opens on the
         * talent that was clicked rather than on the last one read.
         */}
-      <Dialog open={open !== null} onOpenChange={(next) => { if (!next) setOpen(null); }}>
-        {open && (
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        {shown && (
           <DialogContent
-            key={open.key}
+            key={shown.key}
             showCloseButton={false}
             className="panel max-h-[85vh] max-w-lg gap-0 overflow-hidden p-0 ring-0 sm:max-w-lg"
           >
-            <AbilityPanel ability={open} closeLabel={t('abilityClose')} />
+            <AbilityPanel ability={shown} closeLabel={t('abilityClose')} />
           </DialogContent>
         )}
       </Dialog>

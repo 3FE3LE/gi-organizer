@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import { Button, buttonVariants } from '@/components/ui/button';
 import { AssetImage } from '@/components/asset-image';
+import { Collapse } from '@/components/collapse';
 import type { Move } from '@/lib/player/move';
 import type { PieceFit } from '@/lib/rules/piece-score';
 
@@ -144,36 +145,40 @@ export function CandidateRow({
         />
       </div>
 
-      {open && (candidate.stats || candidate.passive) && (
-        <div className="mx-3 mb-2 space-y-3 rounded border border-edge/60 bg-ink/40 px-2 py-2">
-          {candidate.stats && (
-            <PieceComparison
-              equipped={slot.equipped?.stats ?? null}
-              candidate={candidate.stats}
-            />
-          )}
-          {/* A weapon is its passive as much as its numbers, and two passives
-              are the comparison the table above cannot make. Each opens on its
-              own copy's refinement. */}
-          {slot.kind === 'weapon' && (
-            <div className="grid gap-3 sm:grid-cols-2">
-              {slot.equipped?.passive && (
-                <PassiveColumn
-                  heading={t('equippedHeader')}
-                  passive={slot.equipped.passive}
-                  refinement={slot.equipped.refinement ?? 1}
-                />
-              )}
-              {candidate.passive && (
-                <PassiveColumn
-                  heading={t('defaultCandidateLabel')}
-                  passive={candidate.passive}
-                  refinement={candidate.refinement ?? 1}
-                />
-              )}
-            </div>
-          )}
-        </div>
+      {/* Lazy: a list of candidates, each with a comparison that most rows
+          never open. */}
+      {(candidate.stats || candidate.passive) && (
+        <Collapse open={open} lazy>
+          <div className="mx-3 mb-2 space-y-3 rounded border border-edge/60 bg-ink/40 px-2 py-2">
+            {candidate.stats && (
+              <PieceComparison
+                equipped={slot.equipped?.stats ?? null}
+                candidate={candidate.stats}
+              />
+            )}
+            {/* A weapon is its passive as much as its numbers, and two passives
+                are the comparison the table above cannot make. Each opens on its
+                own copy's refinement. */}
+            {slot.kind === 'weapon' && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {slot.equipped?.passive && (
+                  <PassiveColumn
+                    heading={t('equippedHeader')}
+                    passive={slot.equipped.passive}
+                    refinement={slot.equipped.refinement ?? 1}
+                  />
+                )}
+                {candidate.passive && (
+                  <PassiveColumn
+                    heading={t('defaultCandidateLabel')}
+                    passive={candidate.passive}
+                    refinement={candidate.refinement ?? 1}
+                  />
+                )}
+              </div>
+            )}
+          </div>
+        </Collapse>
       )}
     </li>
   );

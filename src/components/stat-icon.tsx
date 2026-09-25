@@ -76,12 +76,16 @@ export function StatIcon({
   prop,
   label,
   size = 13,
+  showPercent = true,
   className,
 }: {
   prop: string;
   /** The stat's full name, for anything that cannot see the drawing. */
   label: string;
   size?: number;
+  /** Off where the slot already says it: a sands, goblet or circlet never
+   *  rolls flat HP, ATK or DEF, so a percent sign there tells no one anything. */
+  showPercent?: boolean;
   className?: string;
 }) {
   // Read straight out of the table rather than through a helper: a function
@@ -107,7 +111,7 @@ export function StatIcon({
       )}
       {/* The one thing the drawing cannot say, and the only reason the pair of
           them is unambiguous. */}
-      {isPercentProp(prop) && (
+      {showPercent && isPercentProp(prop) && (
         <span aria-hidden className="font-mono text-[0.7em] leading-none text-muted">%</span>
       )}
       <span className="sr-only">{label}</span>

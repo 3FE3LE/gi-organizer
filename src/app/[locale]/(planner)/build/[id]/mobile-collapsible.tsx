@@ -3,6 +3,8 @@
 import { ChevronDown } from 'lucide-react';
 import { useId, useState } from 'react';
 
+import { Collapse } from '@/components/collapse';
+
 /**
  * A section that folds away on a phone and is simply open everywhere else.
  *
@@ -12,9 +14,9 @@ import { useId, useState } from 'react';
  * below `sm`, it is one line that opens on a tap; from `sm` up there is room,
  * so it is a plain heading and the rows are always there.
  *
- * CSS decides the width, not script: the closed state is `max-sm:hidden`, so
- * the server's HTML is already right at both widths and nothing jumps on
- * hydration.
+ * CSS decides the width, not script: from `sm` up the fold is forced open by
+ * class, so the server's HTML is already right at both widths and nothing
+ * jumps on hydration.
  */
 export function MobileCollapsible({
   title,
@@ -47,9 +49,9 @@ export function MobileCollapsible({
           className={`transition-transform ${open ? 'rotate-180' : ''}`}
         />
       </button>
-      <div id={id} className={open ? undefined : 'max-sm:hidden'}>
+      <Collapse open={open} id={id} className="sm:visible sm:grid-rows-[1fr]">
         {children}
-      </div>
+      </Collapse>
     </div>
   );
 }
