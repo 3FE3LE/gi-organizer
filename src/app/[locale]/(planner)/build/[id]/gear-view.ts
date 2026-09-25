@@ -130,11 +130,18 @@ async function artifactSlot(
   const equipped = gear.bySlot.get(slot) ?? null;
   // Four-stars never make the list — see `rarity-floor.ts`. What is worn
   // still shows in the header, whatever it is.
-  const recommendable = (piece: GearPiece) => piece.rarity >= MIN_ARTIFACT_RARITY;
-  const free = (await artifactCandidates(slot, { limit: 40 }, db)).filter(recommendable);
-  const taken = (await artifactCandidates(slot, { includeAssigned: true, limit: 60 }, db))
-    .filter(recommendable)
-    .filter((piece) => piece.equippedTo !== null && piece.equippedTo !== characterId);
+  //
+  // Every piece of the slot, not the top of it. This took the forty highest
+  // levelled free pieces and the dialog filtered those by set, so a set with
+  // its pieces still at +0 offered one or none while the box held a dozen.
+  // Every piece is already scored, and the dialog draws them as it scrolls.
+  const pieces = await artifactCandidates(
+    slot,
+    { includeAssigned: true, minRarity: MIN_ARTIFACT_RARITY },
+    db,
+  );
+  const free = pieces.filter((piece) => piece.equippedTo === null);
+  const taken = pieces.filter((piece) => piece.equippedTo !== null && piece.equippedTo !== characterId);
 
   const worthTaking = taken.filter((piece) => plannedSetIds.has(piece.setId));
 

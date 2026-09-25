@@ -21,6 +21,9 @@ import { CandidateRow, MoveButton, type SlotView } from './gear-slot';
 import { PieceComparison } from './piece-stats';
 import { loadSlotAction } from './slot-actions';
 
+/** Candidate cards mounted per step of the dialog's scroll. */
+const BATCH = 24;
+
 /**
  * Editing a piece from the piece itself.
  *
@@ -184,6 +187,31 @@ function SlotDialog({
   const [previewOpen, setPreviewOpen] = useState(true);
   const listRef = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
+
+  // The candidates drawn so far. The slot sends every piece it has, which is a
+  // hundred and more cards on a big box, so they are mounted a batch at a time
+  // as the list scrolls toward the end. A new filter starts over at one batch.
+  const filterKey = `${setFilter}|${mainActive}`;
+  const [batch, setBatch] = useState({ key: filterKey, count: BATCH });
+  if (batch.key !== filterKey) setBatch({ key: filterKey, count: BATCH });
+  const drawn = shown.slice(0, batch.key === filterKey ? batch.count : BATCH);
+  const sentinelRef = useRef<HTMLLIElement>(null);
+  const more = drawn.length < shown.length;
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!more || !sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setBatch((current) => ({ ...current, count: current.count + BATCH }));
+        }
+      },
+      { root: listRef.current, rootMargin: '600px' },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [more, drawn.length]);
 
   const [state, move, pending] = useActionState<MoveState, FormData>(
     moveGearAction, { status: 'idle' },
@@ -430,7 +458,7 @@ function SlotDialog({
 
         {view?.kind === 'artifact' && (
           <ul className="grid grid-cols-2 gap-2 p-2 sm:grid-cols-3 lg:grid-cols-4">
-            {shown.map((candidate) => candidate.card && (
+            {drawn.map((candidate) => candidate.card && (
               <OwnedArtifactCardView
                 key={candidate.id}
                 data={candidate.card}
@@ -458,6 +486,7 @@ function SlotDialog({
                 </button>
               </OwnedArtifactCardView>
             ))}
+            {more && <li ref={sentinelRef} aria-hidden className="col-span-full h-px" />}
           </ul>
         )}
 

@@ -109,7 +109,10 @@ export type CandidateFilter = {
   includeAssigned?: boolean;
   setId?: number;
   mainProp?: string;
+  /** Omitted, everything that matches. */
   limit?: number;
+  /** Pieces below this rarity are left out in the query, not after it. */
+  minRarity?: number;
 };
 
 export async function artifactCandidates(
@@ -130,13 +133,18 @@ export async function artifactCandidates(
     clauses.push('main_prop = ?');
     values.push(filter.mainProp);
   }
+  if (filter.minRarity !== undefined) {
+    clauses.push('rarity >= ?');
+    values.push(filter.minRarity);
+  }
 
+  // `LIMIT -1` is SQLite for no limit.
   const rows = (await db
     .prepare(`SELECT ${ARTIFACT_FIELDS} FROM artifact_instance
               WHERE ${clauses.join(' AND ')}
               ORDER BY rarity DESC, level DESC
               LIMIT ?`)
-    .all(...values, filter.limit ?? 60)) as unknown as ArtifactRow[];
+    .all(...values, filter.limit ?? -1)) as unknown as ArtifactRow[];
 
   return rows.map(toPiece);
 }
