@@ -121,8 +121,7 @@ export function internalsOf(db: Db): Internals {
 export function createDb(open: () => Promise<Client>): Db {
   let opening: Promise<Client> | undefined;
   // A failed open is forgotten, so the next statement tries again instead of
-  // every later one inheriting the same rejection — which matters now that
-  // `instrumentation.ts` opens it before any request is there to see the error.
+  // every later one inheriting the same rejection.
   const connect = () => (opening ??= open().catch((error: unknown) => {
     opening = undefined;
     throw error;
@@ -240,7 +239,7 @@ export function getDb(): Db {
     // The migration's read is the connection's first round trip, so its time
     // is what opening costs a new instance: the handshake and the probe that
     // measured at 60 to 320 ms against ~15 for every trip after it. Logged
-    // once per instance. `instrumentation.ts` starts this at boot.
+    // once per instance.
     const opened = performance.now();
     await migrate(client);
     console.log(`[timing] ${JSON.stringify({
