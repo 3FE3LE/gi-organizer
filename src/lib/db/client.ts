@@ -227,10 +227,26 @@ export function getDb(): Db {
 
     const client = createClient(authToken ? { url, authToken } : { url });
 
+    // What opening costs a new instance, once, in the function log: the
+    // first round trip carries the TLS handshake and the protocol probe, the
+    // second is the network alone, and the migration is what is left.
+    const opened = performance.now();
+    await client.execute('SELECT 1');
+    const first = performance.now();
+    await client.execute('SELECT 1');
+    const second = performance.now();
+
     // Foreign keys are on by default in libSQL, unlike `node:sqlite`, and the
     // journal and busy-timeout pragmas the file build set are properties of a
     // local file that the server owns instead.
     await migrate(client);
+    console.log(`[timing] ${JSON.stringify({
+      route: 'db-open',
+      firstTripMs: Math.round(first - opened),
+      secondTripMs: Math.round(second - first),
+      migrateMs: Math.round(performance.now() - second),
+      region: process.env.VERCEL_REGION ?? null,
+    })}`);
     return client;
   });
   return globalThis.__giOrganizerDb;
