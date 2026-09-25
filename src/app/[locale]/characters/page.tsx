@@ -26,6 +26,7 @@ import { holdersWithGear } from '@/lib/player/queries';
 import { readRegion } from '@/lib/player/region';
 import { gameDate } from '@/lib/rules/game-day';
 import { getAccountCatalog } from '@/lib/player/traveler';
+import { requestTimer } from '@/lib/timing';
 
 /**
  * The roster, shown the way the game shows it: what you have first, what you do
@@ -52,14 +53,19 @@ export default async function CharactersPage({
   const view = query.view === 'calendar' ? 'calendar' : 'gallery';
   const grouping: Grouping = isGrouping(query.group) ? query.group : 'owned';
 
+  const timer = requestTimer('/characters');
   const t = await getTranslations('characters');
-  const catalog = await getAccountCatalog(locale);
   const db = getDb();
+  // The first query of an instance also opens the connection and checks the
+  // schema, so it is timed on its own, ahead of the catalog that needs it.
+  const profileId = await timer.step('connect+profile', getProfileId(db));
+  const catalog = await timer.step('catalog', getAccountCatalog(locale));
   const roster = new Map(
-    (await readRoster(db, await getProfileId(db))).map((entry) => [entry.characterId, entry]),
+    (await timer.step('roster', readRoster(db, profileId))).map((entry) => [entry.characterId, entry]),
   );
   const owned: ReadonlySet<number> = new Set(roster.keys());
-  const gear = await holdersWithGear(db);
+  const gear = await timer.step('gear', holdersWithGear(db));
+  timer.done();
 
   const byRelease = catalog.index.charactersByRelease;
   const mine = byRelease.filter((character) => owned.has(character.id));
