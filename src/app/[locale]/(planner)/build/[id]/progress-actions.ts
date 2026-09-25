@@ -1,5 +1,6 @@
 'use server';
 
+import '@/lib/forms/zod-messages';
 import { getTranslations } from 'next-intl/server';
 import { refresh } from 'next/cache';
 

@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod/mini';
 
 import { CHOOSABLE_SLOTS } from '@/lib/rules/piece-score';
 import { TEAM_ROLES } from '@/lib/rules/types';
@@ -20,6 +20,13 @@ import { TEAM_ROLES } from '@/lib/rules/types';
  * Nothing here imports `server-only` or touches the database. Whatever needs
  * the catalog — does this weapon exist, is this set real — stays in the action,
  * which is the only side that can ask.
+ *
+ * Written against `zod/mini`, not `zod`. The form resolves on the client, and
+ * the classic API is one object carrying every method, so importing it shipped
+ * all of Zod — 134 KB compressed — with the build page. The mini API is plain
+ * functions a bundler can drop, and it names no messages of its own; the
+ * server actions load the English ones (see `zod-messages.ts`), and the client
+ * never shows one.
  */
 
 /** Levels where the game lets a character sit both before and after ascending. */
@@ -39,8 +46,8 @@ export const MAX_GOAL_ROWS = 8;
 /** Four substats, in priority order, is the whole weighting the scorer reads. */
 export const SUBSTAT_POSITIONS = [1, 2, 3, 4] as const;
 
-const level = z.number().int().min(1).max(90);
-const talentLevel = z.number().int().min(1).max(10);
+const level = z.int().check(z.minimum(1), z.maximum(90));
+const talentLevel = z.int().check(z.minimum(1), z.maximum(10));
 
 const talents = z.object({
   auto: talentLevel,
@@ -50,12 +57,11 @@ const talents = z.object({
 
 /** A `<select>` of catalog ids: a string in, an id or nothing out. */
 const selectedId = z
-  .string()
-  .transform((value) => (value === '' ? null : Number(value)))
-  .refine(
+  .pipe(z.string(), z.transform((value) => (value === '' ? null : Number(value))))
+  .check(z.refine(
     (value) => value === null || (Number.isInteger(value) && value > 0),
     { message: 'invalid_id' },
-  );
+  ));
 
 /**
  * A goal row is either empty or complete.
@@ -69,8 +75,10 @@ const goalRow = z.object({
   min: z.string(),
 });
 
+const positiveId = z.int().check(z.positive());
+
 export const progressSchema = z.object({
-  characterId: z.number().int().positive(),
+  characterId: positiveId,
   /** The goal being edited. Empty starts the character's first one. */
   buildId: z.string(),
   /**
@@ -79,7 +87,7 @@ export const progressSchema = z.object({
    */
   role: z.union([z.literal(''), z.enum(TEAM_ROLES as [string, ...string[]])]),
   /** Priority order. The position *is* the weight the scorer reads. */
-  substats: z.array(z.string()).max(SUBSTAT_POSITIONS.length),
+  substats: z.array(z.string()).check(z.maxLength(SUBSTAT_POSITIONS.length)),
 
   /*
    * Where the character is today is not here on purpose.
@@ -94,17 +102,17 @@ export const progressSchema = z.object({
   targetTalents: talents,
 
   weaponId: selectedId,
-  weaponRefinement: z.number().int().min(1).max(5),
+  weaponRefinement: z.int().check(z.minimum(1), z.maximum(5)),
 
   /** One set is a four-piece, two are a 2+2. */
-  setIds: z.array(selectedId).max(2),
+  setIds: z.array(selectedId).check(z.maxLength(2)),
   /**
    * Keyed by slot, but partial: a slot with no main stat chosen is not an
    * error. `statedMainStats` narrows it to the three slots a player can choose,
    * so an unknown key cannot reach the database.
    */
   mainStats: z.record(z.string(), z.string()),
-  goals: z.array(goalRow).max(MAX_GOAL_ROWS),
+  goals: z.array(goalRow).check(z.maxLength(MAX_GOAL_ROWS)),
 });
 
 export type ProgressFormValues = z.input<typeof progressSchema>;
@@ -141,8 +149,8 @@ export function statedSetIds(setIds: ProgressPayload['setIds']) {
 
 /** "Fill this goal from its role", with the role the player currently sees. */
 export const templateSchema = z.object({
-  characterId: z.number().int().positive(),
-  buildId: z.string().min(1),
+  characterId: positiveId,
+  buildId: z.string().check(z.minLength(1)),
   role: z.union([z.literal(''), z.enum(TEAM_ROLES as [string, ...string[]])]),
 });
 
@@ -154,7 +162,7 @@ export function statedSubstats(substats: string[]) {
 }
 
 /** A rejected payload, worded for the player rather than for a log. */
-export function firstIssue(error: z.ZodError, t: (key: string) => string): string {
+export function firstIssue(error: z.core.$ZodError, t: (key: string) => string): string {
   const issue = error.issues[0];
   if (!issue) return t('invalidData');
   const message = issue.message === 'invalid_id' ? t('invalidId') : issue.message;
