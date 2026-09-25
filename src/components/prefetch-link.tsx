@@ -33,11 +33,45 @@ type LinkProps = ComponentProps<typeof Link>;
  * was every owned character's build, requested while the gallery itself was
  * still loading and again for each row a scroll revealed — dozens of renders
  * in a few seconds, on a phone's network and processor. They now wait for the
- * page to finish loading, and warm only a link that has stayed on screen for a
- * beat: the cards the player stops on, not the ones a scroll carries past.
+ * page to finish loading, and warm only once scrolling has stopped: the cards
+ * on screen where the player stops, not the ones a scroll carries past. A
+ * per-card dwell was tried first, and a slow scroll kept every card on screen
+ * long enough to pass it — fifty build pages in eight seconds in the log.
  */
-const DWELL_MS = 400;
+const SETTLE_MS = 400;
 const TOUCH_HOLD_MS = 90;
+
+/*
+ * One listener for the page, shared by every eager link: after the load, and
+ * after each scroll anywhere on the page (capture, so a scrolling panel counts
+ * too), it waits for things to settle and then tells each link to warm if it
+ * is on screen.
+ */
+const settleListeners = new Set<() => void>();
+let settleTimer = 0;
+let listening = false;
+
+function armSettle() {
+  window.clearTimeout(settleTimer);
+  settleTimer = window.setTimeout(() => {
+    for (const listener of [...settleListeners]) listener();
+  }, SETTLE_MS);
+}
+
+function onSettle(listener: () => void) {
+  settleListeners.add(listener);
+  if (!listening) {
+    listening = true;
+    window.addEventListener('scroll', armSettle, { passive: true, capture: true });
+  }
+  // A link mounted while the page is still gets its turn too; one mounted
+  // during the load waits for it.
+  if (document.readyState === 'complete') armSettle();
+  else window.addEventListener('load', armSettle, { once: true });
+  return () => {
+    settleListeners.delete(listener);
+  };
+}
 export function PrefetchLink({
   children,
   eager = false,
@@ -62,24 +96,18 @@ export function PrefetchLink({
     const node = link.current;
     if (!eager || warm || !node) return;
 
-    let dwell = 0;
-    let observer: IntersectionObserver | null = null;
-    const watch = () => {
-      observer = new IntersectionObserver(([entry]) => {
-        clearTimeout(dwell);
-        if (entry?.isIntersecting) dwell = window.setTimeout(() => setWarm(true), DWELL_MS);
-      });
-      observer.observe(node);
-    };
-
-    // After the page's own load, so the warming never competes with it.
-    if (document.readyState === 'complete') watch();
-    else window.addEventListener('load', watch, { once: true });
+    let visible = false;
+    const observer = new IntersectionObserver(([entry]) => {
+      visible = entry?.isIntersecting ?? false;
+    });
+    observer.observe(node);
+    const stop = onSettle(() => {
+      if (visible) setWarm(true);
+    });
 
     return () => {
-      window.removeEventListener('load', watch);
-      observer?.disconnect();
-      clearTimeout(dwell);
+      observer.disconnect();
+      stop();
     };
   }, [eager, warm]);
 

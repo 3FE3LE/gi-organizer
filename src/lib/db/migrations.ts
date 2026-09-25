@@ -385,6 +385,19 @@ const RECORD_VERSION = `INSERT INTO schema_version (id, version) VALUES (0, ?)
   ON CONFLICT (id) DO UPDATE SET version = excluded.version`;
 
 export async function migrate(client: Client): Promise<number> {
+  // The common case, in one round trip: the schema is current. Every new
+  // server instance runs this before its first query, and the full check —
+  // which tables exist, which version, then recreating the version table and
+  // writing the same number back — was four trips to the database and two
+  // writes, paid on the launch request of every cold instance.
+  try {
+    const row = await client.execute('SELECT version FROM schema_version WHERE id = 0');
+    const version = Number(row.rows[0]?.version ?? 0);
+    if (version >= MIGRATIONS.length) return version;
+  } catch {
+    // No version table yet: a new database, or one from before it existed.
+  }
+
   const applied = await appliedVersion(client);
 
   // Still recorded in the pragma of a file this build no longer reads from

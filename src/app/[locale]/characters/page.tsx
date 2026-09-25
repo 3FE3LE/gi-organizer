@@ -22,6 +22,7 @@ import { isLocale } from '@/lib/data/locales';
 import { getDb } from '@/lib/db/client';
 import { readRoster, type CharacterBuild } from '@/lib/player/characters';
 import { getProfileId } from '@/lib/player/db';
+import { currentProfileId } from '@/lib/player/profile';
 import { holdersWithGear } from '@/lib/player/queries';
 import { readRegion } from '@/lib/player/region';
 import { gameDate } from '@/lib/rules/game-day';
@@ -56,9 +57,11 @@ export default async function CharactersPage({
   const timer = requestTimer('/characters');
   const t = await getTranslations('characters');
   const db = getDb();
-  // The first query of an instance also opens the connection and checks the
-  // schema, so it is timed on its own, ahead of the catalog that needs it.
-  const profileId = await timer.step('connect+profile', getProfileId(db));
+  // The session first, then the first query — which on a new instance also
+  // opens the connection and checks the schema — each timed on its own, ahead
+  // of the catalog that needs both.
+  await timer.step('auth', currentProfileId());
+  const profileId = await timer.step('db+profile', getProfileId(db));
   const catalog = await timer.step('catalog', getAccountCatalog(locale));
   const roster = new Map(
     (await timer.step('roster', readRoster(db, profileId))).map((entry) => [entry.characterId, entry]),
