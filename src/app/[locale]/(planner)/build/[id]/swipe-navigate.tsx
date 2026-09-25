@@ -1,8 +1,10 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, ViewTransition } from 'react';
+import { useEffect, useRef } from 'react';
 import { useSwipeable } from 'react-swipeable';
+
+import { SWIPE_TYPE } from './swipe-type';
 
 /**
  * Walking the roster with a thumb.
@@ -25,13 +27,14 @@ import { useSwipeable } from 'react-swipeable';
  *     mount, and the panel slides out the way it was thrown while the route
  *     changes, and the next one slides in from the other side, so there is no
  *     moment where the old character snaps back and waits for the network.
- *   - **The slide in is part of the view transition.** The navigation runs
- *     as one, so between the commit and its end the screen shows the
- *     browser's snapshots, not the page. A slide started from an effect ran
- *     on the page underneath, out of sight, and on a phone — where the
- *     transition is longest — the new panel surfaced only once it was over.
- *     The swipe tags the navigation with its direction instead, and the
- *     panel's `<ViewTransition>` turns that tag into the enter animation.
+ *   - **No view transition under it.** The slide is animated here, on the
+ *     panel itself, because that is what a phone draws smoothly. A view
+ *     transition would hide the page behind its snapshots until it ended, so
+ *     the slide ran out of sight and the new panel surfaced late. Animating the
+ *     snapshots instead showed it on time, but as a screen-sized texture moving
+ *     while the new page hydrated, which stuttered. So the swipe tags the
+ *     navigation, and every `<ViewTransition>` on the page, and the CSS, stand
+ *     down for that tag. See `swipe-type.ts`.
  *
  * A swipe that starts on a control of its own — the level slider, a field, a
  * row that scrolls sideways — belongs to that control. Touch only: a mouse
@@ -40,6 +43,9 @@ import { useSwipeable } from 'react-swipeable';
 const COMMIT_DISTANCE = 80;
 const COMMIT_VELOCITY = 0.45;
 const MAX_LEAN = 90;
+
+/** Which side the next panel enters from; set just before a swipe navigates. */
+let enterFrom: 'left' | 'right' | null = null;
 
 export function SwipeNavigate({
   previousHref,
@@ -59,6 +65,21 @@ export function SwipeNavigate({
     if (previousHref) router.prefetch(previousHref);
     if (nextHref) router.prefetch(nextHref);
   }, [router, previousHref, nextHref]);
+
+  // Arriving by a swipe: come in from the side the finger was moving away from.
+  useEffect(() => {
+    const node = panel.current;
+    const from = enterFrom;
+    enterFrom = null;
+    if (!node || !from || reducedMotion()) return;
+    node.animate(
+      [
+        { transform: `translate3d(${from === 'right' ? 40 : -40}%, 0, 0)`, opacity: 0 },
+        { transform: 'translate3d(0, 0, 0)', opacity: 1 },
+      ],
+      { duration: 260, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
+    );
+  }, []);
 
   const paint = (x: number, animate: boolean) => {
     cancelAnimationFrame(frame.current);
@@ -105,10 +126,8 @@ export function SwipeNavigate({
         node.style.transform = `translate3d(${dir === 'Left' ? -45 : 45}%, 0, 0)`;
         node.style.opacity = '0';
       }
-      router.push(href, {
-        scroll: false,
-        transitionTypes: [dir === 'Left' ? 'swipe-next' : 'swipe-previous'],
-      });
+      enterFrom = dir === 'Left' ? 'right' : 'left';
+      router.push(href, { scroll: false, transitionTypes: [SWIPE_TYPE] });
     },
     trackTouch: true,
     trackMouse: false,
@@ -126,14 +145,7 @@ export function SwipeNavigate({
       }}
       className="touch-pan-y"
     >
-      {/* Enters only when a swipe brought it here: an arrow, a link or the
-          browser's back button carries no type and keeps its own motion. */}
-      <ViewTransition
-        enter={{ 'swipe-next': 'swipe-from-right', 'swipe-previous': 'swipe-from-left', default: 'none' }}
-        default="none"
-      >
-        <div>{children}</div>
-      </ViewTransition>
+      {children}
     </div>
   );
 }

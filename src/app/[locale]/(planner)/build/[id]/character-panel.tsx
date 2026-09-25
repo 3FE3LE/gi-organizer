@@ -28,6 +28,7 @@ import { EquippedFit } from './equipped-fit';
 import { Attributes, type AttributeLevel, type AttributeRow } from './attributes';
 import { GearActions } from './gear-actions';
 import { MobileCollapsible } from './mobile-collapsible';
+import { SWIPE_TYPE } from './swipe-type';
 import { WeaponPassive, type WeaponPassiveText } from './weapon-passive';
 
 /**
@@ -275,7 +276,7 @@ export async function CharacterPanel({
             <ViewTransition
               key="splash"
               name={`character-${character.id}`}
-              share="morph"
+              share={{ [SWIPE_TYPE]: 'none', default: 'morph' }}
               default="none"
             >
               <div className="relative h-full min-h-[15.5rem] overflow-hidden">

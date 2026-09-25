@@ -898,28 +898,13 @@ select.field {
   }
 }
 
-/* A swipe along the roster: the next panel slides in from the side the
-   finger threw the last one away from. See `swipe-navigate.tsx`. */
-::view-transition-new(.swipe-from-right) {
-  animation: 260ms var(--ease-out-soft) both swipe-from-right;
-}
-
-::view-transition-new(.swipe-from-left) {
-  animation: 260ms var(--ease-out-soft) both swipe-from-left;
-}
-
-@keyframes swipe-from-right {
-  from {
-    opacity: 0;
-    transform: translate3d(40%, 0, 0);
-  }
-}
-
-@keyframes swipe-from-left {
-  from {
-    opacity: 0;
-    transform: translate3d(-40%, 0, 0);
-  }
+/* A swipe along the roster animates the panel itself, not snapshots of it
+   (see `swipe-navigate.tsx`). Should anything still start a transition on
+   one, it ends at once, so the page and its slide are never hidden behind it. */
+:active-view-transition-type(swipe)::view-transition-group(*),
+:active-view-transition-type(swipe)::view-transition-old(*),
+:active-view-transition-type(swipe)::view-transition-new(*) {
+  animation: none;
 }
 
 /* The header is the anchor the rest moves against, so it holds still — and

@@ -27,6 +27,7 @@ import { loadBuildContext, type BuildContext } from './context';
 import { upgradeCostFor } from './cost-view';
 import { neighboursOf, type Neighbour as NeighbourEntry } from './neighbours';
 import { SwipeNavigate } from './swipe-navigate';
+import { SWIPE_TYPE } from './swipe-type';
 import { objectiveViewFor } from './objective-view';
 import { TABS, loadBuildParams, serializeBuildParams, type Tab } from './params';
 import { ProgressPanel } from './progress-form';
@@ -173,7 +174,13 @@ export default async function BuildPage({
         * `key` is what makes React treat the two tabs as an exit/enter pair
         * rather than an update in place.
         */}
-      <ViewTransition key={tab} name="build-tab" share="auto" enter="auto" default="none">
+      <ViewTransition
+        key={tab}
+        name="build-tab"
+        share={{ [SWIPE_TYPE]: 'none', default: 'auto' }}
+        enter={{ [SWIPE_TYPE]: 'none', default: 'auto' }}
+        default="none"
+      >
         <div>
           {tab === 'objective' && <ObjectiveTab context={context} />}
           {tab === 'changes' && <ChangesTab context={context} />}
@@ -420,7 +427,11 @@ function Neighbour({
           splash of the page it opens instead of the two swapping. One step
           along the roster then reads as one object moving, exactly as a step in
           from the gallery does. */}
-      <ViewTransition name={`character-${character.id}`} share="morph" default="none">
+      <ViewTransition
+        name={`character-${character.id}`}
+        share={{ [SWIPE_TYPE]: 'none', default: 'morph' }}
+        default="none"
+      >
         <GameIcon
           filename={character.icon}
           kind="avatar"
