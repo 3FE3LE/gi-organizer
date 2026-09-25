@@ -57,17 +57,19 @@ export default async function CharactersPage({
   const timer = requestTimer('/characters');
   const t = await getTranslations('characters');
   const db = getDb();
-  // The session first, then the first query — which on a new instance also
-  // opens the connection and checks the schema — each timed on its own, ahead
-  // of the catalog that needs both.
-  await timer.step('auth', currentProfileId());
-  const profileId = await timer.step('db+profile', getProfileId(db));
-  const catalog = await timer.step('catalog', getAccountCatalog(locale));
-  const roster = new Map(
-    (await timer.step('roster', readRoster(db, profileId))).map((entry) => [entry.characterId, entry]),
-  );
+  // Everything the gallery reads, at once. They were awaited in turn, and on a
+  // new instance that queued a catalogue parse behind the database handshake
+  // and three queries behind each other, each a round trip of ~15 ms. The
+  // steps now overlap, so the timing line reads each one's own length and the
+  // total is the longest of them rather than their sum.
+  const profileId = await timer.step('auth', currentProfileId());
+  const [catalog, rosterRows, gear] = await Promise.all([
+    timer.step('catalog', getAccountCatalog(locale)),
+    timer.step('roster', getProfileId(db).then(() => readRoster(db, profileId))),
+    timer.step('gear', holdersWithGear(db)),
+  ]);
+  const roster = new Map(rosterRows.map((entry) => [entry.characterId, entry]));
   const owned: ReadonlySet<number> = new Set(roster.keys());
-  const gear = await timer.step('gear', holdersWithGear(db));
   timer.done();
 
   const byRelease = catalog.index.charactersByRelease;

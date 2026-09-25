@@ -120,7 +120,13 @@ export function internalsOf(db: Db): Internals {
  */
 export function createDb(open: () => Promise<Client>): Db {
   let opening: Promise<Client> | undefined;
-  const connect = () => (opening ??= open());
+  // A failed open is forgotten, so the next statement tries again instead of
+  // every later one inheriting the same rejection — which matters now that
+  // `instrumentation.ts` opens it before any request is there to see the error.
+  const connect = () => (opening ??= open().catch((error: unknown) => {
+    opening = undefined;
+    throw error;
+  }));
   const current = new AsyncLocalStorage<Transaction>();
 
   const executor = async (): Promise<Client | Transaction> =>
@@ -227,24 +233,19 @@ export function getDb(): Db {
 
     const client = createClient(authToken ? { url, authToken } : { url });
 
-    // What opening costs a new instance, once, in the function log: the
-    // first round trip carries the TLS handshake and the protocol probe, the
-    // second is the network alone, and the migration is what is left.
-    const opened = performance.now();
-    await client.execute('SELECT 1');
-    const first = performance.now();
-    await client.execute('SELECT 1');
-    const second = performance.now();
-
     // Foreign keys are on by default in libSQL, unlike `node:sqlite`, and the
     // journal and busy-timeout pragmas the file build set are properties of a
     // local file that the server owns instead.
+    //
+    // The migration's read is the connection's first round trip, so its time
+    // is what opening costs a new instance: the handshake and the probe that
+    // measured at 60 to 320 ms against ~15 for every trip after it. Logged
+    // once per instance. `instrumentation.ts` starts this at boot.
+    const opened = performance.now();
     await migrate(client);
     console.log(`[timing] ${JSON.stringify({
       route: 'db-open',
-      firstTripMs: Math.round(first - opened),
-      secondTripMs: Math.round(second - first),
-      migrateMs: Math.round(performance.now() - second),
+      openMs: Math.round(performance.now() - opened),
       region: process.env.VERCEL_REGION ?? null,
     })}`);
     return client;

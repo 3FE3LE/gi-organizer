@@ -105,12 +105,14 @@ export async function setTravelerBody(db: Db, profileId: string, body: TravelerB
  * assigns the Traveler's gear to when nothing else says.
  */
 async function accountTraveler(db: Db, profileId: string) {
-  const named = await readTravelerBody(db, profileId);
-  const rows = (await db
-    .prepare(`SELECT character_id, skill_depot_id FROM character_build
-              WHERE profile_id = ? AND character_id IN (?, ?)`)
-    .all(profileId, TRAVELER_BODIES.male, TRAVELER_BODIES.female)) as unknown as
-    { character_id: number; skill_depot_id: number | null }[];
+  // Independent reads, so one round trip rather than two.
+  const [named, rows] = await Promise.all([
+    readTravelerBody(db, profileId),
+    db.prepare(`SELECT character_id, skill_depot_id FROM character_build
+                WHERE profile_id = ? AND character_id IN (?, ?)`)
+      .all(profileId, TRAVELER_BODIES.male, TRAVELER_BODIES.female) as Promise<unknown> as
+      Promise<{ character_id: number; skill_depot_id: number | null }[]>,
+  ]);
 
   let body: TravelerBody = named ?? 'male';
   if (!named) {
@@ -146,9 +148,14 @@ async function accountTraveler(db: Db, profileId: string) {
  * name. Built once per request.
  */
 export const getAccountCatalog = cache(async (locale: Locale): Promise<Catalog> => {
-  const catalog = await getCatalog(locale);
+  // The catalogue is work on this processor and the Traveler is a trip to the
+  // database, so the two run at once: on a new instance the first is the
+  // catalogue's parse and the second is the connection's handshake.
   const db = getDb();
-  const traveler = await accountTraveler(db, await getProfileId(db));
+  const [catalog, traveler] = await Promise.all([
+    getCatalog(locale),
+    getProfileId(db).then((profileId) => accountTraveler(db, profileId)),
+  ]);
   const hidden = traveler.id === TRAVELER_BODIES.male ? TRAVELER_BODIES.female : TRAVELER_BODIES.male;
 
   const found = catalog.characters.get(traveler.id);
