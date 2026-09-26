@@ -1,8 +1,9 @@
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
-import { SectionTabs } from '@/components/section-tabs';
 import { isLocale } from '@/lib/data/locales';
+
+import { PlanTabs } from './plan-tabs';
 
 /**
  * What to do next, in two views: material demand — a day's rotation or the
@@ -17,7 +18,7 @@ export default async function PlanLayout({ children, params }: LayoutProps<'/[lo
   return (
     <div className="space-y-6">
       <h1 className="page-title">Plan</h1>
-      <SectionTabs
+      <PlanTabs
         tabs={[
           { href: `/${locale}/plan`, label: t('farmTab'), hint: t('farmHint') },
           { href: `/${locale}/plan/upgrades`, label: t('upgradesTab'), hint: t('upgradesHint') },

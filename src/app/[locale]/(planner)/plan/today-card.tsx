@@ -14,7 +14,7 @@ import type { farmingPlan } from '@/lib/rules/assemble';
 import { gameDate, nextGameReset, type GameRegion } from '@/lib/rules/game-day';
 import { charactersIn, domainsOn, type Weekday } from '@/lib/rules/materials';
 
-import { href, type Filters } from './filters';
+import { href, scopeHref, type Filters } from './filters';
 import { ResetCountdown } from './reset-countdown';
 
 type Plan = Awaited<ReturnType<typeof farmingPlan>>;
@@ -184,7 +184,7 @@ async function UpgradesChip({
   const { actionableNow } = summarizeAgenda(inTeam(await agenda, team));
   if (actionableNow === 0) return null;
 
-  const queue = `/${locale}/plan/upgrades${team ? `?team=${encodeURIComponent(team.id)}` : ''}`;
+  const queue = scopeHref(`/${locale}/plan/upgrades`, { team: team?.id ?? null });
 
   return (
     <Link href={queue} data-active className="chip gap-1">

@@ -16,6 +16,8 @@ import { chainsOf } from '@/lib/rules/cascade';
 import { inTeam, summarizeAgenda, type AgendaItem, type Cost } from '@/lib/rules/agenda';
 import { getAccountCatalog } from '@/lib/player/traveler';
 
+import { loadScope } from '../filters';
+
 export const dynamic = 'force-dynamic';
 
 /**
@@ -50,7 +52,7 @@ export default async function AgendaPage({
 }: PageProps<'/[locale]/plan/upgrades'>) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
-  const { team: teamId } = await searchParams;
+  const { team: teamId } = await loadScope(searchParams);
 
   const catalog = await getAccountCatalog(locale);
   const db = getDb();

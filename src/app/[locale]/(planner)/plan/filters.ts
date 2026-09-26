@@ -93,3 +93,15 @@ export function toggle<T>(values: readonly T[], value: T): T[] {
     ? values.filter((entry) => entry !== value)
     : [...values, value];
 }
+
+/**
+ * The part of the filters both of the plan's views mean the same way: which
+ * team it is narrowed to. The farming view reads it with everything else; the
+ * upgrades queue reads only this, and the tabs between them carry it across.
+ */
+export const scopeParsers = { team: filterParsers.team };
+
+export const loadScope = createLoader(scopeParsers);
+
+/** A link into either view, keeping the team. */
+export const scopeHref = createSerializer(scopeParsers);
