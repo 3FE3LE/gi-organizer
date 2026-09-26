@@ -450,7 +450,7 @@ export async function CharacterPanel({
           </MobileCollapsible>
 
           {loadout.known && (<>
-            <h2 className="mb-2 mt-5 text-xs font-medium uppercase tracking-wide text-muted">
+            <h2 className="mb-2 mt-5 text-sm font-medium uppercase tracking-wide text-muted">
               {t('weaponHeading')}
             </h2>
             {loadout.weapon && weaponDefinition ? (
@@ -543,7 +543,7 @@ export async function CharacterPanel({
       {loadout.known && (
         <div className="border-t border-edge p-4">
           <div className="mb-2 flex flex-wrap items-baseline gap-x-3">
-            <h2 className="text-xs font-medium uppercase tracking-wide text-muted">
+            <h2 className="text-sm font-medium uppercase tracking-wide text-muted">
               {t('artifactsHeading')}
             </h2>
             {loadout.setCounts.map(([setId, count]) => {

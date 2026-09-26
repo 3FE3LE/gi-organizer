@@ -154,7 +154,7 @@ function Stat({
 }: { label: string; value: number; note: string; locale: Locale }) {
   return (
     <div className="tile">
-      <dt className="font-mono text-2xs uppercase tracking-[0.12em] text-muted">{label}</dt>
+      <dt className="font-mono text-2xs uppercase tracking-wide text-muted">{label}</dt>
       {/* The player's locale, not the server's: every other number on the site
           is grouped with `locale` and this one was grouped with whatever the
           machine defaults to. */}

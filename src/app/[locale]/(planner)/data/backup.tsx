@@ -71,7 +71,7 @@ export function Backup() {
       </div>
 
       {confirming ? (
-        <form action={restore} className="space-y-2 rounded border border-accent/40 bg-surface p-3">
+        <form action={restore} className="notice space-y-2 p-3">
           <p className="text-sm">
             <strong className="text-accent">{t('confirmTitle')}</strong> {t('confirmBody')}
           </p>

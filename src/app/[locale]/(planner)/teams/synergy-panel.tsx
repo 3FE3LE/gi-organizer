@@ -57,7 +57,7 @@ export function SynergyPanel({ synergy }: { synergy: SynergyView }) {
 
   return (
     <section className="space-y-3 border-b border-edge px-4 py-3">
-      <h3 className="text-2xs font-medium uppercase tracking-wide text-muted">
+      <h3 className="font-mono text-2xs uppercase tracking-wide text-muted">
         {t('synergyHeading')}
       </h3>
 
@@ -104,7 +104,7 @@ export function SynergyPanel({ synergy }: { synergy: SynergyView }) {
               {synergy.mechanics.map((mechanic) => (
                 <li
                   key={mechanic.id}
-                  className={`rounded border px-1.5 py-0.5 text-2xs ${
+                  className={`pill ${
                     mechanic.objective
                       ? 'border-accent text-accent'
                       : mechanic.active

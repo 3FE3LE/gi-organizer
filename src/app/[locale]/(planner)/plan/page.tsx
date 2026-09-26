@@ -1,5 +1,4 @@
 import { getTranslations } from 'next-intl/server';
-import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Suspense, ViewTransition } from 'react';
@@ -9,6 +8,7 @@ import { GameIcon } from '@/components/game-icon';
 import { SectionTabs } from '@/components/section-tabs';
 import { Skeleton } from '@/components/skeleton';
 import { StickyDock } from '@/components/sticky-dock';
+import { FoldMark } from '@/components/fold-mark';
 import { type Catalog } from '@/lib/data/catalog';
 import { isLocale, type Locale } from '@/lib/data/locales';
 import { getDb } from '@/lib/db/client';
@@ -511,7 +511,7 @@ async function AnytimePile({
     <details className="group card">
       <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-xs">
         {/* The same fold mark as "más filtros": a line that opens says so. */}
-        <ChevronRight size={12} aria-hidden className="shrink-0 text-muted transition-transform group-open:rotate-90" />
+        <FoldMark />
         <span className="min-w-0 flex-1 truncate">{group.label}</span>
 
         {/* What is in the pile, without opening it. */}

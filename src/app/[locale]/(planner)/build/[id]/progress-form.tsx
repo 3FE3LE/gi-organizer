@@ -4,19 +4,7 @@ import { useFormatter, useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  Check,
-  CircleAlert,
-  Crown,
-  Gauge,
-  Minus,
-  Plus,
-  Save,
-  Sparkles,
-  Target,
-  Trash2,
-  X,
-} from 'lucide-react';
+import { ArrowRight, Check, CircleAlert, Crown, Gauge, Minus, Plus, Save, Sparkles, Target, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import {
   Controller,
@@ -894,7 +882,7 @@ function LevelCell({
       <p className="flex items-baseline justify-between gap-2 font-mono text-2xs uppercase tracking-wide text-muted">
         {heading}
         <span className="tabular normal-case">
-          {t('todayColumn')} {today} <span aria-hidden>→</span>{' '}
+          {t('todayColumn')} {today} <ArrowRight size={10} aria-hidden className="mx-0.5 inline" />{' '}
           <span className="text-sm text-text">{level}</span>
         </span>
       </p>

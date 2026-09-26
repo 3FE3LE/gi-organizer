@@ -1,6 +1,7 @@
 import { EyeOff } from 'lucide-react';
 
 import { ElementIcon } from '@/components/element-icon';
+import { FoldMark } from '@/components/fold-mark';
 import { elementColor } from '@/lib/data/elements';
 
 /**
@@ -213,9 +214,7 @@ export function CardLegend({
   return (
     <details className={`group/legend text-xs sm:max-w-md ${className}`}>
       <summary className="flex cursor-pointer list-none items-center gap-1 text-muted hover:text-text sm:justify-end">
-        <svg viewBox="0 0 12 12" aria-hidden className="h-3 w-3 transition-transform group-open/legend:rotate-90">
-          <path d="M4.5 3 7.5 6 4.5 9" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        <FoldMark group="legend" />
         {labels.summary}
       </summary>
       <ul className="card mt-2 space-y-2 p-3">

@@ -504,7 +504,12 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
             them on a page means neither is the main one. */}
         <div className="min-w-0 space-y-6">
           {views.length === 0 ? (
-            <p className="max-w-prose text-sm text-muted">{tTeams('empty')}</p>
+            <div className="space-y-3">
+              <p className="max-w-prose text-sm text-muted">{tTeams('empty')}</p>
+              {/* The way in, where the message is, rather than only in the
+                  drawer the empty page gives no reason to open. */}
+              <CreateTeam locale={locale} hasDraft={false} />
+            </div>
           ) : (
             views.map((team) => (
               <TeamBoard key={team.id} team={team} roster={roster} objectives={objectives} />

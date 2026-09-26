@@ -1,4 +1,4 @@
-import { ChevronRight } from 'lucide-react';
+import { Check, SlidersHorizontal } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
@@ -6,6 +6,7 @@ import { ActiveFilters } from '@/components/active-filters';
 import { DockFold } from '@/components/dock-fold';
 import { HoverLabel } from '@/components/hint';
 import { FilterGroup } from '@/components/segmented-links';
+import { FoldMark } from '@/components/fold-mark';
 import type { Catalog } from '@/lib/data/catalog';
 import type { Team } from '@/lib/player/teams';
 import {
@@ -93,7 +94,8 @@ export async function FilterBar({
   // every visit actually touches. Opened automatically whenever one of the
   // folded rows is off its default, so a shared link with a team or a reason
   // picked never hides the control that picked it.
-  const moreOpen = filters.team !== null || filters.reason.length > 0 || !filters.assume;
+  const folded = (filters.team !== null ? 1 : 0) + filters.reason.length + (filters.assume ? 0 : 1);
+  const moreOpen = folded > 0;
   const team = teams.find((entry) => entry.id === filters.team);
 
   return (
@@ -166,9 +168,17 @@ export async function FilterBar({
 
       <DockFold when="docked" className="pt-3">
       <details open={moreOpen} className="group card">
-        <summary className="flex cursor-pointer list-none items-center gap-1.5 px-3 py-2 font-mono text-2xs uppercase text-muted hover:text-text">
-          <ChevronRight size={12} className="transition-transform group-open:rotate-90" />
-          {t('moreFilters')}
+        {/* The artifacts' "more filters", word for word: an icon, the name, how
+            many of the folded filters are on, and the fold mark. */}
+        <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-xs text-text transition-colors hover:bg-surface-2/60">
+          <SlidersHorizontal size={14} aria-hidden className="text-muted" />
+          <span className="font-medium">{t('moreFilters')}</span>
+          {folded > 0 && (
+            <span className="tabular rounded-full bg-accent px-1.5 font-mono text-2xs leading-4 text-on-accent">
+              {folded}
+            </span>
+          )}
+          <FoldMark className="ml-auto" />
         </summary>
 
         {/* One question per group, its label above its values, and the
@@ -231,7 +241,7 @@ export async function FilterBar({
                 active={filters.assume}
                 title={t('assumeTitle')}
               >
-                {filters.assume ? '✓ ' : ''}{t('assumeToggle')}
+                {filters.assume && <Check size={12} aria-hidden />}{t('assumeToggle')}
               </Chip>
             </span>
           </FilterGroup>

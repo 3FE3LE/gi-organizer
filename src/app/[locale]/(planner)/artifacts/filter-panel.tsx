@@ -1,5 +1,5 @@
 import {
-  ChevronRight, PackageOpen, SlidersHorizontal, UserCheck,
+  PackageOpen, SlidersHorizontal, UserCheck,
 } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
@@ -7,6 +7,7 @@ import { ActiveFilters } from '@/components/active-filters';
 import { Segment, Segments } from '@/components/segmented-links';
 import { SLOT_ICONS } from '@/components/slot-icon';
 import { StatIcon } from '@/components/stat-icon';
+import { FoldMark } from '@/components/fold-mark';
 import { formatSetEffect, setEffects, statLabel, type Catalog } from '@/lib/data/catalog';
 import { resolveIcon } from '@/lib/data/icon';
 import { ARTIFACT_SLOTS } from '@/lib/enka/slots';
@@ -140,7 +141,7 @@ export async function FilterPanel({
               {advanced}
             </span>
           )}
-          <ChevronRight size={14} aria-hidden className="ml-auto text-muted transition-transform group-open:rotate-90" />
+          <FoldMark className="ml-auto" />
         </summary>
 
         <div className="space-y-3 border-t border-edge px-3 py-2.5">

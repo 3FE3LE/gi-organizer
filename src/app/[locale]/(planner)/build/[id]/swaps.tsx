@@ -1,5 +1,6 @@
 'use client';
 
+import { ArrowRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useActionState } from 'react';
 
@@ -83,7 +84,7 @@ export function SwapVerdict({ swap, characterId }: { swap: SwapRow; characterId:
           {!swap.keepsSetBonus && <span className="text-accent">{t('breaksSet')}</span>}
           {swap.goalChanges.map((change) => (
             <span key={change.label} className={change.to === 'met' ? 'text-accent' : 'text-text'}>
-              {change.label} {change.from}→{change.to}
+              {change.label} {change.from}<ArrowRight size={10} aria-hidden className="mx-0.5 inline" />{change.to}
             </span>
           ))}
         </p>

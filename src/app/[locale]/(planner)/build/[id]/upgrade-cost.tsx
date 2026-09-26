@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 
 import { GameIcon } from '@/components/game-icon';
+import { FoldMark } from '@/components/fold-mark';
 import type { Locale } from '@/lib/data/locales';
 
 import type { CostRow, CostTier, UpgradeCost } from './cost-view';
@@ -58,6 +59,7 @@ export async function UpgradeCostPanel({
               {row.tiers.length > 0 ? (
                 <details className="card group">
                   <summary className="flex cursor-pointer list-none items-center gap-3 px-3 py-2">
+                    <FoldMark className="-mr-1" />
                     <Line row={row} t={t} number={number} expandable />
                   </summary>
                   <ul className="border-t border-edge/60 px-3 py-1">

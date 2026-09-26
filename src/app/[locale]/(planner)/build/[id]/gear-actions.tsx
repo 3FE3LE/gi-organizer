@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeftRight, ArrowUp, ChevronDown, Star, X } from 'lucide-react';
+import { ArrowLeftRight, ArrowUp, Star, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useActionState, useEffect, useRef, useState } from 'react';
 
@@ -15,6 +15,7 @@ import { SetStripView } from '@/components/set-strip-view';
 import { StatIcon } from '@/components/stat-icon';
 import type { ArtifactSlot } from '@/lib/data/types';
 import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { FoldMark } from '@/components/fold-mark';
 
 import { type MoveState, moveGearAction } from './actions';
 import { CandidateRow, MoveButton, type SlotView } from './gear-slot';
@@ -91,7 +92,7 @@ export function GearActions({
           showCloseButton={false}
           // Wider for artifacts, which are a grid of the box's cards; a
           // weapon list is rows and reads best narrow.
-          className={`gap-0 overflow-hidden rounded-xl border border-edge-strong bg-surface p-0 ring-0 ${
+          className={`panel gap-0 overflow-hidden p-0 ring-0 ${
             slot === 'weapon' ? 'max-w-3xl sm:max-w-3xl' : 'max-w-5xl sm:max-w-5xl'
           }`}
         >
@@ -349,11 +350,7 @@ function SlotDialog({
               onClick={() => setPreviewOpen((open) => !open)}
               className="flex min-w-0 flex-1 items-center gap-1.5 text-left font-mono text-2xs uppercase tracking-wide text-muted hover:text-text"
             >
-              <ChevronDown
-                size={14}
-                aria-hidden
-                className={`shrink-0 transition-transform ${previewOpen ? '' : '-rotate-90'}`}
-              />
+              <FoldMark open={previewOpen} />
               <span className="shrink-0">{previewOpen ? t('previewCollapse') : t('previewExpand')}</span>
               {!previewOpen && (
                 <span className="min-w-0 truncate normal-case tracking-normal text-text">

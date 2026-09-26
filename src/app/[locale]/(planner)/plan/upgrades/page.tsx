@@ -1,4 +1,4 @@
-import { ArrowRight, Plus, X } from 'lucide-react';
+import { ArrowRight, CornerDownRight, Plus, X } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -145,9 +145,9 @@ export default async function AgendaPage({
           [t('actionableTile'), summary.actionableNow, 'text-good'],
           [t('goalsTile'), summary.fixesGoals, 'text-accent'],
         ] as const).map(([label, value, tone]) => (
-          <div key={label} className="tile flex flex-col-reverse px-3 py-2.5">
-            <dt className="text-2xs text-muted">{label}</dt>
-            <dd className={`tabular font-mono text-2xl ${value === 0 ? 'text-muted' : tone}`}>{value}</dd>
+          <div key={label} className="tile">
+            <dt className="font-mono text-2xs uppercase tracking-wide text-muted">{label}</dt>
+            <dd className={`tabular mt-2 font-mono text-2xl leading-none ${value === 0 ? 'text-muted' : tone}`}>{value}</dd>
           </div>
         ))}
       </dl>
@@ -181,7 +181,7 @@ export default async function AgendaPage({
                     }`}
                   >
                     <span className="tabular w-5 shrink-0 font-mono text-xs text-muted">
-                      {step > 0 ? '↳' : `${index + 1}.`}
+                      {step > 0 ? <CornerDownRight size={12} aria-hidden /> : `${index + 1}.`}
                     </span>
                     <PieceIcon piece={pieces.get(move.instanceId)} slot={move.slot} slotText={slotName(move.slot)} catalog={catalog} />
 
@@ -209,7 +209,7 @@ export default async function AgendaPage({
 
                     <span className="ml-auto flex items-center gap-1.5 font-mono text-xs">
                       {move.breaksSetFor && (
-                        <span className="rounded-full border border-warn/40 px-2 py-0.5 text-warn">
+                        <span className="pill border-warn/40 text-warn">
                           {t('breaksSet')}
                         </span>
                       )}
@@ -232,7 +232,7 @@ export default async function AgendaPage({
                 <li key={entry.buildId} className="card-2 flex items-center gap-2 py-1 pl-1 pr-2.5">
                   <Avatar id={entry.characterId} catalog={catalog} locale={locale} size="sm" />
                   <span className="tabular font-mono text-2xs text-muted">
-                    {entry.before.toFixed(1)} → <span className="text-good">{entry.after.toFixed(1)}</span>
+                    {entry.before.toFixed(1)}<ArrowRight size={10} aria-hidden className="mx-0.5 inline" /><span className="text-good">{entry.after.toFixed(1)}</span>
                   </span>
                 </li>
               ))}
@@ -292,11 +292,11 @@ export default async function AgendaPage({
                         <span className="min-w-0">{describe(item)}</span>
                       </span>
                       <span className="flex flex-wrap items-center gap-1.5 font-mono text-2xs">
-                        <span className={`rounded-full border px-2 py-0.5 ${COST_TONE[item.cost]}`}>
+                        <span className={`pill ${COST_TONE[item.cost]}`}>
                           {costLabel(item.cost)}
                         </span>
                         {item.fixesGoals.length > 0 && (
-                          <span className="rounded-full border border-accent/40 px-2 py-0.5 text-accent">
+                          <span className="pill border-accent/40 text-accent">
                             {t('goalTag')}
                           </span>
                         )}

@@ -14,10 +14,11 @@ export default async function PlanLayout({ children, params }: LayoutProps<'/[lo
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   const t = await getTranslations('plan');
+  const nav = await getTranslations('nav');
 
   return (
     <div className="space-y-6">
-      <h1 className="page-title">Plan</h1>
+      <h1 className="page-title">{nav('plan')}</h1>
       <PlanTabs
         tabs={[
           { href: `/${locale}/plan`, label: t('farmTab'), hint: t('farmHint') },

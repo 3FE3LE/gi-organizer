@@ -12,9 +12,10 @@ import { PrefetchLink } from '@/components/prefetch-link';
 import { SectionTabs } from '@/components/section-tabs';
 import { StickyDock } from '@/components/sticky-dock';
 import { FilterGroup, Segment, Segments } from '@/components/segmented-links';
-import { CakeSlice, ChevronRight } from 'lucide-react';
+import { CakeSlice } from 'lucide-react';
 
 import { HoverLabel } from '@/components/hint';
+import { FoldMark } from '@/components/fold-mark';
 import {
   GROUPINGS,
   type Grouping,
@@ -157,7 +158,7 @@ export default async function CharactersPage({
       </header>
 
       {orphaned > 0 && (
-        <p className="rounded border border-accent/40 bg-surface px-3 py-2 text-sm">
+        <p className="notice text-sm">
           <strong className="text-accent">{t('orphanedTitle')}</strong>{' '}
           {t('orphanedBody', { count: orphaned })}{' '}
           <Link href={`/${locale}/data`} className="underline hover:text-accent">
@@ -255,7 +256,7 @@ export default async function CharactersPage({
               return (
                 <details key={`${group.key}-${narrowed}`} open={narrowed} className="group/missing">
                   <summary className="mb-3 flex cursor-pointer list-none items-center gap-1.5 text-sm font-medium uppercase tracking-wide text-muted hover:text-text">
-                    <ChevronRight size={14} aria-hidden className="transition-transform group-open/missing:rotate-90" />
+                    <FoldMark group="missing" />
                     {heading}{' '}
                     <span className="font-mono">{group.characters.length}</span>
                   </summary>

@@ -1,4 +1,4 @@
-import { Sparkles } from 'lucide-react';
+import { ArrowRight, Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { AssetImage } from '@/components/asset-image';
@@ -148,7 +148,7 @@ export function ArtifactCardView({
                 forecast — that line has rolled already. */}
             {card.critValueAtFour != null && (
               <span className="tabular text-accent" title={t('pendingSubstatHint')}>
-                → {card.critValueAtFour.toFixed(1)}
+                <ArrowRight size={10} aria-hidden className="mx-0.5 inline" />{card.critValueAtFour.toFixed(1)}
               </span>
             )}
           </p>

@@ -383,6 +383,30 @@ body {
     border-radius: var(--radius-card);
   }
 
+  /* A notice that matters: an accent edge on the page's surface, for the few
+     things that ask the player to act — an import that looks wrong, a restore
+     about to replace everything, gear with no owner. */
+  .notice {
+    background: var(--surface);
+    border: 1px solid color-mix(in oklab, var(--accent) 40%, transparent);
+    border-radius: var(--radius-card);
+    padding: 0.5rem 0.75rem;
+  }
+
+  /* A small label with a border: a cost, a mechanic, a tag. The colour is the
+     caller's (`border-good/40 text-good`, …); the shape is this. */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--edge);
+    border-radius: 9999px;
+    padding: 0.125rem 0.5rem;
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    line-height: var(--text-2xs--line-height);
+    white-space: nowrap;
+  }
+
   .panel {
     background: var(--surface);
     border: 1px solid var(--edge);

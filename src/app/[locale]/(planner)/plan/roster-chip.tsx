@@ -1,6 +1,6 @@
 'use client';
 
-import { RotateCcw, X } from 'lucide-react';
+import { RotateCcw, Target, X } from 'lucide-react';
 import Link from 'next/link';
 
 import { Hint } from '@/components/hint';
@@ -55,7 +55,7 @@ export function RosterChip({
       <span className={dismissed ? 'line-through' : ''}>{name}</span>
       {/* A character with a target of their own was planned for on purpose, so
           the assumption is not what is driving them. */}
-      {hasTarget && !dismissed && <span className="text-2xs">●</span>}
+      {hasTarget && !dismissed && <Target size={10} aria-hidden className="text-accent" />}
     </>
   );
   const faceClass = 'flex items-center gap-1.5 py-0.5 pl-1 pr-2';

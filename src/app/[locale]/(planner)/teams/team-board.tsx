@@ -482,7 +482,7 @@ function MemberPicker({
           gate here unmounted it before it could animate out. */}
       <DialogContent
         showCloseButton={false}
-        className="max-w-2xl gap-0 overflow-hidden rounded-xl border border-edge-strong bg-surface p-0 ring-0 sm:max-w-2xl"
+        className="panel max-w-2xl gap-0 overflow-hidden p-0 ring-0 sm:max-w-2xl"
       >
         <div className="flex max-h-[80vh] flex-col">
           <header className="flex items-center gap-3 border-b border-edge px-4 py-3">

@@ -115,7 +115,7 @@ export function ImportForm() {
             </p>
 
             {preview.suspect && (
-              <p className="rounded border border-accent/40 bg-surface px-3 py-2 text-sm">
+              <p className="notice text-sm">
                 <strong className="text-accent">{t('suspectLabel')}</strong> {preview.suspect.reason}.
                 {t('suspectSuffix')}
               </p>

@@ -1,9 +1,9 @@
 'use client';
 
-import { ChevronDown } from 'lucide-react';
 import { useId, useState } from 'react';
 
 import { Collapse } from '@/components/collapse';
+import { FoldMark } from '@/components/fold-mark';
 
 /**
  * A section that folds away on a phone and is simply open everywhere else.
@@ -32,7 +32,7 @@ export function MobileCollapsible({
 
   return (
     <div className={className}>
-      <h2 className="mb-2 hidden text-xs font-medium uppercase tracking-wide text-muted sm:block">
+      <h2 className="mb-2 hidden text-sm font-medium uppercase tracking-wide text-muted sm:block">
         {title}
       </h2>
       <button
@@ -40,14 +40,10 @@ export function MobileCollapsible({
         aria-expanded={open}
         aria-controls={id}
         onClick={() => setOpen((current) => !current)}
-        className="mb-2 flex w-full items-center justify-between gap-2 text-xs font-medium uppercase tracking-wide text-muted sm:hidden"
+        className="mb-2 flex w-full items-center justify-between gap-2 text-sm font-medium uppercase tracking-wide text-muted sm:hidden"
       >
         {title}
-        <ChevronDown
-          size={14}
-          aria-hidden
-          className={`transition-transform ${open ? 'rotate-180' : ''}`}
-        />
+        <FoldMark open={open} />
       </button>
       <Collapse open={open} id={id} className="sm:visible sm:grid-rows-[1fr]">
         {children}
