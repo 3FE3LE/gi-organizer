@@ -1,4 +1,4 @@
-import { ArrowRight, Download, Swords, Target } from 'lucide-react';
+import { Download, Swords, Target } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { Suspense } from 'react';
@@ -8,14 +8,13 @@ import { Skeleton } from '@/components/skeleton';
 import type { Catalog } from '@/lib/data/catalog';
 import type { Locale } from '@/lib/data/locales';
 import type { Team } from '@/lib/player/teams';
-import type { AgendaItem } from '@/lib/rules/agenda';
-import { inTeam, summarizeAgenda } from '@/lib/rules/agenda';
 import type { farmingPlan } from '@/lib/rules/assemble';
 import { gameDate, nextGameReset, type GameRegion } from '@/lib/rules/game-day';
 import { charactersIn, domainsOn, type Weekday } from '@/lib/rules/materials';
 
 import { href, scopeHref, type Filters } from './filters';
 import { ResetCountdown } from './reset-countdown';
+import { UpgradesChip } from './upgrades-chip';
 
 type Plan = Awaited<ReturnType<typeof farmingPlan>>;
 
@@ -33,12 +32,12 @@ const FACES = 10;
  * tab, which nobody would otherwise open to find out.
  *
  * The day and the countdown need nothing but the clock, so they paint with
- * the shell. The faces wait on the plan and the upgrade count on the agenda,
- * each behind its own boundary, so the slower one never holds up the other.
+ * the shell. The faces wait on the plan, behind a boundary of their own; the
+ * upgrade count is asked for by the browser once the page has settled — see
+ * `upgrades-chip.tsx` for why it is not part of this render.
  */
 export async function TodayCard({
   plan,
-  agenda,
   base,
   catalog,
   filters,
@@ -48,7 +47,6 @@ export async function TodayCard({
   today,
 }: {
   plan: Promise<Plan>;
-  agenda: Promise<AgendaItem[]>;
   base: string;
   catalog: Catalog;
   filters: Filters;
@@ -74,7 +72,6 @@ export async function TodayCard({
       <Suspense fallback={<Skeleton className="h-9 w-72" />}>
         <TodayBody
           plan={plan}
-          agenda={agenda}
           base={base}
           catalog={catalog}
           filters={filters}
@@ -89,7 +86,6 @@ export async function TodayCard({
 
 async function TodayBody({
   plan,
-  agenda,
   base,
   catalog,
   filters,
@@ -98,7 +94,6 @@ async function TodayBody({
   today,
 }: {
   plan: Promise<Plan>;
-  agenda: Promise<AgendaItem[]>;
   base: string;
   catalog: Catalog;
   filters: Filters;
@@ -160,37 +155,13 @@ async function TodayBody({
             {t('domainsToday', { count: domains.length })}
           </Link>
         )}
-        <Suspense fallback={<Skeleton className="h-7 w-44 rounded-full" />}>
-          <UpgradesChip agenda={agenda} locale={locale} team={team} />
-        </Suspense>
+        <UpgradesChip
+          locale={locale}
+          teamId={team?.id ?? null}
+          href={scopeHref(`/${locale}/plan/upgrades`, { team: team?.id ?? null })}
+        />
       </div>
     </div>
-  );
-}
-
-/**
- * Gear that can move tonight without farming, one tap from the queue.
- *
- * Counted for the team the page is narrowed to, like everything else on it,
- * and the link carries the team along so the queue it opens says the same
- * number.
- */
-async function UpgradesChip({
-  agenda, locale, team,
-}: {
-  agenda: Promise<AgendaItem[]>; locale: Locale; team: Team | null;
-}) {
-  const t = await getTranslations('plan');
-  const { actionableNow } = summarizeAgenda(inTeam(await agenda, team));
-  if (actionableNow === 0) return null;
-
-  const queue = scopeHref(`/${locale}/plan/upgrades`, { team: team?.id ?? null });
-
-  return (
-    <Link href={queue} data-active className="chip gap-1">
-      {t('upgradesReady', { count: actionableNow })}
-      <ArrowRight size={12} aria-hidden />
-    </Link>
   );
 }
 

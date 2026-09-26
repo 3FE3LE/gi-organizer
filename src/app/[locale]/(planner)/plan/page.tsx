@@ -14,9 +14,10 @@ import { isLocale, type Locale } from '@/lib/data/locales';
 import { getDb } from '@/lib/db/client';
 import { readRegion } from '@/lib/player/region';
 import { isDraft, readTeams, type Team } from '@/lib/player/teams';
-import { accountAgenda, farmingPlan } from '@/lib/rules/assemble';
+import { farmingPlan } from '@/lib/rules/assemble';
 import { gameWeekday } from '@/lib/rules/game-day';
 import { getAccountCatalog } from '@/lib/player/traveler';
+import { requestTimer } from '@/lib/timing';
 import {
   charactersIn,
   domainsByKind,
@@ -54,17 +55,23 @@ export default async function PlanPage({ params, searchParams }: PageProps<'/[lo
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
 
-  const catalog = await getAccountCatalog(locale);
+  const timer = requestTimer('/plan');
   const db = getDb();
+  // Everything the shell needs, at once rather than one round trip after
+  // another — the same fix the roster had, and this is the page signing in
+  // lands on now.
+  const [catalog, teamsRead, region, teamsLabel] = await Promise.all([
+    timer.step('catalog', getAccountCatalog(locale)),
+    timer.step('teams', readTeams(db)),
+    // Today on the player's own server, where the rotation turns at 04:00 and
+    // not at midnight — and never on the machine's UTC clock, which showed
+    // tomorrow's domains to anybody farming in the evening west of Greenwich.
+    timer.step('region', readRegion(db)),
+    getTranslations('teams'),
+  ]);
   // The draft is named where it is shown; see `isDraft`.
-  const reserveLabel = (await getTranslations('teams'))('reserveTeam');
-  const teams = (await readTeams(db)).map((team) =>
-    isDraft(team) ? { ...team, name: reserveLabel } : team);
-
-  // Today on the player's own server, where the rotation turns at 04:00 and
-  // not at midnight — and never on the machine's UTC clock, which showed
-  // tomorrow's domains to anybody farming in the evening west of Greenwich.
-  const region = await readRegion(db);
+  const reserveLabel = teamsLabel('reserveTeam');
+  const teams = teamsRead.map((team) => isDraft(team) ? { ...team, name: reserveLabel } : team);
   const today = gameWeekday(new Date(), region);
   const filters = await loadFilters(searchParams, today);
 
@@ -73,10 +80,15 @@ export default async function PlanPage({ params, searchParams }: PageProps<'/[lo
 
   // Started here and awaited where each piece is drawn: the plan feeds the
   // day card, the roster trigger in the dock and the list, and one scan of
-  // the account is enough for all three. Neither is awaited by the page
-  // itself, so the shell streams before either is known.
+  // the account is enough for all three. Not awaited by the page itself, so
+  // the shell streams before it is known.
   const plan = farmingPlan(catalog, db, farmingFilter(filters, characterIds));
-  const agenda = accountAgenda(catalog, db);
+  timer.done();
+
+  // The streamed half, timed on its own line: the shell's line is printed
+  // before the plan has answered.
+  const streamed = requestTimer('/plan:streamed');
+  void Promise.allSettled([streamed.step('plan', plan)]).then(() => streamed.done());
 
   /*
    * The filter bar is a pure function of the URL and the catalog; the plan
@@ -91,7 +103,6 @@ export default async function PlanPage({ params, searchParams }: PageProps<'/[lo
     <div className="space-y-6">
       <TodayCard
         plan={plan}
-        agenda={agenda}
         base={base}
         catalog={catalog}
         filters={filters}
