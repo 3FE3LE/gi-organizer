@@ -2,14 +2,17 @@
 
 import { useTranslations } from 'next-intl';
 
+import { AssetImage } from '@/components/asset-image';
 import { ElementIcon } from '@/components/element-icon';
+import { Hint } from '@/components/hint';
+import { StatusIcon, statusTone } from '@/components/status-icon';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 /**
  * What the team is, beside what is wrong with it.
  *
  * The findings under each slot are faults; this is the other half — the
- * resonance the elements buy, the reactions those same elements enable, and
+ * resonance the elements buy, whether the reaction it was built for fires, and
  * the set bonuses one member is hanging over the other three. All of it is
  * computed in `lib/rules/synergy.ts` and arrives here as ids and names, so this
  * file only decides what is worth reading first.
@@ -27,17 +30,13 @@ export type SynergyView = {
     element: string | null;
     members: string[];
   }[];
-  mechanics: {
-    id: string;
+  /** The mechanic the team was built for, or null when it names none. */
+  objective: {
     label: string;
     active: boolean;
-    objective: boolean;
-    /** Element names the team does not field. */
-    missing: string[];
-    /** Whether it also wants any element at all to react with. */
-    missingAny: boolean;
-    carriers: string[];
-  }[];
+    /** Who makes it happen: its carriers and whoever fields an element it uses. */
+    enablers: { characterId: number; name: string; icon: string | null }[];
+  } | null;
   auras: {
     key: string;
     setName: string;
@@ -91,53 +90,15 @@ export function SynergyPanel({ synergy }: { synergy: SynergyView }) {
           )}
         </Group>
 
-        <Group title={t('mechanicsHeading')}>
-          {synergy.mechanics.length === 0 ? (
-            <Empty>{t('noMechanics')}</Empty>
+        {/* Only the objective, as a verdict: it fires or it does not. The
+            other reactions the elements happen to allow answered nothing the
+            player asked, and a list of who brings each one ran off the card
+            once three members carried the same thing. */}
+        <Group title={t('objectiveMechanicHeading')}>
+          {synergy.objective === null ? (
+            <Empty>{t('noObjectiveMechanic')}</Empty>
           ) : (
-            /* Chips rather than rows: a Dendro team fields six reactions, and
-               six paragraphs of "who brings this" is a wall in front of the
-               one line that matters. What a chip cannot say — the element the
-               team is short of, the second member who agrees — is said under
-               it, and only by the chips that have something to say. */
-            <ul className="flex flex-wrap gap-1">
-              {synergy.mechanics.map((mechanic) => (
-                <li
-                  key={mechanic.id}
-                  className={`pill ${
-                    mechanic.objective
-                      ? 'border-accent text-accent'
-                      : mechanic.active
-                        ? 'border-edge text-text'
-                        : 'border-dashed border-edge text-muted'
-                  }`}
-                >
-                  {mechanic.label}
-                  {mechanic.objective && (
-                    <span className="ml-1 font-mono uppercase text-accent">
-                      {t('mechanicObjective')}
-                    </span>
-                  )}
-                  {!mechanic.active && (
-                    <span className="ml-1 font-mono text-warn">
-                      {t('mechanicMissing', {
-                        elements: [
-                          ...mechanic.missing,
-                          ...(mechanic.missingAny ? [t('mechanicMissingAny')] : []),
-                        ].join(', '),
-                      })}
-                    </span>
-                  )}
-                  {/* One carrier is that character's own kit. Two is the team
-                      agreeing on something, which is the synergy worth naming. */}
-                  {mechanic.carriers.length > 1 && (
-                    <span className="ml-1 font-mono text-muted">
-                      {t('mechanicCarriers', { names: mechanic.carriers.join(' · ') })}
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
+            <ObjectiveMechanic objective={synergy.objective} />
           )}
         </Group>
 
@@ -167,6 +128,48 @@ export function SynergyPanel({ synergy }: { synergy: SynergyView }) {
         </Group>
       </Accordion>
     </section>
+  );
+}
+
+/** The objective's name in green with the faces that enable it, or in red. */
+function ObjectiveMechanic({ objective }: { objective: NonNullable<SynergyView['objective']> }) {
+  const t = useTranslations('teams');
+  const status = objective.active ? 'met' : 'short';
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+      <p className={`flex items-center gap-1.5 text-xs ${statusTone(status)}`}>
+        <StatusIcon status={status} size={14} />
+        {objective.label}
+        <span className="sr-only">
+          : {t(objective.active ? 'objectiveMechanicMet' : 'objectiveMechanicUnmet')}
+        </span>
+      </p>
+      {objective.active && objective.enablers.length > 0 && (
+        <ul className="flex -space-x-1.5">
+          {objective.enablers.map((enabler) => (
+            <li key={enabler.characterId}>
+              {/* Not a link, so a real tooltip; focusable so a keyboard
+                  reaches the name too. */}
+              <Hint text={enabler.name}>
+                <span
+                  tabIndex={0}
+                  className="block rounded-full ring-2 ring-surface focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
+                >
+                  <AssetImage
+                    src={enabler.icon}
+                    kind="avatar"
+                    alt={enabler.name}
+                    className="h-6 w-6 rounded-full bg-surface-2"
+                    sizes="24px"
+                  />
+                </span>
+              </Hint>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 

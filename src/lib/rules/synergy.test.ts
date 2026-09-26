@@ -104,6 +104,14 @@ test('swirl needs the wind and something to catch', () => {
   assert.equal(swirl.active, true);
 });
 
+test('who enables a reaction: its carriers and whoever fields an element it uses', () => {
+  const [swirl] = mechanicsOf([
+    member(1, GEO), member(2, ANEMO, ['swirl']), member(3, PYRO), member(4, HYDRO),
+  ], 'swirl');
+
+  assert.deepEqual(swirl.enablers, [2, 3, 4]);
+});
+
 test('a kit-only mechanic counts once a second member agrees', () => {
   const alone = mechanicsOf([member(1, HYDRO, ['hexerei']), member(2, PYRO)], null);
   assert.deepEqual(alone, []);

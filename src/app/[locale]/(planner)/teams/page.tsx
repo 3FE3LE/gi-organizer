@@ -348,7 +348,7 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
   };
 
   /** The engine's answer, with every id turned into something readable. */
-  const synergyViewFor = (team: (typeof teams)[number]): SynergyView => {
+  const synergyViewFor = async (team: (typeof teams)[number]): Promise<SynergyView> => {
     const members = team.slots.map((slot) => memberOf(slot.characterId));
     const synergy = synergyOf(members, {
       objective: team.objective,
@@ -371,17 +371,22 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
         element: resonance.elementType,
         members: resonance.members.map(name),
       })),
-      mechanics: synergy.mechanics.map((mechanic) => ({
-        id: mechanic.id,
-        label: mechanicLabelT.has(mechanic.id) ? mechanicLabelT(mechanic.id) : mechanic.id,
-        active: mechanic.active,
-        objective: mechanic.objective,
-        missing: mechanic.missing
-          .filter((element) => element !== 'any')
-          .map((element) => elementName(element)),
-        missingAny: mechanic.missing.includes('any'),
-        carriers: mechanic.carriers.map(name),
-      })),
+      // Only the one the team was put together for: the rest are what the
+      // elements happen to allow, and the board has no question to answer
+      // about them.
+      objective: await (async () => {
+        const mechanic = synergy.mechanics.find((entry) => entry.objective);
+        if (!mechanic) return null;
+        return {
+          label: mechanicLabelT.has(mechanic.id) ? mechanicLabelT(mechanic.id) : mechanic.id,
+          active: mechanic.active,
+          enablers: await Promise.all(mechanic.enablers.map(async (characterId) => ({
+            characterId,
+            name: name(characterId),
+            icon: await resolveIcon(catalog.characters.get(characterId)?.icon, 'avatar'),
+          }))),
+        };
+      })(),
       auras: synergy.auras.map((aura) => {
         const set = catalog.artifacts.get(aura.setId);
 
@@ -409,7 +414,7 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
     draft: team.draft,
     objective: team.objective,
     findings: findingsFor(targetKey({ kind: 'team', teamId: team.id })),
-    synergy: synergyViewFor(team),
+    synergy: await synergyViewFor(team),
     slots: await Promise.all(team.slots.map(async (slot): Promise<SlotView> => {
       const character = catalog.characters.get(slot.characterId);
       const gear = input.gear.get(slot.characterId);

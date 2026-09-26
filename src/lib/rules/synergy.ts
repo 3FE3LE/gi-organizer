@@ -110,6 +110,11 @@ export type MechanicSynergy = {
   missing: string[];
   /** Members whose own kit names the mechanic. */
   carriers: number[];
+  /**
+   * Everyone who makes it happen, in team order: the carriers, and whoever
+   * fields one of the elements it reacts with.
+   */
+  enablers: number[];
   /** Whether it is live: elements present, and a carrier where one is needed. */
   active: boolean;
   /** Whether the team was assembled for this one. */
@@ -259,11 +264,16 @@ export function mechanicsOf(members: SynergyMember[], objective: string | null):
     if (!isObjective && all.length === 0 && any.length === 0 && carriers.length < 2) continue;
     if (!isObjective && !active) continue;
 
+    const reacting = new Set([...all, ...any]);
+
     synergies.push({
       id,
       elements: [...all, ...(any.length > 0 ? ['any'] : [])],
       missing,
       carriers,
+      enablers: members
+        .filter((member) => carriers.includes(member.characterId) || reacting.has(member.elementType))
+        .map((member) => member.characterId),
       active,
       objective: isObjective,
     });
