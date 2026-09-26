@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server';
+import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Suspense, ViewTransition } from 'react';
@@ -6,7 +7,7 @@ import { Suspense, ViewTransition } from 'react';
 import { ElementIcon } from '@/components/element-icon';
 import { GameIcon } from '@/components/game-icon';
 import { SectionTabs } from '@/components/section-tabs';
-import { PanelsSkeleton, Skeleton } from '@/components/skeleton';
+import { Skeleton } from '@/components/skeleton';
 import { StickyDock } from '@/components/sticky-dock';
 import { type Catalog } from '@/lib/data/catalog';
 import { isLocale, type Locale } from '@/lib/data/locales';
@@ -31,6 +32,7 @@ import { MaterialRow } from './material-row';
 import { RosterPanel, summarizeRoster } from './roster-panel';
 import { RosterSheet } from './roster-sheet';
 import { farmingFilter, resolveScope } from './scope';
+import { DomainCardsSkeleton } from './skeletons';
 import { TodayCard } from './today-card';
 import { WeekMap } from './week-map';
 
@@ -126,10 +128,7 @@ export default async function PlanPage({ params, searchParams }: PageProps<'/[lo
         key={href(base, filters)}
         fallback={
           <ViewTransition exit="fade-out" default="none">
-            <div className="space-y-4">
-              <Skeleton className="h-8 w-52" />
-              <PanelsSkeleton count={4} height="h-28" />
-            </div>
+            <DomainCardsSkeleton />
           </ViewTransition>
         }
       >
@@ -497,8 +496,10 @@ async function AnytimePile({
   const t = await getTranslations('plan');
 
   return (
-    <details className="card">
+    <details className="group card">
       <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-xs">
+        {/* The same fold mark as "más filtros": a line that opens says so. */}
+        <ChevronRight size={12} aria-hidden className="shrink-0 text-muted transition-transform group-open:rotate-90" />
         <span className="min-w-0 flex-1 truncate">{group.label}</span>
 
         {/* What is in the pile, without opening it. */}
