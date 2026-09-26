@@ -85,15 +85,11 @@ export function ImportForm() {
             name="file"
             accept=".json,.GOOD,application/json"
             required
-            className="min-w-0 max-w-full text-sm file:mr-3 file:rounded file:border file:border-edge file:bg-surface file:px-3 file:py-1.5 file:text-sm file:text-text"
+            className="min-w-0 max-w-full text-sm file:mr-3 file:rounded-md file:border file:border-edge file:bg-surface-2 file:px-3 file:py-1.5 file:text-sm file:text-text"
           />
-          <button
-            type="submit"
-            disabled={uploading}
-            className="card px-3 py-1.5 text-sm hover:border-accent disabled:opacity-50"
-          >
+          <Button variant="outline" type="submit" disabled={uploading}>
             {uploading ? t('reading') : t('preview')}
-          </button>
+          </Button>
         </form>
 
         {uploadError && (
@@ -182,15 +178,11 @@ export function ImportForm() {
             placeholder="UID"
             pattern="[1-9][0-9]{8,9}"
             required
-            className="w-40 card px-2 py-1.5 font-mono text-sm"
+            className="field h-8 w-40 rounded-lg px-2.5 font-mono text-sm"
           />
-          <button
-            type="submit"
-            disabled={seeding}
-            className="card px-3 py-1.5 text-sm hover:border-accent disabled:opacity-50"
-          >
+          <Button variant="outline" type="submit" disabled={seeding}>
             {seeding ? t('reading') : t('importShowcase')}
-          </button>
+          </Button>
         </form>
 
         <Result state={seedState} />

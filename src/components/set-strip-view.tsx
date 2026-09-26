@@ -9,6 +9,7 @@ import { DockFold } from '@/components/dock-fold';
 import { GameText } from '@/components/game-text';
 import { Hint } from '@/components/hint';
 import { GROUP_LABEL } from '@/components/segmented-links';
+import { buttonVariants } from '@/components/ui/button';
 
 export type SetChoice = {
   setId: number;
@@ -141,9 +142,9 @@ export function SetStripView({
               type="button"
               onClick={() => onSelect(null)}
               aria-label={t('clearSetAria')}
-              className="shrink-0 rounded p-1 text-muted hover:text-text"
+              className={buttonVariants({ variant: 'ghost', size: 'icon-sm', className: 'shrink-0' })}
             >
-              <X size={14} aria-hidden />
+              <X size={16} aria-hidden />
             </button>
           </div>
         )}

@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/sheet';
 
 import { RosterOptimismProvider, usePlannedCount } from './roster-optimism';
+import { buttonVariants } from '@/components/ui/button';
 
 /**
  * The roster, one tap away instead of always on screen.
@@ -97,7 +98,7 @@ function RosterSheetInner({
             <SheetTitle className="font-mono text-xs font-normal uppercase text-muted">
               {t('charactersLabel')}
             </SheetTitle>
-            <SheetClose aria-label={t('closeAria')} className="text-muted hover:text-text">
+            <SheetClose aria-label={t('closeAria')} className={buttonVariants({ variant: 'ghost', size: 'icon-sm' })}>
               <X size={16} aria-hidden />
             </SheetClose>
           </header>

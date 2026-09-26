@@ -5,6 +5,7 @@ import { Suspense } from 'react';
 
 import { GameIcon } from '@/components/game-icon';
 import { Skeleton } from '@/components/skeleton';
+import { buttonVariants } from '@/components/ui/button';
 import type { Catalog } from '@/lib/data/catalog';
 import type { Locale } from '@/lib/data/locales';
 import type { Team } from '@/lib/player/teams';
@@ -151,7 +152,7 @@ async function TodayBody({
       <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
         {/* A way to today's list, so not drawn while today's list is it. */}
         {domains.length > 0 && !(filters.range === 'day' && filters.day === today) && (
-          <Link href={todayHref} className="chip">
+          <Link href={todayHref} className={buttonVariants({ variant: 'outline', size: 'xs' })}>
             {t('domainsToday', { count: domains.length })}
           </Link>
         )}

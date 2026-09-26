@@ -4,6 +4,7 @@ import { RotateCcw, X } from 'lucide-react';
 import Link from 'next/link';
 
 import { Hint } from '@/components/hint';
+import { buttonVariants } from '@/components/ui/button';
 
 import { dismissRoster, restoreRoster } from './roster-actions';
 import { usePlannedCount, useRosterOptimism } from './roster-optimism';
@@ -126,7 +127,7 @@ export function RosterBulk({
       <button
         type="submit"
         disabled={disabled}
-        className="flex items-center gap-1.5 rounded border border-edge px-2.5 py-1 font-mono text-2xs uppercase text-muted transition-colors hover:border-accent hover:text-text disabled:opacity-40"
+        className={buttonVariants({ variant: dismiss ? 'destructive' : 'outline', size: 'xs', className: 'font-mono text-2xs uppercase' })}
       >
         {children}
       </button>

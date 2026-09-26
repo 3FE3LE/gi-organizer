@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { ActionStatus } from '@/components/action-status';
 
 /**
@@ -54,14 +54,14 @@ export function Backup() {
         <a
           href="/api/export"
           download
-          className="card px-3 py-1.5 text-sm hover:border-accent"
+          className={buttonVariants({ variant: 'outline' })}
         >
           {t('downloadFull')}
         </a>
         <a
           href="/api/export/good"
           download
-          className="card px-3 py-1.5 text-sm hover:border-accent"
+          className={buttonVariants({ variant: 'outline' })}
         >
           {t('exportGood')}
         </a>
@@ -81,7 +81,7 @@ export function Backup() {
               name="file"
               accept=".json,application/json"
               required
-              className="text-sm file:mr-3 file:rounded file:border file:border-edge file:bg-ink file:px-3 file:py-1.5 file:text-sm file:text-text"
+              className="min-w-0 max-w-full text-sm file:mr-3 file:rounded-md file:border file:border-edge file:bg-surface-2 file:px-3 file:py-1.5 file:text-sm file:text-text"
             />
             <Button
               variant="default"
@@ -90,23 +90,15 @@ export function Backup() {
             >
               {busy ? t('restoring') : t('replaceAll')}
             </Button>
-            <button
-              type="button"
-              onClick={() => setConfirming(false)}
-              className="text-sm text-muted hover:text-text"
-            >
+            <Button variant="ghost" type="button" onClick={() => setConfirming(false)}>
               {t('cancel')}
-            </button>
+            </Button>
           </div>
         </form>
       ) : (
-        <button
-          type="button"
-          onClick={() => setConfirming(true)}
-          className="card px-3 py-1.5 text-sm text-muted hover:border-accent hover:text-text"
-        >
+        <Button variant="outline" type="button" onClick={() => setConfirming(true)}>
           {t('restoreFromBackup')}
-        </button>
+        </Button>
       )}
 
       <ActionStatus

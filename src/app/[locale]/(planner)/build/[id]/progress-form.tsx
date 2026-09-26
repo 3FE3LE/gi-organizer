@@ -720,7 +720,7 @@ function ProgressForm({
               disabled={form.formState.isSubmitting || busy !== null}
               aria-label={busy === 'template' ? t('filling') : t('fillFromRole')}
               title={t('fillFromRoleTitle')}
-              className="flex shrink-0 items-center gap-2 rounded border border-edge px-2 py-1.5 text-sm text-muted transition-colors hover:border-accent hover:text-text disabled:opacity-50 sm:px-3"
+              className={buttonVariants({ variant: 'outline', className: 'shrink-0' })}
             >
               <Sparkles size={14} />
               <span className="max-sm:hidden">
@@ -739,7 +739,7 @@ function ProgressForm({
             disabled={form.formState.isSubmitting || busy !== null}
             aria-label={t('deleteGoalAria')}
             title={t('deleteGoalAria')}
-            className="shrink-0 rounded border border-edge p-2 text-muted transition-colors hover:border-bad hover:text-bad disabled:opacity-50"
+            className={buttonVariants({ variant: 'destructive', size: 'icon', className: 'shrink-0' })}
           >
             <Trash2 size={14} />
           </button>

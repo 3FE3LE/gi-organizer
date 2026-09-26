@@ -15,6 +15,7 @@ import { roleLabel } from '@/lib/rules/role-labels';
 import { getAccountCatalog } from '@/lib/player/traveler';
 
 import { EmptyArtifactSlot } from '@/components/empty-artifact-slot';
+import { StatusIcon, statusTone } from '@/components/status-icon';
 import type { PieceFit } from '@/lib/rules/piece-score';
 import type { ArtifactSlot } from '@/lib/data/types';
 
@@ -267,18 +268,9 @@ async function ChangesTab({ context }: { context: BuildContext }) {
           </span>
         )}
         {suggestions.goals.map((goal) => (
-          <span
-            key={goal.prop}
-            className={`font-mono text-xs ${
-              goal.status === 'met'
-                ? 'text-muted'
-                : goal.status === 'close'
-                  ? 'text-text'
-                  : 'text-accent'
-            }`}
-          >
-            {propLabel(catalog, goal.prop)} {Math.round(goal.actual)}/{goal.min}{' '}
-            {goal.status === 'met' ? '✓' : goal.status === 'close' ? '~' : '✗'}
+          <span key={goal.prop} className={`inline-flex items-center gap-1 font-mono text-xs ${statusTone(goal.status)}`}>
+            <StatusIcon status={goal.status} />
+            {propLabel(catalog, goal.prop)} {Math.round(goal.actual)}/{goal.min}
           </span>
         ))}
       </div>

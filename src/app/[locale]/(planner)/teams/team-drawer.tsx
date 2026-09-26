@@ -24,6 +24,7 @@ import { startTransition, useOptimistic, useState } from 'react';
 
 import { AssetImage } from '@/components/asset-image';
 import { buttonVariants } from '@/components/ui/button';
+import { StatusIcon } from '@/components/status-icon';
 import {
   Drawer,
   DrawerClose,
@@ -300,10 +301,14 @@ function Row({ team }: { team: RailEntry }) {
         <span className="flex flex-wrap items-baseline gap-x-2 font-mono text-2xs text-muted">
           {team.draft && <span>{t('draftTag')}</span>}
           {team.objectiveLabel && <span className="text-accent">{team.objectiveLabel}</span>}
-          {team.errors > 0 && <span className="text-bad">{team.errors} ✗</span>}
-          {team.warnings > 0 && <span className="text-warn">{team.warnings} !</span>}
+          {team.errors > 0 && (
+            <span className="inline-flex items-center gap-0.5 text-bad"><StatusIcon status="error" size={10} />{team.errors}</span>
+          )}
+          {team.warnings > 0 && (
+            <span className="inline-flex items-center gap-0.5 text-warn"><StatusIcon status="warning" size={10} />{team.warnings}</span>
+          )}
           {team.errors === 0 && team.warnings === 0 && filled === 4 && (
-            <span className="text-good">{t('ok')}</span>
+            <span className="inline-flex items-center gap-0.5 text-good"><StatusIcon status="met" size={10} />{t('ok')}</span>
           )}
         </span>
       </span>

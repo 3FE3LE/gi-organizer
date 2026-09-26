@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import { countReadyUpgrades } from './upgrades-count';
+import { buttonVariants } from '@/components/ui/button';
 
 /**
  * Gear that can move tonight without farming, one tap from the queue.
@@ -48,7 +49,7 @@ export function UpgradesChip({
   if (!count || count.key !== key || count.value === 0) return null;
 
   return (
-    <Link href={href} data-active className="chip rise gap-1">
+    <Link href={href} className={buttonVariants({ size: 'xs', className: 'rise' })}>
       {t('upgradesReady', { count: count.value })}
       <ArrowRight size={12} aria-hidden />
     </Link>

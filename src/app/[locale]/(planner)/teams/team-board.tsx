@@ -26,6 +26,7 @@ import { Hint } from '@/components/hint';
 import { StatIcon } from '@/components/stat-icon';
 import { FieldSelect } from '@/components/field-select';
 import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { StatusIcon, statusTone } from '@/components/status-icon';
 import { TEAM_ROLES, type TeamRole } from '@/lib/rules/types';
 
 import { SynergyPanel, type SynergyView } from './synergy-panel';
@@ -158,7 +159,7 @@ export function TeamBoard({
           {team.draft && <SaveDraft teamId={team.id} />}
           <form action={remove}>
             <input type="hidden" name="teamId" value={team.id} />
-            <Button variant="outline" size="sm" type="submit">
+            <Button variant="outline" size="sm" type="submit" className="hover:text-bad">
               {t('deleteButton')}
             </Button>
           </form>
@@ -684,7 +685,7 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
         <input type="hidden" name="characterId" value={slot.characterId} />
         <button
           type="submit"
-          className={buttonVariants({ variant: 'ghost', size: 'icon-sm', className: 'text-muted hover:text-accent' })}
+          className={buttonVariants({ variant: 'destructive', size: 'icon-sm' })}
           aria-label={t('removeAria', { name: slot.name })}
           title={t('removeAria', { name: slot.name })}
         >
@@ -796,16 +797,8 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
       {slot.goals.length > 0 && (
         <ul className="flex flex-wrap justify-center gap-x-2 font-mono text-2xs">
           {slot.goals.map((goal) => (
-            <li
-              key={goal.label}
-              className={
-                goal.status === 'met'
-                  ? 'text-good'
-                  : goal.status === 'close'
-                    ? 'text-warn'
-                    : 'text-bad'
-              }
-            >
+            <li key={goal.label} className={`inline-flex items-center gap-1 ${statusTone(goal.status)}`}>
+              <StatusIcon status={goal.status} size={11} />
               {goal.label} <span className="tabular">{Math.round(goal.actual)}/{goal.min}</span>
             </li>
           ))}
@@ -879,19 +872,10 @@ function Mark({
 }
 
 function Finding({ finding }: { finding: { severity: string; message: string } }) {
-  const tone =
-    finding.severity === 'error'
-      ? 'text-accent'
-      : finding.severity === 'warning'
-        ? 'text-text'
-        : 'text-muted';
-
   return (
-    <li className={`text-2xs leading-snug ${tone}`}>
-      <span className="font-mono text-muted">
-        {finding.severity === 'error' ? '!!' : finding.severity === 'warning' ? '!' : 'i'}
-      </span>{' '}
-      {finding.message}
+    <li className="flex items-start gap-1.5 text-2xs leading-snug text-text">
+      <StatusIcon status={finding.severity} size={12} className="mt-px" />
+      <span className={finding.severity === 'info' ? 'text-muted' : ''}>{finding.message}</span>
     </li>
   );
 }
