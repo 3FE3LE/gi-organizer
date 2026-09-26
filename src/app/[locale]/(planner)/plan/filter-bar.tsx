@@ -1,4 +1,4 @@
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, X } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
@@ -87,9 +87,10 @@ export async function FilterBar({
   // folded rows is off its default, so a shared link with a team or a reason
   // picked never hides the control that picked it.
   const moreOpen = filters.team !== null || filters.reason.length > 0 || !filters.assume;
+  const team = teams.find((entry) => entry.id === filters.team);
 
   return (
-    <div className="card space-y-3 p-4">
+    <div className="card flex flex-col gap-3 p-4 group-data-[stuck]/dock:gap-2 group-data-[stuck]/dock:p-2">
       {/* The day strip is the view toggle: a day is either the one thing this
           is scoped to, or — tapped again — nothing, which is the whole
           backlog. A separate "por día"/"todo el backlog" pair said the same
@@ -121,7 +122,36 @@ export async function FilterBar({
         })}
       </nav>
 
-      <details open={moreOpen} className="group card">
+      {/* Docked, the folded rows give way to what they have picked: the day
+          strip is what gets touched mid-list, and an open disclosure over the
+          results would cover the thing being filtered. What stays is each
+          choice that is off its default, one tap from undoing it — so the
+          docked bar never hides why the list is narrower than it looks. */}
+      {moreOpen && (
+        <div className="hidden flex-wrap gap-1 group-data-[stuck]/dock:flex">
+          {team && (
+            <Chip to={href(base, filters, { team: null, chars: [] })} active>
+              {team.name} <X size={12} aria-hidden />
+            </Chip>
+          )}
+          {filters.reason.map((reason) => (
+            <Chip
+              key={reason}
+              to={href(base, filters, { reason: toggle(filters.reason, reason) })}
+              active
+            >
+              {reasonLabel(reason)} <X size={12} aria-hidden />
+            </Chip>
+          ))}
+          {!filters.assume && (
+            <Chip to={href(base, filters, { assume: true, chars: [] })} active={false}>
+              {t('assumeToggle')}
+            </Chip>
+          )}
+        </div>
+      )}
+
+      <details open={moreOpen} className="group card group-data-[stuck]/dock:hidden">
         <summary className="flex cursor-pointer list-none items-center gap-1.5 px-3 py-2 font-mono text-2xs uppercase text-muted hover:text-text">
           <ChevronRight size={12} className="transition-transform group-open:rotate-90" />
           {t('moreFilters')}

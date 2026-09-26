@@ -6,6 +6,7 @@ import { Suspense, ViewTransition } from 'react';
 import { GameIcon } from '@/components/game-icon';
 import { SectionTabs } from '@/components/section-tabs';
 import { PanelsSkeleton, Skeleton } from '@/components/skeleton';
+import { StickyDock } from '@/components/sticky-dock';
 import { type Catalog } from '@/lib/data/catalog';
 import { isLocale, type Locale } from '@/lib/data/locales';
 import { getDb } from '@/lib/db/client';
@@ -76,7 +77,11 @@ export default async function PlanPage({ params, searchParams }: PageProps<'/[lo
    */
   return (
     <div className="space-y-6">
-      <FilterBar base={base} filters={filters} catalog={catalog} teams={teams} region={region} />
+      {/* Docked like the roster's grouping and the artifact filters: the day
+          is changed from halfway down a backlog as often as from the top. */}
+      <StickyDock>
+        <FilterBar base={base} filters={filters} catalog={catalog} teams={teams} region={region} />
+      </StickyDock>
 
       {/*
         * The skeleton hands over to the plan rather than being replaced by it:
