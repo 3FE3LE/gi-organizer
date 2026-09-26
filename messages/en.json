@@ -27,6 +27,9 @@
   },
   "common": {
     "close": "Close",
+    "activeFilters": "active",
+    "clearFilters": "clear all",
+    "removeFilter": "Remove {name}",
     "mode": { "abyss": "Abyss", "theater": "Theater", "stygian": "Stygian", "other": "Other" },
     "slot": {
       "flower": "flower", "plume": "plume", "sands": "sands", "goblet": "goblet", "circlet": "circlet"
@@ -144,7 +147,6 @@
     "resultCount": "{shown} of {total}",
     "clearFilters": "Clear filters",
     "noMatch": "Nobody matches that search.",
-    "removeFilter": "Remove {name}",
     "grouping": {
       "owned": "Owned", "element": "Element", "nation": "Nation",
       "version": "Version", "weapon": "Weapon", "rarity": "Rarity"
@@ -260,9 +262,6 @@
     "tierOrBetter": "{tier} average or better",
     "perfectSubstatToggle": "with a perfect substat",
     "perfectSubstatActive": "perfect substat",
-    "activeLabel": "active",
-    "removeSr": "remove",
-    "clearAll": "clear all",
     "cvActive": "CV ≥ {value}",
     "cvMinAria": "Minimum crit value",
     "cvOrMore": "{rating} · CV {value} or more",
@@ -306,6 +305,7 @@
     "allReasons": "all",
     "assumeTitle": "Counts characters with no target as if headed for level 90, with skill and burst at 9",
     "assumeToggle": "include without target",
+    "onlyWithTarget": "with a target only",
     "today": "Today",
     "otherDay": "{day}",
     "allBacklogHeading": "All the backlog",

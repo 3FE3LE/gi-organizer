@@ -62,7 +62,7 @@ export function RosterChip({
   return (
     <li
       className={`flex items-center overflow-hidden rounded border text-2xs transition-opacity ${
-        picked ? 'border-accent bg-surface-2' : 'border-edge'
+        picked ? 'border-accent ring-1 ring-accent' : 'border-edge'
       } ${dismissed ? 'opacity-60' : ''} ${dimmed && !picked ? 'opacity-50' : ''}`}
     >
       {filterable ? (

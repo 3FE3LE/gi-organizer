@@ -1,6 +1,19 @@
 import Link from 'next/link';
 
 /**
+ * The label every group of filter values carries, above the values: one
+ * drawing for the question a row of chips or a strip of segments answers.
+ */
+export const GROUP_LABEL = 'font-mono text-2xs uppercase tracking-wide text-muted';
+
+/** A segment's own look: filled when it is the current one. */
+function segmentClass(active: boolean) {
+  return `flex min-h-8 shrink-0 items-center gap-1.5 whitespace-nowrap px-2.5 text-xs transition-colors ${
+    active ? 'bg-accent font-medium text-on-accent' : 'text-muted hover:bg-surface-2 hover:text-text'
+  }`;
+}
+
+/**
  * A choice of one, as a row of links in one bordered strip.
  *
  * The filters on the artifacts page and the grouping on the roster are the
@@ -23,14 +36,42 @@ export function Segments({
     // `min-w-0` and a sideways scroll, so a group wider than a phone — the
     // seven orderings — slides rather than pushing the card past the screen.
     <div className="min-w-0 max-w-full space-y-0.5">
-      <p aria-hidden title={hint} className="font-mono text-2xs uppercase tracking-wide text-muted">{label}</p>
-      <div
-        role="group"
-        aria-label={hint ? `${label}: ${hint}` : label}
-        className="flex w-fit max-w-full items-stretch divide-x divide-edge overflow-x-auto rounded-lg border border-edge bg-surface-2/50"
-      >
-        {children}
-      </div>
+      <p aria-hidden title={hint} className={GROUP_LABEL}>{label}</p>
+      <SegmentStrip label={hint ? `${label}: ${hint}` : label}>{children}</SegmentStrip>
+    </div>
+  );
+}
+
+/** The bordered strip alone, for a strip whose label sits elsewhere. */
+export function SegmentStrip({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div
+      role="group"
+      aria-label={label}
+      className="flex w-fit max-w-full items-stretch divide-x divide-edge overflow-x-auto rounded-lg border border-edge bg-surface-2/50"
+    >
+      {children}
+    </div>
+  );
+}
+
+/**
+ * A group of filter values under its label — the chips of one question, the
+ * same label style `Segments` has, always above rather than beside them.
+ */
+export function FilterGroup({
+  label,
+  className = '',
+  children,
+}: {
+  label: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div role="group" aria-label={label} className={`min-w-0 space-y-1 ${className}`}>
+      <p aria-hidden className={GROUP_LABEL}>{label}</p>
+      <div className="flex flex-wrap items-center gap-1">{children}</div>
     </div>
   );
 }
@@ -55,14 +96,31 @@ export function Segment({
       title={title}
       scroll={scroll}
       aria-current={active ? 'true' : undefined}
-      className={`flex min-h-8 shrink-0 items-center gap-1.5 whitespace-nowrap px-2.5 text-xs transition-colors ${
-        active
-          ? 'bg-accent font-medium text-on-accent'
-          : 'text-muted hover:bg-surface-2 hover:text-text'
-      }`}
+      className={segmentClass(active)}
     >
       {children}
     </Link>
+  );
+}
+
+/**
+ * A segment that is a button rather than a link, for a choice held in the
+ * page instead of the URL — the same drawing, so a strip reads as one kind of
+ * control wherever it is.
+ */
+export function SegmentButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button type="button" onClick={onClick} aria-pressed={active} className={segmentClass(active)}>
+      {children}
+    </button>
   );
 }
 

@@ -1,9 +1,11 @@
-import { ChevronRight, X } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
+import { ActiveFilters } from '@/components/active-filters';
 import { DockFold } from '@/components/dock-fold';
 import { HoverLabel } from '@/components/hint';
+import { FilterGroup } from '@/components/segmented-links';
 import type { Catalog } from '@/lib/data/catalog';
 import type { Team } from '@/lib/player/teams';
 import {
@@ -82,6 +84,7 @@ export async function FilterBar({
   roster?: React.ReactNode;
 }) {
   const t = await getTranslations('plan');
+  const common = await getTranslations('common');
   const reasonLabel = await getTranslations('common.reason');
   const weekdayShort = await getTranslations('common.weekdayShort');
   const regionLabel = await getTranslations('common.region');
@@ -136,26 +139,28 @@ export async function FilterBar({
           choice that is off its default, one tap from undoing it — so the
           docked bar never hides why the list is narrower than it looks. */}
       {moreOpen && (
-        <DockFold when="undocked" className="flex flex-wrap gap-1 pt-2">
-          {team && (
-            <Chip to={href(base, filters, { team: null, chars: [] })} active>
-              {team.name} <X size={12} aria-hidden />
-            </Chip>
-          )}
-          {filters.reason.map((reason) => (
-            <Chip
-              key={reason}
-              to={href(base, filters, { reason: toggle(filters.reason, reason) })}
-              active
-            >
-              {reasonLabel(reason)} <X size={12} aria-hidden />
-            </Chip>
-          ))}
-          {!filters.assume && (
-            <Chip to={href(base, filters, { assume: true, chars: [] })} active={false}>
-              {t('assumeToggle')}
-            </Chip>
-          )}
+        <DockFold when="undocked" className="pt-2">
+          <ActiveFilters
+            items={[
+              ...(team ? [{ key: 'team', label: team.name, to: href(base, filters, { team: null, chars: [] }) }] : []),
+              ...filters.reason.map((reason) => ({
+                key: `reason-${reason}`,
+                label: reasonLabel(reason),
+                to: href(base, filters, { reason: toggle(filters.reason, reason) }),
+              })),
+              // Named for what it narrows to, like the others: the plan counts
+              // only characters with a written target.
+              ...(!filters.assume
+                ? [{ key: 'assume', label: t('onlyWithTarget'), to: href(base, filters, { assume: true, chars: [] }) }]
+                : []),
+            ]}
+            clear={href(base, filters, { team: null, reason: [], assume: true, chars: [] })}
+            labels={{
+              title: common('activeFilters'),
+              clear: common('clearFilters'),
+              remove: (name) => common('removeFilter', { name }),
+            }}
+          />
         </DockFold>
       )}
 
@@ -166,11 +171,10 @@ export async function FilterBar({
           {t('moreFilters')}
         </summary>
 
-        <div className="space-y-3 border-t border-edge px-3 py-3">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="w-16 font-mono text-2xs uppercase text-muted">
-              {t('serverLabel')}
-            </span>
+        {/* One question per group, its label above its values, and the
+            groups side by side where the card is wide enough. */}
+        <div className="flex flex-wrap gap-x-6 gap-y-3 border-t border-edge px-3 py-3">
+          <FilterGroup label={t('serverLabel')}>
             {GAME_REGIONS.map((entry) => (
               <form key={entry} action={chooseRegion.bind(null, entry)}>
                 <button
@@ -184,12 +188,9 @@ export async function FilterBar({
                 </button>
               </form>
             ))}
-          </div>
+          </FilterGroup>
 
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="w-16 font-mono text-2xs uppercase text-muted">
-              {t('teamLabel')}
-            </span>
+          <FilterGroup label={t('teamLabel')}>
             <Chip to={href(base, filters, { team: null, chars: [] })} active={!filters.team}>
               {t('allTeams')}
             </Chip>
@@ -205,12 +206,9 @@ export async function FilterBar({
                 {entry.name}
               </Chip>
             ))}
-          </div>
+          </FilterGroup>
 
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="w-16 font-mono text-2xs uppercase text-muted">
-              {t('reasonLabel')}
-            </span>
+          <FilterGroup label={t('reasonLabel')}>
             <Chip to={href(base, filters, { reason: [] })} active={filters.reason.length === 0}>
               {t('allReasons')}
             </Chip>
@@ -236,7 +234,7 @@ export async function FilterBar({
                 {filters.assume ? '✓ ' : ''}{t('assumeToggle')}
               </Chip>
             </span>
-          </div>
+          </FilterGroup>
         </div>
       </details>
       </DockFold>

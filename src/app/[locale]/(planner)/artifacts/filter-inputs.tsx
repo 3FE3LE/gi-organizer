@@ -6,6 +6,7 @@ import { useTransition } from 'react';
 import { useQueryStates } from 'nuqs';
 
 import { FieldSelect } from '@/components/field-select';
+import { GROUP_LABEL } from '@/components/segmented-links';
 import { Slider } from '@/components/ui/slider';
 
 import {
@@ -99,7 +100,7 @@ export function FilterInputs({
             onClick={() => setFilters({ perfect: !filters.perfect })}
             className={`flex h-[1.875rem] shrink-0 items-center gap-1 rounded-md border px-2 text-2xs transition-colors ${
               filters.perfect
-                ? 'border-accent bg-accent/10 text-accent'
+                ? 'border-transparent bg-accent text-on-accent'
                 : 'border-edge text-muted hover:border-edge-strong hover:text-text'
             }`}
           >
@@ -192,7 +193,7 @@ function Field({
 }) {
   return (
     <label className="block min-w-0">
-      <span className="flex items-baseline justify-between gap-2 font-mono text-2xs uppercase text-muted">
+      <span className={`flex items-baseline justify-between gap-2 ${GROUP_LABEL}`}>
         {label}
         {hint && <span className="truncate normal-case text-text">{hint}</span>}
       </span>

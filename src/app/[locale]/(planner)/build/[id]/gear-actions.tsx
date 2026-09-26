@@ -550,7 +550,7 @@ function FilterButton({
       title={title}
       onClick={onClick}
       className={`flex min-h-8 items-center gap-1 rounded-lg border px-2.5 text-xs transition-colors ${
-        selected ? 'border-accent bg-accent text-on-accent' : 'border-edge text-muted hover:border-edge-strong hover:text-text'
+        selected ? 'border-transparent bg-accent font-medium text-on-accent' : 'border-edge text-muted hover:border-edge-strong hover:text-text'
       }`}
     >
       {children}

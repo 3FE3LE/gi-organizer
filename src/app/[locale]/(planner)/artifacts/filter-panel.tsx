@@ -1,9 +1,9 @@
 import {
-  ChevronRight, PackageOpen, SlidersHorizontal, UserCheck, X,
+  ChevronRight, PackageOpen, SlidersHorizontal, UserCheck,
 } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
-import Link from 'next/link';
 
+import { ActiveFilters } from '@/components/active-filters';
 import { Segment, Segments } from '@/components/segmented-links';
 import { SLOT_ICONS } from '@/components/slot-icon';
 import { StatIcon } from '@/components/stat-icon';
@@ -65,6 +65,7 @@ export async function FilterPanel({
 }) {
   const active = activeCount(filters);
   const t = await getTranslations('artifacts');
+  const common = await getTranslations('common');
   const slotLabel = await getTranslations('common.slot');
   const heldLabel = await getTranslations('common.held');
   const tierLabel = await getTranslations('common.tier');
@@ -238,23 +239,22 @@ export async function FilterPanel({
       </details>
       </div>
 
+      {/* Always here rather than only docked: most of these are set inside
+          "more filters", which is folded by default. */}
       {active > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="font-mono text-2xs uppercase text-muted">{t('activeLabel')}</span>
-          {(await describe(filters, catalog)).map((entry) => (
-            <Chip key={entry.key} to={href(base, filters, entry.clear)} active>
-              {entry.label}
-              <X size={10} className="ml-1 inline" aria-hidden />
-              <span className="sr-only">{t('removeSr')}</span>
-            </Chip>
-          ))}
-          <Link
-            href={href(base, filters, CLEARED)}
-            className="font-mono text-2xs text-muted underline decoration-edge-strong underline-offset-2 hover:text-accent"
-          >
-            {t('clearAll')}
-          </Link>
-        </div>
+        <ActiveFilters
+          items={(await describe(filters, catalog)).map((entry) => ({
+            key: entry.key,
+            label: entry.label,
+            to: href(base, filters, entry.clear),
+          }))}
+          clear={href(base, filters, CLEARED)}
+          labels={{
+            title: common('activeFilters'),
+            clear: common('clearFilters'),
+            remove: (name) => common('removeFilter', { name }),
+          }}
+        />
       )}
     </div>
   );
@@ -321,25 +321,4 @@ async function describe(filters: ArtifactFilters, catalog: Catalog) {
   }
 
   return entries;
-}
-
-function Chip({
-  to,
-  active,
-  children,
-}: {
-  to: string;
-  active: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={to}
-      aria-current={active ? 'true' : undefined}
-      data-active={active}
-      className="chip"
-    >
-      {children}
-    </Link>
-  );
 }

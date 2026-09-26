@@ -31,6 +31,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { FieldSelect } from '@/components/field-select';
 import { Slider } from '@/components/ui/slider';
 import { ActionStatus } from '@/components/action-status';
+import { SegmentButton, SegmentStrip } from '@/components/segmented-links';
 import {
   BREAKPOINTS,
   DEFAULT_GOAL_ROWS,
@@ -572,8 +573,8 @@ function ProgressForm({
             <div className="min-w-0">
               <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
                 <FieldLabel className="mb-0">{t('artifactSetLabel')}</FieldLabel>
-                <div className="flex overflow-hidden rounded border border-edge">
-                  <Segment
+                <SegmentStrip label={t('artifactSetLabel')}>
+                  <SegmentButton
                     active={!showSecondSet}
                     onClick={() => {
                       setShowSecondSet(false);
@@ -581,14 +582,13 @@ function ProgressForm({
                       // too, or a 2+2 stays saved with one half invisible.
                       form.setValue('setIds.1', '', { shouldDirty: true });
                     }}
-                    label={t('fourPieces')}
-                  />
-                  <Segment
-                    active={showSecondSet}
-                    onClick={() => setShowSecondSet(true)}
-                    label={t('twoPlusTwo')}
-                  />
-                </div>
+                  >
+                    {t('fourPieces')}
+                  </SegmentButton>
+                  <SegmentButton active={showSecondSet} onClick={() => setShowSecondSet(true)}>
+                    {t('twoPlusTwo')}
+                  </SegmentButton>
+                </SegmentStrip>
               </div>
 
               <div className={`grid min-w-0 gap-2 ${showSecondSet ? 'grid-cols-2' : ''}`}>
@@ -805,29 +805,6 @@ function FieldLabel({
       {count && <span className="tabular font-mono text-2xs text-muted">{count}</span>}
       {hint && <span className="text-2xs text-muted">{hint}</span>}
     </p>
-  );
-}
-
-function Segment({
-  active,
-  onClick,
-  label,
-}: {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={`border-r border-edge px-2.5 py-1 text-2xs transition-colors last:border-r-0 ${
-        active ? 'bg-surface-2 text-accent' : 'text-muted hover:text-text'
-      }`}
-    >
-      {label}
-    </button>
   );
 }
 

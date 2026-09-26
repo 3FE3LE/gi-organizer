@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ViewTransition } from 'react';
 
+import { ActiveFilters } from '@/components/active-filters';
 import { CardLegend, CardMark, CardWash, CharacterPortrait, LevelTalents } from '@/components/character-card';
 import { DockFold } from '@/components/dock-fold';
 import { ElementIcon } from '@/components/element-icon';
@@ -10,8 +11,8 @@ import { GameIcon } from '@/components/game-icon';
 import { PrefetchLink } from '@/components/prefetch-link';
 import { SectionTabs } from '@/components/section-tabs';
 import { StickyDock } from '@/components/sticky-dock';
-import { Segment, Segments } from '@/components/segmented-links';
-import { CakeSlice, ChevronRight, X } from 'lucide-react';
+import { FilterGroup, Segment, Segments } from '@/components/segmented-links';
+import { CakeSlice, ChevronRight } from 'lucide-react';
 
 import { HoverLabel } from '@/components/hint';
 import {
@@ -76,6 +77,7 @@ export default async function CharactersPage({
 
   const timer = requestTimer('/characters');
   const t = await getTranslations('characters');
+  const common = await getTranslations('common');
   const db = getDb();
   // Everything the gallery reads, at once. They were awaited in turn, and on a
   // new instance that queued a catalogue parse behind the database handshake
@@ -204,7 +206,7 @@ export default async function CharactersPage({
           {/* Docked under the header once the gallery scrolls past it, as the
               artifact filters are: regrouping is something done mid-list. */}
           <StickyDock>
-            <RosterControls base={base} filters={filters} catalog={catalog} t={t} />
+            <RosterControls base={base} filters={filters} catalog={catalog} t={t} common={common} />
           </StickyDock>
           <div className="-mt-4 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
             {narrowed ? (
@@ -328,9 +330,10 @@ type Catalog = Awaited<ReturnType<typeof getAccountCatalog>>;
  * filtered roster is a URL that can be bookmarked and shared.
  */
 function RosterControls({
-  base, filters, catalog, t,
+  base, filters, catalog, t, common,
 }: {
   base: string; filters: RosterFilters; catalog: Catalog; t: Messages;
+  common: Awaited<ReturnType<typeof getTranslations<'common'>>>;
 }) {
   // The game's own words for each element and weapon, read off a character
   // who has one — the catalog carries them per character, not as a table.
@@ -342,6 +345,9 @@ function RosterControls({
   const elementType = (key: string) => `ELEMENT_${key.toUpperCase()}`;
 
   const picked = [
+    // The search is a filter like the others, and docked on a phone the box
+    // is the one control left, so it is named here too.
+    ...(filters.q ? [{ key: 'q', label: `“${filters.q}”`, to: rosterHref(base, filters, { q: '' }) }] : []),
     ...filters.element.map((key) => ({
       key: `element-${key}`,
       label: elementText(key),
@@ -351,13 +357,11 @@ function RosterControls({
     ...filters.weapon.map((key) => ({
       key: `weapon-${key}`,
       label: weaponText(key),
-      icon: null,
       to: rosterHref(base, filters, { weapon: toggle(filters.weapon, key) }),
     })),
     ...filters.rarity.map((rarity) => ({
       key: `rarity-${rarity}`,
       label: `${rarity}★`,
-      icon: null,
       to: rosterHref(base, filters, { rarity: toggle(filters.rarity, rarity) }),
     })),
   ];
@@ -401,27 +405,22 @@ function RosterControls({
       </div>
 
       {picked.length > 0 && (
-        <DockFold when="undocked" className="flex flex-wrap gap-1 pt-2">
-          {picked.map((chip) => (
-            <Link
-              key={chip.key}
-              href={chip.to}
-              scroll={false}
-              data-active
-              aria-label={t('removeFilter', { name: chip.label })}
-              className="chip gap-1"
-            >
-              {chip.icon}
-              {chip.label}
-              <X size={12} aria-hidden />
-            </Link>
-          ))}
+        <DockFold when="undocked" className="pt-2">
+          <ActiveFilters
+            items={picked}
+            clear={rosterHref(base, filters, { q: '', element: [], weapon: [], rarity: [] })}
+            labels={{
+              title: common('activeFilters'),
+              clear: common('clearFilters'),
+              remove: (name) => common('removeFilter', { name }),
+            }}
+          />
         </DockFold>
       )}
 
       <DockFold when="docked" className="pt-3">
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-edge pt-3">
-        <ChipRow label={t('filterElement')}>
+      <div className="flex flex-wrap gap-x-6 gap-y-3 border-t border-edge pt-3">
+        <FilterGroup label={t('filterElement')}>
           {ELEMENTS.map((key) => (
             <Chip
               key={key}
@@ -432,8 +431,8 @@ function RosterControls({
               <ElementIcon element={elementType(key)} label={elementText(key)} className="h-4 w-4" />
             </Chip>
           ))}
-        </ChipRow>
-        <ChipRow label={t('filterWeapon')}>
+        </FilterGroup>
+        <FilterGroup label={t('filterWeapon')}>
           {WEAPONS.map((key) => (
             <Chip
               key={key}
@@ -443,8 +442,8 @@ function RosterControls({
               {weaponText(key)}
             </Chip>
           ))}
-        </ChipRow>
-        <ChipRow label={t('filterRarity')}>
+        </FilterGroup>
+        <FilterGroup label={t('filterRarity')}>
           {RARITIES.map((rarity) => (
             <Chip
               key={rarity}
@@ -454,18 +453,9 @@ function RosterControls({
               {rarity}★
             </Chip>
           ))}
-        </ChipRow>
+        </FilterGroup>
       </div>
       </DockFold>
-    </div>
-  );
-}
-
-function ChipRow({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div role="group" aria-label={label} className="flex flex-wrap items-center gap-1">
-      <span className="mr-1 font-mono text-2xs uppercase text-muted">{label}</span>
-      {children}
     </div>
   );
 }

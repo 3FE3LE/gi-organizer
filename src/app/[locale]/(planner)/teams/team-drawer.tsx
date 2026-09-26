@@ -258,7 +258,7 @@ function SortableTeam({
           team.draft ? 'border-dashed' : ''
         } ${
           selected
-            ? 'border-accent bg-surface-2'
+            ? 'border-accent ring-1 ring-accent'
             : 'border-edge bg-surface hover:border-edge-strong'
         } ${isDragging ? 'shadow-lg' : ''}`}
       >

@@ -8,6 +8,7 @@ import { AssetImage } from '@/components/asset-image';
 import { DockFold } from '@/components/dock-fold';
 import { GameText } from '@/components/game-text';
 import { Hint } from '@/components/hint';
+import { GROUP_LABEL } from '@/components/segmented-links';
 
 export type SetChoice = {
   setId: number;
@@ -67,7 +68,7 @@ export function SetStripView({
       data-pending={pending || undefined}
       className="min-w-0 space-y-1.5 transition-opacity data-pending:opacity-60"
     >
-      <p className="font-mono text-2xs uppercase text-muted">{t('setLabel')}</p>
+      <p className={GROUP_LABEL}>{t('setLabel')}</p>
 
       <div className="relative">
       {/* Arrows for a pointer, which has no swipe: a page at a time, and only
@@ -98,7 +99,7 @@ export function SetStripView({
                   onClick={() => onSelect(isSelected ? null : set.setId)}
                   className={`relative flex h-11 w-11 items-center justify-center rounded-lg border transition-colors ${
                     isSelected
-                      ? 'border-accent bg-accent/10'
+                      ? 'border-accent ring-1 ring-accent'
                       : 'border-edge bg-surface hover:border-edge-strong'
                   } ${set.count === 0 && !isSelected ? 'opacity-40 grayscale' : ''}`}
                 >

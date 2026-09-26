@@ -27,6 +27,9 @@
   },
   "common": {
     "close": "Cerrar",
+    "activeFilters": "activos",
+    "clearFilters": "quitar todos",
+    "removeFilter": "Quitar {name}",
     "mode": { "abyss": "Abismo", "theater": "Teatro", "stygian": "Stygian", "other": "Otro" },
     "slot": {
       "flower": "flor", "plume": "pluma", "sands": "arena", "goblet": "cáliz", "circlet": "diadema"
@@ -144,7 +147,6 @@
     "resultCount": "{shown} de {total}",
     "clearFilters": "Limpiar filtros",
     "noMatch": "Nadie coincide con esa búsqueda.",
-    "removeFilter": "Quitar {name}",
     "grouping": {
       "owned": "Posesión", "element": "Elemento", "nation": "Nación",
       "version": "Versión", "weapon": "Arma", "rarity": "Rareza"
@@ -260,9 +262,6 @@
     "tierOrBetter": "media {tier} o mejor",
     "perfectSubstatToggle": "con substat perfecto",
     "perfectSubstatActive": "substat perfecto",
-    "activeLabel": "activos",
-    "removeSr": "quitar",
-    "clearAll": "quitar todos",
     "cvActive": "CV ≥ {value}",
     "cvMinAria": "Crit value mínimo",
     "cvOrMore": "{rating} · CV {value} o más",
@@ -306,6 +305,7 @@
     "allReasons": "todo",
     "assumeTitle": "Cuenta a los personajes sin objetivo como si fueran a 90, con habilidad y definitiva a 9",
     "assumeToggle": "incluir sin objetivo",
+    "onlyWithTarget": "solo con objetivo",
     "today": "Hoy",
     "otherDay": "El {day}",
     "allBacklogHeading": "Todo el backlog",
