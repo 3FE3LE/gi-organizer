@@ -5,7 +5,7 @@ import { createMemoryDb } from '@/lib/db/client';
 
 import { readBuild, readBuildsFor, saveBuild } from './builds';
 import { readRoster, upsertCharacter } from './characters';
-import { getProfileId } from './db';
+import { getProfileId, persistInventory } from './db';
 import { TargetBelowCurrent, applyProgress, type ProgressInput } from './progress';
 import { readTargets, setTarget } from './targets';
 
@@ -31,6 +31,15 @@ async function db() {
     talent: { auto: 5, skill: 6, burst: 8 },
     talentBonus: null,
   }, { source: 'good', observedAt: '2026-09-16T00:00:00.000Z' });
+
+  // Holding the Elegy: a goal's weapon is read off what is equipped.
+  await persistInventory(database, await getProfileId(database), { artifacts: [], weapons: [] }, {
+    artifacts: [],
+    weapons: [{
+      id: 'w0', weaponId: ELEGY, level: 90, ascension: 6, refinement: 1,
+      lock: false, source: 'good', equippedTo: VENTI, seenAt: '2026-09-16T00:00:00.000Z',
+    }],
+  });
 
   return database;
 }
@@ -174,4 +183,17 @@ test('the plan is what the scarcity row records, notes and all', async () => {
   assert.deepEqual(target?.setIds, [VIRIDESCENT]);
   assert.equal(target?.notes, 'escrita a mano');
   assert.equal(target?.weaponId, ELEGY);
+});
+
+test('an old target naming somebody else\'s weapon reads as the one held', async () => {
+  const database = await db();
+  // What the removed picker could leave behind: a weapon this character is
+  // not wearing, and the scarcity check used to count as theirs.
+  await setTarget({
+    characterId: VENTI, weaponId: 15501, refinement: 5, setIds: [], notes: null,
+  }, database);
+
+  const target = (await readTargets(database)).get(VENTI);
+  assert.equal(target?.weaponId, ELEGY);
+  assert.equal(target?.refinement, 1);
 });

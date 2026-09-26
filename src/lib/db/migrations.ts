@@ -343,6 +343,33 @@ const MIGRATIONS: string[] = [
     -- the body an import assigns that gear to. See \`lib/player/traveler.ts\`.
     ALTER TABLE profile ADD COLUMN traveler_body TEXT;
   `,
+  `
+    -- A goal's weapon is the one its character holds.
+    --
+    -- The goal form lost its weapon picker, but both tables kept the weapon
+    -- saved before, and "fill from the role" went on writing a suggested one
+    -- into \`build\`. The scarcity check read those, so a character whose old
+    -- target named a weapon somebody else now wears showed the account as
+    -- over-allocated as soon as they joined a team, with nothing on screen
+    -- naming the cause. The readers now take the weapon from the inventory;
+    -- this brings the stored columns into line, so a backup or an export says
+    -- the same thing. Nobody holding a weapon leaves the goal without one.
+    UPDATE build_target SET
+      weapon_id = (SELECT w.weapon_id FROM weapon_instance w
+                   WHERE w.profile_id = build_target.profile_id
+                     AND w.assigned_character_id = build_target.character_id),
+      refinement = (SELECT w.refinement FROM weapon_instance w
+                    WHERE w.profile_id = build_target.profile_id
+                      AND w.assigned_character_id = build_target.character_id);
+
+    UPDATE build SET
+      weapon_id = (SELECT w.weapon_id FROM weapon_instance w
+                   WHERE w.profile_id = build.profile_id
+                     AND w.assigned_character_id = build.character_id),
+      weapon_refinement = (SELECT w.refinement FROM weapon_instance w
+                           WHERE w.profile_id = build.profile_id
+                             AND w.assigned_character_id = build.character_id);
+  `,
 ];
 
 /**

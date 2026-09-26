@@ -15,6 +15,15 @@ import { getProfileId } from './db';
 
 export type BuildTarget = {
   characterId: number;
+  /**
+   * The weapon the character holds, read from the inventory rather than this
+   * table. The goal form stopped naming a weapon when the picker left it —
+   * the objective for a weapon is the one equipped — but the column kept
+   * whatever was saved before, and the scarcity check believed it: a target
+   * pointing at a weapon somebody else now wears reported the account as
+   * over-allocated the moment the character joined a team, with nothing on
+   * screen to say why. Read here, the target cannot drift from what is worn.
+   */
   weaponId: number | null;
   refinement: number | null;
   /** Sets the build is aiming for, which the rules read like worn ones. */
@@ -24,8 +33,11 @@ export type BuildTarget = {
 
 export async function readTargets(db: Db = getDb()): Promise<Map<number, BuildTarget>> {
   const rows = (await db
-    .prepare(`SELECT character_id, weapon_id, refinement, set_ids_json, notes
-              FROM build_target WHERE profile_id = ?`)
+    .prepare(`SELECT t.character_id, w.weapon_id, w.refinement, t.set_ids_json, t.notes
+              FROM build_target t
+              LEFT JOIN weapon_instance w
+                ON w.profile_id = t.profile_id AND w.assigned_character_id = t.character_id
+              WHERE t.profile_id = ?`)
     .all(await getProfileId(db))) as unknown as {
       character_id: number; weapon_id: number | null; refinement: number | null;
       set_ids_json: string; notes: string | null;

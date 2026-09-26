@@ -52,8 +52,21 @@ type Row = {
   goals_json: string; notes: string | null;
 };
 
-const FIELDS = `id, character_id, role, objective, weapon_id, weapon_refinement,
-                set_plan_json, main_stats_json, substats_json, goals_json, notes`;
+/**
+ * A build's columns, with its weapon taken from what the character holds.
+ *
+ * The same reason as `BuildTarget.weaponId`: nothing on screen names a
+ * build's weapon any more, so the stored one could only ever disagree with
+ * the equipped one, invisibly — and "fill from the role" wrote a suggested
+ * weapon there that another character could be wearing.
+ */
+const FROM_BUILD = `SELECT b.id, b.character_id, b.role, b.objective,
+                           w.weapon_id, w.refinement AS weapon_refinement,
+                           b.set_plan_json, b.main_stats_json, b.substats_json,
+                           b.goals_json, b.notes
+                    FROM build b
+                    LEFT JOIN weapon_instance w
+                      ON w.profile_id = b.profile_id AND w.assigned_character_id = b.character_id`;
 
 function toBuild(row: Row): Build {
   return {
@@ -73,8 +86,8 @@ function toBuild(row: Row): Build {
 
 export async function readBuilds(db: Db = getDb()): Promise<Build[]> {
   const rows = (await db
-    .prepare(`SELECT ${FIELDS} FROM build WHERE profile_id = ?
-              ORDER BY character_id, role IS NULL, role`)
+    .prepare(`${FROM_BUILD} WHERE b.profile_id = ?
+              ORDER BY b.character_id, b.role IS NULL, b.role`)
     .all(await getProfileId(db))) as unknown as Row[];
 
   return rows.map(toBuild);
@@ -82,8 +95,8 @@ export async function readBuilds(db: Db = getDb()): Promise<Build[]> {
 
 export async function readBuildsFor(characterId: number, db: Db = getDb()): Promise<Build[]> {
   const rows = (await db
-    .prepare(`SELECT ${FIELDS} FROM build WHERE profile_id = ? AND character_id = ?
-              ORDER BY role IS NULL, role`)
+    .prepare(`${FROM_BUILD} WHERE b.profile_id = ? AND b.character_id = ?
+              ORDER BY b.role IS NULL, b.role`)
     .all(await getProfileId(db), characterId)) as unknown as Row[];
 
   return rows.map(toBuild);
@@ -91,7 +104,7 @@ export async function readBuildsFor(characterId: number, db: Db = getDb()): Prom
 
 export async function readBuild(buildId: string, db: Db = getDb()): Promise<Build | null> {
   const row = (await db
-    .prepare(`SELECT ${FIELDS} FROM build WHERE id = ? AND profile_id = ?`)
+    .prepare(`${FROM_BUILD} WHERE b.id = ? AND b.profile_id = ?`)
     .get(buildId, await getProfileId(db))) as Row | undefined;
 
   return row ? toBuild(row) : null;

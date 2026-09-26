@@ -11,7 +11,7 @@ import {
   saveBuild,
   type BuildInput,
 } from './builds';
-import { getProfileId } from './db';
+import { getProfileId, persistInventory } from './db';
 
 const VENTI = 10000022;
 const VIRIDESCENT = 15002;
@@ -55,11 +55,31 @@ test('saving with an id edits rather than duplicating', async () => {
   const database = await db();
   const id = await saveBuild(build(), database);
 
-  await saveBuild({ ...build(), id, weaponRefinement: 5 }, database);
+  await saveBuild({ ...build(), id, notes: 'editada' }, database);
 
   const all = await readBuildsFor(VENTI, database);
   assert.equal(all.length, 1);
-  assert.equal(all[0].weaponRefinement, 5);
+  assert.equal(all[0].notes, 'editada');
+});
+
+test('a goal\'s weapon is the one its character holds, not the one it was saved with', async () => {
+  const database = await db();
+  // Saved naming a weapon nobody is wearing — what the old picker, or a
+  // suggestion, left behind.
+  const id = await saveBuild(build({ weaponId: 15501, weaponRefinement: 1 }), database);
+  assert.equal((await readBuild(id, database))?.weaponId, null);
+
+  await persistInventory(database, await getProfileId(database), { artifacts: [], weapons: [] }, {
+    artifacts: [],
+    weapons: [{
+      id: 'w0', weaponId: 15502, level: 90, ascension: 6, refinement: 3,
+      lock: false, source: 'good', equippedTo: VENTI, seenAt: '2026-09-26T00:00:00.000Z',
+    }],
+  });
+
+  const stored = await readBuild(id, database);
+  assert.equal(stored?.weaponId, 15502);
+  assert.equal(stored?.weaponRefinement, 3);
 });
 
 test('a character cannot hold two goals for the same role', async () => {

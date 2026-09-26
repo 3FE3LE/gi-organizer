@@ -11,7 +11,6 @@ import { firstIssue, templateSchema } from '@/lib/forms/build';
 import { deleteBuild, readBuild, readBuildsFor, saveBuild } from '@/lib/player/builds';
 import { getDb } from '@/lib/db/client';
 import { getBuildPriorities, suggestionsFor } from '@/lib/rules/assemble';
-import { refinementResolver } from '@/lib/player/weapon-copies';
 import { templateFor } from '@/lib/rules/role-templates';
 import { CHOOSABLE_SLOTS } from '@/lib/rules/piece-score';
 import { refreshEverywhere } from '@/lib/refresh';
@@ -125,11 +124,10 @@ export async function applyTemplateAction(
   const suggestions = await suggestionsFor(characterId, catalog, getDb(), existing.id);
 
   // Only what the player can reach: the suggestion lists are already filtered
-  // by ownership for weapons and by feasibility for sets.
+  // by feasibility for sets. The weapon is not the role's to choose — a goal's
+  // weapon is the one held, which is what `existing` already reads — so a
+  // suggestion somebody else is wearing can no longer be written in its place.
   const set = suggestions.sets.find((entry) => entry.feasible) ?? suggestions.sets[0];
-  const weapon = suggestions.weapons.find((entry) => entry.feasible) ?? suggestions.weapons[0];
-
-  const plannedWeaponId = weapon?.weaponId ?? existing.weaponId;
 
   const mainStats: Partial<Record<ArtifactSlot, string[]>> = {};
   for (const [slot, prop] of Object.entries(template.mainStats)) {
@@ -139,15 +137,8 @@ export async function applyTemplateAction(
   await saveBuild({
     ...existing,
     id: existing.id,
-    weaponId: plannedWeaponId,
-    // The community's minimum only where a copy can be forged towards it; a
-    // five-star is at the refinement the account holds. See
-    // `rules/refinement.ts`.
-    weaponRefinement: plannedWeaponId === null
-      ? null
-      : (await refinementResolver()).resolve(
-          characterId, plannedWeaponId, weapon?.minRefinement ?? existing.weaponRefinement,
-        ),
+    weaponId: existing.weaponId,
+    weaponRefinement: existing.weaponRefinement,
     setPlan: set ? [{ setIds: set.setIds, pieces: set.pieces }] : existing.setPlan,
     mainStats,
     substats: template.substats,
