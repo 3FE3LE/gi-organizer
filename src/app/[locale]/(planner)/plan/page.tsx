@@ -32,6 +32,7 @@ import { RosterPanel, summarizeRoster } from './roster-panel';
 import { RosterSheet } from './roster-sheet';
 import { farmingFilter, resolveScope } from './scope';
 import { TodayCard } from './today-card';
+import { WeekMap } from './week-map';
 
 export const dynamic = 'force-dynamic';
 
@@ -279,11 +280,14 @@ async function PlanContent({
           )}
         </>
       ) : (
-        <div className="space-y-3">
-          {schedule.domains.map((plan) => (
-            <FullDomainCard key={plan.domain} plan={plan} catalog={catalog} locale={locale} />
-          ))}
-        </div>
+        <>
+          <WeekMap schedule={schedule} base={base} filters={filters} locale={locale} today={today} />
+          <div className="space-y-3">
+            {schedule.domains.map((plan) => (
+              <FullDomainCard key={plan.domain} plan={plan} catalog={catalog} locale={locale} />
+            ))}
+          </div>
+        </>
       )}
 
       {schedule.anytime.length > 0 && (
@@ -454,8 +458,9 @@ async function FullDomainCard({
 
   return (
     <section className="card">
-      <p className="flex flex-wrap items-baseline gap-x-3 border-b border-edge px-3 py-2 text-sm">
-        <span className="flex-1">{plan.label}</span>
+      <p className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 border-b border-edge px-3 py-2 text-sm">
+        {/* Its own line on a phone, as on the day's cards. */}
+        <span className="w-full sm:w-auto sm:flex-1">{plan.label}</span>
         <span className="font-mono text-xs text-muted">
           {plan.days.map((day) => weekdayLabel(day)).join(' · ')}
         </span>
