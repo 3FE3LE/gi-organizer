@@ -23,7 +23,7 @@ export default function Loading() {
           </div>
           <Skeleton className="h-7 w-full max-w-2xl rounded-full" />
         </div>
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))] gap-3 sm:gap-4">
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))] sm:gap-4">
           {Array.from({ length: 12 }, (_, index) => (
             <Skeleton key={index} className="h-40" />
           ))}
