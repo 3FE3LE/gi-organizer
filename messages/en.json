@@ -111,7 +111,6 @@
   },
   "characters": {
     "title": "My characters",
-    "sortHint": "by release, most recent first",
     "orphanedTitle": "No sheet.",
     "orphanedBody": "{count, plural, one {# character has} other {# characters have}} gear but {count, plural, one {isn't} other {aren't}} on the roster.",
     "orphanedLink": "Add them",
@@ -124,6 +123,18 @@
     "viewGallery": "Gallery",
     "viewCalendar": "Birthdays",
     "groupBy": "Group by",
+    "searchLabel": "Search characters",
+    "searchPlaceholder": "Search by name",
+    "sortBy": "Sort",
+    "sort": {"release": "Release", "level": "Level", "constellation": "Constellation", "name": "Name"},
+    "sortHints": {"release": "by release, newest first", "level": "by level, highest first", "constellation": "by constellation, highest first", "name": "by name"},
+    "filterElement": "Element",
+    "filterWeapon": "Weapon",
+    "filterRarity": "Rarity",
+    "resultCount": "{shown} of {total}",
+    "clearFilters": "Clear filters",
+    "noMatch": "Nobody matches that search.",
+    "removeFilter": "Remove {name}",
     "grouping": {
       "owned": "Owned", "element": "Element", "nation": "Nation",
       "version": "Version", "weapon": "Weapon", "rarity": "Rarity"

@@ -10,12 +10,14 @@ import { SectionTabs } from '@/components/section-tabs';
 import { StickyDock } from '@/components/sticky-dock';
 import { Segment, Segments } from '@/components/segmented-links';
 import { elementColor } from '@/lib/data/elements';
+import { X } from 'lucide-react';
+
+import { HoverLabel } from '@/components/hint';
 import {
   GROUPINGS,
   type Grouping,
   daysUntil,
   groupCharacters,
-  isGrouping,
   parseBirthday,
 } from '@/lib/data/grouping';
 import { isLocale } from '@/lib/data/locales';
@@ -28,6 +30,22 @@ import { readRegion } from '@/lib/player/region';
 import { gameDate } from '@/lib/rules/game-day';
 import { getAccountCatalog } from '@/lib/player/traveler';
 import { requestTimer } from '@/lib/timing';
+
+import {
+  ELEMENTS,
+  RARITIES,
+  SORTS,
+  WEAPONS,
+  elementKey,
+  isNarrowed,
+  loadRosterFilters,
+  rosterHref,
+  toggle,
+  weaponKey,
+  type RosterFilters,
+} from './filters';
+import { narrowRoster } from './narrow';
+import { SearchBox } from './search-box';
 
 /**
  * The roster, shown the way the game shows it: what you have first, what you do
@@ -50,9 +68,9 @@ export default async function CharactersPage({
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
 
-  const query = await searchParams;
-  const view = query.view === 'calendar' ? 'calendar' : 'gallery';
-  const grouping: Grouping = isGrouping(query.group) ? query.group : 'owned';
+  const filters = await loadRosterFilters(searchParams);
+  const { view, group: grouping } = filters;
+  const base = `/${locale}/characters`;
 
   const timer = requestTimer('/characters');
   const t = await getTranslations('characters');
@@ -74,6 +92,8 @@ export default async function CharactersPage({
 
   const byRelease = catalog.index.charactersByRelease;
   const mine = byRelease.filter((character) => owned.has(character.id));
+  const shown = narrowRoster(byRelease, filters, roster, locale);
+  const narrowed = isNarrowed(filters);
 
   /*
    * Gear on a character with no roster row: the scan saw the equipment and not
@@ -97,7 +117,9 @@ export default async function CharactersPage({
             {mine.length}/{byRelease.length}
           </span>
         </h1>
-        {view === 'gallery' && <p className="font-mono text-xs text-muted">{t('sortHint')}</p>}
+        {view === 'gallery' && (
+          <p className="font-mono text-xs text-muted">{t(`sortHints.${filters.sort}`)}</p>
+        )}
       </header>
 
       {orphaned > 0 && (
@@ -114,12 +136,12 @@ export default async function CharactersPage({
       <SectionTabs
         tabs={[
           {
-            href: `/${locale}/characters${grouping === 'owned' ? '' : `?group=${grouping}`}`,
+            href: rosterHref(base, filters, { view: 'gallery' }),
             label: t('viewGallery'),
             active: view === 'gallery',
           },
           {
-            href: `/${locale}/characters?view=calendar`,
+            href: rosterHref(base, filters, { view: 'calendar' }),
             label: t('viewCalendar'),
             active: view === 'calendar',
           },
@@ -139,12 +161,27 @@ export default async function CharactersPage({
           {/* Docked under the header once the gallery scrolls past it, as the
               artifact filters are: regrouping is something done mid-list. */}
           <StickyDock>
-            <GroupPicker locale={locale} current={grouping} t={t} />
+            <RosterControls base={base} filters={filters} catalog={catalog} t={t} />
           </StickyDock>
-          {grouping === 'owned' && mine.length === 0 && (
+          {narrowed && (
+            <p className="-mt-4 flex flex-wrap items-baseline gap-x-3 font-mono text-xs text-muted">
+              {t('resultCount', { shown: shown.length, total: byRelease.length })}
+              <Link
+                href={rosterHref(base, filters, { q: '', element: [], weapon: [], rarity: [] })}
+                scroll={false}
+                className="underline hover:text-accent"
+              >
+                {t('clearFilters')}
+              </Link>
+            </p>
+          )}
+          {grouping === 'owned' && mine.length === 0 && !narrowed && (
             <p className="text-sm text-muted">{t('empty')}</p>
           )}
-          {groupCharacters(byRelease, grouping, owned).map((group, index) => {
+          {narrowed && shown.length === 0 && (
+            <p className="text-sm text-muted">{t('noMatch')}</p>
+          )}
+          {groupCharacters(shown, grouping, owned).map((group, index) => {
             const count = group.characters.filter((character) => owned.has(character.id)).length;
             // "Yours" needs no heading: it is the page's own title. Every
             // other group is one partition among several, and says which.
@@ -195,28 +232,181 @@ function groupLabel(grouping: Grouping, key: string, sample: CharacterView, t: M
   }
 }
 
+type Catalog = Awaited<ReturnType<typeof getAccountCatalog>>;
+
 /**
- * The partitions, as links: each one is a URL, and the current one says so.
+ * Everything that narrows or reorders the gallery, in the dock.
  *
- * The same segmented strip the artifact filters use, so "choose how to see
- * this list" looks the same on both screens.
+ * The search and the two ways to lay the list out — how it is grouped, how it
+ * is ordered — stay in reach while docked: they are what gets changed halfway
+ * down. The chip rows fold away docked, as the plan's extra filters do, and
+ * leave what they picked as chips to undo, so a docked bar never hides why the
+ * gallery is shorter than it looks.
+ *
+ * Every chip is a link built from the same parsers the page reads, so a
+ * filtered roster is a URL that can be bookmarked and shared.
  */
-function GroupPicker({ locale, current, t }: { locale: string; current: Grouping; t: Messages }) {
+function RosterControls({
+  base, filters, catalog, t,
+}: {
+  base: string; filters: RosterFilters; catalog: Catalog; t: Messages;
+}) {
+  // The game's own words for each element and weapon, read off a character
+  // who has one — the catalog carries them per character, not as a table.
+  const sample = catalog.index.charactersByRelease;
+  const elementText = (key: string) =>
+    sample.find((character) => elementKey(character.elementType) === key)?.elementText ?? key;
+  const weaponText = (key: string) =>
+    sample.find((character) => weaponKey(character.weaponType) === key)?.weaponText ?? key;
+  const elementType = (key: string) => `ELEMENT_${key.toUpperCase()}`;
+
+  const picked = [
+    ...filters.element.map((key) => ({
+      key: `element-${key}`,
+      label: elementText(key),
+      icon: <ElementIcon element={elementType(key)} className="h-3.5 w-3.5" sizes="14px" />,
+      to: rosterHref(base, filters, { element: toggle(filters.element, key) }),
+    })),
+    ...filters.weapon.map((key) => ({
+      key: `weapon-${key}`,
+      label: weaponText(key),
+      icon: null,
+      to: rosterHref(base, filters, { weapon: toggle(filters.weapon, key) }),
+    })),
+    ...filters.rarity.map((rarity) => ({
+      key: `rarity-${rarity}`,
+      label: `${rarity}★`,
+      icon: null,
+      to: rosterHref(base, filters, { rarity: toggle(filters.rarity, rarity) }),
+    })),
+  ];
+
   return (
-    <nav aria-label={t('groupBy')}>
-      <Segments label={t('groupBy')}>
-        {GROUPINGS.map((grouping) => (
-          <Segment
-            key={grouping}
-            to={`/${locale}/characters${grouping === 'owned' ? '' : `?group=${grouping}`}`}
-            active={grouping === current}
-            scroll={false}
-          >
-            {t(`grouping.${grouping}`)}
-          </Segment>
-        ))}
-      </Segments>
-    </nav>
+    <div className="card flex flex-col gap-3 p-3 group-data-[stuck]/dock:gap-2 group-data-[stuck]/dock:p-2">
+      <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
+        <div className="w-full sm:w-auto">
+          <SearchBox label={t('searchLabel')} placeholder={t('searchPlaceholder')} />
+        </div>
+        {/* Docked on a phone only the search stays: the two strips below it
+            would take a quarter of the screen off the gallery they arrange. */}
+        <div className="min-w-0 max-sm:group-data-[stuck]/dock:hidden">
+        <Segments label={t('groupBy')}>
+          {GROUPINGS.map((grouping) => (
+            <Segment
+              key={grouping}
+              to={rosterHref(base, filters, { group: grouping })}
+              active={grouping === filters.group}
+              scroll={false}
+            >
+              {t(`grouping.${grouping}`)}
+            </Segment>
+          ))}
+        </Segments>
+        </div>
+        <div className="min-w-0 max-sm:group-data-[stuck]/dock:hidden">
+        <Segments label={t('sortBy')}>
+          {SORTS.map((sort) => (
+            <Segment
+              key={sort}
+              to={rosterHref(base, filters, { sort })}
+              active={sort === filters.sort}
+              scroll={false}
+            >
+              {t(`sort.${sort}`)}
+            </Segment>
+          ))}
+        </Segments>
+        </div>
+      </div>
+
+      {picked.length > 0 && (
+        <div className="hidden flex-wrap gap-1 group-data-[stuck]/dock:flex">
+          {picked.map((chip) => (
+            <Link
+              key={chip.key}
+              href={chip.to}
+              scroll={false}
+              data-active
+              aria-label={t('removeFilter', { name: chip.label })}
+              className="chip gap-1"
+            >
+              {chip.icon}
+              {chip.label}
+              <X size={12} aria-hidden />
+            </Link>
+          ))}
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-edge pt-3 group-data-[stuck]/dock:hidden">
+        <ChipRow label={t('filterElement')}>
+          {ELEMENTS.map((key) => (
+            <Chip
+              key={key}
+              to={rosterHref(base, filters, { element: toggle(filters.element, key) })}
+              active={filters.element.includes(key)}
+              label={elementText(key)}
+            >
+              <ElementIcon element={elementType(key)} label={elementText(key)} className="h-4 w-4" />
+            </Chip>
+          ))}
+        </ChipRow>
+        <ChipRow label={t('filterWeapon')}>
+          {WEAPONS.map((key) => (
+            <Chip
+              key={key}
+              to={rosterHref(base, filters, { weapon: toggle(filters.weapon, key) })}
+              active={filters.weapon.includes(key)}
+            >
+              {weaponText(key)}
+            </Chip>
+          ))}
+        </ChipRow>
+        <ChipRow label={t('filterRarity')}>
+          {RARITIES.map((rarity) => (
+            <Chip
+              key={rarity}
+              to={rosterHref(base, filters, { rarity: toggle(filters.rarity, rarity) })}
+              active={filters.rarity.includes(rarity)}
+            >
+              {rarity}★
+            </Chip>
+          ))}
+        </ChipRow>
+      </div>
+    </div>
+  );
+}
+
+function ChipRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div role="group" aria-label={label} className="flex flex-wrap items-center gap-1">
+      <span className="mr-1 font-mono text-2xs uppercase text-muted">{label}</span>
+      {children}
+    </div>
+  );
+}
+
+/**
+ * One filter value, on or off. An emblem-only chip names itself in a drawn
+ * label on hover and focus, as the plan's chips do — see `components/hint.tsx`.
+ */
+function Chip({
+  to, active, label, children,
+}: {
+  to: string; active: boolean; label?: string; children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={to}
+      scroll={false}
+      aria-current={active ? 'true' : undefined}
+      data-active={active}
+      className={`chip${label ? ' group relative px-1.5' : ''}`}
+    >
+      {children}
+      {label && <HoverLabel text={label} />}
+    </Link>
   );
 }
 
