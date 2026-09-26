@@ -2,9 +2,9 @@
  * Refreshes the Enka character store.
  *
  * Enka's showcase payload identifies talents by internal skill id
- * (`skillLevelMap: { "10017": 10 }`) and gives no ordering. `genshin-db` has no
- * skill ids at all, so the two cannot be joined without this table, which maps
- * every avatar to its ordered skill ids and to the proud-skill groups that
+ * (`skillLevelMap: { "10017": 10 }`) and gives no ordering. The catalog keys a
+ * talent by its position, not its skill id, so the two cannot be joined
+ * without this table, which maps every avatar to its ordered skill ids and to the proud-skill groups that
  * `proudSkillExtraLevelMap` (the +3 from constellations) is keyed by.
  *
  * This is the one part of the dataset that needs the network, so it lives in its

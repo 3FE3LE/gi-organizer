@@ -27,9 +27,8 @@ export type Nation = (typeof NATIONS)[number];
 /**
  * The nation behind the game's association id.
  *
- * Read from the id rather than the localized region, because `genshin-db`
- * leaves the region blank for most characters since 5.7: the association is
- * the field that is always there. The Fatui are Snezhnayan, and a suffixed id
+ * Read from the id rather than a localized region name, which the catalog
+ * does not carry: the association is the field that is always there. The Fatui are Snezhnayan, and a suffixed id
  * (`ASSOC_SNEZHNAYA_STAR`, `ASSOC_NODKRAI_ZIBAI`) belongs to its prefix.
  */
 export function nationOf(associationType: string): Nation {

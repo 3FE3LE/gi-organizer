@@ -125,7 +125,7 @@ async function main() {
     );
 
     // A mismatch is a real divergence: the same id, two different keys. The
-    // "only" lists are expected — genshin-db ships entities GOOD never sees,
+    // "only" lists are expected — the catalog ships entities GOOD never sees,
     // and the Traveler is deliberately excluded from the derived map.
     report('MISMATCH', result.mismatched);
     report('only upstream', result.onlyTheirs);

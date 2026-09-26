@@ -3,7 +3,7 @@ import type { TeamRole } from '@/lib/rules/types';
 /**
  * Facts the game data does not carry.
  *
- * `genshin-db` is a pure mirror: no role, tag, mechanic, archetype or rework
+ * The game data is a pure mirror: no role, tag, mechanic, archetype or rework
  * field exists anywhere in it, and `version` is the debut patch — Zhongli still
  * reports 1.1 despite the 1.3 rework. Anything editorial has to be asserted
  * here, keyed by id and reviewed per entry.

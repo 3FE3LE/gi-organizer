@@ -1,7 +1,7 @@
 /**
  * How a weapon can be obtained, for the weapons where that is knowable.
  *
- * `genshin-db` does not carry it — a weapon record is id, rarity, type, stats,
+ * The catalog does not carry it — a weapon record is id, rarity, type, stats,
  * costs and version — so this is curated by hand in
  * `src/data/curated/weapon-sources.json` and deliberately incomplete.
  *

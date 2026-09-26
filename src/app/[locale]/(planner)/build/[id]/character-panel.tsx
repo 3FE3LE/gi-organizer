@@ -12,6 +12,7 @@ import {
   type Catalog, enkaEntry, formatSetEffect, propLabel, setEffects,
 } from '@/lib/data/catalog';
 import { elementColor, elementDamageProp, elementOfDamageProp } from '@/lib/data/elements';
+import { nationOf } from '@/lib/data/grouping';
 import type { Locale } from '@/lib/data/locales';
 import { formatPropValue, isPercentProp } from '@/lib/data/props';
 import { resolveIcon } from '@/lib/data/icon';
@@ -79,6 +80,7 @@ export async function CharacterPanel({
   const accent = elementColor(character.elementType);
   const t = await getTranslations('build');
   const common = await getTranslations('common');
+  const tCharacters = await getTranslations('characters');
   const slotLabel = await getTranslations('common.slot');
 
   const talentLevels = [loadout.talent.auto, loadout.talent.skill, loadout.talent.burst];
@@ -194,7 +196,10 @@ export async function CharacterPanel({
    * stat row instead, where it already appears. The nation is gone from here
    * until it can be an emblem — see the note on `region` below.
    */
-  const facts = [...new Set([character.region].filter(Boolean))];
+  // The nation, named the way the roster's grouping names it: the catalog
+  // keeps the association, and the words for it live with the interface.
+  const nation = nationOf(character.associationType);
+  const facts = nation === 'other' ? [] : [tCharacters(`nation.${nation}`)];
 
   /*
    * The attribute rows, and their values at every row of the stat table.

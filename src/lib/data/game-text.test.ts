@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { parseGameText, type Block } from './game-text';
+import { parseGameText, plainText, type Block } from './game-text';
 
 /** A block as plain text, for the assertions that are about structure. */
 const plain = (blocks: Block[]) => blocks.map((block) => ({
@@ -84,4 +84,11 @@ test('lines that open on the game\'s bullet are a list, without the bullet', () 
     { kind: 'heading', text: ['Paquete minino'] },
     { kind: 'list', text: ['Inflige Daño Dendro.', 'Esprintar cancela este estado.'] },
   ]);
+});
+
+test('the plain copy keeps paragraphs and bullets and drops every mark', () => {
+  assert.equal(
+    plainText('#<color=#FFD780FF>Pulsar</color>\nInflige <color=#99FF88FF>Daño Dendro</color> en 1{NON_BREAK_SPACE}s.\n\n·Uno.\n·Dos.'),
+    'Pulsar\nInflige Daño Dendro en 1 s.\n\n·Uno.\n·Dos.',
+  );
 });

@@ -22,7 +22,7 @@ export function isPercentProp(prop: string) {
 /**
  * Two sources, two scales for the same stat:
  *
- *   - `ratio`   as `genshin-db` reports it — 0.24 means 24%.
+ *   - `ratio`   as the catalog reports it — 0.24 means 24%.
  *   - `percent` as Enka reports it — 22.1 means 22.1%.
  *
  * Mixing them silently produces values off by 100, so the scale is required
@@ -45,7 +45,7 @@ export function formatPropValue(
 }
 
 /**
- * `specialized` is how `genshin-db` names the ascension bonus in a stat table.
+ * `specialized` is the stat table's name for the ascension bonus.
  * Its actual stat type comes from the character's `substatType` or the weapon's
  * `mainStatType`, so a stat row can only be labelled with that context.
  */

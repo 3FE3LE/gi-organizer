@@ -8,7 +8,7 @@ own. One Favonius Lance cannot be equipped on four polearm supports, and two
 characters on the same team cannot both wear the same 4-piece set. Everything
 below is arranged so those constraints are expressible rather than bolted on.
 
-Current dataset: **game version 7.1** (`genshin-db` 5.2.14).
+Current dataset: **game version 7.1**, from [Project Amber](https://gi.yatta.moe).
 
 ## Layers
 
@@ -23,7 +23,26 @@ mutable, and they refer to the catalog only by id.
 
 ### Catalog
 
-`scripts/build-data.mts` reads `genshin-db` and writes `src/generated/data`:
+The catalog has one source: Project Amber (gi.yatta.moe), which mirrors the
+game's own data every patch — existing characters included, which is why it
+replaced `genshin-db`: that package regenerated a character only in the patch
+that introduced them, so 6.7's talent reworks and 6.2's Hexerei passives never
+reached it. Two steps:
+
+```
+pnpm data:yatta   # downloads Amber's responses into .cache/yatta (network)
+pnpm data:build   # reads only the cache and writes src/generated/data
+```
+
+The cache is ignored by git; the output is committed, so `next build` never
+touches the network. Amber's avatar list trails a release by a few days, so
+`data:yatta` also discovers characters from Enka's store (`pnpm data:enka`) and
+fetches them by id. What Amber does not carry is written down in the build
+script as the game's own fixed words and dates — the seven elements' names, the
+two Travelers' names, and when each patch before 3.0 began (Amber's changelog,
+which gives every later id its version, starts at 3.0).
+
+`scripts/build-data.mts` writes `src/generated/data`:
 
 ```
 meta.json                              game version, generation date, counts
@@ -56,15 +75,15 @@ it, with one exception: talent and constellation text is over 1 MB per locale an
 is read one character at a time, so it is sharded per id and deliberately kept
 out of the catalog.
 
-Stats come from `genshin-db`'s stat *functions*, which are not serializable. The
-pipeline evaluates them at every ascension breakpoint, where `"80"` is level 80
-before the ascension and `"80+"` after. `StatFunction` takes the phase as a
-**positional** argument (`stats(80, 6)`); an options object is silently ignored
-and makes every post-ascension row a duplicate.
+Stats are computed the way the game does: a base value times the level's
+growth curve, plus what the ascension phase adds. The pipeline evaluates them at
+every ascension breakpoint, where `"80"` is level 80 before the ascension and
+`"80+"` after, up to the highest level the rarity reaches.
 
-`genshin-db` 5.2.13's declaration for materials is stale — the runtime object has
-`sources`, not `source`, plus an undeclared `version`. Patched locally in
-`MaterialRecord`.
+A material's `sortRank` groups the tiers of one family and orders families the
+way the bag does. Amber carries no rank, so it is derived: a family is followed
+down its crafting recipe (three of the tier below) to its lowest tier, whose id
+names it, weighted by the material's type.
 
 ### Stat identifiers
 
@@ -72,14 +91,13 @@ and makes every post-ascension row a duplicate.
 catalog ascension stats, weapon main stats, artifact substats, Enka payloads.
 `src/lib/data/props.ts` owns labels and formatting.
 
-`genshin-db` ships no folder of stat labels, so the pipeline harvests them from
-every character's ascension substat and every weapon's main stat, which together
-cover all 16 types the game shows. The four flat variants (`FIGHT_PROP_HP`,
+Amber's avatar and weapon lists carry the labels for every ascension stat and
+main stat, which together cover all 16 types the game shows. The four flat variants (`FIGHT_PROP_HP`,
 `_ATTACK`, `_DEFENSE`, `_BASE_ATTACK`) never appear there because nothing ascends
 into them; artifacts use them, and the game labels a flat stat exactly like its
 percentage twin, so they alias.
 
-The two sources disagree on scale for the same stat: `genshin-db` reports a ratio
+The two sources disagree on scale for the same stat: the catalog reports a ratio
 (`0.24` is 24%), Enka reports a percentage (`22.1` is 22.1%). `formatPropValue`
 requires the scale rather than guessing, because mixing them is an error of 100×
 that still looks plausible.
@@ -133,8 +151,8 @@ Every id in the payload joins the catalog directly, with no translation table:
 | `flat.reliquarySubstats[].appendPropId` | `FIGHT_PROP_*` |
 
 Talents are the one exception. Enka keys them by internal skill id
-(`skillLevelMap: { "10017": 10 }`) with no ordering, and `genshin-db` has no
-skill ids at all. Enka's own store table bridges them, giving each avatar its
+(`skillLevelMap: { "10017": 10 }`) with no ordering, and the catalog keys a
+talent by its position, not its skill id. Enka's own store table bridges them, giving each avatar its
 ordered skill ids plus the proud-skill groups that `proudSkillExtraLevelMap` (the
 +3 from constellations) is keyed by. `pnpm data:enka` mirrors it; keys are
 `avatarId`, or `avatarId-skillDepotId` for the Traveler, whose skills change with
@@ -387,13 +405,13 @@ are personal data and gitignored. On the machine that has one, they are the only
 tests that exercise the matcher at full scale — including a pass that levels
 every one of the 1276 pieces and asserts that none is duplicated or lost.
 
-`data:build` runs on `prebuild` and clears only what it owns, so it never wipes
-the two network-sourced files beside it. Both are committed, which keeps
-`pnpm build` offline. Re-run them after a patch bump:
+`data:build` clears only what it owns, so it never wipes the network-sourced
+files beside it. Everything it writes is committed and `pnpm build` does not
+regenerate it, which keeps a deploy offline — the build machine has no Amber
+cache and needs none. Re-run the pipeline after a patch lands:
 
 ```bash
-pnpm add genshin-db@latest
-pnpm data:build && pnpm data:enka && pnpm data:builds
+pnpm data:enka && pnpm data:yatta && pnpm data:build && pnpm data:builds
 pnpm data:check-assets --all && pnpm data:check-good
 ```
 
@@ -702,7 +720,7 @@ Two things it gets right that are easy to get wrong:
   to the character alone is the classic quiet error.
 - CRIT Rate, CRIT DMG and Energy Recharge start at 5, 50 and 100, not zero.
 
-Artifact main stat values are not in `genshin-db`, so the anchors at +0 and max
+Artifact main stat values are not in the catalog, so the anchors at +0 and max
 level are embedded and the levels between are interpolated linearly. That is
 **accurate to 0.6% at worst** against published +4 values, and always low rather
 than high — enough to decide whether a build clears a threshold, not a
@@ -988,8 +1006,7 @@ one of them.
 ## Locales
 
 `src/lib/data/locales.ts` is the single registry. Each entry maps an app locale to
-the `genshin-db` language name and to Project Amber's path segment, so later live
-fetches stay consistent with the generated strings.
+Project Amber's path segment, which is what the catalog is downloaded and built by.
 
-`genshin-db` 5.2.13 ships 15 languages. Four are wired up (`es`, `en`, `ja`,
-`zh-Hans`); adding one is a single entry plus `pnpm data:build`.
+Four are wired up (`es`, `en`, `ja`, `zh-Hans`); adding one is a single entry, an
+element-name row in `scripts/build-data.mts`, and `pnpm data:yatta && pnpm data:build`.

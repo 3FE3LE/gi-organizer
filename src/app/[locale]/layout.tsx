@@ -233,7 +233,6 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
                 <div className="mx-auto max-w-7xl">
                   {t('footer', {
                     version: meta.gameVersion,
-                    genshinDbVersion: meta.genshinDbVersion,
                     date: meta.generatedAt.slice(0, 10),
                   })}
                 </div>

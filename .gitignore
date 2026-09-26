@@ -60,3 +60,6 @@ playwright-report/
 # agent skills are vendored and pinned by skills-lock.json, so they are
 # committed; per-person permissions are not
 .claude/settings.local.json
+
+# Project Amber responses; see scripts/fetch-yatta.mts
+/.cache/

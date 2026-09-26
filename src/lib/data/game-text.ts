@@ -171,3 +171,23 @@ export function parseGameText(raw: string | null | undefined, options: GameTextO
 
   return blocks;
 }
+
+/**
+ * The same text with every mark resolved and dropped: what a search, a tag
+ * match or an `aria-label` reads. Paragraphs stay a blank line apart and list
+ * lines keep their bullet, so the plain copy still has its shape.
+ */
+export function plainText(raw: string | null | undefined, options: GameTextOptions = {}): string {
+  const blocks = parseGameText(raw, options);
+
+  return blocks
+    .map((block) => block.lines
+      .map((line) => (block.kind === 'list' ? '·' : '')
+        + line.filter((run) => run.layout !== 'touch').map((run) => run.text).join(''))
+      .join('\n'))
+    // A heading sits on the line above its paragraph, as the game wrote it.
+    .reduce((text, part, index) => {
+      if (index === 0) return part;
+      return text + (blocks[index - 1].kind === 'heading' ? '\n' : '\n\n') + part;
+    }, '');
+}

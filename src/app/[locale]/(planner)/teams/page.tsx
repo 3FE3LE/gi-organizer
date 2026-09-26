@@ -142,7 +142,7 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
           weapon: weaponDefinition && weaponStats
             ? {
                 baseAttack: weaponStats.attack ?? 0,
-                prop: weaponDefinition.mainStatType,
+                prop: weaponDefinition.mainStatType ?? null,
                 value: weaponStats.specialized ?? 0,
               }
             : null,

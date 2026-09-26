@@ -1,16 +1,14 @@
 /**
  * Locale registry.
  *
- * `genshinDb` is the language name the `genshin-db` package expects.
- * `amber` is the path segment Project Amber uses, kept here so a later
- * live-data fetch (banners, beta content) stays consistent with the
- * generated strings.
+ * `amber` is the path segment Project Amber uses for the language: the catalog
+ * is downloaded and built per locale by it — see `scripts/fetch-yatta.mts`.
  */
 export const LOCALES = {
-  es: { label: 'Español', genshinDb: 'Spanish', amber: 'es' },
-  en: { label: 'English', genshinDb: 'English', amber: 'en' },
-  ja: { label: '日本語', genshinDb: 'Japanese', amber: 'jp' },
-  'zh-Hans': { label: '简体中文', genshinDb: 'ChineseSimplified', amber: 'chs' },
+  es: { label: 'Español', amber: 'es' },
+  en: { label: 'English', amber: 'en' },
+  ja: { label: '日本語', amber: 'jp' },
+  'zh-Hans': { label: '简体中文', amber: 'chs' },
 } as const;
 
 export type Locale = keyof typeof LOCALES;

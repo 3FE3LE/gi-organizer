@@ -28,9 +28,11 @@ export type CoreWeapon = {
   id: number;
   rarity: number;
   weaponType: string;
-  mainStatType: string;
+  /** Absent on the one- and two-star weapons, which have no second stat. */
+  mainStatType?: string;
   baseAtkValue: number;
-  version: string;
+  /** The patch it first appeared in; unknown for weapons from before 3.0. */
+  version: string | null;
   icon: string | null;
   awakenIcon: string | null;
   stats: StatTable;
@@ -42,7 +44,7 @@ export type ArtifactSlot = 'flower' | 'plume' | 'sands' | 'goblet' | 'circlet';
 export type CoreArtifact = {
   id: number;
   rarityList: number[];
-  version: string;
+  version: string | null;
   pieces: Partial<Record<ArtifactSlot, { icon: string | null }>>;
 };
 
@@ -67,7 +69,6 @@ export type LocalizedCharacter = {
   substatText: string;
   constellation: string;
   affiliation: string;
-  region: string;
 };
 
 export type LocalizedWeapon = {
@@ -75,9 +76,7 @@ export type LocalizedWeapon = {
   description: string;
   weaponText: string;
   mainStatText: string;
-  baseStatText: string;
   effectName: string;
-  effectTemplateRaw: string;
   refinements: string[];
   /** `refinements` with the game's markup kept, for `GameText`. */
   refinementsRaw: string[];
@@ -90,7 +89,7 @@ export type LocalizedArtifact = {
   effect2Pc: string | null;
   effect4Pc: string | null;
   pieces: Partial<
-    Record<ArtifactSlot, { name: string; relicText: string; description: string }>
+    Record<ArtifactSlot, { name: string; description: string }>
   >;
 };
 
@@ -144,7 +143,8 @@ export type EnkaStore = Record<string, EnkaStoreEntry>;
 
 export type Meta = {
   gameVersion: string;
-  genshinDbVersion: string;
+  /** Where the catalog was read from: `Project Amber`. */
+  source: string;
   generatedAt: string;
   locales: string[];
   counts: Record<string, number>;

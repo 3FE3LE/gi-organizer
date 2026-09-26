@@ -559,7 +559,7 @@ async function compareEverySlot(context: {
     weapon: weapon && weaponStats
       ? {
           baseAttack: weaponStats.attack ?? 0,
-          prop: weapon.mainStatType,
+          prop: weapon.mainStatType ?? null,
           value: weaponStats.specialized ?? 0,
         }
       : null,

@@ -6,6 +6,7 @@
   "scripts": {
     "data:build": "node scripts/build-data.mts",
     "data:enka": "node scripts/fetch-enka-store.mts",
+    "data:yatta": "node scripts/fetch-yatta.mts",
     "data:builds": "node scripts/fetch-builds.mts",
     "data:check-assets": "node scripts/check-assets.mts",
     "data:check-good": "node scripts/check-good-keys.mts",
@@ -13,7 +14,6 @@
     "dev": "GI_DB_PATH=data/dev.db GI_TEST_PROFILE=dev next dev",
     "dev:cloud": "next dev",
     "dev:seed": "GI_DB_PATH=data/dev.db GI_TEST_PROFILE=dev node --import ./scripts/test-loader.mjs scripts/seed-dev.mts",
-    "prebuild": "pnpm data:build",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -32,7 +32,6 @@
     "@vercel/blob": "^2.8.0",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.3.0",
-    "genshin-db": "^5.2.14",
     "lucide-react": "^1.46.0",
     "next": "16.3.4",
     "next-intl": "^4.14.5",

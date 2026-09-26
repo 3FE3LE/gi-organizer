@@ -8,7 +8,7 @@
     "data": "Data",
     "language": "Language",
     "primaryNavAria": "Sections",
-    "footer": "Data v{version} · genshin-db {genshinDbVersion} · generated {date}"
+    "footer": "Data v{version} · Project Amber · generated {date}"
   },
   "ui": {
     "loading": "Loading…",
