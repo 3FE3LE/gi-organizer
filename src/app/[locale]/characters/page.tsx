@@ -818,11 +818,15 @@ function Gallery({
                       <span className="sm:hidden">{entry.level}</span>
                       <span className="hidden sm:inline">{t('levelShort', { level: entry.level })}</span>
                       {' · '}
-                      <span
-                        title={t('talentsTitle', entry.talent)}
-                        className={`tabular ${ahead?.talentsShort ? '' : 'text-good'}`}
-                      >
-                        {t('talentsLine', entry.talent)}
+                      <span title={t('talentsTitle', entry.talent)} className="tabular">
+                        {(['auto', 'skill', 'burst'] as const).map((talent, at) => (
+                          <span key={talent}>
+                            {at > 0 && '·'}
+                            <span className={ahead?.talentsMet?.[talent] ? 'text-good' : ''}>
+                              {entry.talent[talent]}
+                            </span>
+                          </span>
+                        ))}
                       </span>
                     </>
                   ) : (
@@ -865,9 +869,8 @@ function CardLegend({ t }: { t: Messages }) {
     {
       key: 'talents',
       mark: (
-        <span className="font-mono text-2xs">
-          <span className="text-muted">6·9·8</span>{' '}
-          <span className="text-good">9·9·9</span>
+        <span className="font-mono text-2xs text-muted">
+          <span className="text-good">1</span>·6·<span className="text-good">9</span>
         </span>
       ),
       text: t('legendTalents'),

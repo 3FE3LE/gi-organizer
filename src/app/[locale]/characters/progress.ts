@@ -14,8 +14,14 @@ type Talents = { auto: number; skill: number; burst: number };
 export type CardProgress = {
   /** Current level over the level aimed at, capped at one. Null when out of the plan. */
   level: number | null;
-  /** Whether a talent is still short of where it is headed. */
+  /** Whether any talent is still short of where it is headed. */
   talentsShort: boolean;
+  /**
+   * Each talent on its own: reached its target or not. One colour for the
+   * three hid which one was short — a normal attack left at 1 on purpose read
+   * as unfinished next to a skill that really was.
+   */
+  talentsMet: { auto: boolean; skill: boolean; burst: boolean } | null;
   /** Whether a talent book they still need drops from a domain open today. */
   booksToday: boolean;
 };
@@ -31,17 +37,23 @@ export function cardProgress(
   bookDays: ReadonlySet<string>,
   today: Weekday,
 ): CardProgress {
-  if (entry.dismissedAt) return { level: null, talentsShort: false, booksToday: false };
+  if (entry.dismissedAt) {
+    return { level: null, talentsShort: false, talentsMet: null, booksToday: false };
+  }
 
   const targetLevel = entry.target.level ?? ASSUMED_TARGET.level;
   const talents = entry.target.talents ?? ASSUMED_TARGET.talents;
-  const talentsShort = entry.talent.auto < talents.auto
-    || entry.talent.skill < talents.skill
-    || entry.talent.burst < talents.burst;
+  const talentsMet = {
+    auto: entry.talent.auto >= talents.auto,
+    skill: entry.talent.skill >= talents.skill,
+    burst: entry.talent.burst >= talents.burst,
+  };
+  const talentsShort = !talentsMet.auto || !talentsMet.skill || !talentsMet.burst;
 
   return {
     level: targetLevel > 0 ? Math.min(1, entry.level / targetLevel) : 1,
     talentsShort,
+    talentsMet,
     booksToday: talentsShort && bookDays.has(today),
   };
 }

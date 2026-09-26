@@ -34,7 +34,7 @@ test('a written target is what the ring fills toward, and it stops at full', () 
 test('somebody out of the plan has no ring and no day', () => {
   const out = cardProgress({ ...entry, dismissedAt: '2026-01-01' }, new Set(['Thursday']), 'Thursday');
 
-  assert.deepEqual(out, { level: null, talentsShort: false, booksToday: false });
+  assert.deepEqual(out, { level: null, talentsShort: false, talentsMet: null, booksToday: false });
 });
 
 test('book days are gathered from every phase of the talent costs', () => {
@@ -44,4 +44,15 @@ test('book days are gathered from every phase of the talent costs', () => {
   );
 
   assert.deepEqual([...days].sort(), ['Monday', 'Sunday', 'Thursday']);
+});
+
+test('each talent is judged on its own, so an attack left at its target reads as done', () => {
+  const progress = cardProgress(
+    { ...entry, talent: { auto: 1, skill: 6, burst: 9 }, target: { level: 90, talents: { auto: 1, skill: 9, burst: 9 } } },
+    new Set(),
+    'Thursday',
+  );
+
+  assert.deepEqual(progress.talentsMet, { auto: true, skill: false, burst: true });
+  assert.equal(progress.talentsShort, true);
 });
