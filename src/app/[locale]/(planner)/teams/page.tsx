@@ -250,6 +250,7 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
         };
       }),
       goals: evaluateGoals(totals, build?.goals ?? []).map((goal) => ({
+        prop: goal.prop,
         label: propLabel(catalog, goal.prop),
         status: goal.status,
         actual: goal.actual,

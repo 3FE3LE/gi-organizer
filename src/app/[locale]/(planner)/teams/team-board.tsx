@@ -61,7 +61,7 @@ export type SlotView = {
   /** Sands, goblet and circlet: the three main stats that are a choice. */
   mainStats: { slot: string; slotLabel: string; prop: string | null; label: string | null }[];
   /** Goals of the resolved build, already evaluated. */
-  goals: { label: string; status: string; actual: number; min: number }[];
+  goals: { prop: string; label: string; status: string; actual: number; min: number }[];
   buildHref: string;
   /** What the roster card shows of this character, for the same portrait here. */
   card: {
@@ -708,10 +708,15 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
         * takes the left and everything about them reads beside it — name and
         * role, level and talents, then the weapon, sets and main stats in one
         * row — and a wider card stacks the same four areas down its middle.
-        * The goals, declarations and findings below stay full width: those are
-        * lists, and lists want the line.
+        *
+        * The first goals sit beside them as a short column of verdicts: beside
+        * the name and level on a phone, beside the portrait on a wider card,
+        * where the column either side of it was empty. A row of every goal
+        * with its numbers ran the card's width and kept growing with each
+        * stat a build names. The declarations and findings below stay full
+        * width: those are lists, and lists want the line.
         */}
-      <div className="grid w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5 [grid-template-areas:'portrait_name'_'portrait_level'_'portrait_marks'] sm:grid-cols-1 sm:justify-items-center sm:gap-y-3 sm:[grid-template-areas:'name'_'portrait'_'level'_'marks']">
+      <div className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 [grid-template-areas:'portrait_name_goals'_'portrait_level_goals'_'portrait_marks_marks'] sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:justify-items-center sm:gap-y-3 sm:[grid-template-areas:'name_name_name'_'._portrait_goals'_'level_level_level'_'marks_marks_marks']">
       <div className="min-w-0 [grid-area:name] sm:w-full sm:px-6 sm:text-center">
         <Link href={slot.buildHref} className="block truncate text-sm hover:text-accent">
           {slot.name}
@@ -749,6 +754,35 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
             labels={{ level: progress.levelLabel, talents: progress.talentsLabel }}
           />
         </div>
+      )}
+
+      {slot.goals.length > 0 && (
+        <ul
+          aria-label={t('goalsLabel')}
+          className="min-w-0 max-w-full space-y-1 self-center font-mono text-2xs [grid-area:goals] sm:justify-self-start"
+        >
+          {/* Three at most: the first ones a build names are the ones it
+              was built around. Met or not, and nothing else — the numbers are
+              on the build page, and here they only pushed the card wider. */}
+          {slot.goals.slice(0, 3).map((goal) => {
+            const status = goal.status === 'met' ? 'met' : 'short';
+            return (
+              <li key={goal.prop}>
+                {/* The numbers stay one hover or one tab away. */}
+                <Hint text={`${goal.label} ${Math.round(goal.actual)}/${goal.min}`}>
+                  <span
+                    tabIndex={0}
+                    className={`flex items-center gap-1 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent ${statusTone(status)}`}
+                  >
+                    <StatusIcon status={status} size={12} />
+                    <StatIcon prop={goal.prop} label={goal.label} size={13} />
+                    <span className="sr-only">{Math.round(goal.actual)}/{goal.min}</span>
+                  </span>
+                </Hint>
+              </li>
+            );
+          })}
+        </ul>
       )}
 
       <ul className="flex flex-wrap items-start justify-start gap-1 pb-1.5 [grid-area:marks] sm:justify-center sm:gap-1.5 sm:pb-0" aria-label={t('buildMarksLabel')}>
@@ -798,17 +832,6 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
 
       {slot.buildName === null && (
         <p className="font-mono text-2xs text-muted">{t('noBuildForRole')}</p>
-      )}
-
-      {slot.goals.length > 0 && (
-        <ul className="flex flex-wrap justify-center gap-x-2 font-mono text-2xs">
-          {slot.goals.map((goal) => (
-            <li key={goal.label} className={`inline-flex items-center gap-1 ${statusTone(goal.status)}`}>
-              <StatusIcon status={goal.status} size={11} />
-              {goal.label} <span className="tabular">{Math.round(goal.actual)}/{goal.min}</span>
-            </li>
-          ))}
-        </ul>
       )}
 
       {slot.needed.map((declaration) => (

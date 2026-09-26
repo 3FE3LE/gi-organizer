@@ -215,6 +215,7 @@
     "openDraftButton": "Continue the draft",
     "saveTeamButton": "Save",
     "saveTeamConfirm": "Save team",
+    "goalsLabel": "Goals",
     "buildMarksLabel": "How they are built",
     "weaponMark": "{name} · Lv. {level} · R{refinement}",
     "noWeapon": "no weapon",
