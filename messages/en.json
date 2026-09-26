@@ -153,7 +153,12 @@
     "versionGroup": "Version {version}",
     "upcomingHeading": "Upcoming birthdays",
     "birthdayToday": "today!",
-    "birthdayIn": "{date} · in {days, plural, one {# day} other {# days}}"
+    "birthdayIn": "{date} · in {days, plural, one {# day} other {# days}}",
+    "birthdayNoticeToday": "Today is {names}'s birthday",
+    "birthdayNoticeHint": "The gift arrives in the in-game mail and can only be claimed today.",
+    "birthdayTomorrow": "Tomorrow: {names}",
+    "seeCalendar": "See birthdays",
+    "monthMine": "{mine} of yours out of {total}"
   },
   "teams": {
     "synergyHeading": "Synergy",

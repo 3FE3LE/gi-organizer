@@ -10,7 +10,7 @@ import { SectionTabs } from '@/components/section-tabs';
 import { StickyDock } from '@/components/sticky-dock';
 import { Segment, Segments } from '@/components/segmented-links';
 import { elementColor } from '@/lib/data/elements';
-import { ChevronRight, EyeOff, X } from 'lucide-react';
+import { CakeSlice, ChevronRight, EyeOff, X } from 'lucide-react';
 
 import { HoverLabel } from '@/components/hint';
 import {
@@ -97,6 +97,18 @@ export default async function CharactersPage({
   const shown = narrowRoster(byRelease, filters, roster, locale);
   const narrowed = isNarrowed(filters);
 
+  // Birthdays among the characters you have, on the game server's date: the
+  // gift is claimable on the day only, so today's is worth a line above the
+  // gallery rather than a trip to the calendar.
+  const gameToday = gameDate(new Date(), region);
+  const birthdaysIn = (days: number) => mine.filter((character) => {
+    const birthday = parseBirthday(character.birthday);
+    return birthday !== null && daysUntil(birthday, gameToday) === days;
+  });
+  const birthdaysToday = birthdaysIn(0);
+  const birthdaysTomorrow = birthdaysIn(1);
+  const list = new Intl.ListFormat(locale, { type: 'conjunction' });
+
   // Where each character you have is headed, for the ring and the marks on
   // their card. "Today" is the game server's day, as in the plan.
   const weekday = gameWeekday(new Date(), region);
@@ -134,8 +146,10 @@ export default async function CharactersPage({
             {mine.length}/{byRelease.length}
           </span>
         </h1>
+        {/* Not on a phone: the sort's own strip already says it, and the line
+            cost a row above the gallery. */}
         {view === 'gallery' && (
-          <p className="font-mono text-xs text-muted">{t(`sortHints.${filters.sort}`)}</p>
+          <p className="hidden font-mono text-xs text-muted sm:block">{t(`sortHints.${filters.sort}`)}</p>
         )}
       </header>
 
@@ -165,12 +179,23 @@ export default async function CharactersPage({
         ]}
       />
 
+      {view === 'gallery' && (birthdaysToday.length > 0 || birthdaysTomorrow.length > 0) && (
+        <BirthdayNotice
+          locale={locale}
+          today={birthdaysToday}
+          tomorrow={birthdaysTomorrow}
+          calendarHref={rosterHref(base, filters, { view: 'calendar' })}
+          names={(characters) => list.format(characters.map((character) => character.name))}
+          t={t}
+        />
+      )}
+
       {view === 'calendar' ? (
         <BirthdayCalendar
           locale={locale}
           characters={byRelease}
           owned={owned}
-          today={gameDate(new Date(), region)}
+          today={gameToday}
           t={t}
         />
       ) : (
@@ -456,6 +481,67 @@ function Chip({
 }
 
 /**
+ * Today's birthdays among yours, and tomorrow's, above the gallery.
+ *
+ * The in-game gift arrives by mail on the day and cannot be claimed after it,
+ * so the calendar tab — where this used to be the only place it was said —
+ * answered the question a day late for anybody who did not think to open it.
+ */
+function BirthdayNotice({
+  locale, today, tomorrow, calendarHref, names, t,
+}: {
+  locale: string;
+  today: CharacterView[];
+  tomorrow: CharacterView[];
+  calendarHref: string;
+  names: (characters: CharacterView[]) => string;
+  t: Messages;
+}) {
+  if (today.length === 0) {
+    return (
+      <p className="flex items-center gap-2 text-xs text-muted">
+        <CakeSlice size={14} aria-hidden />
+        {t('birthdayTomorrow', { names: names(tomorrow) })}
+        {' · '}
+        <Link href={calendarHref} className="underline hover:text-accent">{t('seeCalendar')}</Link>
+      </p>
+    );
+  }
+
+  return (
+    <section className="card flex flex-wrap items-center gap-x-4 gap-y-2 border-accent/50 px-4 py-3">
+      <span className="flex -space-x-2">
+        {today.map((character) => (
+          <Link key={character.id} href={`/${locale}/build/${character.id}`} title={character.name}>
+            <GameIcon
+              filename={character.icon}
+              kind="avatar"
+              alt={character.name}
+              className="h-10 w-10 rounded-full bg-surface-2 ring-2 ring-accent/60"
+              sizes="40px"
+            />
+          </Link>
+        ))}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center gap-1.5 text-sm">
+          <CakeSlice size={14} aria-hidden className="text-accent" />
+          {t('birthdayNoticeToday', { names: names(today) })}
+        </span>
+        <span className="block text-xs text-muted">
+          {t('birthdayNoticeHint')}
+          {tomorrow.length > 0 && ` ${t('birthdayTomorrow', { names: names(tomorrow) })}.`}
+        </span>
+      </span>
+      {/* The tab to it is right above on a phone, where this squeezed the text. */}
+      <Link href={calendarHref} className="hidden text-xs text-muted underline hover:text-accent sm:inline">
+        {t('seeCalendar')}
+      </Link>
+    </section>
+  );
+}
+
+/**
  * Birthdays, a month to a card.
  *
  * The game marks a character's birthday with a mail and a gift, and only on
@@ -482,12 +568,15 @@ function BirthdayCalendar({
       entry.birthday !== null)
     .map((entry) => ({ ...entry, until: daysUntil(entry.birthday, today) }));
 
-  // Yours first: the gift is claimable only for a character you have.
+  // Yours, and only then everyone else: the gift is claimable only for a
+  // character you have, so a stranger's birthday next week is not "upcoming"
+  // in any sense that matters ahead of your own in a month.
   const upcoming = [...dated]
     .sort((a, b) =>
-      a.until - b.until
-      || Number(owned.has(b.character.id)) - Number(owned.has(a.character.id)))
-    .slice(0, 6);
+      Number(owned.has(b.character.id)) - Number(owned.has(a.character.id))
+      || a.until - b.until)
+    .slice(0, 6)
+    .sort((a, b) => a.until - b.until);
 
   const monthName = new Intl.DateTimeFormat(locale, { month: 'long', timeZone: 'UTC' });
   const months = Array.from({ length: 12 }, (_, index) => ({
@@ -539,7 +628,12 @@ function BirthdayCalendar({
           >
             <h3 className="mb-2 flex items-baseline justify-between text-sm capitalize">
               <span className={month.month === today.month ? 'text-accent' : ''}>{month.name}</span>
-              <span className="font-mono text-2xs text-muted">{month.entries.length}</span>
+              <span className="font-mono text-2xs normal-case text-muted">
+                {t('monthMine', {
+                  mine: month.entries.filter((entry) => owned.has(entry.character.id)).length,
+                  total: month.entries.length,
+                })}
+              </span>
             </h3>
             <ul className="space-y-1">
               {month.entries.map(({ character, birthday }) => {
@@ -602,7 +696,9 @@ function Gallery({
   if (compact) return <CompactGallery locale={locale} characters={characters} />;
 
   return (
-    <ul className="rise-stagger grid grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))] gap-3 sm:gap-4">
+    // Three to a row on a phone, where two left a column of cards a screen
+    // tall per six characters; the portrait still fits a third of the width.
+    <ul className="rise-stagger grid grid-cols-3 gap-2 sm:grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))] sm:gap-4">
       {characters.map((character, index) => {
         const entry = roster.get(character.id) ?? null;
         const mine = entry !== null;
@@ -622,7 +718,7 @@ function Gallery({
                  below it is a hundred and twenty pages nobody asked for, so
                  those warm on hover instead. */
               eager={mine}
-              className={`card card-link group relative block overflow-hidden p-3 ${
+              className={`card card-link group relative block overflow-hidden px-1 py-2.5 sm:p-3 ${
                 mine ? '' : 'opacity-70'
               }`}
             >
@@ -711,10 +807,14 @@ function Gallery({
                 </p>
                 {/* Yours read as where they are — level and the three talents;
                     the ones you do not have, as when they came out. */}
-                <p className="mt-0.5 text-center font-mono text-2xs text-muted">
+                <p className="mt-0.5 truncate whitespace-nowrap text-center font-mono text-2xs text-muted">
                   {entry ? (
                     <>
-                      {t('levelShort', { level: entry.level })}{' · '}
+                      {/* A third of a phone is too narrow for the prefix; the
+                          ring around the portrait already says it is the level. */}
+                      <span className="sm:hidden">{entry.level}</span>
+                      <span className="hidden sm:inline">{t('levelShort', { level: entry.level })}</span>
+                      {' · '}
                       <span
                         title={t('talentsTitle', entry.talent)}
                         className={`tabular ${ahead?.talentsShort ? '' : 'text-good'}`}

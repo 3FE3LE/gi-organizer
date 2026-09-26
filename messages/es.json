@@ -153,7 +153,12 @@
     "versionGroup": "Versión {version}",
     "upcomingHeading": "Próximos cumpleaños",
     "birthdayToday": "¡hoy!",
-    "birthdayIn": "{date} · en {days, plural, one {# día} other {# días}}"
+    "birthdayIn": "{date} · en {days, plural, one {# día} other {# días}}",
+    "birthdayNoticeToday": "Hoy cumple {names}",
+    "birthdayNoticeHint": "El regalo llega al correo del juego y solo se reclama hoy.",
+    "birthdayTomorrow": "Mañana: {names}",
+    "seeCalendar": "Ver cumpleaños",
+    "monthMine": "{mine} tuyos de {total}"
   },
   "teams": {
     "synergyHeading": "Sinergia",
