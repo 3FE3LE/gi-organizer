@@ -1,10 +1,9 @@
 'use server';
 
-import { refresh } from 'next/cache';
-
 import { getDb } from '@/lib/db/client';
 import { setDismissed } from '@/lib/player/characters';
 import { getProfileId } from '@/lib/player/db';
+import { refreshEverywhere } from '@/lib/refresh';
 
 /**
  * Saying no to a character, and taking it back.
@@ -17,11 +16,11 @@ import { getProfileId } from '@/lib/player/db';
 export async function dismissRoster(characterId: number | null) {
   const db = getDb();
   await setDismissed(db, await getProfileId(db), characterId === null ? null : [characterId], true);
-  refresh();
+  refreshEverywhere();
 }
 
 export async function restoreRoster(characterId: number | null) {
   const db = getDb();
   await setDismissed(db, await getProfileId(db), characterId === null ? null : [characterId], false);
-  refresh();
+  refreshEverywhere();
 }

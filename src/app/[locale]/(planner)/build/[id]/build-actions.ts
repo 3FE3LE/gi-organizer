@@ -2,7 +2,6 @@
 
 import '@/lib/forms/zod-messages';
 import { getTranslations } from 'next-intl/server';
-import { refresh } from 'next/cache';
 import { redirect } from 'next/navigation';
 
 import { getCatalog } from '@/lib/data/catalog';
@@ -15,6 +14,7 @@ import { getBuildPriorities, suggestionsFor } from '@/lib/rules/assemble';
 import { refinementResolver } from '@/lib/player/weapon-copies';
 import { templateFor } from '@/lib/rules/role-templates';
 import { CHOOSABLE_SLOTS } from '@/lib/rules/piece-score';
+import { refreshEverywhere } from '@/lib/refresh';
 
 export type BuildFormState =
   | { status: 'idle' }
@@ -72,14 +72,14 @@ export async function createBuildAction(
   const returnTo = String(form.get('returnTo') ?? '');
   if (returnTo.startsWith('/')) redirect(`${returnTo}?build=${buildId}&tab=objective`);
 
-  refresh();
+  refreshEverywhere();
   return { status: 'ok', message: t('buildCreated'), buildId };
 }
 
 export async function deleteBuildAction(buildId: string): Promise<BuildFormState> {
   const t = await getTranslations('build.actions');
   const removed = await deleteBuild(buildId);
-  refresh();
+  refreshEverywhere();
 
   return removed > 0
     ? { status: 'ok', message: t('buildDeleted') }
@@ -156,6 +156,6 @@ export async function applyTemplateAction(
     goals: existing.goals.length > 0 ? existing.goals : template.goals,
   });
 
-  refresh();
+  refreshEverywhere();
   return { status: 'ok', message: t('objectiveFilledFromRole'), buildId: existing.id };
 }

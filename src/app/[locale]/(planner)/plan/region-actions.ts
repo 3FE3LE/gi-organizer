@@ -1,9 +1,8 @@
 'use server';
 
-import { refresh } from 'next/cache';
-
 import { setRegion } from '@/lib/player/region';
 import type { GameRegion } from '@/lib/rules/game-day';
+import { refreshEverywhere } from '@/lib/refresh';
 
 /**
  * Which server's clock the plan is read against.
@@ -14,5 +13,5 @@ import type { GameRegion } from '@/lib/rules/game-day';
  */
 export async function chooseRegion(region: GameRegion) {
   await setRegion(region);
-  refresh();
+  refreshEverywhere();
 }

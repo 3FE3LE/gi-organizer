@@ -1,6 +1,5 @@
 'use server';
 
-import { refresh } from 'next/cache';
 import { getLocale, getTranslations } from 'next-intl/server';
 
 import { getCatalog } from '@/lib/data/catalog';
@@ -8,14 +7,16 @@ import { DEFAULT_LOCALE, isLocale } from '@/lib/data/locales';
 import type { AssignmentConflict } from '@/lib/inventory/assignment';
 import type { Repair } from '@/lib/inventory/apply';
 import { AssignmentViolation, applyShowcase, applyStaged } from '@/lib/player/import';
+import { refreshEverywhere } from '@/lib/refresh';
 
 /**
  * Applying is a mutation, so it is a Server Action — unlike the upload, which
  * is a Route Handler because of the 1 MB action body cap.
  *
- * `refresh()` rather than `revalidatePath`: player data is never cached, so
- * there is nothing to invalidate, and `revalidateTag`'s stale-while-revalidate
- * would show the user the state from before their own write.
+ * `refreshEverywhere()` rather than `revalidateTag`: player data is never
+ * cached on the server, and a tag's stale-while-revalidate would show the
+ * user the state from before their own write. What does need clearing is the
+ * browser's copy of the other sections — see `@/lib/refresh`.
  */
 
 export type ActionState =
@@ -33,7 +34,7 @@ export async function applyStagedAction(
 
   try {
     const result = await applyStaged(token, { onAbsent });
-    refresh();
+    refreshEverywhere();
 
     const { artifacts, weapons } = result.persisted;
     const repaired = repairSuffix(result.repairs, t);
@@ -103,7 +104,7 @@ export async function applyShowcaseAction(
 
   try {
     const result = await applyShowcase(uid);
-    refresh();
+    refreshEverywhere();
 
     const { artifacts, weapons } = result.persisted;
     return {

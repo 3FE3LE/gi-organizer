@@ -2,7 +2,6 @@
 
 import '@/lib/forms/zod-messages';
 import { getTranslations } from 'next-intl/server';
-import { refresh } from 'next/cache';
 
 import { getCatalog } from '@/lib/data/catalog';
 import { DEFAULT_LOCALE } from '@/lib/data/locales';
@@ -23,6 +22,7 @@ import { getDb } from '@/lib/db/client';
 import { readRoster } from '@/lib/player/characters';
 import { crownBudget, crownsNeeded } from '@/lib/player/crowns';
 import { getProfileId } from '@/lib/player/db';
+import { refreshEverywhere } from '@/lib/refresh';
 
 /**
  * The form behind "progress and target". Validation only: the write is one
@@ -126,6 +126,6 @@ export async function saveProgressAction(values: ProgressFormValues): Promise<Pr
     throw error;
   }
 
-  refresh();
+  refreshEverywhere();
   return { status: 'ok', message: t('objectiveSaved', { name: character.name }) };
 }

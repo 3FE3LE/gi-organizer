@@ -1,6 +1,5 @@
 'use server';
 
-import { refresh } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
@@ -24,6 +23,7 @@ import { getBuildPriorities } from '@/lib/rules/assemble';
 import { preferredPositions } from '@/lib/rules/slot-order';
 import { suggestRoles } from '@/lib/rules/suggest-role';
 import { TEAM_ROLES, type TeamRole } from '@/lib/rules/types';
+import { refreshEverywhere } from '@/lib/refresh';
 
 export type TeamActionState =
   | { status: 'idle' }
@@ -51,7 +51,7 @@ export async function saveTeamAction(
   if (name.length === 0) return { status: 'error', message: t('nameRequired') };
 
   await nameTeam(String(form.get('teamId') ?? ''), name);
-  refresh();
+  refreshEverywhere();
   return { status: 'ok', message: t('saved', { name }) };
 }
 
@@ -61,7 +61,7 @@ export async function deleteTeamAction(
 ): Promise<TeamActionState> {
   const t = await getTranslations('teams.actions');
   await deleteTeam(String(form.get('teamId') ?? ''));
-  refresh();
+  refreshEverywhere();
   return { status: 'ok', message: t('deleted') };
 }
 
@@ -96,7 +96,7 @@ export async function addSlotAction(
   // Placed by role — see `preferredPositions`; a drag moves them after.
   const result = await setSlot(teamId, characterId, preferredPositions(roles));
   if (result.ok && roles.length > 0) await setRoles(teamId, characterId, roles);
-  refresh();
+  refreshEverywhere();
 
   if (result.ok) {
     const roleLabel = await getTranslations('common.role');
@@ -144,13 +144,13 @@ async function suggestedRoles(characterId: number): Promise<TeamRole[]> {
 /** The team list's order, first to last, after a drag in the drawer. */
 export async function reorderTeamsAction(ids: string[]) {
   await reorderTeams(ids.map(String));
-  refresh();
+  refreshEverywhere();
 }
 
 /** A drag between two positions: a move into an empty one, a swap otherwise. */
 export async function moveSlotAction(teamId: string, characterId: number, to: number) {
   await moveSlot(teamId, characterId, to);
-  refresh();
+  refreshEverywhere();
 }
 
 export async function removeSlotAction(
@@ -159,7 +159,7 @@ export async function removeSlotAction(
 ): Promise<TeamActionState> {
   const t = await getTranslations('teams.actions');
   await removeSlot(String(form.get('teamId') ?? ''), Number(form.get('characterId')));
-  refresh();
+  refreshEverywhere();
   return { status: 'ok', message: t('memberRemoved') };
 }
 
@@ -173,7 +173,7 @@ export async function setRolesAction(
     .filter((role): role is TeamRole => (TEAM_ROLES as string[]).includes(role));
 
   await setRoles(String(form.get('teamId') ?? ''), Number(form.get('characterId')), roles);
-  refresh();
+  refreshEverywhere();
   return { status: 'ok', message: roles.length > 0 ? t('rolesSaved') : t('rolesCleared') };
 }
 
@@ -192,7 +192,7 @@ export async function setDeclarationAction(
     String(form.get('field') ?? ''),
     String(form.get('value') ?? ''),
   );
-  refresh();
+  refreshEverywhere();
   return { status: 'ok', message: t('declarationSaved') };
 }
 
@@ -210,7 +210,7 @@ export async function setObjectiveAction(
   const t = await getTranslations('teams.actions');
   const objective = String(form.get('objective') ?? '');
   await setObjective(String(form.get('teamId') ?? ''), objective === '' ? null : objective);
-  refresh();
+  refreshEverywhere();
 
   return {
     status: 'ok',

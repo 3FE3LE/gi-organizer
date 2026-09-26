@@ -1,12 +1,12 @@
 'use server';
 
 import { getTranslations } from 'next-intl/server';
-import { refresh } from 'next/cache';
 
 import { getCatalog } from '@/lib/data/catalog';
 import { DEFAULT_LOCALE } from '@/lib/data/locales';
 import type { Move } from '@/lib/player/move';
 import { performMove } from '@/lib/player/mutations';
+import { refreshEverywhere } from '@/lib/refresh';
 
 /**
  * One action for every gear move, because there is one operation. The client
@@ -67,7 +67,7 @@ export async function moveGearAction(
     }
   }
 
-  refresh();
+  refreshEverywhere();
 
   const displaced = result.displaced
     .map((entry) => catalog.characters.get(entry.fromCharacterId)?.name)

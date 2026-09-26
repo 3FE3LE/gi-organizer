@@ -1,6 +1,5 @@
 'use server';
 
-import { refresh } from 'next/cache';
 import { getTranslations } from 'next-intl/server';
 import { z } from 'zod';
 
@@ -11,6 +10,7 @@ import { getDb } from '@/lib/db/client';
 import { transaction } from '@/lib/db/tx';
 import { upsertCharacter } from '@/lib/player/characters';
 import { getProfileId } from '@/lib/player/db';
+import { refreshEverywhere } from '@/lib/refresh';
 import {
   TRAVELER_BODIES, isTravelerId, setTravelerBody, travelerDepot,
 } from '@/lib/player/traveler';
@@ -88,6 +88,6 @@ export async function addToRosterAction(_previous: ActionState, form: FormData):
     }, { source: 'manual', observedAt: new Date().toISOString() });
   });
 
-  refresh();
+  refreshEverywhere();
   return { status: 'ok', message: t('added', { name: character.name }) };
 }
