@@ -179,7 +179,7 @@
     "auraPieces": "{pieces} pzs · {name}",
     "auraWearer": "en {name}",
     "auraShared": "repetida en {names}: la segunda no suma",
-    "auraPartitioned": "solo choca si declaran el mismo elemento",
+    "auraPartitioned": "solo choca si absorben el mismo elemento",
     "heading": "Equipos",
     "ok": "ok",
     "empty": "Ningún equipo todavía. Empieza uno con «Nuevo equipo»: primero los cuatro miembros y la mecánica, el nombre al guardar.",
@@ -196,8 +196,6 @@
     "objectiveLabel": "Objetivo del equipo",
     "rolesLabel": "Roles del slot",
     "noRole": "sin rol",
-    "declarationLabel": "Declaración del slot",
-    "noBuildForRole": "sin build para este rol",
     "noTeamOpen": "Ningún equipo abierto",
     "allTeams": "{count, plural, one {# equipo} other {# equipos}}",
     "dragHandle": "Mover a {name}",
@@ -221,7 +219,6 @@
     "noWeapon": "sin arma",
     "noSetEffect": "ningún efecto de set activo",
     "emptyPiece": "sin {slot}",
-    "noDeclaration": "sin declarar",
     "namePlaceholder": "Nombre del equipo",
     "actions": {
       "nameRequired": "ponle un nombre",
@@ -237,7 +234,6 @@
       "memberRemoved": "quitado del equipo",
       "rolesSaved": "roles guardados",
       "rolesCleared": "roles vaciados",
-      "declarationSaved": "declaración guardada",
       "objectiveCleared": "objetivo quitado",
       "objectiveSet": "objetivo: {objective}"
     }

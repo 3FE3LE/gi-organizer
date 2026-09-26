@@ -18,11 +18,11 @@ export default function Loading() {
             <Skeleton className="h-5 w-40" />
             <Skeleton className="ml-auto h-7 w-32" />
           </div>
-          <div className="grid gap-px bg-edge sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-px bg-edge lg:grid-cols-4">
             {Array.from({ length: 4 }, (_, index) => (
-              <div key={index} className="flex items-center gap-3 bg-surface px-3 pb-3 pt-9 sm:flex-col sm:pt-4">
+              <div key={index} className="flex items-center gap-3 bg-surface px-3 pb-3 pt-9 lg:flex-col lg:pt-4">
                 <Skeleton className="h-20 w-20 shrink-0 rounded-full" />
-                <div className="w-full space-y-2 sm:flex sm:flex-col sm:items-center">
+                <div className="w-full space-y-2 lg:flex lg:flex-col lg:items-center">
                   <Skeleton className="h-4 w-24" />
                   <Skeleton className="h-3 w-20" />
                   <Skeleton className="h-9 w-48 rounded-full" />

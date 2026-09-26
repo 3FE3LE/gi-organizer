@@ -179,7 +179,7 @@
     "auraPieces": "{pieces} pcs · {name}",
     "auraWearer": "on {name}",
     "auraShared": "worn again by {names}: the second one is wasted",
-    "auraPartitioned": "collides only if they declare the same element",
+    "auraPartitioned": "collides only if they absorb the same element",
     "heading": "Teams",
     "ok": "ok",
     "empty": "No teams yet. Start one with “New team”: the four members and the mechanic first, the name when you save.",
@@ -196,8 +196,6 @@
     "objectiveLabel": "Team objective",
     "rolesLabel": "Slot roles",
     "noRole": "no role",
-    "declarationLabel": "Slot declaration",
-    "noBuildForRole": "no build for this role",
     "noTeamOpen": "No team open",
     "allTeams": "{count, plural, one {# team} other {# teams}}",
     "dragHandle": "Move {name}",
@@ -221,7 +219,6 @@
     "noWeapon": "no weapon",
     "noSetEffect": "no set effect active",
     "emptyPiece": "no {slot}",
-    "noDeclaration": "not declared",
     "namePlaceholder": "Team name",
     "actions": {
       "nameRequired": "give it a name",
@@ -237,7 +234,6 @@
       "memberRemoved": "removed from the team",
       "rolesSaved": "roles saved",
       "rolesCleared": "roles cleared",
-      "declarationSaved": "declaration saved",
       "objectiveCleared": "objective cleared",
       "objectiveSet": "objective: {objective}"
     }

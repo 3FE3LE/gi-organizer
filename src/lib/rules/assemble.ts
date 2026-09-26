@@ -196,7 +196,13 @@ export async function assemble(catalog: Catalog, db: Db = getDb()) {
       ofArtifactSet: (id) => annotations.sets.get(id)?.mechanics ?? [],
       ofWeapon: (id) => annotations.weapons.get(id)?.mechanics ?? [],
     },
-    rules: [...seedRules(annotations, disabledSeeds), ...userRules],
+    // Not the rules that split an aura by an element the player declares —
+    // Viridescent's shred, say. What that shred is worth depends on an enemy
+    // and its resistances, and the app models neither, so the declaration was
+    // a question with nothing to answer it for. The aura panel still says
+    // when a second copy of a set is on the team.
+    rules: [...seedRules(annotations, disabledSeeds), ...userRules]
+      .filter((rule) => !(rule.kind === 'non-stacking' && rule.partition.by === 'declaration')),
   };
 
   return { input, annotations, teams, deployments, result: evaluate(input) };

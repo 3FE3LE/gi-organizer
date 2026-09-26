@@ -14,7 +14,6 @@ import {
   openDraft,
   reorderTeams,
   removeSlot,
-  setDeclaration,
   setObjective,
   setRoles,
   setSlot,
@@ -175,25 +174,6 @@ export async function setRolesAction(
   await setRoles(String(form.get('teamId') ?? ''), Number(form.get('characterId')), roles);
   refreshEverywhere();
   return { status: 'ok', message: roles.length > 0 ? t('rolesSaved') : t('rolesCleared') };
-}
-
-/**
- * Records what the engine cannot derive. Clearing it returns the slot to
- * "unprovable" rather than asserting something false.
- */
-export async function setDeclarationAction(
-  _previous: TeamActionState,
-  form: FormData,
-): Promise<TeamActionState> {
-  const t = await getTranslations('teams.actions');
-  await setDeclaration(
-    String(form.get('teamId') ?? ''),
-    Number(form.get('characterId')),
-    String(form.get('field') ?? ''),
-    String(form.get('value') ?? ''),
-  );
-  refreshEverywhere();
-  return { status: 'ok', message: t('declarationSaved') };
 }
 
 /**

@@ -4,7 +4,6 @@ import { getTranslations } from 'next-intl/server';
 import { resolveIcon } from '@/lib/data/icon';
 import { propLabel } from '@/lib/data/catalog';
 import { ELEMENT_COLORS, elementColor } from '@/lib/data/elements';
-import { roleLabel } from '@/lib/rules/role-labels';
 import { isLocale } from '@/lib/data/locales';
 import { getDb } from '@/lib/db/client';
 import { readRoster } from '@/lib/player/characters';
@@ -52,7 +51,6 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
   const t = await getTranslations('diagnostics');
   const tTeams = await getTranslations('teams');
   const slotLabel = await getTranslations('common.slot');
-  const roleLabelT = await getTranslations('common.role');
   const mechanicLabelT = await getTranslations('common.mechanic');
   const tCharacters = await getTranslations('characters');
 
@@ -143,26 +141,6 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
       severity: diagnostic.severity,
       message: describe(diagnostic, naming, t),
     }));
-
-  // Which declarations a slot is asked for comes from the rules that could
-  // actually fire on it — including the piece count, so a single Viridescent
-  // flower does not prompt for something no rule will ever read.
-  const declarationFields = new Map<string, { setId: number; pieces: number }[]>();
-  for (const rule of input.rules) {
-    if (rule.kind !== 'non-stacking' || rule.partition.by !== 'declaration') continue;
-    for (const provider of rule.providers) {
-      if (provider.type !== 'artifact-set') continue;
-      const field = rule.partition.field;
-      declarationFields.set(field, [
-        ...(declarationFields.get(field) ?? []),
-        { setId: provider.setId, pieces: provider.pieces },
-      ]);
-    }
-  }
-
-  const elementOptions = Object.keys(ELEMENT_COLORS)
-    .filter((type) => type !== 'ELEMENT_NONE' && type !== 'ELEMENT_ANEMO')
-    .map((type) => ({ value: type, label: elementName(type) }));
 
   const bonusesBySet = new Map(
     [...annotations.sets]
@@ -424,11 +402,6 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
         worn.set(setId, (worn.get(setId) ?? 0) + 1);
       }
 
-      const needed = [...declarationFields]
-        .filter(([, providers]) =>
-          providers.some((provider) => (worn.get(provider.setId) ?? 0) >= provider.pieces))
-        .map(([field]) => ({ field, options: elementOptions }));
-
       const detail = await slotDetail(slot.characterId, slot.roles);
 
       return {
@@ -438,7 +411,6 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
         icon: await resolveIcon(character?.icon, 'avatar'),
         element: character?.elementText ?? '',
         elementColor: elementColor(character?.elementType ?? 'ELEMENT_NONE'),
-        buildName: detail.build ? roleLabel(roleLabelT, detail.build.role) : null,
         weapon: detail.weapon,
         sets: detail.sets,
         mainStats: detail.mainStats,
@@ -446,8 +418,6 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
         buildHref: `/${locale}/build/${slot.characterId}`,
         card: cardOf(slot.characterId),
         roles: slot.roles,
-        declarations: slot.declarations,
-        needed,
         findings: [
           ...findingsFor(targetKey({
             kind: 'team-slot', teamId: team.id, characterId: slot.characterId,

@@ -38,7 +38,6 @@ import {
   moveSlotAction,
   removeSlotAction,
   saveTeamAction,
-  setDeclarationAction,
   setObjectiveAction,
   setRolesAction,
 } from './actions';
@@ -52,8 +51,6 @@ export type SlotView = {
   element: string;
   elementColor: string;
   roles: TeamRole[];
-  /** The build this slot resolved to, which is what everything measures against. */
-  buildName: string | null;
   /** Equipped weapon, if any. */
   weapon: { name: string; icon: string | null; level: number; refinement: number } | null;
   /** Sets worn at two pieces or more: the effects actually switched on. */
@@ -81,9 +78,6 @@ export type SlotView = {
       talentsLabel: string;
     } | null;
   };
-  declarations: Record<string, string>;
-  /** Declarations this slot's gear actually needs, from the active rules. */
-  needed: { field: string; options: { value: string; label: string }[] }[];
   findings: { id: string; severity: string; message: string }[];
 };
 
@@ -324,7 +318,7 @@ function SlotGrid({
         },
       }}
     >
-      <ol className="grid gap-px bg-edge sm:grid-cols-2 xl:grid-cols-4">
+      <ol className="grid gap-px bg-edge lg:grid-cols-4">
         {[0, 1, 2, 3].map((position) => {
           const slot = shown.find((entry) => entry.position === position);
           return (
@@ -346,10 +340,6 @@ function Position({ position, children }: { position: number; children: React.Re
       ref={setNodeRef}
       className={`relative grid bg-surface transition-shadow ${isOver ? 'z-10 shadow-[inset_0_0_0_2px_var(--accent)]' : ''}`}
     >
-      {/* The party slot, as the game numbers it. */}
-      <span aria-hidden className="pointer-events-none absolute left-2 top-2 z-30 font-mono text-2xs text-muted">
-        {position + 1}
-      </span>
       {children}
     </li>
   );
@@ -377,7 +367,7 @@ function DraggableSlot({ teamId, slot }: { teamId: string; slot: SlotView }) {
           aria-label={t('dragHandle', { name: slot.name })}
           // `touch-none` on the grip alone: a finger on it drags, a finger
           // anywhere else on the card still scrolls the page.
-          className={`${buttonVariants({ variant: 'ghost', size: 'icon-sm' })} absolute left-5 top-1 z-10 cursor-grab touch-none text-muted active:cursor-grabbing`}
+          className={`${buttonVariants({ variant: 'ghost', size: 'icon-sm' })} absolute left-1 top-1 z-10 cursor-grab touch-none text-muted active:cursor-grabbing`}
         >
           <GripVertical size={14} aria-hidden />
         </button>
@@ -609,7 +599,7 @@ function RolesMenu({ teamId, characterId, roles }: {
   return (
     <Menu.Root>
       <Menu.Trigger
-        className={`flex max-w-full items-center gap-0.5 rounded font-mono text-2xs sm:mx-auto sm:justify-center underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-accent ${
+        className={`flex max-w-full items-center gap-0.5 rounded font-mono text-2xs lg:mx-auto lg:justify-center underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-accent ${
           shown.length === 0 ? 'text-muted' : 'text-accent'
         }`}
         aria-label={t('rolesLabel')}
@@ -652,16 +642,13 @@ function RolesMenu({ teamId, characterId, roles }: {
  * role picker — which read as a form about the character rather than the
  * character. It is a portrait now, with the build as a row of marks under it:
  * the weapon with its level and refinement, the set effects switched on, and
- * the three main stats that were a choice. Everything else — thresholds,
- * declarations, findings — follows, only where there is something to say.
+ * the three main stats that were a choice, and the first goals beside them.
+ * The findings follow, only where there are any.
  */
 function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
   const t = useTranslations('teams');
   const [, drop] = useActionState<TeamActionState, FormData>(
     removeSlotAction, { status: 'idle' },
-  );
-  const [, declare] = useActionState<TeamActionState, FormData>(
-    setDeclarationAction, { status: 'idle' },
   );
 
   const { card } = slot;
@@ -672,7 +659,7 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
     // one drawing of a character across both pages. `group` for the washes'
     // hover, `isolate` so they stay behind the controls. On a phone the top
     // leaves a row for the grip and the remove button, which sit over it.
-    <div className="group relative isolate flex flex-col items-center gap-3 overflow-hidden bg-surface px-3 pb-3 pt-9 sm:pt-4">
+    <div className="group relative isolate flex flex-col items-center gap-3 overflow-hidden bg-surface px-3 pb-3 pt-9 lg:pt-4">
       <span aria-hidden className="absolute inset-0 -z-10">
         <CardWash elementType={card.elementType} rarity={card.rarity} />
       </span>
@@ -683,7 +670,7 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
         booksToday={progress?.booksToday ?? false}
         labels={card.marks}
         focusable
-        className="right-10 top-2.5 sm:right-auto sm:left-2 sm:top-9"
+        className="right-10 top-2.5 lg:right-auto lg:left-2 lg:top-9"
       />
       <form action={drop} className="absolute right-1.5 top-1.5">
         <input type="hidden" name="teamId" value={teamId} />
@@ -713,11 +700,11 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
         * the name and level on a phone, beside the portrait on a wider card,
         * where the column either side of it was empty. A row of every goal
         * with its numbers ran the card's width and kept growing with each
-        * stat a build names. The declarations and findings below stay full
-        * width: those are lists, and lists want the line.
+        * stat a build names. The findings below stay full width: they are a
+        * list, and a list wants the line.
         */}
-      <div className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 [grid-template-areas:'portrait_name_goals'_'portrait_level_goals'_'portrait_marks_marks'] sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:justify-items-center sm:gap-y-3 sm:[grid-template-areas:'name_name_name'_'._portrait_goals'_'level_level_level'_'marks_marks_marks']">
-      <div className="min-w-0 [grid-area:name] sm:w-full sm:px-6 sm:text-center">
+      <div className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 [grid-template-areas:'portrait_name_goals'_'portrait_level_goals'_'portrait_marks_marks'] lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:justify-items-center lg:gap-y-3 lg:[grid-template-areas:'name_name_name'_'._portrait_goals'_'level_level_level'_'marks_marks_marks']">
+      <div className="min-w-0 [grid-area:name] lg:w-full lg:px-6 lg:text-center">
         <Link href={slot.buildHref} className="block truncate text-sm hover:text-accent">
           {slot.name}
         </Link>
@@ -759,7 +746,7 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
       {slot.goals.length > 0 && (
         <ul
           aria-label={t('goalsLabel')}
-          className="min-w-0 max-w-full space-y-1 self-center font-mono text-2xs [grid-area:goals] sm:justify-self-start"
+          className="min-w-0 max-w-full space-y-1 self-center font-mono text-2xs [grid-area:goals] lg:justify-self-start"
         >
           {/* Three at most: the first ones a build names are the ones it
               was built around. Met or not, and nothing else — the numbers are
@@ -785,7 +772,7 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
         </ul>
       )}
 
-      <ul className="flex flex-wrap items-start justify-start gap-1 pb-1.5 [grid-area:marks] sm:justify-center sm:gap-1.5 sm:pb-0" aria-label={t('buildMarksLabel')}>
+      <ul className="flex flex-wrap items-start justify-start gap-1 pb-1.5 [grid-area:marks] lg:justify-center lg:gap-1.5 lg:pb-0" aria-label={t('buildMarksLabel')}>
         <li>
           <Mark
             label={slot.weapon
@@ -829,29 +816,6 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
         ))}
       </ul>
       </div>
-
-      {slot.buildName === null && (
-        <p className="font-mono text-2xs text-muted">{t('noBuildForRole')}</p>
-      )}
-
-      {slot.needed.map((declaration) => (
-        <FieldSelect
-          key={declaration.field}
-          label={t('declarationLabel')}
-          defaultValue={slot.declarations[declaration.field] ?? ''}
-          placeholder={t('noDeclaration')}
-          onValueChange={(value) => send(declare, {
-            teamId,
-            characterId: String(slot.characterId),
-            field: declaration.field,
-            value,
-          })}
-          groups={[{ options: declaration.options.map((option) => ({
-            value: option.value, label: option.label,
-          })) }]}
-          triggerClassName="w-full px-2 py-1 text-2xs"
-        />
-      ))}
 
       {slot.findings.length > 0 && (
         <ul className="w-full">
