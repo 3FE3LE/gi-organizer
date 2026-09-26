@@ -7,8 +7,9 @@ import { GameIcon } from '@/components/game-icon';
 import { Skeleton } from '@/components/skeleton';
 import type { Catalog } from '@/lib/data/catalog';
 import type { Locale } from '@/lib/data/locales';
+import type { Team } from '@/lib/player/teams';
 import type { AgendaItem } from '@/lib/rules/agenda';
-import { summarizeAgenda } from '@/lib/rules/agenda';
+import { inTeam, summarizeAgenda } from '@/lib/rules/agenda';
 import type { farmingPlan } from '@/lib/rules/assemble';
 import { gameDate, nextGameReset, type GameRegion } from '@/lib/rules/game-day';
 import { charactersIn, domainsOn, type Weekday } from '@/lib/rules/materials';
@@ -43,6 +44,7 @@ export async function TodayCard({
   filters,
   locale,
   region,
+  team,
   today,
 }: {
   plan: Promise<Plan>;
@@ -52,6 +54,8 @@ export async function TodayCard({
   filters: Filters;
   locale: Locale;
   region: GameRegion;
+  /** The team the page is narrowed to, which the upgrade count follows. */
+  team: Team | null;
   today: Weekday;
 }) {
   const t = await getTranslations('plan');
@@ -75,6 +79,7 @@ export async function TodayCard({
           catalog={catalog}
           filters={filters}
           locale={locale}
+          team={team}
           today={today}
         />
       </Suspense>
@@ -89,6 +94,7 @@ async function TodayBody({
   catalog,
   filters,
   locale,
+  team,
   today,
 }: {
   plan: Promise<Plan>;
@@ -97,6 +103,7 @@ async function TodayBody({
   catalog: Catalog;
   filters: Filters;
   locale: Locale;
+  team: Team | null;
   today: Weekday;
 }) {
   const t = await getTranslations('plan');
@@ -154,21 +161,33 @@ async function TodayBody({
           </Link>
         )}
         <Suspense fallback={<Skeleton className="h-7 w-44 rounded-full" />}>
-          <UpgradesChip agenda={agenda} locale={locale} />
+          <UpgradesChip agenda={agenda} locale={locale} team={team} />
         </Suspense>
       </div>
     </div>
   );
 }
 
-/** Gear that can move tonight without farming, one tap from the queue. */
-async function UpgradesChip({ agenda, locale }: { agenda: Promise<AgendaItem[]>; locale: Locale }) {
+/**
+ * Gear that can move tonight without farming, one tap from the queue.
+ *
+ * Counted for the team the page is narrowed to, like everything else on it,
+ * and the link carries the team along so the queue it opens says the same
+ * number.
+ */
+async function UpgradesChip({
+  agenda, locale, team,
+}: {
+  agenda: Promise<AgendaItem[]>; locale: Locale; team: Team | null;
+}) {
   const t = await getTranslations('plan');
-  const { actionableNow } = summarizeAgenda(await agenda);
+  const { actionableNow } = summarizeAgenda(inTeam(await agenda, team));
   if (actionableNow === 0) return null;
 
+  const queue = `/${locale}/plan/upgrades${team ? `?team=${encodeURIComponent(team.id)}` : ''}`;
+
   return (
-    <Link href={`/${locale}/plan/upgrades`} data-active className="chip gap-1">
+    <Link href={queue} data-active className="chip gap-1">
       {t('upgradesReady', { count: actionableNow })}
       <ArrowRight size={12} aria-hidden />
     </Link>

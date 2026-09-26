@@ -345,6 +345,8 @@
       "goalsTile": "close a goal",
       "queueHeading": "Queue",
       "wornBy": "Worn by {name} today",
+      "teamScope": "only {team}",
+      "teamScopeClear": "See the whole account",
       "chainHeading": "Upgrade chain",
       "movementsCount": "{count, plural, one {# move} other {# moves}} · +{gain} total{more}",
       "moreSuffix": " · there's more",

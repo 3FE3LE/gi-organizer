@@ -345,6 +345,8 @@
       "goalsTile": "cierran una meta",
       "queueHeading": "Cola",
       "wornBy": "Hoy la lleva {name}",
+      "teamScope": "solo {team}",
+      "teamScopeClear": "Ver toda la cuenta",
       "chainHeading": "Cadena de mejoras",
       "movementsCount": "{count, plural, one {# movimiento} other {# movimientos}} · +{gain} en total{more}",
       "moreSuffix": " · hay más",

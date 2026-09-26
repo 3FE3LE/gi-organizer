@@ -263,3 +263,13 @@ export function summarizeAgenda(items: AgendaItem[]) {
     byCost,
   };
 }
+
+/** The steps for one team's members, or all of them when no team is picked. */
+export function inTeam<T extends { characterId: number }>(
+  items: T[],
+  team: { slots: { characterId: number }[] } | null,
+): T[] {
+  if (!team) return items;
+  const members = new Set(team.slots.map((slot) => slot.characterId));
+  return items.filter((item) => members.has(item.characterId));
+}

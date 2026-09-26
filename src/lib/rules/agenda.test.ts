@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { buildAgenda, summarizeAgenda, type AgendaInput } from './agenda';
+import { buildAgenda, inTeam, summarizeAgenda, type AgendaInput } from './agenda';
 import type { Swap } from './compare';
 import type { GoalVerdict } from './stats';
 
@@ -195,4 +195,12 @@ test('the summary separates what can be done now from what cannot', () => {
   const summary = summarizeAgenda(items);
   assert.equal(summary.actionableNow, 2);
   assert.equal(summary.byCost['needs-farming'], 1);
+});
+
+test('a team narrows the steps to its members, and no team keeps them all', () => {
+  const items = [{ characterId: 1 }, { characterId: 2 }, { characterId: 3 }];
+  const team = { slots: [{ characterId: 3 }, { characterId: 1 }] };
+
+  assert.deepEqual(inTeam(items, team).map((item) => item.characterId), [1, 3]);
+  assert.equal(inTeam(items, null).length, 3);
 });

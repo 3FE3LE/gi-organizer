@@ -1,4 +1,4 @@
-import { ArrowRight, Plus } from 'lucide-react';
+import { ArrowRight, Plus, X } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -10,9 +10,10 @@ import { isLocale, type Locale } from '@/lib/data/locales';
 import type { ArtifactSlot } from '@/lib/data/types';
 import { getDb } from '@/lib/db/client';
 import { readArtifacts, type OwnedArtifact } from '@/lib/player/artifacts';
+import { isDraft, readTeams } from '@/lib/player/teams';
 import { accountAgenda, accountCascade } from '@/lib/rules/assemble';
 import { chainsOf } from '@/lib/rules/cascade';
-import { summarizeAgenda, type AgendaItem, type Cost } from '@/lib/rules/agenda';
+import { inTeam, summarizeAgenda, type AgendaItem, type Cost } from '@/lib/rules/agenda';
 import { getAccountCatalog } from '@/lib/player/traveler';
 
 export const dynamic = 'force-dynamic';
@@ -44,21 +45,40 @@ const COST_TONE: Record<Cost, string> = {
  * itself and who wears it today — because the sentence alone ("mejor arena
  * disponible") left the player to go and find which sands, on whom.
  */
-export default async function AgendaPage({ params }: PageProps<'/[locale]/plan/upgrades'>) {
+export default async function AgendaPage({
+  params, searchParams,
+}: PageProps<'/[locale]/plan/upgrades'>) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
+  const { team: teamId } = await searchParams;
 
   const catalog = await getAccountCatalog(locale);
   const db = getDb();
-  const [items, cascade, artifacts] = await Promise.all([
+  const [allItems, cascade, artifacts, teams] = await Promise.all([
     accountAgenda(catalog, db),
     accountCascade(catalog, db),
     readArtifacts(db),
+    readTeams(db),
   ]);
+  const t = await getTranslations('plan.upgrades');
+  const reserveLabel = (await getTranslations('teams'))('reserveTeam');
+
+  // Narrowed to a team when the plan's day card sent one along, so the queue
+  // opens on the number that card showed. The chain is kept whole wherever it
+  // touches a member: its moves depend on one another, and half of one is not
+  // a plan anybody can follow.
+  const team = teams.find((entry) => entry.id === teamId) ?? null;
+  const members = new Set(team?.slots.map((slot) => slot.characterId) ?? []);
+  const items = inTeam(allItems, team);
+  const chains = chainsOf(cascade).filter((chain) => !team || chain.some((move) =>
+    members.has(move.toCharacterId)
+    || (move.fromCharacterId !== null && members.has(move.fromCharacterId))));
+  const moves = chains.flat();
+  const netGain = moves.reduce((total, move) => total + move.net, 0);
+  const byBuild = cascade.byBuild.filter((entry) => !team || members.has(entry.characterId));
+
   const pieces = new Map(artifacts.map((piece) => [piece.instanceId, piece]));
   const summary = summarizeAgenda(items);
-  const chains = chainsOf(cascade);
-  const t = await getTranslations('plan.upgrades');
   const slotLabel = await getTranslations('common.slot');
   const costLabel = await getTranslations('common.cost');
   const slotName = (slot: string) => (slotLabel.has(slot) ? slotLabel(slot) : slot);
@@ -101,6 +121,19 @@ export default async function AgendaPage({ params }: PageProps<'/[locale]/plan/u
 
   return (
     <div className="space-y-8">
+      {team && (
+        <Link
+          href={`/${locale}/plan/upgrades`}
+          data-active
+          title={t('teamScopeClear')}
+          aria-label={`${t('teamScope', { team: isDraft(team) ? reserveLabel : team.name })} · ${t('teamScopeClear')}`}
+          className="chip gap-1"
+        >
+          {t('teamScope', { team: isDraft(team) ? reserveLabel : team.name })}
+          <X size={12} aria-hidden />
+        </Link>
+      )}
+
       {/* Three numbers worth reading before the list: how long it is, how
           much of it can be done tonight, and how much of it actually fixes a
           build rather than polishing one. */}
@@ -117,7 +150,7 @@ export default async function AgendaPage({ params }: PageProps<'/[locale]/plan/u
         ))}
       </dl>
 
-      {cascade.moves.length > 0 && (
+      {moves.length > 0 && (
         <section className="space-y-3">
           <div>
             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -126,8 +159,8 @@ export default async function AgendaPage({ params }: PageProps<'/[locale]/plan/u
               </h2>
               <span className="font-mono text-xs text-muted">
                 {t('movementsCount', {
-                  count: cascade.moves.length,
-                  gain: cascade.netGain.toFixed(1),
+                  count: moves.length,
+                  gain: (team ? netGain : cascade.netGain).toFixed(1),
                   more: cascade.truncated ? t('moreSuffix') : '',
                 })}
               </span>
@@ -191,7 +224,7 @@ export default async function AgendaPage({ params }: PageProps<'/[locale]/plan/u
 
           {/* Where the chain leaves each build, once it has all run. */}
           <ul className="flex flex-wrap gap-2">
-            {cascade.byBuild
+            {byBuild
               .filter((entry) => entry.after !== entry.before)
               .map((entry) => (
                 <li key={entry.buildId} className="card-2 flex items-center gap-2 py-1 pl-1 pr-2.5">
