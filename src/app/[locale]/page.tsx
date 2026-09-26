@@ -78,7 +78,7 @@ export default async function Landing({ params }: PageProps<'/[locale]'>) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   const t = await getTranslations({ locale: locale === 'en' ? 'en' : 'es', namespace: 'landing' });
-  const app = `/${locale}/characters`;
+  const app = `/${locale}/plan`;
 
   /*
    * What the page is, for the engines that read structure rather than prose:

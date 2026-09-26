@@ -6,7 +6,7 @@ export default function SignInPage() {
       {/* Into the app when nothing asked for a particular page: `/` is the
           public landing now, and landing there after signing in would be a
           step backwards. A redirect from a protected page still wins. */}
-      <SignIn fallbackRedirectUrl="/es/characters" />
+      <SignIn fallbackRedirectUrl="/es/plan" />
     </main>
   );
 }

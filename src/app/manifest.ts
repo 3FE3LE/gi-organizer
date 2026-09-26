@@ -22,7 +22,7 @@ export default function manifest(): MetadataRoute.Manifest {
     description: 'Builds, artefactos y plan de farmeo para tu cuenta de Genshin Impact.',
     // Straight into the app: the installed icon is for someone who already
     // uses it, not for the landing page a visitor reads first.
-    start_url: '/es/characters',
+    start_url: '/es/plan',
     scope: '/',
     display: 'standalone',
     orientation: 'any',

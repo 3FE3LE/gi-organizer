@@ -122,11 +122,15 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
 
   // Listed once and rendered twice — the header row on a wide screen, the
   // bottom bar on a phone. See `components/main-nav.tsx`.
+  //
+  // The plan leads: it is where signing in lands, because "what do I do
+  // tonight" is the question every visit starts with, and the roster is where
+  // the answer sends you next.
   const sections: NavItem[] = [
+    { id: 'plan', href: `/${locale}/plan`, label: t('plan') },
     { id: 'characters', href: `/${locale}/characters`, label: t('characters') },
     { id: 'teams', href: `/${locale}/teams`, label: t('teams') },
     { id: 'artifacts', href: `/${locale}/artifacts`, label: t('artifacts') },
-    { id: 'plan', href: `/${locale}/plan`, label: t('plan') },
     { id: 'data', href: `/${locale}/data`, label: t('data') },
   ];
 
@@ -186,7 +190,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
                     out of alignment too. */}
                 <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-5 gap-y-2 px-4 py-2.5 sm:px-6 sm:py-3">
                   <Link
-                    href={`/${locale}/characters`}
+                    href={`/${locale}/plan`}
                     className="flex items-center gap-2 rounded-lg font-mono text-sm tracking-tight"
                   >
                     {/* The installed app's icon stands in for "GI": the mark
