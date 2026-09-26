@@ -363,7 +363,9 @@ function DraggableSlot({ teamId, slot }: { teamId: string; slot: SlotView }) {
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Translate.toString(transform) }}
-      className={`relative ${isDragging ? 'z-20 opacity-90 shadow-lg ring-1 ring-accent' : ''}`}
+      // Opaque while carried: at 90% the card under it read through the
+      // one being moved.
+      className={`relative ${isDragging ? 'z-20 shadow-lg ring-1 ring-accent' : ''}`}
     >
       <button
         ref={setActivatorNodeRef}
@@ -602,7 +604,7 @@ function RolesMenu({ teamId, characterId, roles }: {
   return (
     <Menu.Root>
       <Menu.Trigger
-        className={`mx-auto flex max-w-full items-center justify-center gap-0.5 rounded font-mono text-2xs underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-accent ${
+        className={`flex max-w-full items-center gap-0.5 rounded font-mono text-2xs sm:mx-auto sm:justify-center underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-accent ${
           shown.length === 0 ? 'text-muted' : 'text-accent'
         }`}
         aria-label={t('rolesLabel')}
@@ -663,18 +665,19 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
   return (
     // The roster's card, with the team's own controls and build marks on it:
     // one drawing of a character across both pages. `group` for the washes'
-    // hover, `isolate` so they stay behind the controls.
-    <div className="group relative isolate flex flex-col items-center gap-3 overflow-hidden bg-surface px-3 pb-3 pt-4">
+    // hover, `isolate` so they stay behind the controls. On a phone the top
+    // leaves a row for the grip and the remove button, which sit over it.
+    <div className="group relative isolate flex flex-col items-center gap-3 overflow-hidden bg-surface px-3 pb-3 pt-9 sm:pt-4">
       <span aria-hidden className="absolute inset-0 -z-10">
         <CardWash elementType={card.elementType} rarity={card.rarity} />
       </span>
-      {/* Top left: the drag handle is at the slot's own corner above, and the
-          remove button holds the right. */}
+      {/* Beside the remove button on a phone, where the portrait holds the
+          left; under the grip on a wider card, where the name holds the top. */}
       <CardMark
         dismissed={progress?.dismissed ?? false}
         booksToday={progress?.booksToday ?? false}
         labels={card.marks}
-        className="left-2 top-9"
+        className="right-10 top-2.5 sm:right-auto sm:left-2 sm:top-9"
       />
       <form action={drop} className="absolute right-1.5 top-1.5">
         <input type="hidden" name="teamId" value={teamId} />
@@ -689,7 +692,20 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
         </button>
       </form>
 
-      <div className="w-full min-w-0 px-6 text-center">
+      {/*
+        * Who they are and what they are built with, laid out for the width.
+        *
+        * One column on a phone put the name, the role and the portrait each on
+        * a line of their own with the screen's width empty either side, and
+        * four members ran to a thousand pixels. So on a phone the portrait
+        * takes the left and everything about them reads beside it — name and
+        * role, level and talents, then the weapon, sets and main stats in one
+        * row — and a wider card stacks the same four areas down its middle.
+        * The goals, declarations and findings below stay full width: those are
+        * lists, and lists want the line.
+        */}
+      <div className="grid w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5 [grid-template-areas:'portrait_name'_'portrait_level'_'portrait_marks'] sm:grid-cols-1 sm:justify-items-center sm:gap-y-3 sm:[grid-template-areas:'name'_'portrait'_'level'_'marks']">
+      <div className="min-w-0 [grid-area:name] sm:w-full sm:px-6 sm:text-center">
         <Link href={slot.buildHref} className="block truncate text-sm hover:text-accent">
           {slot.name}
         </Link>
@@ -699,6 +715,7 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
         <RolesMenu teamId={teamId} characterId={slot.characterId} roles={slot.roles} />
       </div>
 
+      <div className="[grid-area:portrait]">
       <CharacterPortrait
         elementType={card.elementType}
         elementText={slot.element}
@@ -714,17 +731,20 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
           />
         </Link>
       </CharacterPortrait>
+      </div>
 
       {progress && (
-        <LevelTalents
-          level={progress.level}
-          talent={progress.talent}
-          met={progress.talentsMet}
-          labels={{ level: progress.levelLabel, talents: progress.talentsLabel }}
-        />
+        <div className="[grid-area:level]">
+          <LevelTalents
+            level={progress.level}
+            talent={progress.talent}
+            met={progress.talentsMet}
+            labels={{ level: progress.levelLabel, talents: progress.talentsLabel }}
+          />
+        </div>
       )}
 
-      <ul className="flex flex-wrap items-start justify-center gap-1.5" aria-label={t('buildMarksLabel')}>
+      <ul className="flex flex-wrap items-start justify-start gap-1 pb-1.5 [grid-area:marks] sm:justify-center sm:gap-1.5 sm:pb-0" aria-label={t('buildMarksLabel')}>
         <li>
           <Mark
             label={slot.weapon
@@ -767,6 +787,7 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
           </li>
         ))}
       </ul>
+      </div>
 
       {slot.buildName === null && (
         <p className="font-mono text-2xs text-muted">{t('noBuildForRole')}</p>
