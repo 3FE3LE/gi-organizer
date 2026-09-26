@@ -13,6 +13,8 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 
+import { RosterOptimismProvider, usePlannedCount } from './roster-optimism';
+
 /**
  * The roster, one tap away instead of always on screen.
  *
@@ -22,23 +24,37 @@ import {
  * question reachable without spending the page's width on it by default; the
  * trigger carries the one number worth seeing without opening it.
  */
-export function RosterSheet({
-  total,
-  planned,
-  teamName,
-  charsCount,
-  clearCharsHref,
-  children,
-}: {
+export function RosterSheet(props: RosterSheetProps) {
+  // The provider sits above the trigger and the panel both, so a click in the
+  // panel moves the count on the trigger in the same frame.
+  return (
+    <RosterOptimismProvider>
+      <RosterSheetInner {...props} />
+    </RosterOptimismProvider>
+  );
+}
+
+type RosterSheetProps = {
   total: number;
-  planned: number;
+  /** Who is counted, as the server last said; see `roster-optimism.tsx`. */
+  entries: readonly { characterId: number; dismissed: boolean }[];
   teamName: string | null;
   charsCount: number;
   clearCharsHref: string | null;
   children: React.ReactNode;
-}) {
+};
+
+function RosterSheetInner({
+  total,
+  entries,
+  teamName,
+  charsCount,
+  clearCharsHref,
+  children,
+}: RosterSheetProps) {
   const t = useTranslations('plan');
   const [open, setOpen] = useState(false);
+  const planned = usePlannedCount(entries);
 
   // Nobody on the roster at all — same case `RosterPanel` itself bails on.
   if (total === 0) return null;

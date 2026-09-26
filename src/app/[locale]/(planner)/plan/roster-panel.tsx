@@ -3,12 +3,11 @@ import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
 import { GameIcon } from '@/components/game-icon';
-import { Hint } from '@/components/hint';
 import type { Catalog } from '@/lib/data/catalog';
 import type { Team } from '@/lib/player/teams';
 
 import { type Filters, href, toggle } from './filters';
-import { dismissRoster, restoreRoster } from './roster-actions';
+import { PlannedCount, RosterBulk, RosterChip } from './roster-chip';
 
 /**
  * How many of the roster are in the plan, narrowed to the active team.
@@ -30,7 +29,8 @@ export function summarizeRoster(
   return {
     teamName: team?.name ?? null,
     total: scoped.length,
-    planned: scoped.filter((entry) => !entry.dismissed).length,
+    /** Who is counted, for the trigger to follow a click before the server answers. */
+    entries: scoped.map(({ characterId, dismissed }) => ({ characterId, dismissed })),
   };
 }
 
@@ -92,12 +92,7 @@ export async function RosterPanel({
         <span className="font-mono text-2xs uppercase text-muted">
           {t('charactersLabel')}
         </span>
-        <span>
-          <span className="text-accent">{planned.length}</span>
-          <span className="text-muted">
-            {' '}{t('inPlanSuffix', { total: named.length })}
-          </span>
-        </span>
+        <PlannedCount entries={named} suffix={t('inPlanSuffix', { total: named.length })} />
         {team && <span className="text-muted">{t('onlyTeam', { team: team.name })}</span>}
         {filters.chars.length > 0 && (
           <Link
@@ -108,12 +103,12 @@ export async function RosterPanel({
           </Link>
         )}
         <span className="ml-auto flex flex-wrap gap-2">
-          <Bulk action={dismissRoster} disabled={planned.length === 0}>
+          <RosterBulk dismiss entries={named}>
             <X size={11} /> {t('dismissAll')}
-          </Bulk>
-          <Bulk action={restoreRoster} disabled={dismissed.length === 0}>
+          </RosterBulk>
+          <RosterBulk dismiss={false} entries={named}>
             <RotateCcw size={11} /> {t('restoreAll')}
-          </Bulk>
+          </RosterBulk>
         </span>
       </header>
 
@@ -123,127 +118,36 @@ export async function RosterPanel({
         </p>
 
         <ul className="flex flex-wrap gap-1.5">
-          {shown.map((entry) => {
-            const picked = filters.chars.includes(entry.characterId);
-            // Somebody the plan is not counting has no demand to filter down
-            // to, so their name is a label rather than a control.
-            const filterable = !entry.dismissed && (entry.hasTarget || filters.assume);
-
-            return (
-              <li
-                key={entry.characterId}
-                className={`flex items-center overflow-hidden rounded border text-2xs ${
-                  picked ? 'border-accent bg-surface-2' : 'border-edge'
-                } ${entry.dismissed ? 'opacity-60' : ''} ${
-                  filters.chars.length > 0 && !picked ? 'opacity-50' : ''
-                }`}
-              >
-                <Face
-                  entry={entry}
-                  picked={picked}
-                  to={filterable
-                    ? href(base, filters, { chars: toggle(filters.chars, entry.characterId) })
-                    : null}
-                  t={t}
+          {shown.map((entry) => (
+            <RosterChip
+              key={entry.characterId}
+              characterId={entry.characterId}
+              name={entry.name}
+              icon={
+                <GameIcon
+                  filename={entry.icon}
+                  kind="avatar"
+                  alt=""
+                  className="h-6 w-6 rounded"
+                  sizes="24px"
                 />
-
-                <form
-                  action={entry.dismissed
-                    ? restoreRoster.bind(null, entry.characterId)
-                    : dismissRoster.bind(null, entry.characterId)}
-                >
-                  <Hint text={entry.dismissed ? t('restoreTitle') : t('dismissTitle')}>
-                    <button
-                      type="submit"
-                      aria-label={entry.dismissed ? t('restoreTitle') : t('dismissTitle')}
-                      className={`flex h-7 w-6 items-center justify-center border-l text-muted ${
-                        picked ? 'border-accent' : 'border-edge'
-                      } ${entry.dismissed ? 'hover:text-accent' : 'hover:text-bad'}`}
-                    >
-                      {entry.dismissed ? <RotateCcw size={11} /> : <X size={11} />}
-                    </button>
-                  </Hint>
-                </form>
-              </li>
-            );
-          })}
+              }
+              hasTarget={entry.hasTarget}
+              dismissed={entry.dismissed}
+              picked={filters.chars.includes(entry.characterId)}
+              dimmed={filters.chars.length > 0}
+              assume={filters.assume}
+              filterHref={href(base, filters, { chars: toggle(filters.chars, entry.characterId) })}
+              labels={{
+                restore: t('restoreTitle'),
+                dismiss: t('dismissTitle'),
+                filter: t('filterTitle'),
+                stopFilter: t('stopFilterTitle'),
+              }}
+            />
+          ))}
         </ul>
       </div>
     </section>
-  );
-}
-
-type Entry = {
-  characterId: number;
-  name: string;
-  icon: string | null | undefined;
-  hasTarget: boolean;
-  dismissed: boolean;
-};
-
-/**
- * The face and the name, which filter when there is something to filter.
- *
- * A link and a form button cannot nest, so the two verbs sit side by side
- * inside one chip rather than one inside the other.
- */
-function Face({
-  entry, picked, to, t,
-}: {
-  entry: Entry; picked: boolean; to: string | null;
-  t: Awaited<ReturnType<typeof getTranslations<'plan'>>>;
-}) {
-  const content = (
-    <>
-      <GameIcon
-        filename={entry.icon}
-        kind="avatar"
-        alt=""
-        className="h-6 w-6 rounded"
-        sizes="24px"
-      />
-      <span className={entry.dismissed ? 'line-through' : ''}>{entry.name}</span>
-      {/* A character with a target of their own was planned for on purpose, so
-          the assumption is not what is driving them. */}
-      {entry.hasTarget && !entry.dismissed && <span className="text-2xs">●</span>}
-    </>
-  );
-
-  const className = 'flex items-center gap-1.5 py-0.5 pl-1 pr-2';
-
-  if (!to) return <span className={`${className} text-muted`}>{content}</span>;
-
-  return (
-    <Hint text={picked ? t('stopFilterTitle') : t('filterTitle')}>
-      <Link
-        href={to}
-        aria-current={picked ? 'true' : undefined}
-        className={`${className} ${picked ? 'text-accent' : 'hover:text-accent'}`}
-      >
-        {content}
-      </Link>
-    </Hint>
-  );
-}
-
-function Bulk({
-  action,
-  disabled,
-  children,
-}: {
-  action: (characterId: number | null) => Promise<void>;
-  disabled: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <form action={action.bind(null, null)}>
-      <button
-        type="submit"
-        disabled={disabled}
-        className="flex items-center gap-1.5 rounded border border-edge px-2.5 py-1 font-mono text-2xs uppercase text-muted transition-colors hover:border-accent hover:text-text disabled:opacity-40"
-      >
-        {children}
-      </button>
-    </form>
   );
 }

@@ -178,7 +178,7 @@ async function DockedRoster({
   return (
     <RosterSheet
       total={summary.total}
-      planned={summary.planned}
+      entries={summary.entries}
       teamName={summary.teamName}
       charsCount={filters.chars.length}
       clearCharsHref={filters.chars.length > 0 ? href(base, filters, { chars: [] }) : null}
