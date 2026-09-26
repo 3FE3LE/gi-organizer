@@ -4,6 +4,8 @@ import { ArrowUp } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
+import { Hint } from '@/components/hint';
+
 /**
  * A way back up from the bottom of a long page.
  *
@@ -47,16 +49,18 @@ export function BackToTop() {
   }
 
   return (
-    <button
-      type="button"
-      onClick={toTop}
-      aria-label={t('backToTop')}
-      title={t('backToTop')}
-      data-visible={visible}
-      inert={!visible}
-      className="back-to-top glass fixed right-4 z-40 flex h-10 w-10 items-center justify-center rounded-full border text-muted shadow-md transition-[opacity,translate,color] duration-200 hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent data-[visible=false]:pointer-events-none data-[visible=false]:translate-y-2 data-[visible=false]:opacity-0 sm:right-6"
-    >
-      <ArrowUp size={18} aria-hidden />
-    </button>
+    // To the left: the button sits against the screen's right edge.
+    <Hint text={t('backToTop')} side="left">
+      <button
+        type="button"
+        onClick={toTop}
+        aria-label={t('backToTop')}
+        data-visible={visible}
+        inert={!visible}
+        className="back-to-top glass fixed right-4 z-40 flex h-10 w-10 items-center justify-center rounded-full border text-muted shadow-md transition-[opacity,translate,color] duration-200 hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent data-[visible=false]:pointer-events-none data-[visible=false]:translate-y-2 data-[visible=false]:opacity-0 sm:right-6"
+      >
+        <ArrowUp size={18} aria-hidden />
+      </button>
+    </Hint>
   );
 }

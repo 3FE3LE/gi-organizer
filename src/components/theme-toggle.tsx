@@ -3,6 +3,7 @@
 import { Moon, Sun } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
+import { Hint } from '@/components/hint';
 import { Button } from '@/components/ui/button';
 
 /**
@@ -43,15 +44,17 @@ export function ThemeToggle() {
   }
 
   return (
-    <Button
-      variant="ghost"
-      size="icon-sm"
-      onClick={toggle}
-      aria-label={t('themeToggle')}
-      title={t('themeToggle')}
-    >
-      <Sun size={16} aria-hidden className="theme-sun" />
-      <Moon size={16} aria-hidden className="theme-moon" />
-    </Button>
+    // Below: the toggle lives in the header, with nothing above it to cover.
+    <Hint text={t('themeToggle')} side="bottom">
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        onClick={toggle}
+        aria-label={t('themeToggle')}
+      >
+        <Sun size={16} aria-hidden className="theme-sun" />
+        <Moon size={16} aria-hidden className="theme-moon" />
+      </Button>
+    </Hint>
   );
 }

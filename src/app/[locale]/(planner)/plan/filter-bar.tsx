@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 import { ActiveFilters } from '@/components/active-filters';
 import { DockFold } from '@/components/dock-fold';
-import { HoverLabel } from '@/components/hint';
+import { Hint, HoverLabel } from '@/components/hint';
 import { FilterGroup } from '@/components/segmented-links';
 import { FoldMark } from '@/components/fold-mark';
 import type { Catalog } from '@/lib/data/catalog';
@@ -167,7 +167,7 @@ export async function FilterBar({
       )}
 
       <DockFold when="docked" className="pt-3">
-      <details open={moreOpen} className="group card">
+      <details open={moreOpen} className="group/fold card">
         {/* The artifacts' "more filters", word for word: an icon, the name, how
             many of the folded filters are on, and the fold mark. */}
         <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-xs text-text transition-colors hover:bg-surface-2/60">
@@ -187,15 +187,18 @@ export async function FilterBar({
           <FilterGroup label={t('serverLabel')}>
             {GAME_REGIONS.map((entry) => (
               <form key={entry} action={chooseRegion.bind(null, entry)}>
-                <button
-                  type="submit"
-                  aria-current={region === entry ? 'true' : undefined}
-                  title={t('serverTitle')}
-                  data-active={region === entry}
-                  className="chip"
-                >
-                  {regionLabel(entry)}
-                </button>
+                {/* A button, not a link: it stays on the page, so it can carry
+                    a real tooltip. */}
+                <Hint text={t('serverTitle')}>
+                  <button
+                    type="submit"
+                    aria-current={region === entry ? 'true' : undefined}
+                    data-active={region === entry}
+                    className="chip"
+                  >
+                    {regionLabel(entry)}
+                  </button>
+                </Hint>
               </form>
             ))}
           </FilterGroup>

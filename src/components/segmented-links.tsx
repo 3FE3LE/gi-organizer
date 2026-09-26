@@ -1,5 +1,7 @@
 import Link from 'next/link';
 
+import { HoverLabel } from '@/components/hint';
+
 /**
  * The label every group of filter values carries, above the values: one
  * drawing for the question a row of chips or a strip of segments answers.
@@ -35,8 +37,13 @@ export function Segments({
   return (
     // `min-w-0` and a sideways scroll, so a group wider than a phone — the
     // seven orderings — slides rather than pushing the card past the screen.
-    <div className="min-w-0 max-w-full space-y-0.5">
-      <p aria-hidden title={hint} className={GROUP_LABEL}>{label}</p>
+    // `relative` here, outside that scroll, is what a segment's hover label is
+    // placed against — see `Segment`.
+    <div className="relative min-w-0 max-w-full space-y-0.5">
+      {/* The hint rides on the strip's own name, where a screen reader and a
+          keyboard both meet it; a `title` on a label nothing can focus reached
+          neither. */}
+      <p aria-hidden className={GROUP_LABEL}>{label}</p>
       <SegmentStrip label={hint ? `${label}: ${hint}` : label}>{children}</SegmentStrip>
     </div>
   );
@@ -93,12 +100,21 @@ export function Segment({
   return (
     <Link
       href={to}
-      title={title}
       scroll={scroll}
       aria-current={active ? 'true' : undefined}
-      className={segmentClass(active)}
+      className={`${segmentClass(active)}${title ? ' group/segment' : ''}`}
     >
       {children}
+      {/* A segment is a link, so its hint is the CSS label rather than a
+          tooltip — see `components/hint.tsx`. The segment is deliberately not
+          `relative`: the strip scrolls sideways, and a scroller clips whatever
+          is placed against something inside it, so a label anchored to the
+          segment would be cut off above the strip. It is placed against the
+          group around the strip instead, and hangs below it: above, it would
+          land on the group's name, and a folded panel clips what rises out of
+          its top. Its own named group, because these strips sit inside cards
+          that are a `group` of their own. */}
+      {title && <HoverLabel text={title} side="bottom" scope="segment" />}
     </Link>
   );
 }

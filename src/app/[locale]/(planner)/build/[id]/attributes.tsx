@@ -140,7 +140,7 @@ export function Attributes({
                 {row.element && <ElementIcon element={row.element} className="h-3.5 w-3.5" />}
                 {row.label}
                 {row.ascension && (
-                  <span className="ml-1 text-2xs uppercase text-accent" title={ascensionLabel}>
+                  <span className="ml-1 text-2xs uppercase text-accent">
                     {ascensionLabel}
                   </span>
                 )}

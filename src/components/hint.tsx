@@ -57,6 +57,11 @@ const LABEL_SIDES = {
   right: 'left-full top-1/2 ml-1.5 -translate-y-1/2',
 };
 
+const LABEL_SCOPES = {
+  group: 'group-hover:opacity-100 group-focus-visible:opacity-100',
+  segment: 'group-hover/segment:opacity-100 group-focus-visible/segment:opacity-100',
+};
+
 /**
  * The same hint, for a trigger that navigates.
  *
@@ -69,14 +74,21 @@ const LABEL_SIDES = {
 export function HoverLabel({
   text,
   side = 'top',
+  scope = 'group',
 }: {
   text: string;
   side?: keyof typeof LABEL_SIDES;
+  /**
+   * Which `group` it answers to. The plain one by default; `segment` for a
+   * trigger that sits inside some other `group`, which would light every
+   * label under it at once.
+   */
+  scope?: keyof typeof LABEL_SCOPES;
 }) {
   return (
     <span
       aria-hidden
-      className={`pointer-events-none absolute z-50 w-max max-w-56 rounded-md border border-edge bg-surface-2 px-2 py-1 text-xs font-normal normal-case leading-snug text-text opacity-0 shadow-[var(--shadow-raised)] transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 ${LABEL_SIDES[side]}`}
+      className={`pointer-events-none absolute z-50 w-max max-w-56 rounded-md border border-edge bg-surface-2 px-2 py-1 text-xs font-normal normal-case leading-snug text-text opacity-0 shadow-[var(--shadow-raised)] transition-opacity duration-150 ${LABEL_SCOPES[scope]} ${LABEL_SIDES[side]}`}
     >
       {text}
     </span>

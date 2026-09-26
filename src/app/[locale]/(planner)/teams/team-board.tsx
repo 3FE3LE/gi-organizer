@@ -368,19 +368,20 @@ function DraggableSlot({ teamId, slot }: { teamId: string; slot: SlotView }) {
       // one being moved.
       className={`relative ${isDragging ? 'z-20 shadow-lg ring-1 ring-accent' : ''}`}
     >
-      <button
-        ref={setActivatorNodeRef}
-        type="button"
-        {...attributes}
-        {...listeners}
-        aria-label={t('dragHandle', { name: slot.name })}
-        title={t('dragHandle', { name: slot.name })}
-        // `touch-none` on the grip alone: a finger on it drags, a finger
-        // anywhere else on the card still scrolls the page.
-        className={`${buttonVariants({ variant: 'ghost', size: 'icon-sm' })} absolute left-5 top-1 z-10 cursor-grab touch-none text-muted active:cursor-grabbing`}
-      >
-        <GripVertical size={14} aria-hidden />
-      </button>
+      <Hint text={t('dragHandle', { name: slot.name })}>
+        <button
+          ref={setActivatorNodeRef}
+          type="button"
+          {...attributes}
+          {...listeners}
+          aria-label={t('dragHandle', { name: slot.name })}
+          // `touch-none` on the grip alone: a finger on it drags, a finger
+          // anywhere else on the card still scrolls the page.
+          className={`${buttonVariants({ variant: 'ghost', size: 'icon-sm' })} absolute left-5 top-1 z-10 cursor-grab touch-none text-muted active:cursor-grabbing`}
+        >
+          <GripVertical size={14} aria-hidden />
+        </button>
+      </Hint>
       <Slot teamId={teamId} slot={slot} />
     </div>
   );
@@ -528,35 +529,38 @@ function MemberPicker({
 
                     return (
                       <li key={character.id}>
-                        <button
-                          type="button"
-                          disabled={busy || pending}
-                          onClick={() => send(action, { teamId, characterId: String(character.id) })}
-                          title={busy
+                        <Hint
+                          text={busy
                             ? here
                               ? t('alreadyInThisTeam')
                               : t('inOtherTeam', { name: character.inTeam!.name })
                             : character.name}
-                          className="flex w-full flex-col items-center gap-1 rounded-lg p-1 text-center transition-colors hover:bg-ink/50 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-accent"
                         >
-                          <span
-                            className="rounded-full border-2 bg-icon-bed"
-                            style={{ borderColor: character.elementColor }}
+                          <button
+                            type="button"
+                            disabled={busy || pending}
+                            onClick={() => send(action, { teamId, characterId: String(character.id) })}
+                            className="flex w-full flex-col items-center gap-1 rounded-lg p-1 text-center transition-colors hover:bg-ink/50 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-accent"
                           >
-                            <AssetImage
-                              src={character.icon}
-                              kind="avatar"
-                              className="h-12 w-12 rounded-full"
-                              sizes="48px"
-                            />
-                          </span>
-                          <span className="w-full truncate text-2xs">{character.name}</span>
-                          <span className="w-full truncate font-mono text-2xs text-muted">
-                            {busy
-                              ? here ? t('alreadyInThisTeam') : character.inTeam!.name
-                              : '★'.repeat(character.rarity)}
-                          </span>
-                        </button>
+                            <span
+                              className="rounded-full border-2 bg-icon-bed"
+                              style={{ borderColor: character.elementColor }}
+                            >
+                              <AssetImage
+                                src={character.icon}
+                                kind="avatar"
+                                className="h-12 w-12 rounded-full"
+                                sizes="48px"
+                              />
+                            </span>
+                            <span className="w-full truncate text-2xs">{character.name}</span>
+                            <span className="w-full truncate font-mono text-2xs text-muted">
+                              {busy
+                                ? here ? t('alreadyInThisTeam') : character.inTeam!.name
+                                : '★'.repeat(character.rarity)}
+                            </span>
+                          </button>
+                        </Hint>
                       </li>
                     );
                   })}
@@ -678,19 +682,21 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
         dismissed={progress?.dismissed ?? false}
         booksToday={progress?.booksToday ?? false}
         labels={card.marks}
+        focusable
         className="right-10 top-2.5 sm:right-auto sm:left-2 sm:top-9"
       />
       <form action={drop} className="absolute right-1.5 top-1.5">
         <input type="hidden" name="teamId" value={teamId} />
         <input type="hidden" name="characterId" value={slot.characterId} />
-        <button
-          type="submit"
-          className={buttonVariants({ variant: 'destructive', size: 'icon-sm' })}
-          aria-label={t('removeAria', { name: slot.name })}
-          title={t('removeAria', { name: slot.name })}
-        >
-          <X size={14} aria-hidden />
-        </button>
+        <Hint text={t('removeAria', { name: slot.name })}>
+          <button
+            type="submit"
+            className={buttonVariants({ variant: 'destructive', size: 'icon-sm' })}
+            aria-label={t('removeAria', { name: slot.name })}
+          >
+            <X size={14} aria-hidden />
+          </button>
+        </Hint>
       </form>
 
       {/*

@@ -516,7 +516,7 @@ function BirthdayNotice({
     <section className="card flex flex-wrap items-center gap-x-4 gap-y-2 border-accent/50 px-4 py-3">
       <span className="flex -space-x-2">
         {today.map((character) => (
-          <Link key={character.id} href={`/${locale}/build/${character.id}`} title={character.name}>
+          <Link key={character.id} href={`/${locale}/build/${character.id}`} className="group relative">
             <GameIcon
               filename={character.icon}
               kind="avatar"
@@ -524,6 +524,7 @@ function BirthdayNotice({
               className="h-10 w-10 rounded-full bg-surface-2 ring-2 ring-accent/60"
               sizes="40px"
             />
+            <HoverLabel text={character.name} />
           </Link>
         ))}
       </span>
@@ -809,8 +810,7 @@ function CompactGallery({ locale, characters }: { locale: string; characters: Ch
         <li key={character.id}>
           <PrefetchLink
             href={`/${locale}/build/${character.id}`}
-            title={character.name}
-            className="card card-link flex flex-col items-center gap-1 px-1.5 py-2 opacity-70 hover:opacity-100"
+            className="card card-link group relative flex flex-col items-center gap-1 px-1.5 py-2 opacity-70 hover:opacity-100 focus-visible:opacity-100"
           >
             <span className="relative">
               <GameIcon
@@ -824,6 +824,8 @@ function CompactGallery({ locale, characters }: { locale: string; characters: Ch
               </span>
             </span>
             <span className="w-full truncate text-center text-2xs text-muted">{character.name}</span>
+            {/* The whole name, where the line under the face truncates it. */}
+            <HoverLabel text={character.name} />
           </PrefetchLink>
         </li>
       ))}

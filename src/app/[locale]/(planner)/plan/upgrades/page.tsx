@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { GameIcon } from '@/components/game-icon';
+import { HoverLabel } from '@/components/hint';
 import { SlotIcon } from '@/components/slot-icon';
 import { propLabel, type Catalog } from '@/lib/data/catalog';
 import { isLocale, type Locale } from '@/lib/data/locales';
@@ -127,12 +128,14 @@ export default async function AgendaPage({
         <Link
           href={`/${locale}/plan/upgrades`}
           data-active
-          title={t('teamScopeClear')}
           aria-label={`${t('teamScope', { team: isDraft(team) ? reserveLabel : team.name })} · ${t('teamScopeClear')}`}
-          className="chip gap-1"
+          className="chip group relative gap-1"
         >
           {t('teamScope', { team: isDraft(team) ? reserveLabel : team.name })}
           <X size={12} aria-hidden />
+          {/* A link, so the CSS label rather than a tooltip — see
+              `components/hint.tsx`. */}
+          <HoverLabel text={t('teamScopeClear')} />
         </Link>
       )}
 
@@ -351,20 +354,26 @@ function Avatar({
 }) {
   const character = catalog.characters.get(id);
   const box = size === 'sm' ? 'h-6 w-6' : 'h-8 w-8';
+  const name = title ?? character?.name;
 
   return (
+    // The name is the CSS label, since a face is a link — see
+    // `components/hint.tsx`. To the right rather than above: the chains are
+    // cards that clip their overflow, and a label above the first row was cut
+    // off by the card's top edge. The dimming is on the face, not the link,
+    // so the label reads at full strength.
     <Link
       href={`/${locale}/build/${id}`}
-      title={title ?? character?.name}
-      className={`shrink-0 rounded-full hover:ring-2 hover:ring-accent ${dim ? 'opacity-60' : ''}`}
+      className="group relative shrink-0 rounded-full hover:ring-2 hover:ring-accent"
     >
       <GameIcon
         filename={character?.icon}
         kind="avatar"
-        alt={title ?? character?.name ?? ''}
-        className={`${box} rounded-full bg-surface-2`}
+        alt={name ?? ''}
+        className={`${box} rounded-full bg-surface-2${dim ? ' opacity-60' : ''}`}
         sizes={size === 'sm' ? '24px' : '32px'}
       />
+      {name && <HoverLabel text={name} side="right" />}
     </Link>
   );
 }

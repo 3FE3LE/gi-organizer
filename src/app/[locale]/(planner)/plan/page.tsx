@@ -5,6 +5,7 @@ import { Suspense, ViewTransition } from 'react';
 
 import { ElementIcon } from '@/components/element-icon';
 import { GameIcon } from '@/components/game-icon';
+import { HoverLabel } from '@/components/hint';
 import { SectionTabs } from '@/components/section-tabs';
 import { Skeleton } from '@/components/skeleton';
 import { StickyDock } from '@/components/sticky-dock';
@@ -409,33 +410,40 @@ async function DomainCard({
           {waiting.map((entry) => {
             const character = catalog.characters.get(entry.characterId);
             const assumed = isAssumed(needs, entry.characterId);
+            const hint = t('waitingTitle', {
+              name: character?.name ?? entry.characterId,
+              count: entry.count,
+              assumedSuffix: assumed ? t('assumedTargetSuffix') : '',
+            });
 
             return (
               <li key={entry.characterId}>
+                {/* The hint is the CSS label, because this is a link — see
+                    `components/hint.tsx` — and it is also the link's name, so a
+                    screen reader hears the count and not only the face. An
+                    assumed target dims the face and its badge rather than the
+                    link, which would have dimmed the label with them. */}
                 <Link
                   href={`/${locale}/build/${entry.characterId}`}
-                  title={t('waitingTitle', {
-                    name: character?.name ?? entry.characterId,
-                    count: entry.count,
-                    assumedSuffix: assumed ? t('assumedTargetSuffix') : '',
-                  })}
-                  className={`relative block rounded border ${
-                    assumed ? 'border-dashed border-edge opacity-60' : 'border-edge'
+                  aria-label={hint}
+                  className={`group relative block rounded border ${
+                    assumed ? 'border-dashed border-edge/60' : 'border-edge'
                   } hover:border-accent`}
                 >
                   <GameIcon
                     filename={character?.icon}
                     kind="avatar"
                     alt={character?.name ?? ''}
-                    className="h-11 w-11 rounded"
+                    className={`h-11 w-11 rounded${assumed ? ' opacity-60' : ''}`}
                     sizes="44px"
                   />
                   {/* The element, the way the roster groups them. */}
                   {character?.elementType && (
-                    <span className="absolute -bottom-1 -right-1 rounded-full bg-surface p-0.5 ring-1 ring-edge">
+                    <span className={`absolute -bottom-1 -right-1 rounded-full bg-surface p-0.5 ring-1 ring-edge${assumed ? ' opacity-60' : ''}`}>
                       <ElementIcon element={character.elementType} className="h-3.5 w-3.5" sizes="14px" />
                     </span>
                   )}
+                  <HoverLabel text={hint} />
                 </Link>
               </li>
             );
@@ -508,7 +516,7 @@ async function AnytimePile({
   const t = await getTranslations('plan');
 
   return (
-    <details className="group card">
+    <details className="group/fold card">
       <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-xs">
         {/* The same fold mark as "más filtros": a line that opens says so. */}
         <FoldMark />

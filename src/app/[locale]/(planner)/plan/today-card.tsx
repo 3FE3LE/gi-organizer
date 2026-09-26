@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 
 import { GameIcon } from '@/components/game-icon';
+import { HoverLabel } from '@/components/hint';
 import { Skeleton } from '@/components/skeleton';
 import { buttonVariants } from '@/components/ui/button';
 import type { Catalog } from '@/lib/data/catalog';
@@ -127,8 +128,7 @@ async function TodayBody({
                   <li key={entry.characterId}>
                     <Link
                       href={`/${locale}/build/${entry.characterId}`}
-                      title={character?.name}
-                      className="relative block rounded-full ring-2 ring-surface transition-transform hover:z-10 hover:-translate-y-0.5"
+                      className="group relative block rounded-full ring-2 ring-surface transition-transform hover:z-10 hover:-translate-y-0.5 focus-visible:z-10"
                     >
                       <GameIcon
                         filename={character?.icon}
@@ -137,6 +137,10 @@ async function TodayBody({
                         className="h-9 w-9 rounded-full bg-surface-2"
                         sizes="36px"
                       />
+                      {/* A face is a link, so its name is the CSS label — see
+                          `components/hint.tsx`. The picture's `alt` stays the
+                          link's name. */}
+                      {character?.name && <HoverLabel text={character.name} />}
                     </Link>
                   </li>
                 );

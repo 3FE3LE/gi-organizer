@@ -57,7 +57,7 @@ export async function UpgradeCostPanel({
           {cost.rows.map((row) => (
             <li key={row.key}>
               {row.tiers.length > 0 ? (
-                <details className="card group">
+                <details className="card group/fold">
                   <summary className="flex cursor-pointer list-none items-center gap-3 px-3 py-2">
                     <FoldMark className="-mr-1" />
                     <Line row={row} t={t} number={number} expandable />
@@ -123,7 +123,7 @@ function Line({
           {/* The marker the tier list is behind, since `list-none` took the
               browser's own away. */}
           {expandable && (
-            <span className="ml-1 text-muted transition-transform group-open:hidden">
+            <span className="ml-1 text-muted transition-transform group-open/fold:hidden">
               {t('costTiers', { count: row.tiers.length })}
             </span>
           )}

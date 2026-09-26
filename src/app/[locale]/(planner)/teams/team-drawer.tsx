@@ -23,6 +23,7 @@ import Link from 'next/link';
 import { startTransition, useOptimistic, useState } from 'react';
 
 import { AssetImage } from '@/components/asset-image';
+import { Hint } from '@/components/hint';
 import { buttonVariants } from '@/components/ui/button';
 import { StatusIcon } from '@/components/status-icon';
 import {
@@ -233,24 +234,25 @@ function SortableTeam({
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={`relative flex items-stretch gap-1 ${isDragging ? 'z-10 opacity-90' : ''}`}
     >
-      <button
-        ref={setActivatorNodeRef}
-        type="button"
-        {...attributes}
-        {...listeners}
-        onKeyDown={(event) => {
-          if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
-          event.preventDefault();
-          onStep(event.key === 'ArrowUp' ? -1 : 1);
-        }}
-        aria-keyshortcuts="ArrowUp ArrowDown"
-        data-base-ui-swipe-ignore=""
-        aria-label={t('dragHandle', { name: team.name })}
-        title={t('dragHandle', { name: team.name })}
-        className={`${buttonVariants({ variant: 'ghost', size: 'icon-sm' })} h-auto shrink-0 cursor-grab touch-none text-muted active:cursor-grabbing`}
-      >
-        <GripVertical size={14} aria-hidden />
-      </button>
+      <Hint text={t('dragHandle', { name: team.name })}>
+        <button
+          ref={setActivatorNodeRef}
+          type="button"
+          {...attributes}
+          {...listeners}
+          onKeyDown={(event) => {
+            if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+            event.preventDefault();
+            onStep(event.key === 'ArrowUp' ? -1 : 1);
+          }}
+          aria-keyshortcuts="ArrowUp ArrowDown"
+          data-base-ui-swipe-ignore=""
+          aria-label={t('dragHandle', { name: team.name })}
+          className={`${buttonVariants({ variant: 'ghost', size: 'icon-sm' })} h-auto shrink-0 cursor-grab touch-none text-muted active:cursor-grabbing`}
+        >
+          <GripVertical size={14} aria-hidden />
+        </button>
+      </Hint>
       <Link
         href={`/${locale}/teams?team=${team.id}`}
         onClick={onPick}

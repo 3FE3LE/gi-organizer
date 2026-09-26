@@ -6,10 +6,12 @@ import { ChevronRight } from 'lucide-react';
  * app — it was seven marks before, from a rotating plus to a hand-drawn arrow.
  *
  * Inside a `<details>` it follows the element's own `open` through the group
- * named here, so it needs no state; a fold driven by React passes `open`.
+ * named here, so it needs no state; a fold driven by React passes `open`. The
+ * plain fold is `group/fold`, not a bare `group`: a bare one would also light
+ * every hover label inside the fold whenever the pointer is anywhere on it.
  */
 const GROUPS = {
-  details: 'group-open:rotate-90',
+  details: 'group-open/fold:rotate-90',
   legend: 'group-open/legend:rotate-90',
   missing: 'group-open/missing:rotate-90',
 } as const;

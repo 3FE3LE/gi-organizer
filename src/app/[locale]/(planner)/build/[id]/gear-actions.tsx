@@ -10,6 +10,7 @@ import { AssetImage } from '@/components/asset-image';
 import { Collapse } from '@/components/collapse';
 import { EmptyArtifactSlot } from '@/components/empty-artifact-slot';
 import { FitIcons } from '@/components/fit-icons';
+import { Hint } from '@/components/hint';
 import { OwnedArtifactCardView } from '@/components/owned-artifact-card-view';
 import { SetStripView } from '@/components/set-strip-view';
 import { StatIcon } from '@/components/stat-icon';
@@ -511,15 +512,16 @@ function SlotDialog({
       </div>
 
       {scrolled && (
-        <button
-          type="button"
-          onClick={() => listRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
-          title={t('backToTop')}
-          className="absolute bottom-3 right-3 flex h-9 w-9 items-center justify-center rounded-full border border-edge-strong bg-surface/90 text-text shadow-lg backdrop-blur hover:border-accent hover:text-accent"
-        >
-          <ArrowUp size={16} aria-hidden />
-          <span className="sr-only">{t('backToTop')}</span>
-        </button>
+        <Hint text={t('backToTop')} side="left">
+          <button
+            type="button"
+            onClick={() => listRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="absolute bottom-3 right-3 flex h-9 w-9 items-center justify-center rounded-full border border-edge-strong bg-surface/90 text-text shadow-lg backdrop-blur hover:border-accent hover:text-accent"
+          >
+            <ArrowUp size={16} aria-hidden />
+            <span className="sr-only">{t('backToTop')}</span>
+          </button>
+        </Hint>
       )}
       </div>
     </div>
@@ -540,11 +542,10 @@ function FilterButton({
   title?: string;
   children: React.ReactNode;
 }) {
-  return (
+  const button = (
     <button
       type="button"
       aria-pressed={selected}
-      title={title}
       onClick={onClick}
       className={`flex min-h-8 items-center gap-1 rounded-lg border px-2.5 text-xs transition-colors ${
         selected ? 'border-transparent bg-accent font-medium text-on-accent' : 'border-edge text-muted hover:border-edge-strong hover:text-text'
@@ -553,4 +554,6 @@ function FilterButton({
       {children}
     </button>
   );
+
+  return title ? <Hint text={title}>{button}</Hint> : button;
 }

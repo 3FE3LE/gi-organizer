@@ -6,6 +6,7 @@ import { useTransition } from 'react';
 import { useQueryStates } from 'nuqs';
 
 import { FieldSelect } from '@/components/field-select';
+import { Hint } from '@/components/hint';
 import { GROUP_LABEL } from '@/components/segmented-links';
 import { Slider } from '@/components/ui/slider';
 
@@ -93,20 +94,21 @@ export function FilterInputs({
               triggerClassName="px-2 py-1 text-xs"
             />
           </span>
-          <button
-            type="button"
-            aria-pressed={filters.perfect}
-            title={t('perfectSubstatToggle')}
-            onClick={() => setFilters({ perfect: !filters.perfect })}
-            className={`flex h-[1.875rem] shrink-0 items-center gap-1 rounded-md border px-2 text-2xs transition-colors ${
-              filters.perfect
-                ? 'border-transparent bg-accent text-on-accent'
-                : 'border-edge text-muted hover:border-edge-strong hover:text-text'
-            }`}
-          >
-            <Sparkles size={11} aria-hidden />
-            <span className="sr-only">{t('perfectSubstatToggle')}</span>
-          </button>
+          <Hint text={t('perfectSubstatToggle')}>
+            <button
+              type="button"
+              aria-pressed={filters.perfect}
+              onClick={() => setFilters({ perfect: !filters.perfect })}
+              className={`flex h-[1.875rem] shrink-0 items-center gap-1 rounded-md border px-2 text-2xs transition-colors ${
+                filters.perfect
+                  ? 'border-transparent bg-accent text-on-accent'
+                  : 'border-edge text-muted hover:border-edge-strong hover:text-text'
+              }`}
+            >
+              <Sparkles size={11} aria-hidden />
+              <span className="sr-only">{t('perfectSubstatToggle')}</span>
+            </button>
+          </Hint>
         </span>
       </Field>
 

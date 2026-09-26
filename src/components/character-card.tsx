@@ -2,6 +2,7 @@ import { EyeOff } from 'lucide-react';
 
 import { ElementIcon } from '@/components/element-icon';
 import { FoldMark } from '@/components/fold-mark';
+import { Hint } from '@/components/hint';
 import { elementColor } from '@/lib/data/elements';
 
 /**
@@ -39,37 +40,61 @@ export function CardWash({ elementType, rarity }: { elementType: string; rarity:
  * The one mark a card carries in its corner: out of the plan, or a talent
  * book they still need is in rotation today. Out of the plan wins — the plan
  * farms nothing for them.
+ *
+ * Its explanation depends on what the card is. A card that is itself a link —
+ * the roster's — cannot hold a second thing to focus, and a tooltip inside it
+ * would cost the link its page transition (see `components/hint.tsx`), so
+ * there the mark keeps a plain `title` and says itself to a screen reader
+ * through its hidden text. A card that is not a link — the team board's —
+ * passes `focusable`, and the mark becomes a stop on the keyboard with a real
+ * hint.
  */
 export function CardMark({
   dismissed,
   booksToday,
   labels,
+  focusable = false,
   className = 'right-2 top-2',
 }: {
   dismissed: boolean;
   booksToday: boolean;
   labels: { dismissed: string; today: string; todayTitle: string };
+  /** Whether the mark can take focus and a hint: only on a card that is not a link. */
+  focusable?: boolean;
   /** Where in the corner, for a card that keeps something else there. */
   className?: string;
 }) {
+  const explain = (text: string, mark: React.ReactElement) =>
+    focusable ? <Hint text={text}>{mark}</Hint> : mark;
+  const ring = focusable
+    ? ' focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
+    : '';
+
   if (dismissed) {
-    return (
-      <span title={labels.dismissed} className={`absolute z-10 text-muted ${className}`}>
+    return explain(
+      labels.dismissed,
+      <span
+        title={focusable ? undefined : labels.dismissed}
+        tabIndex={focusable ? 0 : undefined}
+        className={`absolute z-10 rounded-sm text-muted ${className}${ring}`}
+      >
         <EyeOff size={13} aria-hidden />
         <span className="sr-only">{labels.dismissed}</span>
-      </span>
+      </span>,
     );
   }
   if (!booksToday) return null;
 
-  return (
+  return explain(
+    labels.todayTitle,
     <span
-      title={labels.todayTitle}
-      className={`absolute z-10 rounded-full border border-accent/50 bg-surface px-1.5 font-mono text-2xs leading-4 text-accent ${className}`}
+      title={focusable ? undefined : labels.todayTitle}
+      tabIndex={focusable ? 0 : undefined}
+      className={`absolute z-10 rounded-full border border-accent/50 bg-surface px-1.5 font-mono text-2xs leading-4 text-accent ${className}${ring}`}
     >
       {labels.today}
       <span className="sr-only">: {labels.todayTitle}</span>
-    </span>
+    </span>,
   );
 }
 

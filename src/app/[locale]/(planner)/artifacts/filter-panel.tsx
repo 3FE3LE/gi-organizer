@@ -131,7 +131,7 @@ export async function FilterPanel({
           the control that produced it. */}
       <details
         open={advanced > 0}
-        className="group border-t border-edge"
+        className="group/fold border-t border-edge"
       >
         <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-xs text-text transition-colors hover:bg-surface-2/60">
           <SlidersHorizontal size={14} aria-hidden className="text-muted" />

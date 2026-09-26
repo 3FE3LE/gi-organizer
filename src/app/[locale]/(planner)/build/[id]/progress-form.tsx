@@ -17,6 +17,7 @@ import {
 
 import { Button, buttonVariants } from '@/components/ui/button';
 import { FieldSelect } from '@/components/field-select';
+import { Hint } from '@/components/hint';
 import { Slider } from '@/components/ui/slider';
 import { ActionStatus } from '@/components/action-status';
 import { SegmentButton, SegmentStrip } from '@/components/segmented-links';
@@ -690,47 +691,50 @@ function ProgressForm({
           left it hanging off the edge. */}
       <div data-sticky-save className="glass sticky bottom-[var(--section-nav-height)] -mx-4 flex items-center gap-2 border-t px-4 py-3 sm:static sm:mx-0 sm:rounded-card sm:border sm:px-4">
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          <Button
-            variant="default"
-            type="submit"
-            size="icon"
-            aria-label={form.formState.isSubmitting ? t('saving') : t('saveGoal')}
-            title={form.formState.isSubmitting ? t('saving') : t('saveGoal')}
-            disabled={form.formState.isSubmitting || busy !== null}
-          >
-            <Save size={16} />
-          </Button>
+          <Hint text={form.formState.isSubmitting ? t('saving') : t('saveGoal')}>
+            <Button
+              variant="default"
+              type="submit"
+              size="icon"
+              aria-label={form.formState.isSubmitting ? t('saving') : t('saveGoal')}
+              disabled={form.formState.isSubmitting || busy !== null}
+            >
+              <Save size={16} />
+            </Button>
+          </Hint>
 
           {values.buildId && (
-            <button
-              type="button"
-              onClick={fillFromRole}
-              disabled={form.formState.isSubmitting || busy !== null}
-              aria-label={busy === 'template' ? t('filling') : t('fillFromRole')}
-              title={t('fillFromRoleTitle')}
-              className={buttonVariants({ variant: 'outline', className: 'shrink-0' })}
-            >
-              <Sparkles size={14} />
-              <span className="max-sm:hidden">
-                {busy === 'template' ? t('filling') : t('fillFromRole')}
-              </span>
-            </button>
+            <Hint text={t('fillFromRoleTitle')}>
+              <button
+                type="button"
+                onClick={fillFromRole}
+                disabled={form.formState.isSubmitting || busy !== null}
+                aria-label={busy === 'template' ? t('filling') : t('fillFromRole')}
+                className={buttonVariants({ variant: 'outline', className: 'shrink-0' })}
+              >
+                <Sparkles size={14} />
+                <span className="max-sm:hidden">
+                  {busy === 'template' ? t('filling') : t('fillFromRole')}
+                </span>
+              </button>
+            </Hint>
           )}
 
           <ActionStatus state={state} className="min-w-0 truncate font-mono text-xs" />
         </div>
 
         {values.buildId && (
-          <button
-            type="button"
-            onClick={remove}
-            disabled={form.formState.isSubmitting || busy !== null}
-            aria-label={t('deleteGoalAria')}
-            title={t('deleteGoalAria')}
-            className={buttonVariants({ variant: 'destructive', size: 'icon', className: 'shrink-0' })}
-          >
-            <Trash2 size={14} />
-          </button>
+          <Hint text={t('deleteGoalAria')}>
+            <button
+              type="button"
+              onClick={remove}
+              disabled={form.formState.isSubmitting || busy !== null}
+              aria-label={t('deleteGoalAria')}
+              className={buttonVariants({ variant: 'destructive', size: 'icon', className: 'shrink-0' })}
+            >
+              <Trash2 size={14} />
+            </button>
+          </Hint>
         )}
       </div>
     </form>

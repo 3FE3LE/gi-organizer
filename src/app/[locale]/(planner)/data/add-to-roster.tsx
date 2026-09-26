@@ -6,6 +6,7 @@ import { useActionState, useState } from 'react';
 import { ActionStatus } from '@/components/action-status';
 import { AssetImage } from '@/components/asset-image';
 import { ElementIcon } from '@/components/element-icon';
+import { Hint } from '@/components/hint';
 import { Button } from '@/components/ui/button';
 
 import type { ActionState } from './import-actions';
@@ -135,11 +136,10 @@ function Option({
   title?: string;
   children: React.ReactNode;
 }) {
-  return (
+  const button = (
     <button
       type="button"
       aria-pressed={selected}
-      title={title}
       onClick={onClick}
       className={`flex min-h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs transition-colors ${
         selected ? 'border-transparent bg-accent font-medium text-on-accent' : 'border-edge text-muted hover:border-edge-strong hover:text-text'
@@ -148,6 +148,8 @@ function Option({
       {children}
     </button>
   );
+
+  return title ? <Hint text={title}>{button}</Hint> : button;
 }
 
 function Number({
