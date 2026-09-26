@@ -333,7 +333,11 @@
     "stepTeamsTitle": "Build teams",
     "stepTeamsBody": "To look only at what one team needs.",
     "upgrades": {
-      "pendingSummary": "{total} pending · {actionable} doable now · {fixes} close a goal",
+      "pendingTile": "pending",
+      "actionableTile": "doable now",
+      "goalsTile": "close a goal",
+      "queueHeading": "Queue",
+      "wornBy": "Worn by {name} today",
       "chainHeading": "Upgrade chain",
       "movementsCount": "{count, plural, one {# move} other {# moves}} · +{gain} total{more}",
       "moreSuffix": " · there's more",
