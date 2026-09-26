@@ -82,7 +82,14 @@ export async function upgradeCostFor(context: BuildContext): Promise<UpgradeCost
   const to: Progress = {
     level: loadout?.target.level ?? ASSUMED_TARGET.level,
     ascension: loadout?.target.ascension ?? ASSUMED_TARGET.ascension,
-    talents: loadout?.target.talents ?? ASSUMED_TARGET.talents,
+    // An assumed talent is never below where the character already is: the
+    // assumption leaves a normal attack at 1, and one already at 7 is not
+    // headed back down. A written target is the player's, and stands.
+    talents: loadout?.target.talents ?? {
+      auto: Math.max(from.talents.auto, ASSUMED_TARGET.talents.auto),
+      skill: Math.max(from.talents.skill, ASSUMED_TARGET.talents.skill),
+      burst: Math.max(from.talents.burst, ASSUMED_TARGET.talents.burst),
+    },
   };
 
   const source: DemandSource = {
@@ -159,8 +166,8 @@ export async function upgradeCostFor(context: BuildContext): Promise<UpgradeCost
   });
 
   /*
-   * Ordered by the game's own `sortRank`, descending: crown, books, gems, boss
-   * drops, mob drops, the local specialty. It is the order the bag itself uses,
+   * Ordered by `sortRank`, descending: crown, books, gems, boss drops, mob
+   * drops, the local specialty. It is the order the bag itself uses,
    * so a row is where the player's eye already expects it — and it is stable,
    * which sorting by "what is most missing" is not.
    */
@@ -180,17 +187,16 @@ function rankOf(catalog: Catalog, row: CostRow) {
  * A gem is four items in the data and one thing to farm: three fragments craft
  * into the tier above, so "how much jade do I still need" is a question about
  * the family, not about the row the bag happens to be showing. The game groups
- * them with `sortRank` — every tier of a family shares one — but a rank is not
- * unique on its own: a character's ascension boss drop and their weekly boss
- * drop both rank `11101`, and for eight characters the two ids are even
- * adjacent, so no rule over ids alone tells them apart.
+ * them with `sortRank` — every tier of a family shares one, the id of its
+ * lowest tier, as the data build derives it from the crafting recipes (see
+ * `sortRankOf` in `scripts/build-data.mts`).
  *
- * What does tell them apart is which table they are billed from. The two never
- * appear in the same one: the ascension drop is only in `costs`, the weekly
- * only in `talentCosts`. So families are grouped inside each table, where a
- * rank *is* unique (checked across the whole dataset), and then merged across
+ * Families are still grouped inside each table first and then merged across
  * tables when they share an id — which is exactly the mob drop, the one family
- * that really does pay for both.
+ * that really does pay for both. The game's own rank gave a character's
+ * ascension boss drop and their weekly boss drop the same number, and the
+ * table was what told them apart; the derived rank does not collide, and the
+ * grouping keeps working either way.
  */
 export function familiesOf(
   catalog: Catalog,
