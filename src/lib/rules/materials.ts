@@ -28,12 +28,17 @@ export type Progress = {
  * from either screen which one was lying.
  *
  * Talents stop at nine because ten costs a Crown of Insight, about one a
- * patch: a demand no amount of farming moves.
+ * patch: a demand no amount of farming moves. The normal attack is left
+ * where it starts: most characters are played for their skill and burst, and
+ * assuming it went to nine as well asked for a third of the talent books in
+ * the plan for a talent few players level — and drew every card on the roster
+ * as unfinished over it. A character whose attack matters gets a written
+ * target, and that target is what counts.
  */
 export const ASSUMED_TARGET: Progress = {
   level: 90,
   ascension: 6,
-  talents: { auto: 9, skill: 9, burst: 9 },
+  talents: { auto: 1, skill: 9, burst: 9 },
 };
 
 export type DemandSource = {

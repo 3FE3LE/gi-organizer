@@ -5,7 +5,7 @@ import { cardProgress, talentBookDays } from './progress';
 
 const entry = {
   level: 80,
-  talent: { auto: 6, skill: 9, burst: 9 },
+  talent: { auto: 1, skill: 8, burst: 9 },
   target: { level: null, talents: null },
   dismissedAt: null,
 };
@@ -20,7 +20,7 @@ test('with no target written, the ring and the books read against the cap', () =
 
 test('a written target is what the ring fills toward, and it stops at full', () => {
   const done = cardProgress(
-    { ...entry, target: { level: 70, talents: { auto: 6, skill: 8, burst: 8 } } },
+    { ...entry, target: { level: 70, talents: { auto: 1, skill: 8, burst: 8 } } },
     new Set(['Thursday']),
     'Thursday',
   );
@@ -55,4 +55,11 @@ test('each talent is judged on its own, so an attack left at its target reads as
 
   assert.deepEqual(progress.talentsMet, { auto: true, skill: false, burst: true });
   assert.equal(progress.talentsShort, true);
+});
+
+test('with no target written, an attack left at 1 is not what is missing', () => {
+  const progress = cardProgress({ ...entry, talent: { auto: 1, skill: 9, burst: 9 } }, new Set(['Thursday']), 'Thursday');
+
+  assert.deepEqual(progress.talentsMet, { auto: true, skill: true, burst: true });
+  assert.equal(progress.booksToday, false);
 });
