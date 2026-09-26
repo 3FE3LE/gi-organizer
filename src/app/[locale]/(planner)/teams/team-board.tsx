@@ -21,6 +21,7 @@ import { startTransition, useActionState, useOptimistic, useState } from 'react'
 import { Button, buttonVariants } from '@/components/ui/button';
 import { ActionStatus } from '@/components/action-status';
 import { AssetImage } from '@/components/asset-image';
+import { CardMark, CardWash, CharacterPortrait, LevelTalents } from '@/components/character-card';
 import { Hint } from '@/components/hint';
 import { StatIcon } from '@/components/stat-icon';
 import { FieldSelect } from '@/components/field-select';
@@ -61,6 +62,24 @@ export type SlotView = {
   /** Goals of the resolved build, already evaluated. */
   goals: { label: string; status: string; actual: number; min: number }[];
   buildHref: string;
+  /** What the roster card shows of this character, for the same portrait here. */
+  card: {
+    rarity: number;
+    elementType: string;
+    marks: { dismissed: string; today: string; todayTitle: string };
+    /** Null for somebody not on the roster, which a team slot cannot really hold. */
+    progress: {
+      level: number;
+      constellation: number;
+      talent: { auto: number; skill: number; burst: number };
+      talentsMet: { auto: boolean; skill: boolean; burst: boolean } | null;
+      ring: { value: number; title: string } | null;
+      booksToday: boolean;
+      dismissed: boolean;
+      levelLabel: string;
+      talentsLabel: string;
+    } | null;
+  };
   declarations: Record<string, string>;
   /** Declarations this slot's gear actually needs, from the active rules. */
   needed: { field: string; options: { value: string; label: string }[] }[];
@@ -638,8 +657,25 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
     setDeclarationAction, { status: 'idle' },
   );
 
+  const { card } = slot;
+  const progress = card.progress;
+
   return (
-    <div className="relative flex flex-col items-center gap-3 bg-surface px-3 pb-3 pt-4">
+    // The roster's card, with the team's own controls and build marks on it:
+    // one drawing of a character across both pages. `group` for the washes'
+    // hover, `isolate` so they stay behind the controls.
+    <div className="group relative isolate flex flex-col items-center gap-3 overflow-hidden bg-surface px-3 pb-3 pt-4">
+      <span aria-hidden className="absolute inset-0 -z-10">
+        <CardWash elementType={card.elementType} rarity={card.rarity} />
+      </span>
+      {/* Top left: the drag handle is at the slot's own corner above, and the
+          remove button holds the right. */}
+      <CardMark
+        dismissed={progress?.dismissed ?? false}
+        booksToday={progress?.booksToday ?? false}
+        labels={card.marks}
+        className="left-2 top-9"
+      />
       <form action={drop} className="absolute right-1.5 top-1.5">
         <input type="hidden" name="teamId" value={teamId} />
         <input type="hidden" name="characterId" value={slot.characterId} />
@@ -663,19 +699,30 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
         <RolesMenu teamId={teamId} characterId={slot.characterId} roles={slot.roles} />
       </div>
 
-      <Link href={slot.buildHref} aria-hidden tabIndex={-1} className="rounded-full">
-        <span
-          className="block rounded-full p-0.5"
-          style={{ background: slot.elementColor }}
-        >
+      <CharacterPortrait
+        elementType={card.elementType}
+        elementText={slot.element}
+        constellation={progress?.constellation ?? null}
+        ring={progress?.ring ?? null}
+      >
+        <Link href={slot.buildHref} aria-hidden tabIndex={-1} className="block rounded-full">
           <AssetImage
             src={slot.icon}
             kind="avatar"
-            className="block h-20 w-20 rounded-full bg-icon-bed"
+            className="block h-20 w-20 rounded-full border border-edge bg-surface-2"
             sizes="80px"
           />
-        </span>
-      </Link>
+        </Link>
+      </CharacterPortrait>
+
+      {progress && (
+        <LevelTalents
+          level={progress.level}
+          talent={progress.talent}
+          met={progress.talentsMet}
+          labels={{ level: progress.levelLabel, talents: progress.talentsLabel }}
+        />
+      )}
 
       <ul className="flex flex-wrap items-start justify-center gap-1.5" aria-label={t('buildMarksLabel')}>
         <li>

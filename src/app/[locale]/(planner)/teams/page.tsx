@@ -20,6 +20,10 @@ import { synergyOf, type SynergyMember } from '@/lib/rules/synergy';
 import { describe, type Naming } from '@/lib/rules/diagnostics';
 import { targetKey } from '@/lib/rules/types';
 import { getAccountCatalog } from '@/lib/player/traveler';
+import { readRegion } from '@/lib/player/region';
+import { cardProgress, talentBookDays } from '@/lib/rules/card-progress';
+import { gameWeekday } from '@/lib/rules/game-day';
+import { CardLegend } from '@/components/character-card';
 
 import { TeamBoard, type RosterEntry, type SlotView, type TeamView } from './team-board';
 import { type SynergyView } from './synergy-panel';
@@ -50,6 +54,55 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
   const slotLabel = await getTranslations('common.slot');
   const roleLabelT = await getTranslations('common.role');
   const mechanicLabelT = await getTranslations('common.mechanic');
+  const tCharacters = await getTranslations('characters');
+
+  // Where each member is headed, read the way the roster reads it — the same
+  // ring, the same talent colours, the same "today" — so a character looks
+  // the same on both pages. See `@/components/character-card`.
+  const [rosterRows, region] = await Promise.all([
+    readRoster(db, await getProfileId(db)),
+    readRegion(db),
+  ]);
+  const rosterById = new Map(rosterRows.map((entry) => [entry.characterId, entry]));
+  const weekday = gameWeekday(new Date(), region);
+  const markLabels = {
+    dismissed: tCharacters('dismissedTitle'),
+    today: tCharacters('booksToday'),
+    todayTitle: tCharacters('booksTodayTitle'),
+  };
+  const cardOf = (characterId: number): SlotView['card'] => {
+    const character = catalog.characters.get(characterId);
+    const entry = rosterById.get(characterId);
+    const base = {
+      rarity: character?.rarity ?? 4,
+      elementType: character?.elementType ?? 'ELEMENT_NONE',
+      marks: markLabels,
+    };
+    if (!entry) return { ...base, progress: null };
+
+    const ahead = cardProgress(
+      entry,
+      talentBookDays(character?.talentCosts ?? {}, (id) => catalog.materials.get(id)?.days),
+      weekday,
+    );
+    return {
+      ...base,
+      progress: {
+        level: entry.level,
+        constellation: entry.constellation,
+        talent: entry.talent,
+        talentsMet: ahead.talentsMet,
+        ring: ahead.level === null ? null : {
+          value: ahead.level,
+          title: tCharacters('levelTitle', { level: entry.level, target: entry.target.level ?? 90 }),
+        },
+        booksToday: ahead.booksToday,
+        dismissed: entry.dismissedAt !== null,
+        levelLabel: tCharacters('levelShort', { level: entry.level }),
+        talentsLabel: tCharacters('talentsTitle', entry.talent),
+      },
+    };
+  };
 
   // The draft has no name of its own; every place that shows one reads it
   // from here. See `isDraft`.
@@ -385,6 +438,7 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
         mainStats: detail.mainStats,
         goals: detail.goals,
         buildHref: `/${locale}/build/${slot.characterId}`,
+        card: cardOf(slot.characterId),
         roles: slot.roles,
         declarations: slot.declarations,
         needed,
@@ -413,7 +467,7 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
   // Grouped by element in the picker, so the order is the element's first and
   // the name's second: the same order the game's own party screen filters by.
   const elementOrder = Object.keys(ELEMENT_COLORS);
-  const owned = (await readRoster(db, await getProfileId(db)))
+  const owned = rosterRows
     .map((entry) => catalog.characters.get(entry.characterId))
     .filter((character) => character !== undefined)
     .sort((a, b) =>
@@ -455,6 +509,20 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
             views.map((team) => (
               <TeamBoard key={team.id} team={team} roster={roster} objectives={objectives} />
             ))
+          )}
+
+          {views.length > 0 && (
+            <CardLegend
+              className="-mt-3 sm:ml-auto"
+              labels={{
+                summary: tCharacters('legendSummary'),
+                ring: tCharacters('legendRing'),
+                talents: tCharacters('legendTalents'),
+                today: tCharacters('legendToday'),
+                todayText: tCharacters('booksToday'),
+                dismissed: tCharacters('legendDismissed'),
+              }}
+            />
           )}
 
           {selectedDiagnostics.length > 0 && (

@@ -25,8 +25,10 @@ const PAD = 8;
  * or leave a gap.
  *
  * Docking changes nothing about the dock's geometry. The padding it docks with
- * is always there, cancelled by an equal negative margin while it sits in the
- * page, and the glass, the edge and the shadow are one layer behind the
+ * is always there — above the controls cancelled by an equal negative margin,
+ * below them left as a little air, since a negative margin there would cancel
+ * the gap the page's own spacing puts under the dock — and the glass, the edge
+ * and the shadow are one layer behind the
  * controls that fades in. The padding used to animate in from nothing and the
  * edge to appear as a new pixel of border, both on the frame the dock stuck —
  * so a slow scroll saw the controls jump down and the bar jolt as it took
@@ -102,7 +104,7 @@ export function StickyDock({ children }: { children: React.ReactNode }) {
         ref={dock}
         data-stuck={stuck || undefined}
         style={{ top }}
-        className={`group/dock sticky z-30 -mx-4 -my-2 px-4 py-2 sm:-mx-6 sm:px-6
+        className={`group/dock sticky z-30 -mx-4 -mt-2 px-4 py-2 sm:-mx-6 sm:px-6
           before:pointer-events-none before:absolute before:inset-0 before:-z-10 before:border-b before:border-edge before:bg-ink/85 before:opacity-0 before:shadow-[var(--shadow-raised)] before:backdrop-blur-md before:transition-opacity before:duration-200
           data-[stuck]:max-h-[70svh] data-[stuck]:overflow-y-auto data-[stuck]:before:opacity-100`}
       >

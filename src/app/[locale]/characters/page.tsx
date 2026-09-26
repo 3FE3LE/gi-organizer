@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ViewTransition } from 'react';
 
+import { CardLegend, CardMark, CardWash, CharacterPortrait, LevelTalents } from '@/components/character-card';
 import { DockFold } from '@/components/dock-fold';
 import { ElementIcon } from '@/components/element-icon';
 import { GameIcon } from '@/components/game-icon';
@@ -10,8 +11,7 @@ import { PrefetchLink } from '@/components/prefetch-link';
 import { SectionTabs } from '@/components/section-tabs';
 import { StickyDock } from '@/components/sticky-dock';
 import { Segment, Segments } from '@/components/segmented-links';
-import { elementColor } from '@/lib/data/elements';
-import { CakeSlice, ChevronRight, EyeOff, X } from 'lucide-react';
+import { CakeSlice, ChevronRight, X } from 'lucide-react';
 
 import { HoverLabel } from '@/components/hint';
 import {
@@ -46,7 +46,7 @@ import {
   type RosterFilters,
 } from './filters';
 import { narrowRoster } from './narrow';
-import { cardProgress, talentBookDays, type CardProgress } from './progress';
+import { cardProgress, talentBookDays, type CardProgress } from '@/lib/rules/card-progress';
 import { SearchBox } from './search-box';
 
 /**
@@ -219,7 +219,14 @@ export default async function CharactersPage({
                 </Link>
               </p>
             ) : <span />}
-            <CardLegend t={t} />
+            <CardLegend labels={{
+              summary: t('legendSummary'),
+              ring: t('legendRing'),
+              talents: t('legendTalents'),
+              today: t('legendToday'),
+              todayText: t('booksToday'),
+              dismissed: t('legendDismissed'),
+            }} />
           </div>
           {grouping === 'owned' && mine.length === 0 && !narrowed && (
             <p className="text-sm text-muted">{t('empty')}</p>
@@ -701,6 +708,12 @@ function Gallery({
 
   if (compact) return <CompactGallery locale={locale} characters={characters} />;
 
+  const markLabels = {
+    dismissed: t('dismissedTitle'),
+    today: t('booksToday'),
+    todayTitle: t('booksTodayTitle'),
+  };
+
   return (
     // Three to a row on a phone, where two left a column of cards a screen
     // tall per six characters; the portrait still fits a third of the width.
@@ -708,7 +721,6 @@ function Gallery({
       {characters.map((character, index) => {
         const entry = roster.get(character.id) ?? null;
         const mine = entry !== null;
-        const element = elementColor(character.elementType);
         const ahead = progress.get(character.id);
 
         return (
@@ -728,59 +740,22 @@ function Gallery({
                 mine ? '' : 'opacity-70'
               }`}
             >
-              {/* The element, as a wash behind the portrait rather than a
-                  stripe on top of it: the same information, and it survives
-                  being looked at for an hour. */}
-              <span
-                aria-hidden
-                className="pointer-events-none absolute inset-x-0 top-0 h-24 opacity-25 transition-opacity duration-300 group-hover:opacity-45"
-                style={{ background: `radial-gradient(60% 100% at 50% 0%, ${element}, transparent 70%)` }}
+              <CardWash elementType={character.elementType} rarity={character.rarity} />
+              <CardMark
+                dismissed={Boolean(entry?.dismissedAt)}
+                booksToday={Boolean(ahead?.booksToday)}
+                labels={markLabels}
               />
-
-              {/* The rarity, as the footer the game's own cards carry: gold
-                  or violet rising from the bottom edge, under the name. The
-                  element keeps the top, so the two never mix. */}
-              <span
-                aria-hidden
-                className="pointer-events-none absolute inset-x-0 bottom-0 h-16 opacity-35 transition-opacity duration-300 group-hover:opacity-55"
-                style={{
-                  background: `linear-gradient(to top, var(${
-                    character.rarity >= 5 ? '--rarity-5' : '--rarity-4'
-                  }), transparent)`,
-                }}
-              />
-
-              {/* The two marks a card can carry, in its corner: out of the plan,
-                  or a talent book they still need is in rotation today. */}
-              {entry?.dismissedAt ? (
-                <span
-                  title={t('dismissedTitle')}
-                  className="absolute right-2 top-2 z-10 text-muted"
-                >
-                  <EyeOff size={13} aria-hidden />
-                  <span className="sr-only">{t('dismissedTitle')}</span>
-                </span>
-              ) : ahead?.booksToday ? (
-                <span
-                  title={t('booksTodayTitle')}
-                  className="absolute right-2 top-2 z-10 rounded-full border border-accent/50 bg-surface px-1.5 font-mono text-2xs leading-4 text-accent"
-                >
-                  {t('booksToday')}
-                  <span className="sr-only">: {t('booksTodayTitle')}</span>
-                </span>
-              ) : null}
 
               <div className="relative">
-                <div className="relative mx-auto h-20 w-20">
-                  {entry && ahead?.level != null && (
-                    <LevelRing
-                      value={ahead.level}
-                      title={t('levelTitle', {
-                        level: entry.level,
-                        target: entry.target.level ?? 90,
-                      })}
-                    />
-                  )}
+                <CharacterPortrait
+                  elementType={character.elementType}
+                  elementText={character.elementText}
+                  constellation={entry?.constellation ?? null}
+                  ring={entry && ahead?.level != null
+                    ? { value: ahead.level, title: t('levelTitle', { level: entry.level, target: entry.target.level ?? 90 }) }
+                    : null}
+                >
                   {/*
                     * The same avatar becomes the splash on the page this opens.
                     * Naming both ends is all the browser needs to move one
@@ -803,35 +778,21 @@ function Gallery({
                       />
                     </div>
                   </ViewTransition>
-
-                  <ElementBadge element={character.elementType} label={character.elementText} />
-                  {entry && <ConstellationBadge entry={entry} />}
-                </div>
+                </CharacterPortrait>
 
                 <p className={`mt-2.5 truncate text-center text-sm ${mine ? '' : 'text-muted'}`}>
                   {character.name}
                 </p>
                 {/* Yours read as where they are — level and the three talents;
                     the ones you do not have, as when they came out. */}
-                <p className="mt-0.5 truncate whitespace-nowrap text-center font-mono text-2xs text-muted">
+                <p className="mt-0.5 truncate text-center font-mono text-2xs text-muted">
                   {entry ? (
-                    <>
-                      {/* A third of a phone is too narrow for the prefix; the
-                          ring around the portrait already says it is the level. */}
-                      <span className="sm:hidden">{entry.level}</span>
-                      <span className="hidden sm:inline">{t('levelShort', { level: entry.level })}</span>
-                      {' · '}
-                      <span title={t('talentsTitle', entry.talent)} className="tabular">
-                        {(['auto', 'skill', 'burst'] as const).map((talent, at) => (
-                          <span key={talent}>
-                            {at > 0 && '·'}
-                            <span className={ahead?.talentsMet?.[talent] ? 'text-good' : ''}>
-                              {entry.talent[talent]}
-                            </span>
-                          </span>
-                        ))}
-                      </span>
-                    </>
+                    <LevelTalents
+                      level={entry.level}
+                      talent={entry.talent}
+                      met={ahead?.talentsMet ?? null}
+                      labels={{ level: t('levelShort', { level: entry.level }), talents: t('talentsTitle', entry.talent) }}
+                    />
                   ) : (
                     t('versionLine', { version: character.version })
                   )}
@@ -843,106 +804,6 @@ function Gallery({
         );
       })}
     </ul>
-  );
-}
-
-/**
- * What the marks on a card mean, drawn as they appear on it.
- *
- * Each of them is explained on hover, which a phone does not have and which
- * nobody finds without being told to look. Folded, so it costs one line to
- * the player who already knows.
- */
-function CardLegend({ t }: { t: Messages }) {
-  const items = [
-    {
-      key: 'ring',
-      mark: (
-        <svg viewBox="0 0 24 24" aria-hidden className="h-6 w-6 -rotate-90">
-          <circle cx="12" cy="12" r="9.5" fill="none" strokeWidth="2.5" className="stroke-edge" />
-          <circle
-            cx="12" cy="12" r="9.5" fill="none" strokeWidth="2.5" strokeLinecap="round"
-            strokeDasharray={2 * Math.PI * 9.5} strokeDashoffset={2 * Math.PI * 9.5 * 0.3}
-            className="stroke-accent"
-          />
-        </svg>
-      ),
-      text: t('legendRing'),
-    },
-    {
-      key: 'talents',
-      mark: (
-        <span className="font-mono text-2xs text-muted">
-          <span className="text-good">1</span>·6·<span className="text-good">9</span>
-        </span>
-      ),
-      text: t('legendTalents'),
-    },
-    {
-      key: 'today',
-      mark: (
-        <span className="rounded-full border border-accent/50 bg-surface px-1.5 font-mono text-2xs leading-4 text-accent">
-          {t('booksToday')}
-        </span>
-      ),
-      text: t('legendToday'),
-    },
-    {
-      key: 'dismissed',
-      mark: <EyeOff size={14} aria-hidden className="text-muted" />,
-      text: t('legendDismissed'),
-    },
-  ];
-
-  return (
-    <details className="group/legend text-xs sm:max-w-md">
-      <summary className="flex cursor-pointer list-none items-center gap-1 text-muted hover:text-text sm:justify-end">
-        <ChevronRight size={12} aria-hidden className="transition-transform group-open/legend:rotate-90" />
-        {t('legendSummary')}
-      </summary>
-      <ul className="card mt-2 space-y-2 p-3">
-        {items.map((item) => (
-          <li key={item.key} className="flex items-center gap-3">
-            <span className="flex w-20 shrink-0 justify-center">{item.mark}</span>
-            <span className="text-muted">{item.text}</span>
-          </li>
-        ))}
-      </ul>
-    </details>
-  );
-}
-
-/**
- * How far along the level is, as a ring around the portrait.
- *
- * Drawn on the portrait's own rim, where the eye already is, instead of a
- * bar under the name competing with it. Full turns green: that character has
- * reached what the plan wants of them.
- */
-function LevelRing({ value, title }: { value: number; title: string }) {
-  const radius = 41;
-  const length = 2 * Math.PI * radius;
-
-  return (
-    <svg
-      viewBox="0 0 88 88"
-      aria-hidden
-      className="pointer-events-none absolute -inset-1 h-[88px] w-[88px] -rotate-90"
-    >
-      <title>{title}</title>
-      <circle cx="44" cy="44" r={radius} fill="none" strokeWidth="2.5" className="stroke-edge" />
-      <circle
-        cx="44"
-        cy="44"
-        r={radius}
-        fill="none"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeDasharray={length}
-        strokeDashoffset={length * (1 - value)}
-        className={value >= 1 ? 'stroke-good' : 'stroke-accent'}
-      />
-    </svg>
   );
 }
 
@@ -976,77 +837,5 @@ function CompactGallery({ locale, characters }: { locale: string; characters: Ch
         </li>
       ))}
     </ul>
-  );
-}
-
-/** Lower right of the portrait, just outside its 40px radius. */
-const CONSTELLATION_ANGLE = 35;
-/** Upper left, across the portrait from the constellation. */
-const ELEMENT_ANGLE = 215;
-/** Just outside the 40px radius, so the badge overlaps the border, not the face. */
-const RIM = 42;
-
-/**
- * The constellation, on the rim of the portrait.
- *
- * The line under the name used to carry how many artifacts were worn — a
- * number that is five for nearly everyone and says nothing anyone plans
- * around. The level took its place in that line; the constellation is the one
- * number that reads as part of the character rather than of the account, so
- * it sits on the portrait itself, where the game puts it.
- */
-function ConstellationBadge({ entry }: { entry: CharacterBuild }) {
-  return (
-    <RimBadge
-      angle={CONSTELLATION_ANGLE}
-      className={entry.constellation >= 6 ? 'text-accent' : entry.constellation > 0 ? 'text-text' : 'text-muted'}
-    >
-      C{entry.constellation}
-    </RimBadge>
-  );
-}
-
-/**
- * The element's emblem on the rim, for every character, owned or not: it is
- * a fact about who they are, and the one a team is built around.
- */
-function ElementBadge({ element, label }: { element: string; label: string }) {
-  const radians = (ELEMENT_ANGLE * Math.PI) / 180;
-
-  return (
-    <span
-      title={label}
-      className="absolute flex h-6 w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-edge bg-surface shadow-sm"
-      style={{
-        left: `calc(50% + ${(Math.cos(radians) * RIM).toFixed(2)}px)`,
-        top: `calc(50% + ${(Math.sin(radians) * RIM).toFixed(2)}px)`,
-      }}
-    >
-      <ElementIcon element={element} label={label} className="h-4 w-4" />
-    </span>
-  );
-}
-
-function RimBadge({
-  angle,
-  className,
-  children,
-}: {
-  angle: number;
-  className: string;
-  children: React.ReactNode;
-}) {
-  const radians = (angle * Math.PI) / 180;
-
-  return (
-    <span
-      className={`tabular absolute min-w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border border-edge bg-surface px-1 text-center font-mono text-2xs leading-4 shadow-sm ${className}`}
-      style={{
-        left: `calc(50% + ${(Math.cos(radians) * RIM).toFixed(2)}px)`,
-        top: `calc(50% + ${(Math.sin(radians) * RIM).toFixed(2)}px)`,
-      }}
-    >
-      {children}
-    </span>
   );
 }

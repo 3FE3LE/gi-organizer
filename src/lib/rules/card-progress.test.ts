@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { cardProgress, talentBookDays } from './progress';
+import { cardProgress, talentBookDays } from './card-progress';
 
 const entry = {
   level: 80,
