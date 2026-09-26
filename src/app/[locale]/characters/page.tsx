@@ -205,18 +205,21 @@ export default async function CharactersPage({
           <StickyDock>
             <RosterControls base={base} filters={filters} catalog={catalog} t={t} />
           </StickyDock>
-          {narrowed && (
-            <p className="-mt-4 flex flex-wrap items-baseline gap-x-3 font-mono text-xs text-muted">
-              {t('resultCount', { shown: shown.length, total: byRelease.length })}
-              <Link
-                href={rosterHref(base, filters, { q: '', element: [], weapon: [], rarity: [] })}
-                scroll={false}
-                className="underline hover:text-accent"
-              >
-                {t('clearFilters')}
-              </Link>
-            </p>
-          )}
+          <div className="-mt-4 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+            {narrowed ? (
+              <p className="flex flex-wrap items-baseline gap-x-3 font-mono text-xs text-muted">
+                {t('resultCount', { shown: shown.length, total: byRelease.length })}
+                <Link
+                  href={rosterHref(base, filters, { q: '', element: [], weapon: [], rarity: [] })}
+                  scroll={false}
+                  className="underline hover:text-accent"
+                >
+                  {t('clearFilters')}
+                </Link>
+              </p>
+            ) : <span />}
+            <CardLegend t={t} />
+          </div>
           {grouping === 'owned' && mine.length === 0 && !narrowed && (
             <p className="text-sm text-muted">{t('empty')}</p>
           )}
@@ -833,6 +836,73 @@ function Gallery({
         );
       })}
     </ul>
+  );
+}
+
+/**
+ * What the marks on a card mean, drawn as they appear on it.
+ *
+ * Each of them is explained on hover, which a phone does not have and which
+ * nobody finds without being told to look. Folded, so it costs one line to
+ * the player who already knows.
+ */
+function CardLegend({ t }: { t: Messages }) {
+  const items = [
+    {
+      key: 'ring',
+      mark: (
+        <svg viewBox="0 0 24 24" aria-hidden className="h-6 w-6 -rotate-90">
+          <circle cx="12" cy="12" r="9.5" fill="none" strokeWidth="2.5" className="stroke-edge" />
+          <circle
+            cx="12" cy="12" r="9.5" fill="none" strokeWidth="2.5" strokeLinecap="round"
+            strokeDasharray={2 * Math.PI * 9.5} strokeDashoffset={2 * Math.PI * 9.5 * 0.3}
+            className="stroke-accent"
+          />
+        </svg>
+      ),
+      text: t('legendRing'),
+    },
+    {
+      key: 'talents',
+      mark: (
+        <span className="font-mono text-2xs">
+          <span className="text-muted">6·9·8</span>{' '}
+          <span className="text-good">9·9·9</span>
+        </span>
+      ),
+      text: t('legendTalents'),
+    },
+    {
+      key: 'today',
+      mark: (
+        <span className="rounded-full border border-accent/50 bg-surface px-1.5 font-mono text-2xs leading-4 text-accent">
+          {t('booksToday')}
+        </span>
+      ),
+      text: t('legendToday'),
+    },
+    {
+      key: 'dismissed',
+      mark: <EyeOff size={14} aria-hidden className="text-muted" />,
+      text: t('legendDismissed'),
+    },
+  ];
+
+  return (
+    <details className="group/legend text-xs sm:max-w-md">
+      <summary className="flex cursor-pointer list-none items-center gap-1 text-muted hover:text-text sm:justify-end">
+        <ChevronRight size={12} aria-hidden className="transition-transform group-open/legend:rotate-90" />
+        {t('legendSummary')}
+      </summary>
+      <ul className="card mt-2 space-y-2 p-3">
+        {items.map((item) => (
+          <li key={item.key} className="flex items-center gap-3">
+            <span className="flex w-20 shrink-0 justify-center">{item.mark}</span>
+            <span className="text-muted">{item.text}</span>
+          </li>
+        ))}
+      </ul>
+    </details>
   );
 }
 
