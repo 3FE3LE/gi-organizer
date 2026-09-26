@@ -142,7 +142,7 @@ export default async function CharactersPage({
   const orphaned = [...gear.keys()].filter((id) => !owned.has(id)).length;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <header className="flex flex-wrap items-baseline justify-between gap-4">
         <h1 className="page-title">
           {t('title')}{' '}
@@ -209,7 +209,7 @@ export default async function CharactersPage({
           <StickyDock>
             <RosterControls base={base} filters={filters} catalog={catalog} t={t} common={common} />
           </StickyDock>
-          <div className="-mt-4 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+          <div className="-mt-3 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
             {narrowed ? (
               <p className="flex flex-wrap items-baseline gap-x-3 font-mono text-xs text-muted">
                 {t('resultCount', { shown: shown.length, total: byRelease.length })}

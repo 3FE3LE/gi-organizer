@@ -91,7 +91,7 @@ export default async function InventoryPage({ params }: PageProps<'/[locale]/dat
   })));
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat locale={locale} label={t('artifactsStat')} value={inventory.artifacts.length}
           note={t('artifactsEquippedNote', { count: assignedArtifacts.length })} />

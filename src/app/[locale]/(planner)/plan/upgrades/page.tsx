@@ -123,7 +123,7 @@ export default async function AgendaPage({
   const nameOf = (id: number) => catalog.characters.get(id)?.name ?? String(id);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {team && (
         <Link
           href={`/${locale}/plan/upgrades`}
