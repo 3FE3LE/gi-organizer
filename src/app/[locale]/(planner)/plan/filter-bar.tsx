@@ -69,6 +69,7 @@ export async function FilterBar({
   catalog,
   teams,
   region,
+  roster,
 }: {
   base: string;
   filters: Filters;
@@ -76,6 +77,8 @@ export async function FilterBar({
   teams: Team[];
   /** The game server whose clock the day strip is read against. */
   region: GameRegion;
+  /** Who the plan is for, as the trigger that opens that list. */
+  roster?: React.ReactNode;
 }) {
   const t = await getTranslations('plan');
   const reasonLabel = await getTranslations('common.reason');
@@ -99,28 +102,32 @@ export async function FilterBar({
           too narrow to fit all seven at once, not the expected way to read
           it — the strip stays one row rather than wrapping the last day or
           two beneath the first. */}
-      <nav className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-0.5">
-        {gameWeekStrip(new Date(), region).map(({ day, date }) => {
-          const active = filters.range === 'day' && day === filters.day;
+      <div className="flex items-center gap-1 sm:gap-3">
+        <nav className="-mx-1 flex min-w-0 flex-1 gap-1 overflow-x-auto px-1 pb-0.5">
+          {gameWeekStrip(new Date(), region).map(({ day, date }) => {
+            const active = filters.range === 'day' && day === filters.day;
 
-          return (
-            <Link
-              key={day}
-              href={active
-                ? href(base, filters, { range: 'all' })
-                : href(base, filters, { range: 'day', day })}
-              aria-current={active ? 'page' : undefined}
-              data-active={active}
-              className="chip w-10 shrink-0 flex-col gap-0 rounded-xl px-1 py-1.5 text-center"
-            >
-              <span className="block font-mono text-2xs uppercase">
-                {weekdayShort(day)}
-              </span>
-              <span className="block font-mono text-sm tabular">{date}</span>
-            </Link>
-          );
-        })}
-      </nav>
+            return (
+              <Link
+                key={day}
+                href={active
+                  ? href(base, filters, { range: 'all' })
+                  : href(base, filters, { range: 'day', day })}
+                aria-current={active ? 'page' : undefined}
+                data-active={active}
+                className="chip w-9 shrink-0 flex-col gap-0 rounded-xl px-1 py-1.5 text-center sm:w-10"
+              >
+                <span className="block font-mono text-2xs uppercase">
+                  {weekdayShort(day)}
+                </span>
+                <span className="block font-mono text-sm tabular">{date}</span>
+              </Link>
+            );
+          })}
+        </nav>
+        {/* Beside the days rather than under them, so the dock stays one row. */}
+        {roster && <div className="shrink-0">{roster}</div>}
+      </div>
 
       {/* Docked, the folded rows give way to what they have picked: the day
           strip is what gets touched mid-list, and an open disclosure over the

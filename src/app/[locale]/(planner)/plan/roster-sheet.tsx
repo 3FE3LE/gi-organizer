@@ -60,14 +60,16 @@ export function RosterSheet({
             the control saying something different from what it shows. */}
         <SheetTrigger
           aria-label={`${planned}/${total} ${t('charactersLabel')}`}
-          className="flex items-center gap-1.5 card px-2.5 py-1.5 text-xs hover:border-accent"
+          // Stacked on a phone, the shape and size of a day in the strip it
+          // sits beside, so all seven days still fit next to it.
+          className="flex w-10 flex-col items-center gap-0.5 card px-1 py-1.5 text-2xs hover:border-accent sm:w-auto sm:flex-row sm:gap-1.5 sm:px-2.5 sm:text-xs"
         >
           <Users size={13} aria-hidden />
           <span className="tabular font-mono">
             <span className="text-accent">{planned}</span>
             <span className="text-muted">/{total}</span>
           </span>
-          {teamName && <span className="text-muted">{t('onlyTeam', { team: teamName })}</span>}
+          {teamName && <span className="hidden text-muted sm:inline">{t('onlyTeam', { team: teamName })}</span>}
         </SheetTrigger>
 
         <SheetContent

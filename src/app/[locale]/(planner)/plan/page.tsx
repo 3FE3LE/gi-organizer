@@ -12,7 +12,7 @@ import { isLocale, type Locale } from '@/lib/data/locales';
 import { getDb } from '@/lib/db/client';
 import { readRegion } from '@/lib/player/region';
 import { isDraft, readTeams, type Team } from '@/lib/player/teams';
-import { farmingPlan } from '@/lib/rules/assemble';
+import { accountAgenda, farmingPlan } from '@/lib/rules/assemble';
 import { gameWeekday } from '@/lib/rules/game-day';
 import { getAccountCatalog } from '@/lib/player/traveler';
 import {
@@ -30,6 +30,7 @@ import { MaterialRow } from './material-row';
 import { RosterPanel, summarizeRoster } from './roster-panel';
 import { RosterSheet } from './roster-sheet';
 import { farmingFilter, resolveScope } from './scope';
+import { TodayCard } from './today-card';
 
 export const dynamic = 'force-dynamic';
 
@@ -66,6 +67,13 @@ export default async function PlanPage({ params, searchParams }: PageProps<'/[lo
   const { characterIds } = resolveScope(teams, filters);
   const base = `/${locale}/plan`;
 
+  // Started here and awaited where each piece is drawn: the plan feeds the
+  // day card, the roster trigger in the dock and the list, and one scan of
+  // the account is enough for all three. Neither is awaited by the page
+  // itself, so the shell streams before either is known.
+  const plan = farmingPlan(catalog, db, farmingFilter(filters, characterIds));
+  const agenda = accountAgenda(catalog, db);
+
   /*
    * The filter bar is a pure function of the URL and the catalog; the plan
    * behind it is a scan of every target the account holds. Streaming the
@@ -77,10 +85,34 @@ export default async function PlanPage({ params, searchParams }: PageProps<'/[lo
    */
   return (
     <div className="space-y-6">
+      <TodayCard
+        plan={plan}
+        agenda={agenda}
+        base={base}
+        catalog={catalog}
+        filters={filters}
+        locale={locale}
+        region={region}
+        today={today}
+      />
+
       {/* Docked like the roster's grouping and the artifact filters: the day
           is changed from halfway down a backlog as often as from the top. */}
       <StickyDock>
-        <FilterBar base={base} filters={filters} catalog={catalog} teams={teams} region={region} />
+        <FilterBar
+          base={base}
+          filters={filters}
+          catalog={catalog}
+          teams={teams}
+          region={region}
+          roster={
+            // Not keyed by the filters: a navigation keeps the last count on
+            // screen until the new one arrives, rather than blinking it out.
+            <Suspense fallback={<Skeleton className="h-8 w-16 rounded-xl" />}>
+              <DockedRoster base={base} catalog={catalog} filters={filters} plan={plan} teams={teams} />
+            </Suspense>
+          }
+        />
       </StickyDock>
 
       {/*
@@ -103,10 +135,9 @@ export default async function PlanPage({ params, searchParams }: PageProps<'/[lo
           <PlanContent
             base={base}
             catalog={catalog}
-            characterIds={characterIds}
+            plan={plan}
             filters={filters}
             locale={locale}
-            teams={teams}
             today={today}
           />
         </ViewTransition>
@@ -115,80 +146,90 @@ export default async function PlanPage({ params, searchParams }: PageProps<'/[lo
   );
 }
 
+type Plan = Awaited<ReturnType<typeof farmingPlan>>;
+
+/**
+ * Who the plan is for, as the trigger that opens the list.
+ *
+ * It lives in the dock rather than beside the list's heading, so narrowing to
+ * one face or dismissing somebody is in reach from anywhere down the page.
+ */
+async function DockedRoster({
+  base, catalog, filters, plan, teams,
+}: {
+  base: string; catalog: Catalog; filters: Filters; plan: Promise<Plan>; teams: Team[];
+}) {
+  const { roster } = await plan;
+  const summary = summarizeRoster(roster, teams, filters);
+
+  return (
+    <RosterSheet
+      total={summary.total}
+      planned={summary.planned}
+      teamName={summary.teamName}
+      charsCount={filters.chars.length}
+      clearCharsHref={filters.chars.length > 0 ? href(base, filters, { chars: [] }) : null}
+    >
+      <RosterPanel base={base} catalog={catalog} filters={filters} roster={roster} teams={teams} />
+    </RosterSheet>
+  );
+}
+
 /** Everything that needs the plan itself, which is the expensive half. */
 async function PlanContent({
   base,
   catalog,
-  characterIds,
+  plan,
   filters,
   locale,
-  teams,
   today,
 }: {
   base: string;
   catalog: Catalog;
-  characterIds: Set<number> | undefined;
+  plan: Promise<Plan>;
   filters: Filters;
   locale: Locale;
-  teams: Team[];
   today: Weekday;
 }) {
-  const db = getDb();
-  const { schedule, sources, roster } = await farmingPlan(
-    catalog, db, farmingFilter(filters, characterIds),
-  );
+  const { schedule, sources, roster } = await plan;
+  // An empty account: the day card is walking them through the first import,
+  // and a zero-count heading over "nobody has a target" would argue with it.
+  if (roster.length === 0) return null;
 
   const { talent, weapon } = domainsByKind(schedule, filters.day);
   const showing = filters.view === 'weapon' ? weapon : talent;
-  const rosterSummary = summarizeRoster(roster, teams, filters);
   const t = await getTranslations('plan');
   const weekdayLabel = await getTranslations('common.weekday');
 
   return (
     <div className="space-y-6">
-      {/* The roster trigger used to sit on a row of its own above this one —
-          a whole line for a number nobody reads without the day heading next
-          to it for context. Folded into the same row, pushed to the far
-          side, it costs nothing that heading wasn't already spending. */}
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-          {/* The day, and only the day. The active team was named three times
-              on this screen: the filled chip in the filter bar, the roster
-              trigger that explains why the count is scoped, and here. The
-              chip is the control and the trigger earns its copy by
-              explaining a number; a heading that repeats the filter above it
-              earns nothing. */}
-          <h2 className="text-sm">
-            {filters.range === 'day'
-              ? (filters.day === today
-                ? t('today')
-                : t('otherDay', { day: weekdayLabel(filters.day) }))
-              : t('allBacklogHeading')}
-          </h2>
-          <p className="font-mono text-xs text-muted">
-            {filters.range === 'day'
-              ? t('sourcesCountDay', {
-                  count: sources,
-                  domains: talent.length + weapon.length,
-                  anytime: schedule.anytime.length,
-                })
-              : t('sourcesCountAll', {
-                  count: sources,
-                  domains: schedule.domains.length,
-                  anytime: schedule.anytime.length,
-                })}
-          </p>
-        </div>
-
-        <RosterSheet
-          total={rosterSummary.total}
-          planned={rosterSummary.planned}
-          teamName={rosterSummary.teamName}
-          charsCount={filters.chars.length}
-          clearCharsHref={filters.chars.length > 0 ? href(base, filters, { chars: [] }) : null}
-        >
-          <RosterPanel base={base} catalog={catalog} filters={filters} roster={roster} teams={teams} />
-        </RosterSheet>
+      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+        {/* The day, and only the day. The active team was named three times
+            on this screen: the filled chip in the filter bar, the roster
+            trigger that explains why the count is scoped, and here. The
+            chip is the control and the trigger earns its copy by
+            explaining a number; a heading that repeats the filter above it
+            earns nothing. */}
+        <h2 className="text-sm">
+          {filters.range === 'day'
+            ? (filters.day === today
+              ? t('today')
+              : t('otherDay', { day: weekdayLabel(filters.day) }))
+            : t('allBacklogHeading')}
+        </h2>
+        <p className="font-mono text-xs text-muted">
+          {filters.range === 'day'
+            ? t('sourcesCountDay', {
+                count: sources,
+                domains: talent.length + weapon.length,
+                anytime: schedule.anytime.length,
+              })
+            : t('sourcesCountAll', {
+                count: sources,
+                domains: schedule.domains.length,
+                anytime: schedule.anytime.length,
+              })}
+        </p>
       </div>
 
       {sources === 0 ? (

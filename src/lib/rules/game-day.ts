@@ -91,3 +91,16 @@ export function gameDate(now: Date, region: GameRegion): { month: number; day: n
   const today = atGameDay(now, region);
   return { month: today.getUTCMonth() + 1, day: today.getUTCDate() };
 }
+
+/**
+ * The next daily reset on this server, as an instant.
+ *
+ * The start of tomorrow's game day, read on the shifted clock and shifted
+ * back — the same two corrections `atGameDay` makes, run in reverse.
+ */
+export function nextGameReset(now: Date, region: GameRegion): Date {
+  const shift = (REGION_OFFSETS[region] - RESET_HOUR) * HOUR;
+  const today = new Date(now.getTime() + shift);
+  const tomorrow = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() + 1);
+  return new Date(tomorrow - shift);
+}
