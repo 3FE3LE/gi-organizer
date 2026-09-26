@@ -8,6 +8,7 @@ import { buttonVariants } from '@/components/ui/button';
 import { AssetImage } from '@/components/asset-image';
 import { Hint } from '@/components/hint';
 import { Slider } from '@/components/ui/slider';
+import { GameText } from '@/components/game-text';
 import {
   Dialog,
   DialogClose,
@@ -263,9 +264,7 @@ function AbilityPanel({ ability, closeLabel }: { ability: Ability; closeLabel: s
 
       <div className="flex-1 space-y-4 overflow-y-auto px-4 py-3">
         {ability.description && (
-          <p className="whitespace-pre-line text-xs leading-relaxed text-muted">
-            <Emphasis text={ability.description} />
-          </p>
+          <GameText text={ability.description} className="text-xs leading-relaxed text-muted" />
         )}
 
         {scaling && levels > 0 && (
@@ -308,19 +307,6 @@ function AbilityPanel({ ability, closeLabel }: { ability: Ability; closeLabel: s
         )}
       </div>
     </div>
-  );
-}
-
-/**
- * The game's own emphasis, which `genshin-db` writes as `**term**` where the
- * client links a term to its glossary. Drawn as the term it is rather than as
- * asterisks.
- */
-function Emphasis({ text }: { text: string }) {
-  return text.split(/\*\*(.+?)\*\*/g).map((part, index) =>
-    index % 2 === 1
-      ? <strong key={index} className="font-normal text-text">{part}</strong>
-      : part,
   );
 }
 

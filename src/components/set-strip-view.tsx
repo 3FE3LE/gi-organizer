@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { AssetImage } from '@/components/asset-image';
 import { DockFold } from '@/components/dock-fold';
+import { GameText } from '@/components/game-text';
 import { Hint } from '@/components/hint';
 
 export type SetChoice = {
@@ -132,7 +133,7 @@ export function SetStripView({
                 </span>
               </p>
               {active.effects.map((line) => (
-                <p key={line} className="text-xs leading-relaxed text-muted">{line}</p>
+                <GameText key={line} text={line} className="text-xs leading-relaxed text-muted" />
               ))}
             </div>
             <button

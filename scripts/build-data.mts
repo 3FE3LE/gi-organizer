@@ -408,6 +408,15 @@ async function main() {
         // declares this field to be.
         refinements: [weapon.r1, weapon.r2, weapon.r3, weapon.r4, weapon.r5]
           .map((refinement) => refinement?.description ?? ''),
+        // The same five, with the game's markup kept: the template's `{0}`,
+        // `{1}` filled from each refinement's values, so the numbers a
+        // refinement changes stay marked as the game marks them. See
+        // `lib/data/game-text.ts`.
+        refinementsRaw: [weapon.r1, weapon.r2, weapon.r3, weapon.r4, weapon.r5]
+          .map((refinement) => (refinement && weapon.effectTemplateRaw
+            ? weapon.effectTemplateRaw.replace(/\{(\d+)\}/g, (whole: string, index: string) =>
+              refinement.values?.[Number(index)] ?? whole)
+            : refinement?.description ?? '')),
       }]),
     ));
 

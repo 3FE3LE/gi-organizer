@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import { Slider } from '@/components/ui/slider';
+import { GameText } from '@/components/game-text';
 
 /**
  * A weapon's passive, and what each refinement does to it.
@@ -58,21 +59,9 @@ export function WeaponPassive({
           </label>
         )}
       </div>
-      <p className="text-xs leading-relaxed text-muted">
-        <Numbers text={text} />
-      </p>
+      {/* The values a refinement changes are the ones the game marks, so they
+          are what reads as a value; the rest is the same from R1 to R5. */}
+      <GameText text={text} values className="text-xs leading-relaxed text-muted" />
     </section>
-  );
-}
-
-/**
- * The numbers are what a refinement changes, so they are what is marked.
- * Everything else in the sentence is identical from R1 to R5.
- */
-function Numbers({ text }: { text: string }) {
-  return text.split(/(\d+(?:[.,]\d+)?(?:\/\d+(?:[.,]\d+)?)*\s?%?)/g).map((part, index) =>
-    index % 2 === 1
-      ? <span key={index} className="tabular text-text">{part}</span>
-      : part,
   );
 }

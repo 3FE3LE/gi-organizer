@@ -79,6 +79,8 @@ export type LocalizedWeapon = {
   effectName: string;
   effectTemplateRaw: string;
   refinements: string[];
+  /** `refinements` with the game's markup kept, for `GameText`. */
+  refinementsRaw: string[];
 };
 
 export type LocalizedArtifact = {

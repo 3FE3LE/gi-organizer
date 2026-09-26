@@ -1012,6 +1012,23 @@ select.field {
     }
   }
 
+  /*
+   * A phrase the game words per device — "Un toque" on a phone, "Pulsar una
+   * vez" with a mouse. Both are in the page; the pointer decides which shows.
+   * See `components/game-text.tsx`.
+   */
+  @media (pointer: coarse) {
+    .game-text-pointer {
+      display: none;
+    }
+  }
+
+  @media not (pointer: coarse) {
+    .game-text-touch {
+      display: none;
+    }
+  }
+
   details::details-content {
     block-size: 0;
     opacity: 0;

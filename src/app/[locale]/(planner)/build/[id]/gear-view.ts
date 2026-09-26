@@ -111,7 +111,7 @@ async function candidateViews(context: BuildContext) {
       card: null,
       refinement: weapon.refinement,
       passive: definition?.effectName
-        ? { name: definition.effectName, refinements: definition.refinements }
+        ? { name: definition.effectName, refinements: definition.refinementsRaw ?? definition.refinements }
         : null,
     };
   };

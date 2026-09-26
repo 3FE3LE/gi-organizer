@@ -104,7 +104,8 @@ export async function CharacterPanel({
     fallback: ['N', 'E', 'Q'][index],
     icon: await resolveIcon(talentIcons[index] ?? null, 'talent'),
     name: talentNames[index] ?? t('talentFallback', { n: index + 1 }),
-    description: detail.talents?.combat[index]?.description ?? '',
+    // The game's markup, for `GameText`; the plain copy only where there is none.
+    description: detail.talents?.combat[index]?.descriptionRaw || detail.talents?.combat[index]?.description || '',
     scaling: detail.talents?.combat[index]?.attributes,
     level: talentLevels[index],
     bonus: talentBonus[index],
@@ -120,7 +121,7 @@ export async function CharacterPanel({
         fallback: phase > 0 ? `A${phase}` : '·',
         icon: await resolveIcon(passive.icon ?? null, 'talent'),
         name: passive.name,
-        description: passive.description,
+        description: passive.descriptionRaw || passive.description,
         unlocked: loadout.ascension >= phase,
         unlockAscension: phase,
       };
@@ -134,7 +135,8 @@ export async function CharacterPanel({
       fallback: `C${index + 1}`,
       icon: await resolveIcon(constellationIcons[index] ?? null, 'constellation'),
       name: detail.constellation?.levels[index]?.name ?? `C${index + 1}`,
-      description: detail.constellation?.levels[index]?.description ?? '',
+      description: detail.constellation?.levels[index]?.descriptionRaw
+        || detail.constellation?.levels[index]?.description || '',
       unlocked: index < loadout.constellation,
     })),
   );
@@ -159,7 +161,7 @@ export async function CharacterPanel({
   // which is why this checks for one rather than assuming every weapon has a
   // line to show.
   const weaponPassive: WeaponPassiveText | null = weaponDefinition?.effectName
-    ? { name: weaponDefinition.effectName, refinements: weaponDefinition.refinements }
+    ? { name: weaponDefinition.effectName, refinements: weaponDefinition.refinementsRaw ?? weaponDefinition.refinements }
     : null;
 
   const bySlot = new Map(loadout.pieces.map((piece) => [piece.slot, piece]));

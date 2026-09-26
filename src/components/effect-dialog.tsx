@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { buttonVariants } from '@/components/ui/button';
 import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Hint } from '@/components/hint';
+import { GameText } from '@/components/game-text';
 
 /**
  * A name that opens into what it actually does.
@@ -63,9 +64,9 @@ export function EffectButton({
             </DialogClose>
           </header>
           <div className="max-h-[70vh] space-y-2 overflow-y-auto px-4 py-3 text-xs leading-relaxed text-muted">
-            {lines.map((line, index) => (
-              <p key={index}>{line}</p>
-            ))}
+            {/* Each through `GameText`, so a set effect's own line breaks and a
+                weapon's marked values read as they do everywhere else. */}
+            {lines.map((line, index) => <GameText key={index} text={line} />)}
           </div>
         </DialogContent>
       </Dialog>
