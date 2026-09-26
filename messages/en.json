@@ -316,6 +316,8 @@
     "closeAria": "Close",
     "sheetAriaLabel": "Characters",
     "haveOf": "have {owned} of {needed}",
+    "alsoOn": "also {days}",
+    "haveOfTitle": "{name}: have {owned} of {needed}",
     "todayTitle": "{day} {date}",
     "resetInHours": "resets in {hours} h {minutes} min",
     "resetInMinutes": "resets in {minutes} min",

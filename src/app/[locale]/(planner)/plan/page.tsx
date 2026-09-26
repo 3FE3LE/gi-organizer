@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Suspense, ViewTransition } from 'react';
 
+import { ElementIcon } from '@/components/element-icon';
 import { GameIcon } from '@/components/game-icon';
 import { SectionTabs } from '@/components/section-tabs';
 import { PanelsSkeleton, Skeleton } from '@/components/skeleton';
@@ -272,7 +273,7 @@ async function PlanContent({
           ) : (
             <div className="space-y-3">
               {showing.map((plan) => (
-                <DomainCard key={plan.domain} plan={plan} catalog={catalog} locale={locale} />
+                <DomainCard key={plan.domain} plan={plan} catalog={catalog} locale={locale} day={filters.day} />
               ))}
             </div>
           )}
@@ -312,21 +313,38 @@ async function PlanContent({
  * many times you go in. Used in the day view, where the domain is already
  * narrowed to one day's worth and the per-material arithmetic is one click
  * away in the backlog view instead.
+ *
+ * Two things the glance used to leave out. How close each tier is — a bar
+ * under the icon, what is in the bag against what is needed — since "faltan
+ * 6" of 9 and of 300 are different evenings. And the other days it rotates,
+ * so a domain that can wait until tomorrow says so without a trip to the
+ * strip.
  */
 async function DomainCard({
-  plan, catalog, locale,
+  plan, catalog, locale, day,
 }: {
-  plan: DomainPlan; catalog: Catalog; locale: Locale;
+  plan: DomainPlan; catalog: Catalog; locale: Locale; day: Weekday;
 }) {
   const t = await getTranslations('plan');
+  const weekdayLabel = await getTranslations('common.weekday');
   // Lowest tier first, which is the order the domain itself lists them in.
   const needs = [...plan.needs].sort((a, b) => a.materialId - b.materialId);
   const waiting = charactersIn([plan]);
+  // Sunday opens every domain, so it tells one apart from another no more
+  // than it would on every card at once.
+  const otherDays = plan.days.filter((entry) => entry !== day && entry !== 'Sunday');
 
   return (
     <section className="card">
-      <p className="flex flex-wrap items-baseline gap-x-3 border-b border-edge px-3 py-2">
-        <span className="flex-1 text-sm">{plan.label}</span>
+      <p className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 border-b border-edge px-3 py-2">
+        {/* Its own line on a phone, where the counts beside it squeezed the
+            name into a column two words wide. */}
+        <span className="w-full text-sm sm:w-auto sm:flex-1">{plan.label}</span>
+        {otherDays.length > 0 && (
+          <span className="font-mono text-2xs text-muted">
+            {t('alsoOn', { days: otherDays.map((entry) => weekdayLabel(entry)).join(' · ') })}
+          </span>
+        )}
         <span className="font-mono text-xs text-muted">
           {t('missing', { count: plan.short.toLocaleString(locale) })}
         </span>
@@ -334,20 +352,42 @@ async function DomainCard({
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-3 px-3 py-3">
         <ul className="flex gap-2">
-          {needs.map((need) => (
-            <li key={need.materialId} className="relative">
-              <GameIcon
-                filename={catalog.materials.get(need.materialId)?.icon}
-                kind="material"
-                alt={catalog.materials.get(need.materialId)?.name ?? ''}
-                className="h-11 w-11"
-                sizes="44px"
-              />
-              <span className="tabular absolute -bottom-1 right-0 rounded bg-surface-2 px-1 font-mono text-2xs text-accent">
-                {need.short.toLocaleString(locale)}
-              </span>
-            </li>
-          ))}
+          {needs.map((need) => {
+            const material = catalog.materials.get(need.materialId);
+            const covered = need.needed > 0 ? Math.min(1, need.owned / need.needed) : 1;
+
+            return (
+              <li
+                key={need.materialId}
+                title={t('haveOfTitle', {
+                  name: material?.name ?? `#${need.materialId}`,
+                  owned: need.owned.toLocaleString(locale),
+                  needed: need.needed.toLocaleString(locale),
+                })}
+                className="w-11"
+              >
+                <span className="relative block">
+                  <GameIcon
+                    filename={material?.icon}
+                    kind="material"
+                    alt={material?.name ?? ''}
+                    className="h-11 w-11"
+                    sizes="44px"
+                  />
+                  <span className="tabular absolute -bottom-1 right-0 rounded bg-surface-2 px-1 font-mono text-2xs text-accent">
+                    {need.short.toLocaleString(locale)}
+                  </span>
+                </span>
+                {/* How much of this tier the bag already covers. */}
+                <span aria-hidden className="mt-1.5 block h-1 overflow-hidden rounded-full bg-surface-2">
+                  <span
+                    className="block h-full rounded-full bg-accent"
+                    style={{ width: `${Math.round(covered * 100)}%` }}
+                  />
+                </span>
+              </li>
+            );
+          })}
         </ul>
 
         <ul className="flex flex-wrap gap-2">
@@ -364,7 +404,7 @@ async function DomainCard({
                     count: entry.count,
                     assumedSuffix: assumed ? t('assumedTargetSuffix') : '',
                   })}
-                  className={`block rounded border ${
+                  className={`relative block rounded border ${
                     assumed ? 'border-dashed border-edge opacity-60' : 'border-edge'
                   } hover:border-accent`}
                 >
@@ -375,6 +415,12 @@ async function DomainCard({
                     className="h-11 w-11 rounded"
                     sizes="44px"
                   />
+                  {/* The element, the way the roster groups them. */}
+                  {character?.elementType && (
+                    <span className="absolute -bottom-1 -right-1 rounded-full bg-surface p-0.5 ring-1 ring-edge">
+                      <ElementIcon element={character.elementType} className="h-3.5 w-3.5" sizes="14px" />
+                    </span>
+                  )}
                 </Link>
               </li>
             );
