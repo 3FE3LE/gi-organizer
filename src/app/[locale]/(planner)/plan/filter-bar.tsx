@@ -2,6 +2,7 @@ import { ChevronRight, X } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
+import { DockFold } from '@/components/dock-fold';
 import { HoverLabel } from '@/components/hint';
 import type { Catalog } from '@/lib/data/catalog';
 import type { Team } from '@/lib/player/teams';
@@ -93,7 +94,7 @@ export async function FilterBar({
   const team = teams.find((entry) => entry.id === filters.team);
 
   return (
-    <div className="card flex flex-col gap-3 p-4 group-data-[stuck]/dock:gap-2 group-data-[stuck]/dock:p-2">
+    <div className="card flex flex-col p-4 transition-[padding] duration-200 group-data-[stuck]/dock:p-2">
       {/* The day strip is the view toggle: a day is either the one thing this
           is scoped to, or — tapped again — nothing, which is the whole
           backlog. A separate "por día"/"todo el backlog" pair said the same
@@ -135,7 +136,7 @@ export async function FilterBar({
           choice that is off its default, one tap from undoing it — so the
           docked bar never hides why the list is narrower than it looks. */}
       {moreOpen && (
-        <div className="hidden flex-wrap gap-1 group-data-[stuck]/dock:flex">
+        <DockFold when="undocked" className="flex flex-wrap gap-1 pt-2">
           {team && (
             <Chip to={href(base, filters, { team: null, chars: [] })} active>
               {team.name} <X size={12} aria-hidden />
@@ -155,10 +156,11 @@ export async function FilterBar({
               {t('assumeToggle')}
             </Chip>
           )}
-        </div>
+        </DockFold>
       )}
 
-      <details open={moreOpen} className="group card group-data-[stuck]/dock:hidden">
+      <DockFold when="docked" className="pt-3">
+      <details open={moreOpen} className="group card">
         <summary className="flex cursor-pointer list-none items-center gap-1.5 px-3 py-2 font-mono text-2xs uppercase text-muted hover:text-text">
           <ChevronRight size={12} className="transition-transform group-open:rotate-90" />
           {t('moreFilters')}
@@ -237,6 +239,7 @@ export async function FilterBar({
           </div>
         </div>
       </details>
+      </DockFold>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 
 import { AssetImage } from '@/components/asset-image';
+import { DockFold } from '@/components/dock-fold';
 import { Hint } from '@/components/hint';
 
 export type SetChoice = {
@@ -118,7 +119,8 @@ export function SetStripView({
           it. Live, so picking a set by keyboard also reads its bonus. */}
       {/* Hidden while the filters are docked over the list: the bonus is
           read once, and the strip above already marks the chosen set. */}
-      <div aria-live="polite" className="group-data-[stuck]/dock:hidden">
+      <DockFold when="docked">
+      <div aria-live="polite">
         {showEffects && active && (
           <div className="flex items-start gap-3 card-2 px-3 py-1.5">
             <AssetImage src={active.icon} kind="relic" alt="" className="h-8 w-8 shrink-0" sizes="32px" />
@@ -144,6 +146,7 @@ export function SetStripView({
           </div>
         )}
       </div>
+      </DockFold>
     </div>
   );
 }

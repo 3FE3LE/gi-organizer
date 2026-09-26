@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ViewTransition } from 'react';
 
+import { DockFold } from '@/components/dock-fold';
 import { ElementIcon } from '@/components/element-icon';
 import { GameIcon } from '@/components/game-icon';
 import { PrefetchLink } from '@/components/prefetch-link';
@@ -355,14 +356,14 @@ function RosterControls({
   ];
 
   return (
-    <div className="card flex flex-col gap-3 p-3 group-data-[stuck]/dock:gap-2 group-data-[stuck]/dock:p-2">
-      <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
+    <div className="card flex flex-col p-3 transition-[padding] duration-200 group-data-[stuck]/dock:p-2">
+      <div className="flex flex-wrap items-end gap-x-4">
         <div className="w-full sm:w-auto">
           <SearchBox label={t('searchLabel')} placeholder={t('searchPlaceholder')} />
         </div>
         {/* Docked on a phone only the search stays: the two strips below it
             would take a quarter of the screen off the gallery they arrange. */}
-        <div className="min-w-0 max-sm:group-data-[stuck]/dock:hidden">
+        <DockFold when="docked-phone" className="min-w-0 pt-2">
         <Segments label={t('groupBy')}>
           {GROUPINGS.map((grouping) => (
             <Segment
@@ -375,8 +376,8 @@ function RosterControls({
             </Segment>
           ))}
         </Segments>
-        </div>
-        <div className="min-w-0 max-sm:group-data-[stuck]/dock:hidden">
+        </DockFold>
+        <DockFold when="docked-phone" className="min-w-0 pt-2">
         <Segments label={t('sortBy')}>
           {SORTS.map((sort) => (
             <Segment
@@ -389,11 +390,11 @@ function RosterControls({
             </Segment>
           ))}
         </Segments>
-        </div>
+        </DockFold>
       </div>
 
       {picked.length > 0 && (
-        <div className="hidden flex-wrap gap-1 group-data-[stuck]/dock:flex">
+        <DockFold when="undocked" className="flex flex-wrap gap-1 pt-2">
           {picked.map((chip) => (
             <Link
               key={chip.key}
@@ -408,10 +409,11 @@ function RosterControls({
               <X size={12} aria-hidden />
             </Link>
           ))}
-        </div>
+        </DockFold>
       )}
 
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-edge pt-3 group-data-[stuck]/dock:hidden">
+      <DockFold when="docked" className="pt-3">
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-edge pt-3">
         <ChipRow label={t('filterElement')}>
           {ELEMENTS.map((key) => (
             <Chip
@@ -447,6 +449,7 @@ function RosterControls({
           ))}
         </ChipRow>
       </div>
+      </DockFold>
     </div>
   );
 }

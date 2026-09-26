@@ -962,6 +962,56 @@ select.field {
       visibility 0s;
   }
 
+  /*
+   * The folds of a docked bar; see `components/dock-fold.tsx`. Hidden only
+   * once folded, so a folded row leaves the tab order, and clipped only while
+   * folded or folding, so a tooltip over an open row is never cut off.
+   */
+  .dock-fold {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition:
+      grid-template-rows var(--duration-enter) var(--ease-out-soft),
+      opacity var(--duration-enter) var(--ease-out-soft),
+      visibility 0s;
+  }
+
+  .dock-fold > * {
+    min-height: 0;
+  }
+
+  [data-stuck] .dock-fold[data-fold='docked'],
+  .dock-fold[data-fold='undocked']:not([data-stuck] .dock-fold) {
+    grid-template-rows: 0fr;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      grid-template-rows var(--duration-enter) var(--ease-out-soft),
+      opacity var(--duration-exit) var(--ease-out-soft),
+      visibility 0s linear var(--duration-enter);
+  }
+
+  [data-stuck] .dock-fold[data-fold='docked'] > *,
+  .dock-fold[data-fold='undocked']:not([data-stuck] .dock-fold) > * {
+    overflow: hidden;
+  }
+
+  @media (width < 40rem) {
+    [data-stuck] .dock-fold[data-fold='docked-phone'] {
+      grid-template-rows: 0fr;
+      opacity: 0;
+      visibility: hidden;
+      transition:
+        grid-template-rows var(--duration-enter) var(--ease-out-soft),
+        opacity var(--duration-exit) var(--ease-out-soft),
+        visibility 0s linear var(--duration-enter);
+    }
+
+    [data-stuck] .dock-fold[data-fold='docked-phone'] > * {
+      overflow: hidden;
+    }
+  }
+
   details::details-content {
     block-size: 0;
     opacity: 0;
