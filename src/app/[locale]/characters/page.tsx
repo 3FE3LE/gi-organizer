@@ -11,7 +11,7 @@ import { GameIcon } from '@/components/game-icon';
 import { PrefetchLink } from '@/components/prefetch-link';
 import { SectionTabs } from '@/components/section-tabs';
 import { StickyDock } from '@/components/sticky-dock';
-import { FilterGroup, GROUP_LABEL, Segment, Segments } from '@/components/segmented-links';
+import { FilterGroup, GROUP_LABEL } from '@/components/segmented-links';
 import { WeaponTypeIcon } from '@/components/weapon-type-icon';
 import { CakeSlice, SlidersHorizontal } from 'lucide-react';
 
@@ -394,18 +394,20 @@ function RosterControls({
               and behind a disclosure it would be two clicks every time.
               Docked on a phone only the search stays. */}
           <DockFold when="docked-phone" className="min-w-0 pt-2">
-            <Segments label={t('groupBy')}>
+            {/* Chips rather than a segmented strip: six groupings are wider
+                than a phone, and a strip that scrolls sideways hid the last
+                ones off the card. Chips wrap to a second line instead. */}
+            <FilterGroup label={t('groupBy')}>
               {GROUPINGS.map((grouping) => (
-                <Segment
+                <Chip
                   key={grouping}
                   to={rosterHref(base, filters, { group: grouping })}
                   active={grouping === filters.group}
-                  scroll={false}
                 >
                   {t(`grouping.${grouping}`)}
-                </Segment>
+                </Chip>
               ))}
-            </Segments>
+            </FilterGroup>
           </DockFold>
         </div>
 
@@ -413,22 +415,25 @@ function RosterControls({
             of emblems with how many of yours each one has. */}
         <DockFold when="docked-phone" className="space-y-1.5 pt-3">
           <p className={GROUP_LABEL}>{t('filterElement')}</p>
-          <ul className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1.5 pt-1">
+          {/* Seven across on a phone as a grid of equal cells, so the row
+              always fits the card rather than scrolling its last emblem off
+              it; fixed tiles from `sm` up, where there is room. */}
+          <ul className="grid grid-cols-7 gap-1 pb-1.5 pt-1 sm:flex sm:gap-1.5">
             {ELEMENTS.map((key) => {
               const active = filters.element.includes(key);
               const count = elementCounts.get(key) ?? 0;
               return (
-                <li key={key} className="shrink-0">
+                <li key={key} className="min-w-0 sm:shrink-0">
                   <Link
                     href={rosterHref(base, filters, { element: toggle(filters.element, key) })}
                     scroll={false}
                     aria-current={active ? 'true' : undefined}
                     aria-label={`${elementText(key)} (${count})`}
-                    className={`group relative flex h-11 w-11 items-center justify-center rounded-lg border transition-colors ${
+                    className={`group relative flex aspect-square w-full max-w-11 items-center justify-center rounded-lg border transition-colors sm:h-11 sm:w-11 ${
                       active ? 'border-accent ring-1 ring-accent' : 'border-edge bg-surface hover:border-edge-strong'
                     } ${count === 0 && !active ? 'opacity-40 grayscale' : ''}`}
                   >
-                    <ElementIcon element={elementType(key)} className="h-7 w-7" sizes="28px" />
+                    <ElementIcon element={elementType(key)} className="h-3/5 w-3/5 sm:h-7 sm:w-7" sizes="28px" />
                     {count > 0 && (
                       <span className="tabular absolute -bottom-1 -right-1 rounded bg-ink px-1 font-mono text-2xs leading-4 text-muted">
                         {count}
@@ -474,18 +479,17 @@ function RosterControls({
           </summary>
 
           <div className="flex flex-wrap items-end gap-x-6 gap-y-3 border-t border-edge px-3 py-2.5">
-            <Segments label={t('sortBy')}>
+            <FilterGroup label={t('sortBy')}>
               {SORTS.map((sort) => (
-                <Segment
+                <Chip
                   key={sort}
                   to={rosterHref(base, filters, { sort })}
                   active={sort === filters.sort}
-                  scroll={false}
                 >
                   {t(`sort.${sort}`)}
-                </Segment>
+                </Chip>
               ))}
-            </Segments>
+            </FilterGroup>
             <FilterGroup label={t('filterWeapon')}>
               {WEAPONS.map((key) => (
                 <Chip
