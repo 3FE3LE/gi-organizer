@@ -515,6 +515,36 @@ body {
     }
   }
 
+  /**
+   * A glyph the game draws white on clear — the weapon types — darkened to
+   * the text colour on a light page, where white on white is nothing.
+   */
+  :root[data-theme='light'] .glyph-light {
+    filter: brightness(0.2);
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme='dark']) .glyph-light {
+      filter: brightness(0.2);
+    }
+  }
+
+  /* On a filled chip the glyph takes the chip's own ink: dark on the dark
+     theme's pale gold, white on the light theme's deep one. */
+  [data-active='true'] .glyph-light {
+    filter: brightness(0.2);
+  }
+
+  :root[data-theme='light'] [data-active='true'] .glyph-light {
+    filter: none;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme='dark']) [data-active='true'] .glyph-light {
+      filter: none;
+    }
+  }
+
   /** Inputs and selects, which had six slightly different borders between them. */
   .field {
     background: var(--ink);

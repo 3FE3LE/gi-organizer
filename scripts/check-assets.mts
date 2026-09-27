@@ -20,6 +20,7 @@ import path from 'node:path';
 
 import { type AssetKind, iconUrl } from '../src/lib/data/assets.ts';
 import { ELEMENT_COLORS, elementIcon } from '../src/lib/data/elements.ts';
+import { WEAPON_TYPE_ICONS } from '../src/lib/data/weapon-types.ts';
 import type {
   ById,
   CoreArtifact,
@@ -87,6 +88,7 @@ async function collect(): Promise<Target[]> {
     // The seven emblems, named by hand in `elements.ts` — checked like the rest
     // so a host dropping one fails here rather than as a blank on screen.
     element: Object.keys(ELEMENT_COLORS).map(elementIcon).filter(nonNull),
+    weaponType: Object.values(WEAPON_TYPE_ICONS),
   };
 
   return (Object.entries(groups) as [AssetKind, string[]][]).flatMap(([kind, names]) =>

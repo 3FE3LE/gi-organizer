@@ -11,8 +11,9 @@ import { GameIcon } from '@/components/game-icon';
 import { PrefetchLink } from '@/components/prefetch-link';
 import { SectionTabs } from '@/components/section-tabs';
 import { StickyDock } from '@/components/sticky-dock';
-import { FilterGroup, Segment, Segments } from '@/components/segmented-links';
-import { CakeSlice } from 'lucide-react';
+import { FilterGroup, GROUP_LABEL, Segment, Segments } from '@/components/segmented-links';
+import { WeaponTypeIcon } from '@/components/weapon-type-icon';
+import { CakeSlice, SlidersHorizontal } from 'lucide-react';
 
 import { HoverLabel } from '@/components/hint';
 import { FoldMark } from '@/components/fold-mark';
@@ -98,6 +99,11 @@ export default async function CharactersPage({
 
   const byRelease = catalog.index.charactersByRelease;
   const mine = byRelease.filter((character) => owned.has(character.id));
+  const elementCounts = new Map<string, number>();
+  for (const character of mine) {
+    const key = elementKey(character.elementType);
+    if (key) elementCounts.set(key, (elementCounts.get(key) ?? 0) + 1);
+  }
   const shown = narrowRoster(byRelease, filters, roster, locale);
   const narrowed = isNarrowed(filters);
 
@@ -207,7 +213,7 @@ export default async function CharactersPage({
           {/* Docked under the header once the gallery scrolls past it, as the
               artifact filters are: regrouping is something done mid-list. */}
           <StickyDock>
-            <RosterControls base={base} filters={filters} catalog={catalog} t={t} common={common} />
+            <RosterControls base={base} filters={filters} catalog={catalog} elementCounts={elementCounts} t={t} common={common} />
           </StickyDock>
           <div className="-mt-3 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
             {narrowed ? (
@@ -321,19 +327,24 @@ type Catalog = Awaited<ReturnType<typeof getAccountCatalog>>;
 /**
  * Everything that narrows or reorders the gallery, in the dock.
  *
- * The search and the two ways to lay the list out — how it is grouped, how it
- * is ordered — stay in reach while docked: they are what gets changed halfway
- * down. The chip rows fold away docked, as the plan's extra filters do, and
- * leave what they picked as chips to undo, so a docked bar never hides why the
- * gallery is shorter than it looks.
+ * Laid out as the artifacts page is: the search, the grouping and a strip of
+ * elements in the open — what gets changed halfway down, and what stays in
+ * reach docked — and the ordering, weapon and rarity under "more filters".
+ * Four rows of segments and chips side by side ran off the card on anything
+ * narrower than a desktop. Docked, the disclosure folds away and what it had
+ * picked stays as chips to undo, so a docked bar never hides why the gallery
+ * is shorter than it looks.
  *
  * Every chip is a link built from the same parsers the page reads, so a
  * filtered roster is a URL that can be bookmarked and shared.
  */
 function RosterControls({
-  base, filters, catalog, t, common,
+  base, filters, catalog, elementCounts, t, common,
 }: {
-  base: string; filters: RosterFilters; catalog: Catalog; t: Messages;
+  base: string; filters: RosterFilters; catalog: Catalog;
+  /** How many of the player's own characters each element has. */
+  elementCounts: ReadonlyMap<string, number>;
+  t: Messages;
   common: Awaited<ReturnType<typeof getTranslations<'common'>>>;
 }) {
   // The game's own words for each element and weapon, read off a character
@@ -358,6 +369,7 @@ function RosterControls({
     ...filters.weapon.map((key) => ({
       key: `weapon-${key}`,
       label: weaponText(key),
+      icon: <WeaponTypeIcon weapon={key} className="h-3.5 w-3.5" sizes="14px" />,
       to: rosterHref(base, filters, { weapon: toggle(filters.weapon, key) }),
     })),
     ...filters.rarity.map((rarity) => ({
@@ -367,95 +379,138 @@ function RosterControls({
     })),
   ];
 
+  // Behind the disclosure and off their default: its badge, and whether it
+  // opens on load, so a shared URL does not hide the control that made it.
+  const folded = filters.weapon.length + filters.rarity.length + (filters.sort === 'release' ? 0 : 1);
+
   return (
-    <div className="card flex flex-col p-3 transition-[padding] duration-200 group-data-[stuck]/dock:p-2">
-      <div className="flex flex-wrap items-end gap-x-4">
-        <div className="w-full sm:w-auto">
-          <SearchBox label={t('searchLabel')} placeholder={t('searchPlaceholder')} />
+    <div className="card transition-[padding] duration-200">
+      <div className="flex flex-col px-3 pb-1 pt-2.5">
+        <div className="flex flex-wrap items-end gap-x-4">
+          <div className="w-full sm:w-auto">
+            <SearchBox label={t('searchLabel')} placeholder={t('searchPlaceholder')} />
+          </div>
+          {/* Grouping stays out here: it is changed as often as the search,
+              and behind a disclosure it would be two clicks every time.
+              Docked on a phone only the search stays. */}
+          <DockFold when="docked-phone" className="min-w-0 pt-2">
+            <Segments label={t('groupBy')}>
+              {GROUPINGS.map((grouping) => (
+                <Segment
+                  key={grouping}
+                  to={rosterHref(base, filters, { group: grouping })}
+                  active={grouping === filters.group}
+                  scroll={false}
+                >
+                  {t(`grouping.${grouping}`)}
+                </Segment>
+              ))}
+            </Segments>
+          </DockFold>
         </div>
-        {/* Docked on a phone only the search stays: the two strips below it
-            would take a quarter of the screen off the gallery they arrange. */}
-        <DockFold when="docked-phone" className="min-w-0 pt-2">
-        <Segments label={t('groupBy')}>
-          {GROUPINGS.map((grouping) => (
-            <Segment
-              key={grouping}
-              to={rosterHref(base, filters, { group: grouping })}
-              active={grouping === filters.group}
-              scroll={false}
-            >
-              {t(`grouping.${grouping}`)}
-            </Segment>
-          ))}
-        </Segments>
+
+        {/* The element leads, as the set does on the artifacts page: a strip
+            of emblems with how many of yours each one has. */}
+        <DockFold when="docked-phone" className="space-y-1.5 pt-3">
+          <p className={GROUP_LABEL}>{t('filterElement')}</p>
+          <ul className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1.5 pt-1">
+            {ELEMENTS.map((key) => {
+              const active = filters.element.includes(key);
+              const count = elementCounts.get(key) ?? 0;
+              return (
+                <li key={key} className="shrink-0">
+                  <Link
+                    href={rosterHref(base, filters, { element: toggle(filters.element, key) })}
+                    scroll={false}
+                    aria-current={active ? 'true' : undefined}
+                    aria-label={`${elementText(key)} (${count})`}
+                    className={`group relative flex h-11 w-11 items-center justify-center rounded-lg border transition-colors ${
+                      active ? 'border-accent ring-1 ring-accent' : 'border-edge bg-surface hover:border-edge-strong'
+                    } ${count === 0 && !active ? 'opacity-40 grayscale' : ''}`}
+                  >
+                    <ElementIcon element={elementType(key)} className="h-7 w-7" sizes="28px" />
+                    {count > 0 && (
+                      <span className="tabular absolute -bottom-1 -right-1 rounded bg-ink px-1 font-mono text-2xs leading-4 text-muted">
+                        {count}
+                      </span>
+                    )}
+                    <HoverLabel text={`${elementText(key)} · ${count}`} />
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
         </DockFold>
-        <DockFold when="docked-phone" className="min-w-0 pt-2">
-        <Segments label={t('sortBy')}>
-          {SORTS.map((sort) => (
-            <Segment
-              key={sort}
-              to={rosterHref(base, filters, { sort })}
-              active={sort === filters.sort}
-              scroll={false}
-            >
-              {t(`sort.${sort}`)}
-            </Segment>
-          ))}
-        </Segments>
-        </DockFold>
+
+        {picked.length > 0 && (
+          <DockFold when="undocked" className="pb-1.5">
+            <ActiveFilters
+              items={picked}
+              clear={rosterHref(base, filters, { q: '', element: [], weapon: [], rarity: [] })}
+              labels={{
+                title: common('activeFilters'),
+                clear: common('clearFilters'),
+                remove: (name) => common('removeFilter', { name }),
+              }}
+            />
+          </DockFold>
+        )}
       </div>
 
-      {picked.length > 0 && (
-        <DockFold when="undocked" className="pt-2">
-          <ActiveFilters
-            items={picked}
-            clear={rosterHref(base, filters, { q: '', element: [], weapon: [], rarity: [] })}
-            labels={{
-              title: common('activeFilters'),
-              clear: common('clearFilters'),
-              remove: (name) => common('removeFilter', { name }),
-            }}
-          />
-        </DockFold>
-      )}
+      {/* The rest, as on the artifacts page: folded, with a count of what is
+          on inside it. Folded away entirely while docked, where the summary
+          above says what it holds. */}
+      <DockFold when="docked">
+        <details open={folded > 0} className="group/fold border-t border-edge">
+          <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-xs text-text transition-colors hover:bg-surface-2/60">
+            <SlidersHorizontal size={14} aria-hidden className="text-muted" />
+            <span className="font-medium">{t('moreFilters')}</span>
+            {folded > 0 && (
+              <span className="tabular rounded-full bg-accent px-1.5 font-mono text-2xs leading-4 text-on-accent">
+                {folded}
+              </span>
+            )}
+            <FoldMark className="ml-auto" />
+          </summary>
 
-      <DockFold when="docked" className="pt-3">
-      <div className="flex flex-wrap gap-x-6 gap-y-3 border-t border-edge pt-3">
-        <FilterGroup label={t('filterElement')}>
-          {ELEMENTS.map((key) => (
-            <Chip
-              key={key}
-              to={rosterHref(base, filters, { element: toggle(filters.element, key) })}
-              active={filters.element.includes(key)}
-              label={elementText(key)}
-            >
-              <ElementIcon element={elementType(key)} label={elementText(key)} className="h-4 w-4" />
-            </Chip>
-          ))}
-        </FilterGroup>
-        <FilterGroup label={t('filterWeapon')}>
-          {WEAPONS.map((key) => (
-            <Chip
-              key={key}
-              to={rosterHref(base, filters, { weapon: toggle(filters.weapon, key) })}
-              active={filters.weapon.includes(key)}
-            >
-              {weaponText(key)}
-            </Chip>
-          ))}
-        </FilterGroup>
-        <FilterGroup label={t('filterRarity')}>
-          {RARITIES.map((rarity) => (
-            <Chip
-              key={rarity}
-              to={rosterHref(base, filters, { rarity: toggle(filters.rarity, rarity) })}
-              active={filters.rarity.includes(rarity)}
-            >
-              {rarity}★
-            </Chip>
-          ))}
-        </FilterGroup>
-      </div>
+          <div className="flex flex-wrap items-end gap-x-6 gap-y-3 border-t border-edge px-3 py-2.5">
+            <Segments label={t('sortBy')}>
+              {SORTS.map((sort) => (
+                <Segment
+                  key={sort}
+                  to={rosterHref(base, filters, { sort })}
+                  active={sort === filters.sort}
+                  scroll={false}
+                >
+                  {t(`sort.${sort}`)}
+                </Segment>
+              ))}
+            </Segments>
+            <FilterGroup label={t('filterWeapon')}>
+              {WEAPONS.map((key) => (
+                <Chip
+                  key={key}
+                  to={rosterHref(base, filters, { weapon: toggle(filters.weapon, key) })}
+                  active={filters.weapon.includes(key)}
+                  label={weaponText(key)}
+                >
+                  <WeaponTypeIcon weapon={key} label={weaponText(key)} className="h-5 w-5" />
+                </Chip>
+              ))}
+            </FilterGroup>
+            <FilterGroup label={t('filterRarity')}>
+              {RARITIES.map((rarity) => (
+                <Chip
+                  key={rarity}
+                  to={rosterHref(base, filters, { rarity: toggle(filters.rarity, rarity) })}
+                  active={filters.rarity.includes(rarity)}
+                >
+                  {rarity}★
+                </Chip>
+              ))}
+            </FilterGroup>
+          </div>
+        </details>
       </DockFold>
     </div>
   );

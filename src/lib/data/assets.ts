@@ -57,6 +57,11 @@ const ASSETS = {
    * is missing Cryo's; see `elementIcon` for the names.
    */
   element: { host: 'amber', width: 64, height: 64 },
+  /**
+   * The five weapon-type glyphs (`UI_GachaTypeIcon_Sword`), white on clear.
+   * Amber's are the smaller files of the two hosts, at the same 128px.
+   */
+  weaponType: { host: 'amber', width: 128, height: 128 },
 } as const satisfies Record<
   string,
   { host: keyof typeof HOSTS; width: number; height: number }

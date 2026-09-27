@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 /** The padding a docked bar has around its controls, in pixels (`py-2`). */
 const PAD = 8;
@@ -35,11 +36,13 @@ const PAD = 8;
  * hold. What folds away on docking folds, see `dock-fold.tsx`.
  *
  * What the dock gives up when it docks is handed back to the page as a spacer
- * under it. Without that, docking made the page shorter by exactly what was
- * folded away: on a list barely taller than the screen the scroll position
- * no longer fitted, the browser pulled it back up, the dock let go, grew back,
- * and docked again — a loop the eye sees as the bar flickering. Held at one
- * height, the page also stops jumping by that amount under the reader.
+ * at the very end of it. Without that, docking made the page shorter by
+ * exactly what was folded away: on a list barely taller than the screen the
+ * scroll position no longer fitted, the browser pulled it back up, the dock
+ * let go, grew back, and docked again — a loop the eye sees as the bar
+ * flickering. At the end, not under the dock: there it held the list where
+ * it was, and the list sat a folded filter's height below the bar — a blank
+ * band that only closed once it had scrolled away.
  */
 export function StickyDock({ children }: { children: React.ReactNode }) {
   const sentinel = useRef<HTMLDivElement>(null);
@@ -110,7 +113,7 @@ export function StickyDock({ children }: { children: React.ReactNode }) {
       >
         {children}
       </div>
-      {shortfall > 0 && <div aria-hidden style={{ height: shortfall }} className="mb-0" />}
+      {shortfall > 0 && createPortal(<div aria-hidden style={{ height: shortfall }} />, document.body)}
     </>
   );
 }

@@ -138,6 +138,7 @@
     "groupBy": "Agrupar por",
     "searchLabel": "Buscar personaje",
     "searchPlaceholder": "Buscar por nombre",
+    "moreFilters": "más filtros",
     "sortBy": "Ordenar",
     "sort": {"release": "Lanzamiento", "level": "Nivel", "constellation": "Constelación", "name": "Nombre"},
     "sortHints": {"release": "por lanzamiento, más reciente primero", "level": "por nivel, más alto primero", "constellation": "por constelación, más alta primero", "name": "por nombre"},
