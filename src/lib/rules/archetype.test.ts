@@ -10,8 +10,8 @@ const CD = 'FIGHT_PROP_CRITICAL_HURT';
 const ATK = 'FIGHT_PROP_ATTACK_PERCENT';
 const FLAT = 'FIGHT_PROP_DEFENSE';
 
-/** DEF% and recharge, crit on top, ATK% in place of either crit line. */
-const build: Archetype = { required: [DEF, ER], optional: [CR, CD], wildcard: ATK };
+/** DEF% and recharge, with crit on top. */
+const build: Archetype = { required: [DEF, ER], optional: [CR, CD] };
 
 const props = (...list: string[]) => new Set(list);
 
@@ -20,15 +20,13 @@ test('a piece without every required substat is not listed', () => {
   assert.equal(meetsArchetype(props(DEF, ER, FLAT, ATK), build), true);
 });
 
-test('both optionals lead, then an optional with the wildcard, then one alone', () => {
+test('a piece with both optionals leads, then one, then none', () => {
   const fits = [
     archetypeFit(props(DEF, ER, CR, CD), build),
     archetypeFit(props(DEF, ER, CD, ATK), build),
-    archetypeFit(props(DEF, ER, CR, FLAT), build),
     archetypeFit(props(DEF, ER, ATK, FLAT), build),
-    archetypeFit(props(DEF, ER, FLAT, 'FIGHT_PROP_HP'), build),
   ];
-  assert.deepEqual(fits, [4, 3, 2, 1, 0]);
+  assert.deepEqual(fits, [2, 1, 0]);
 });
 
 test('the tiebreak counts only rolls into the substats the build named', () => {

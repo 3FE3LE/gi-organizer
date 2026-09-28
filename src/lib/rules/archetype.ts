@@ -6,40 +6,29 @@ import type { RollQuality } from './rolls';
  * "Best for DEF" priced every piece on crit first and the named scaler second,
  * so a DEF search opened on five pieces with no DEF on them at all. The
  * question is narrower than a weighting can say: this build *needs* DEF% and
- * recharge, would like crit on top, and can live with ATK% in place of either
- * crit line. So it is said in those terms:
+ * recharge, and would like crit on top. So it is said in those terms:
  *
  *   - **required** — up to two. A piece without every one is not listed.
  *   - **optional** — up to two. Never filters; a piece with both leads.
- *   - **wildcard** — one. Stands in for either optional, never for both.
  *
- * A piece has four substat lines and the required take two of them, so two
- * lines are left for the rest to compete for. That is why the wildcard is a
- * substitute and not a fifth optional: with both optionals on the piece there
- * is no line left for it.
+ * A piece has four substat lines and the required take two of them, so the
+ * optionals compete for the two that are left.
  */
 export type Archetype = {
   required: string[];
   optional: string[];
-  wildcard: string | null;
 };
 
 export const MAX_REQUIRED = 2;
 export const MAX_OPTIONAL = 2;
 
 export function isEmptyArchetype(archetype: Archetype) {
-  return archetype.required.length === 0
-    && archetype.optional.length === 0
-    && archetype.wildcard === null;
+  return archetype.required.length === 0 && archetype.optional.length === 0;
 }
 
 /** Every substat the archetype names, required first. */
 export function archetypeProps(archetype: Archetype) {
-  return [
-    ...archetype.required,
-    ...archetype.optional,
-    ...(archetype.wildcard === null ? [] : [archetype.wildcard]),
-  ];
+  return [...archetype.required, ...archetype.optional];
 }
 
 /** Whether a piece carries every required substat. The locked line counts. */
@@ -48,21 +37,11 @@ export function meetsArchetype(props: Set<string>, archetype: Archetype) {
 }
 
 /**
- * How well a piece's remaining lines fit, best first:
- *
- *   4 — both optionals
- *   3 — one optional and the wildcard
- *   2 — one optional
- *   1 — the wildcard alone
- *   0 — none of them
+ * How many of the optionals a piece carries: 2, 1 or 0, best first. With the
+ * required ones always present, that is four, three or two matches.
  */
 export function archetypeFit(props: Set<string>, archetype: Archetype) {
-  const optionals = archetype.optional.filter((prop) => props.has(prop)).length;
-  const wildcard = archetype.wildcard !== null && props.has(archetype.wildcard);
-
-  if (optionals >= 2) return 4;
-  if (optionals === 1) return wildcard ? 3 : 2;
-  return wildcard ? 1 : 0;
+  return archetype.optional.filter((prop) => props.has(prop)).length;
 }
 
 /**

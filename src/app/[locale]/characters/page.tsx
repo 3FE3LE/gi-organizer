@@ -237,6 +237,15 @@ export default async function CharactersPage({
               dismissed: t('legendDismissed'),
             }} />
           </div>
+          {/*
+            * Keyed by the view, as the plan's results are: a filter change is
+            * the old gallery leaving and the new one arriving, so it
+            * crossfades rather than cutting, and a portrait in both — the
+            * `character-<id>` names below — glides to where it now sits
+            * instead of vanishing and reappearing.
+            */}
+          <ViewTransition key={rosterHref(base, filters)} enter="fade-in" exit="fade-out" default="none">
+          <div className="space-y-6">
           {grouping === 'owned' && mine.length === 0 && !narrowed && (
             <p className="text-sm text-muted">{t('empty')}</p>
           )}
@@ -302,6 +311,8 @@ export default async function CharactersPage({
               </section>
             );
           })}
+          </div>
+          </ViewTransition>
         </>
       )}
     </div>

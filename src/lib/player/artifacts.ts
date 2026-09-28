@@ -151,14 +151,10 @@ export type ArtifactFilter = {
   mainProp?: string | null;
   /** `free` is nobody's, `worn` is on somebody. */
   held?: 'free' | 'worn' | null;
-  /** Only pieces with a substat where every roll landed maximum. */
-  perfectOnly?: boolean;
-  /** Minimum average tier, as a fraction. `0.9` means "alto or better". */
-  minEfficiency?: number | null;
   /** Minimum crit value. Narrows the box to what a crit build would want. */
   minCritValue?: number | null;
-  /** The four-level band the piece sits in: 0 is +0–3, 20 is finished. */
-  levelBand?: number | null;
+  /** The highest upgrade step let through: 8 is +0 to +11, 20 is everything. */
+  levelCap?: number | null;
 };
 
 export type ArtifactSort = 'value' | 'potential' | 'quality' | 'cv' | 'rolls' | 'level' | 'set';
@@ -184,34 +180,33 @@ export function filterArtifacts(
     if (filter.mainProp && piece.mainProp !== filter.mainProp) return false;
     if (filter.held === 'free' && piece.holderId !== null) return false;
     if (filter.held === 'worn' && piece.holderId === null) return false;
-    if (filter.perfectOnly && !piece.quality.hasPerfect) return false;
     if (archetype && !meetsArchetype(propsOf(piece), archetype)) return false;
-    if (filter.minEfficiency && (piece.quality.efficiency ?? 0) < filter.minEfficiency) {
-      return false;
-    }
     if (filter.minCritValue && effectiveCv(piece) < filter.minCritValue) return false;
-    if (filter.levelBand !== null && filter.levelBand !== undefined
-      && Math.floor(piece.level / 4) * 4 !== filter.levelBand) return false;
+    if (filter.levelCap !== null && filter.levelCap !== undefined
+      && Math.floor(piece.level / 4) * 4 > filter.levelCap) return false;
     return true;
   });
 
   // Worth depends on the scaler, so it is not a property of the piece and is
   // not cached on it. Computed once per piece here rather than inside the
   // comparator, which a sort calls a few thousand times for a box this size.
-  // The build named its substats, so that is what "value" means: how many of
-  // the rest it carries, then how many rolls landed in any it named. The
-  // generic worth would put crit first whatever the build asked for.
-  if (sort === 'value' && archetype) {
+  // The build named its substats, so a piece carrying more of them leads
+  // whatever the ordering: all four, then three, then the two required. The
+  // chosen ordering only settles pieces that match equally — and for "value"
+  // that is rolls into the named substats, since the generic worth would put
+  // crit first whatever the build asked for.
+  if (archetype) {
     const rank = new Map(kept.map((piece) => [piece.instanceId, {
       fit: archetypeFit(propsOf(piece), archetype),
       rolls: archetypeRolls(piece.quality.substats, archetype),
     }] as const));
+    const within: Comparator = sort === 'value'
+      ? (a, b) => rank.get(b.instanceId)!.rolls - rank.get(a.instanceId)!.rolls
+        || effectiveCv(b) - effectiveCv(a)
+      : comparators[sort];
 
-    return kept.sort((a, b) => {
-      const left = rank.get(a.instanceId)!;
-      const right = rank.get(b.instanceId)!;
-      return right.fit - left.fit || right.rolls - left.rolls || effectiveCv(b) - effectiveCv(a);
-    });
+    return kept.sort((a, b) =>
+      rank.get(b.instanceId)!.fit - rank.get(a.instanceId)!.fit || within(a, b));
   }
 
   if (sort === 'value') {

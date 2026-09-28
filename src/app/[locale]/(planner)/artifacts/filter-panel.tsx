@@ -21,12 +21,10 @@ import {
   CRIT_STEP_LABELS,
   HELD,
   SORTS,
-  TIER_FILTERS,
   activeCount,
   archetypeOf,
   hasArchetype,
   href,
-  tierAt,
   type ArtifactFilters,
 } from './filters';
 import { FilterInputs } from './filter-inputs';
@@ -71,7 +69,6 @@ export async function FilterPanel({
   const common = await getTranslations('common');
   const slotLabel = await getTranslations('common.slot');
   const heldLabel = await getTranslations('common.held');
-  const tierLabel = await getTranslations('common.tier');
   const sortLabel = await getTranslations('common.sort');
 
   /*
@@ -105,8 +102,7 @@ export async function FilterPanel({
   const advanced = [
     filters.slot !== null, filters.held !== null, filters.scaler !== null,
     filters.sort !== 'value',
-    hasArchetype(filters), filters.quality !== null, filters.cv !== null,
-    filters.perfect, filters.main !== null, filters.lvl !== null,
+    hasArchetype(filters), filters.cv !== null, filters.main !== null, filters.lvl !== null,
   ].filter(Boolean).length;
   const scalerLabel = await getTranslations('common.scaler');
   // A scaler only prices the value ordering, so picking one switches to it —
@@ -227,7 +223,13 @@ export async function FilterPanel({
 
             <Segments label={t('sortLabel')}>
               {SORTS.map((sort) => (
-                <Segment key={sort} to={href(base, filters, { sort })} active={filters.sort === sort}>
+                // The level cap belongs to the potential ordering, so leaving
+                // it takes the cap along rather than hiding a live filter.
+                <Segment
+                  key={sort}
+                  to={href(base, filters, sort === 'potential' ? { sort } : { sort, lvl: null })}
+                  active={filters.sort === sort}
+                >
                   {sortLabel(sort)}
                 </Segment>
               ))}
@@ -236,10 +238,6 @@ export async function FilterPanel({
 
           <FilterInputs
             substats={ROLLABLE.map((prop) => ({ value: prop, label: statLabel(catalog, prop) }))}
-            tiers={TIER_FILTERS.map((fraction) => ({
-              value: String(Math.round(fraction * 100)),
-              label: t('tierOrBetter', { tier: tierLabel(tierAt(fraction)) }),
-            }))}
             ownedMains={ownedMains}
           />
         </div>
@@ -273,7 +271,6 @@ async function describe(filters: ArtifactFilters, catalog: Catalog) {
   const slotLabel = await getTranslations('common.slot');
   const heldLabel = await getTranslations('common.held');
   const critRatingLabel = await getTranslations('common.critRating');
-  const tierLabel = await getTranslations('common.tier');
 
   const entries: { key: string; label: string; clear: Partial<ArtifactFilters> }[] = [];
 
@@ -302,28 +299,11 @@ async function describe(filters: ArtifactFilters, catalog: Catalog) {
       clear: { want: archetype.optional.filter((other) => other !== prop) },
     });
   }
-  if (archetype.wildcard !== null) {
-    entries.push({
-      key: 'alt',
-      label: t('wildcardActive', { stat: statLabel(catalog, archetype.wildcard) }),
-      clear: { alt: null },
-    });
-  }
-  if (filters.main) {
-    entries.push({ key: 'main', label: statLabel(catalog, filters.main), clear: { main: null } });
-  }
   if (filters.set !== null) {
     entries.push({
       key: 'set',
       label: catalog.artifacts.get(filters.set)?.name ?? `#${filters.set}`,
       clear: { set: null },
-    });
-  }
-  if (filters.quality !== null) {
-    entries.push({
-      key: 'quality',
-      label: t('tierOrBetter', { tier: tierLabel(tierAt(filters.quality / 100)) }),
-      clear: { quality: null },
     });
   }
   if (filters.cv !== null) {
@@ -338,13 +318,9 @@ async function describe(filters: ArtifactFilters, catalog: Catalog) {
   if (filters.lvl !== null) {
     entries.push({
       key: 'lvl',
-      label: filters.lvl === 20 ? '+20' : `+${filters.lvl}–${filters.lvl + 3}`,
+      label: t('levelCapReading', { level: filters.lvl }),
       clear: { lvl: null },
     });
   }
-  if (filters.perfect) {
-    entries.push({ key: 'perfect', label: t('perfectSubstatActive'), clear: { perfect: false } });
-  }
-
   return entries;
 }

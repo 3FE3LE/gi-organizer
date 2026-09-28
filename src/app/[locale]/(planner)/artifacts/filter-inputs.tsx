@@ -1,6 +1,5 @@
 'use client';
 
-import { Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTransition } from 'react';
 import { useQueryStates } from 'nuqs';
@@ -13,19 +12,19 @@ import { Slider } from '@/components/ui/slider';
 import {
   CRIT_FILTERS,
   CRIT_STEP_LABELS,
-  LEVEL_BANDS,
+  LEVEL_CAPS,
   artifactParsers,
 } from './filters';
 
 /**
  * The narrowing controls that are inputs rather than links.
  *
- * Substat and roll tier were rows of chips — eleven stats and four tiers
- * spread over two lines — for what is a choice of one from a list, which is
- * what a select is. With them as selects, the four questions a search is
- * phrased in (a substat, how well it rolled, how much crit, which main stat)
- * sit in one row on a desktop and wrap on a phone. The sets are a row of their
- * own under them; see `set-strip.tsx`.
+ * The build's four substats in one row, and under them how much crit and which
+ * main stat. The roll-tier select and the level bands are gone: the first cut
+ * on luck rather than on where the rolls landed, which read as a filter that
+ * did not work, and the second is now a cap that belongs to the potential
+ * ordering and only shows with it. The sets are a row of their own above;
+ * see `set-strip.tsx`.
  *
  * `shallow: false` because the filtering happens on the server: the list is a
  * thousand pieces and narrowing it in the browser would mean shipping all of
@@ -34,13 +33,10 @@ import {
  */
 export function FilterInputs({
   substats,
-  tiers,
   ownedMains,
 }: {
   /** Every rollable substat, worded by the server. */
   substats: { value: string; label: string }[];
-  /** The roll-tier cut-offs, as percentages, worded by the server. */
-  tiers: { value: string; label: string }[];
   /** Only the main stats the box actually holds for the slot in view. */
   /** Empty for a slot whose main stat the game fixed, and before one is picked. */
   ownedMains: { prop: string; name: string }[];
@@ -60,13 +56,13 @@ export function FilterInputs({
     : t('cvOrMore', { rating: critRatingLabel(CRIT_STEP_LABELS[step - 1]), value: CRIT_FILTERS[step - 1] }));
 
   /*
-   * The build's substats, one select per line: two required, two optional,
-   * one wildcard — see `lib/rules/archetype.ts`. Each select offers only what
-   * no other line has taken, so a stat cannot be both required and a bonus.
-   * Choosing any of them retires the scaler and orders by the fit, which is
-   * the answer the choice was asking for.
+   * The build's substats, one select per line: two required, two optional —
+   * see `lib/rules/archetype.ts`. Each select offers only what no other line
+   * has taken, so a stat cannot be both required and a bonus. Choosing any
+   * retires the scaler and orders by the fit, which is the answer the choice
+   * was asking for.
    */
-  const lines: { key: string; label: string; value: string | null; set: (value: string | null) => Partial<typeof filters> }[] = [
+  const lines = [
     ...[0, 1].map((index) => ({
       key: `need-${index}`,
       label: t('requiredLine', { index: index + 1 }),
@@ -79,14 +75,16 @@ export function FilterInputs({
       value: filters.want[index] ?? null,
       set: (value: string | null) => ({ want: place(filters.want, index, value) }),
     })),
-    {
-      key: 'alt',
-      label: t('wildcardLine'),
-      value: filters.alt,
-      set: (value: string | null) => ({ alt: value }),
-    },
   ];
   const taken = new Set(lines.map((line) => line.value).filter((value) => value !== null));
+
+  // The level cap is part of the potential ordering: "which raw pieces are
+  // worth feeding" is that ordering over pieces not yet levelled, and on any
+  // other ordering a cap was a second question nobody was asking.
+  const potential = filters.sort === 'potential';
+  // A hand-edited step that is not one of the marks reads as no cap.
+  const capIndex = LEVEL_CAPS.indexOf(filters.lvl as (typeof LEVEL_CAPS)[number]);
+  const cap = capIndex === -1 ? LEVEL_CAPS.length - 1 : capIndex;
 
   return (
     <div
@@ -100,7 +98,7 @@ export function FilterInputs({
             <span className="cursor-help normal-case text-muted">?</span>
           </Hint>
         </legend>
-        <div className="mt-1.5 grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="mt-1.5 grid grid-cols-2 gap-x-3 gap-y-2 lg:grid-cols-4">
           {lines.map((line) => (
             <Field key={line.key} label={line.label}>
               <FieldSelect
@@ -109,7 +107,9 @@ export function FilterInputs({
                 onValueChange={(value) => setFilters({
                   ...line.set(value === '' ? null : value),
                   scaler: null,
-                  sort: 'value',
+                  // Potential keeps its own order; everything else answers
+                  // with the fit.
+                  ...(potential ? {} : { sort: 'value' as const }),
                 })}
                 placeholder={t('any')}
                 groups={[{ options: substats.filter((option) =>
@@ -121,117 +121,88 @@ export function FilterInputs({
         </div>
       </fieldset>
 
-      <div
-        className={`grid gap-x-4 gap-y-3 sm:grid-cols-2 ${
-          ownedMains.length > 0 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'
-        }`}
-      >
-
-      {/* "quality" named nothing in particular. What it cuts on is the average
-          tier of a piece's rolls, which is the vocabulary the cards below
-          already use. A maxed roll is a toggle beside it rather than a fifth
-          tier, because it is a different question: not how the piece rolled on
-          average, but whether one roll hit the ceiling. */}
-      <Field label={t('rollsLabel')}>
-        <span className="flex items-center gap-1.5">
-          <span className="min-w-0 flex-1">
-            <FieldSelect
-              label={t('rollsAria')}
-              value={filters.quality === null ? '' : String(filters.quality)}
-              onValueChange={(value) => setFilters({ quality: value === '' ? null : Number(value) })}
-              placeholder={t('any')}
-              groups={[{ options: tiers }]}
-              triggerClassName="px-2 py-1 text-xs"
-            />
-          </span>
-          <Hint text={t('perfectSubstatToggle')}>
-            <button
-              type="button"
-              aria-pressed={filters.perfect}
-              onClick={() => setFilters({ perfect: !filters.perfect })}
-              className={`flex h-[1.875rem] shrink-0 items-center gap-1 rounded-md border px-2 text-2xs transition-colors ${
-                filters.perfect
-                  ? 'border-transparent bg-accent text-on-accent'
-                  : 'border-edge text-muted hover:border-edge-strong hover:text-text'
-              }`}
-            >
-              <Sparkles size={11} aria-hidden />
-              <span className="sr-only">{t('perfectSubstatToggle')}</span>
-            </button>
-          </Hint>
-        </span>
-      </Field>
-
-      {/* By upgrade, not by level: +5 and +7 have landed the same rolls and
-          are the same question, so the bands are the four-level steps the game
-          upgrades on. With "potencial" as the order, it is how the raw pieces
-          worth feeding are found. */}
-      <Field label={t('levelLabel')}>
-        <FieldSelect
-          label={t('levelAria')}
-          value={filters.lvl === null ? '' : String(filters.lvl)}
-          onValueChange={(value) => setFilters({ lvl: value === '' ? null : Number(value) })}
-          placeholder={t('any')}
-          groups={[{ options: LEVEL_BANDS.map((band) => ({
-            value: String(band),
-            label: band === 20 ? '+20' : `+${band}–${band + 3}`,
-          })) }]}
-          triggerClassName="px-2 py-1 text-xs"
-        />
-      </Field>
-
-      <Field label={t('critValueLabel')} hint={reading}>
-        {/*
-          * The cut-off, as a scale.
-          *
-          * This was a native range with forty lines of vendor-prefixed CSS to
-          * paint its own track and thumb — `::-webkit-slider-runnable-track`,
-          * `::-moz-range-thumb`, and a `--fill` variable to colour the part
-          * behind the handle. The primitive draws the same thing from two
-          * elements, in both themes, and keeps the keyboard behaviour.
-          */}
-        <Slider
-          min={0}
-          max={CRIT_FILTERS.length}
-          step={1}
-          value={step}
-          aria-label={t('cvMinAria')}
-          onValueChange={(next) => {
-            const value = Number(next);
-            setFilters({ cv: value === 0 ? null : CRIT_FILTERS[value - 1] });
-          }}
-          className="py-1.5"
-        />
-        <span className="mt-1 flex justify-between font-mono text-2xs uppercase tracking-wide text-muted">
-          <span>—</span>
-          {CRIT_FILTERS.map((value, index) => (
-            <span key={value} className={step === index + 1 ? 'text-accent' : undefined}>
-              {value}
-            </span>
-          ))}
-        </span>
-      </Field>
-
-      {/* The main stat is how a search is actually phrased — "a mastery
-          sands" — and it is the one thing `worth` refuses to score, because
-          which main stat is right is the build's decision and not the box's.
-          Absent until a slot makes it a question with more than one answer. */}
-      {ownedMains.length > 0 && (
-        <Field label={t('mainStatLabel')}>
-          <FieldSelect
-            label={t('mainStatAria')}
-            value={filters.main ?? ''}
-            onValueChange={(value) => setFilters({ main: value === '' ? null : value })}
-            placeholder={t('anyWithCount', { count: ownedMains.length })}
-            groups={[{ options: ownedMains.map((main) => ({
-              value: main.prop, label: main.name,
-            })) }]}
-            triggerClassName="px-2 py-1 text-xs"
+      <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
+        <Field label={t('critValueLabel')} hint={reading}>
+          <Scale
+            steps={['—', ...CRIT_FILTERS.map(String)]}
+            value={step}
+            label={t('cvMinAria')}
+            onChange={(value) => setFilters({ cv: value === 0 ? null : CRIT_FILTERS[value - 1] })}
           />
         </Field>
-      )}
+
+        {potential && (
+          <Field label={t('levelCapLabel')} hint={t('levelCapReading', { level: LEVEL_CAPS[cap] })}>
+            <Scale
+              steps={LEVEL_CAPS.map((level) => `+${level}`)}
+              value={cap}
+              label={t('levelCapAria')}
+              // The last step is no cap at all, so it leaves the address.
+              onChange={(value) => setFilters({
+                lvl: value === LEVEL_CAPS.length - 1 ? null : LEVEL_CAPS[value],
+              })}
+            />
+          </Field>
+        )}
+
+        {/* The main stat is how a search is actually phrased — "a mastery
+            sands" — and it is the one thing `worth` refuses to score, because
+            which main stat is right is the build's decision and not the box's.
+            Absent until a slot makes it a question with more than one answer. */}
+        {ownedMains.length > 0 && (
+          <Field label={t('mainStatLabel')}>
+            <FieldSelect
+              label={t('mainStatAria')}
+              value={filters.main ?? ''}
+              onValueChange={(value) => setFilters({ main: value === '' ? null : value })}
+              placeholder={t('anyWithCount', { count: ownedMains.length })}
+              groups={[{ options: ownedMains.map((main) => ({
+                value: main.prop, label: main.name,
+              })) }]}
+              triggerClassName="px-2 py-1 text-xs"
+            />
+          </Field>
+        )}
       </div>
     </div>
+  );
+}
+
+/**
+ * A handful of named steps, as a scale.
+ *
+ * This was a native range with forty lines of vendor-prefixed CSS to paint its
+ * own track and thumb. The primitive draws the same thing from two elements,
+ * in both themes, and keeps the keyboard behaviour; the marks under it name
+ * each step, the current one in the accent.
+ */
+function Scale({
+  steps, value, label, onChange,
+}: {
+  steps: string[];
+  value: number;
+  label: string;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <>
+      <Slider
+        min={0}
+        max={steps.length - 1}
+        step={1}
+        value={value}
+        aria-label={label}
+        onValueChange={(next) => onChange(Number(next))}
+        className="py-1.5"
+      />
+      <span className="mt-1 flex justify-between font-mono text-2xs uppercase tracking-wide text-muted">
+        {steps.map((mark, index) => (
+          <span key={mark} className={index === value && index > 0 ? 'text-accent' : undefined}>
+            {mark}
+          </span>
+        ))}
+      </span>
+    </>
   );
 }
 

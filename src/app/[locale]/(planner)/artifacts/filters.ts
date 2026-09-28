@@ -2,7 +2,6 @@ import {
   createLoader,
   createSerializer,
   parseAsArrayOf,
-  parseAsBoolean,
   parseAsInteger,
   parseAsString,
   parseAsStringLiteral,
@@ -11,7 +10,7 @@ import {
 
 import { ARTIFACT_SLOTS } from '@/lib/enka/slots';
 import type { ArtifactSort } from '@/lib/player/artifacts';
-import { CRIT_VALUE_PER_ROLL, TIER_FRACTIONS, TIERS, critRating } from '@/lib/rules/rolls';
+import { CRIT_VALUE_PER_ROLL, critRating } from '@/lib/rules/rolls';
 import {
   MAX_OPTIONAL, MAX_REQUIRED, archetypeProps, type Archetype,
 } from '@/lib/rules/archetype';
@@ -53,14 +52,6 @@ export const CRIT_STEP_LABELS = CRIT_ROLL_STEPS.map((rolls) => critRating(rolls 
 
 export const HELD = ['free', 'worn'] as const;
 
-/** The tiers a piece's average can be filtered by, worst usable first. */
-export const TIER_FILTERS = TIER_FRACTIONS.filter((fraction) => fraction > 0.7);
-
-/** The tier each cut-off lets through, so the chip can name it. */
-export function tierAt(fraction: number) {
-  return TIERS[TIER_FRACTIONS.indexOf(fraction as (typeof TIER_FRACTIONS)[number])];
-}
-
 export const artifactParsers = {
   slot: parseAsStringLiteral(ARTIFACT_SLOTS),
   set: parseAsInteger,
@@ -68,17 +59,16 @@ export const artifactParsers = {
   need: parseAsArrayOf(parseAsString, ',').withDefault([]),
   /** Optional: never filters, orders. */
   want: parseAsArrayOf(parseAsString, ',').withDefault([]),
-  /** Stands in for either optional. */
-  alt: parseAsString,
   /** The piece's main stat. Not scored — see `worth.ts` — but searched for. */
   main: parseAsString,
   held: parseAsStringLiteral(HELD),
-  perfect: parseAsBoolean.withDefault(false),
-  /** As a percentage, because a fraction in a URL reads as noise. */
-  quality: parseAsInteger,
   /** Minimum crit value, as a whole number. */
   cv: parseAsInteger,
-  /** The four-level band: 0 is +0–3, 16 is +16–19, 20 is finished. */
+  /**
+   * The highest upgrade step shown, with the potential ordering: 8 lets
+   * through +0 to +11, the pieces that have rolled at most twice. Absent is no
+   * cap.
+   */
   lvl: parseAsInteger,
   sort: parseAsStringLiteral(SORTS).withDefault('value'),
   /**
@@ -109,12 +99,11 @@ export function href(
 
 /** Everything a reset has to clear. `sort` is a view, not a narrowing. */
 export const CLEARED: Partial<ArtifactFilters> = {
-  slot: null, set: null, need: [], want: [], alt: null, main: null, held: null, perfect: false,
-  quality: null, cv: null, lvl: null,
+  slot: null, set: null, need: [], want: [], main: null, held: null, cv: null, lvl: null,
 };
 
-/** The bands the level filter offers, one per upgrade. */
-export const LEVEL_BANDS = [0, 4, 8, 12, 16, 20] as const;
+/** The level cap's steps, one per upgrade; the last is no cap. */
+export const LEVEL_CAPS = [0, 4, 8, 12, 16, 20] as const;
 
 export function activeCount(filters: ArtifactFilters) {
   return Object.entries(CLEARED).filter(([key, empty]) => {
@@ -142,9 +131,8 @@ export function archetypeOf(filters: ArtifactFilters): Archetype {
 
   const required = take(filters.need, MAX_REQUIRED);
   const optional = take(filters.want, MAX_OPTIONAL);
-  const wildcard = filters.alt !== null && !seen.has(filters.alt) ? filters.alt : null;
 
-  return { required, optional, wildcard };
+  return { required, optional };
 }
 
 /**
@@ -164,5 +152,5 @@ export function pricingScaler(filters: ArtifactFilters): Scaler | null {
 
 /** Whether the build's substats are in play, which retires the scaler. */
 export function hasArchetype(filters: ArtifactFilters) {
-  return filters.need.length > 0 || filters.want.length > 0 || filters.alt !== null;
+  return filters.need.length > 0 || filters.want.length > 0;
 }
