@@ -11,7 +11,7 @@ import { GameIcon } from '@/components/game-icon';
 import { PrefetchLink } from '@/components/prefetch-link';
 import { SectionTabs } from '@/components/section-tabs';
 import { StickyDock } from '@/components/sticky-dock';
-import { FilterGroup, GROUP_LABEL } from '@/components/segmented-links';
+import { GROUP_LABEL, Segment, Segments } from '@/components/segmented-links';
 import { WeaponTypeIcon } from '@/components/weapon-type-icon';
 import { CakeSlice, SlidersHorizontal } from 'lucide-react';
 
@@ -405,20 +405,21 @@ function RosterControls({
               and behind a disclosure it would be two clicks every time.
               Docked on a phone only the search stays. */}
           <DockFold when="docked-phone" className="min-w-0 pt-2">
-            {/* Chips rather than a segmented strip: six groupings are wider
-                than a phone, and a strip that scrolls sideways hid the last
-                ones off the card. Chips wrap to a second line instead. */}
-            <FilterGroup label={t('groupBy')}>
+            {/* Six groupings are wider than a phone; the strip wraps to a
+                second row there rather than hiding the last ones off the
+                card. */}
+            <Segments label={t('groupBy')}>
               {GROUPINGS.map((grouping) => (
-                <Chip
+                <Segment
                   key={grouping}
                   to={rosterHref(base, filters, { group: grouping })}
                   active={grouping === filters.group}
+                  scroll={false}
                 >
                   {t(`grouping.${grouping}`)}
-                </Chip>
+                </Segment>
               ))}
-            </FilterGroup>
+            </Segments>
           </DockFold>
         </div>
 
@@ -490,67 +491,47 @@ function RosterControls({
           </summary>
 
           <div className="flex flex-wrap items-end gap-x-6 gap-y-3 border-t border-edge px-3 py-2.5">
-            <FilterGroup label={t('sortBy')}>
+            <Segments label={t('sortBy')}>
               {SORTS.map((sort) => (
-                <Chip
+                <Segment
                   key={sort}
                   to={rosterHref(base, filters, { sort })}
                   active={sort === filters.sort}
+                  scroll={false}
                 >
                   {t(`sort.${sort}`)}
-                </Chip>
+                </Segment>
               ))}
-            </FilterGroup>
-            <FilterGroup label={t('filterWeapon')}>
+            </Segments>
+            <Segments label={t('filterWeapon')}>
               {WEAPONS.map((key) => (
-                <Chip
+                <Segment
                   key={key}
                   to={rosterHref(base, filters, { weapon: toggle(filters.weapon, key) })}
                   active={filters.weapon.includes(key)}
-                  label={weaponText(key)}
+                  title={weaponText(key)}
+                  scroll={false}
                 >
                   <WeaponTypeIcon weapon={key} label={weaponText(key)} className="h-5 w-5" />
-                </Chip>
+                </Segment>
               ))}
-            </FilterGroup>
-            <FilterGroup label={t('filterRarity')}>
+            </Segments>
+            <Segments label={t('filterRarity')}>
               {RARITIES.map((rarity) => (
-                <Chip
+                <Segment
                   key={rarity}
                   to={rosterHref(base, filters, { rarity: toggle(filters.rarity, rarity) })}
                   active={filters.rarity.includes(rarity)}
+                  scroll={false}
                 >
                   {rarity}★
-                </Chip>
+                </Segment>
               ))}
-            </FilterGroup>
+            </Segments>
           </div>
         </details>
       </DockFold>
     </div>
-  );
-}
-
-/**
- * One filter value, on or off. An emblem-only chip names itself in a drawn
- * label on hover and focus, as the plan's chips do — see `components/hint.tsx`.
- */
-function Chip({
-  to, active, label, children,
-}: {
-  to: string; active: boolean; label?: string; children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={to}
-      scroll={false}
-      aria-current={active ? 'true' : undefined}
-      data-active={active}
-      className={`chip${label ? ' group relative px-1.5' : ''}`}
-    >
-      {children}
-      {label && <HoverLabel text={label} />}
-    </Link>
   );
 }
 

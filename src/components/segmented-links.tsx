@@ -4,14 +4,23 @@ import { HoverLabel } from '@/components/hint';
 
 /**
  * The label every group of filter values carries, above the values: one
- * drawing for the question a row of chips or a strip of segments answers.
+ * drawing for the question a strip of segments answers.
  */
 export const GROUP_LABEL = 'font-mono text-2xs uppercase tracking-wide text-muted';
 
-/** A segment's own look: filled when it is the current one. */
+/**
+ * A segment's own look: filled when it is the current one.
+ *
+ * The resting fill is opaque — the card's surface half mixed toward the second
+ * one, which is what the strip's translucent tint used to paint — because the
+ * hairlines between segments are now the strip's own edge colour showing
+ * through a one-pixel gap, and a translucent segment would let it through.
+ */
 function segmentClass(active: boolean) {
-  return `flex min-h-8 shrink-0 items-center gap-1.5 whitespace-nowrap px-2.5 text-xs transition-colors ${
-    active ? 'bg-accent font-medium text-on-accent' : 'text-muted hover:bg-surface-2 hover:text-text'
+  return `flex min-h-8 grow items-center justify-center gap-1.5 whitespace-nowrap px-2.5 text-xs transition-colors ${
+    active
+      ? 'bg-accent font-medium text-on-accent'
+      : 'bg-[color-mix(in_oklab,var(--surface-2)_50%,var(--surface))] text-muted hover:bg-surface-2 hover:text-text'
   }`;
 }
 
@@ -35,10 +44,9 @@ export function Segments({
   children: React.ReactNode;
 }) {
   return (
-    // `min-w-0` and a sideways scroll, so a group wider than a phone — the
-    // seven orderings — slides rather than pushing the card past the screen.
-    // `relative` here, outside that scroll, is what a segment's hover label is
-    // placed against — see `Segment`.
+    // `min-w-0`, so a group wider than a phone wraps inside the card rather
+    // than pushing it past the screen. `relative` is what a segment's hover
+    // label is placed against — see `Segment`.
     <div className="relative min-w-0 max-w-full space-y-0.5">
       {/* The hint rides on the strip's own name, where a screen reader and a
           keyboard both meet it; a `title` on a label nothing can focus reached
@@ -49,36 +57,23 @@ export function Segments({
   );
 }
 
-/** The bordered strip alone, for a strip whose label sits elsewhere. */
+/**
+ * The bordered strip alone, for a strip whose label sits elsewhere.
+ *
+ * It wraps rather than scrolling. A strip that slid sideways hid its last
+ * values off the card on a phone — six groupings, seven orderings — which is
+ * why those used to be chips. Wrapped, the hairlines are a one-pixel gap over
+ * the edge colour, so they divide a second row as they do the first, and each
+ * segment grows to fill its row so no gap is left showing at a row's end.
+ */
 export function SegmentStrip({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div
       role="group"
       aria-label={label}
-      className="flex w-fit max-w-full items-stretch divide-x divide-edge overflow-x-auto rounded-lg border border-edge bg-surface-2/50"
+      className="flex w-fit max-w-full flex-wrap items-stretch gap-px overflow-hidden rounded-lg border border-edge bg-edge"
     >
       {children}
-    </div>
-  );
-}
-
-/**
- * A group of filter values under its label — the chips of one question, the
- * same label style `Segments` has, always above rather than beside them.
- */
-export function FilterGroup({
-  label,
-  className = '',
-  children,
-}: {
-  label: string;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div role="group" aria-label={label} className={`min-w-0 space-y-1 ${className}`}>
-      <p aria-hidden className={GROUP_LABEL}>{label}</p>
-      <div className="flex flex-wrap items-center gap-1">{children}</div>
     </div>
   );
 }
@@ -102,13 +97,14 @@ export function Segment({
       href={to}
       scroll={scroll}
       aria-current={active ? 'true' : undefined}
+      data-active={active}
       className={`${segmentClass(active)}${title ? ' group/segment' : ''}`}
     >
       {children}
       {/* A segment is a link, so its hint is the CSS label rather than a
           tooltip — see `components/hint.tsx`. The segment is deliberately not
-          `relative`: the strip scrolls sideways, and a scroller clips whatever
-          is placed against something inside it, so a label anchored to the
+          `relative`: the strip clips to its rounded corners, and that clips
+          whatever is placed against something inside it, so a label anchored to the
           segment would be cut off above the strip. It is placed against the
           group around the strip instead, and hangs below it: above, it would
           land on the group's name, and a folded panel clips what rises out of
@@ -134,7 +130,7 @@ export function SegmentButton({
   children: React.ReactNode;
 }) {
   return (
-    <button type="button" onClick={onClick} aria-pressed={active} className={segmentClass(active)}>
+    <button type="button" onClick={onClick} aria-pressed={active} data-active={active} className={segmentClass(active)}>
       {children}
     </button>
   );
