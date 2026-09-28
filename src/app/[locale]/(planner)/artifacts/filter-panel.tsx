@@ -23,6 +23,8 @@ import {
   SORTS,
   TIER_FILTERS,
   activeCount,
+  archetypeOf,
+  hasArchetype,
   href,
   tierAt,
   type ArtifactFilters,
@@ -103,7 +105,7 @@ export async function FilterPanel({
   const advanced = [
     filters.slot !== null, filters.held !== null, filters.scaler !== null,
     filters.sort !== 'value',
-    filters.sub !== null, filters.quality !== null, filters.cv !== null,
+    hasArchetype(filters), filters.quality !== null, filters.cv !== null,
     filters.perfect, filters.main !== null, filters.lvl !== null,
   ].filter(Boolean).length;
   const scalerLabel = await getTranslations('common.scaler');
@@ -177,6 +179,9 @@ export async function FilterPanel({
               * only ordering it prices, so picking a scaler always answers with a
               * ranking for it.
               */}
+            {/* Retired while the build's substats are chosen: those say what
+                the value ordering counts, more exactly than a scaler can. */}
+            {!hasArchetype(filters) && (
             <Segments label={t('scalerLabel')} hint={t('scalerHint')}>
               <Segment
                 to={href(base, filters, { scaler: null, ...valueSort })}
@@ -195,6 +200,7 @@ export async function FilterPanel({
                 </Segment>
               ))}
             </Segments>
+            )}
 
             {/* Icons, like the slots beside them: "free" and "worn" are two
                 states a player reads at a glance, and spelled out they were the
@@ -281,8 +287,27 @@ async function describe(filters: ArtifactFilters, catalog: Catalog) {
   if (filters.held) {
     entries.push({ key: 'held', label: heldLabel(filters.held), clear: { held: null } });
   }
-  if (filters.sub) {
-    entries.push({ key: 'sub', label: statLabel(catalog, filters.sub), clear: { sub: null } });
+  const archetype = archetypeOf(filters);
+  for (const prop of archetype.required) {
+    entries.push({
+      key: `need-${prop}`,
+      label: t('requiredActive', { stat: statLabel(catalog, prop) }),
+      clear: { need: archetype.required.filter((other) => other !== prop) },
+    });
+  }
+  for (const prop of archetype.optional) {
+    entries.push({
+      key: `want-${prop}`,
+      label: t('optionalActive', { stat: statLabel(catalog, prop) }),
+      clear: { want: archetype.optional.filter((other) => other !== prop) },
+    });
+  }
+  if (archetype.wildcard !== null) {
+    entries.push({
+      key: 'alt',
+      label: t('wildcardActive', { stat: statLabel(catalog, archetype.wildcard) }),
+      clear: { alt: null },
+    });
   }
   if (filters.main) {
     entries.push({ key: 'main', label: statLabel(catalog, filters.main), clear: { main: null } });

@@ -5,6 +5,9 @@ import type { ArtifactSlot } from '@/lib/data/types';
 import {
   CRIT_WEIGHTS, critRating, critValue, pieceQuality, type CritRating, type RollQuality,
 } from '@/lib/rules/rolls';
+import {
+  archetypeFit, archetypeRolls, isEmptyArchetype, meetsArchetype, type Archetype,
+} from '@/lib/rules/archetype';
 import { pieceWorth, type Scaler } from '@/lib/rules/worth';
 
 import { getProfileId } from './db';
@@ -139,8 +142,11 @@ export function critPotential(quality: { substats: RollQuality[] }, mainProp?: s
 export type ArtifactFilter = {
   slot?: ArtifactSlot | null;
   setId?: number | null;
-  /** A substat the piece must carry. */
-  substat?: string | null;
+  /**
+   * The build's substats: the required ones filter, the rest only order. When
+   * set, the value ordering is the fit to it rather than the generic worth.
+   */
+  archetype?: Archetype | null;
   /** The piece's main stat, which is a search axis rather than a score. */
   mainProp?: string | null;
   /** `free` is nobody's, `worn` is on somebody. */
@@ -168,6 +174,10 @@ export function filterArtifacts(
   sort: ArtifactSort = 'value',
   scaler: Scaler | null = null,
 ): OwnedArtifact[] {
+  const archetype = filter.archetype && !isEmptyArchetype(filter.archetype)
+    ? filter.archetype
+    : null;
+
   const kept = artifacts.filter((piece) => {
     if (filter.slot && piece.slot !== filter.slot) return false;
     if (filter.setId && piece.setId !== filter.setId) return false;
@@ -175,9 +185,7 @@ export function filterArtifacts(
     if (filter.held === 'free' && piece.holderId !== null) return false;
     if (filter.held === 'worn' && piece.holderId === null) return false;
     if (filter.perfectOnly && !piece.quality.hasPerfect) return false;
-    if (filter.substat && !piece.substats.some((entry) => entry.prop === filter.substat)) {
-      return false;
-    }
+    if (archetype && !meetsArchetype(propsOf(piece), archetype)) return false;
     if (filter.minEfficiency && (piece.quality.efficiency ?? 0) < filter.minEfficiency) {
       return false;
     }
@@ -190,6 +198,22 @@ export function filterArtifacts(
   // Worth depends on the scaler, so it is not a property of the piece and is
   // not cached on it. Computed once per piece here rather than inside the
   // comparator, which a sort calls a few thousand times for a box this size.
+  // The build named its substats, so that is what "value" means: how many of
+  // the rest it carries, then how many rolls landed in any it named. The
+  // generic worth would put crit first whatever the build asked for.
+  if (sort === 'value' && archetype) {
+    const rank = new Map(kept.map((piece) => [piece.instanceId, {
+      fit: archetypeFit(propsOf(piece), archetype),
+      rolls: archetypeRolls(piece.quality.substats, archetype),
+    }] as const));
+
+    return kept.sort((a, b) => {
+      const left = rank.get(a.instanceId)!;
+      const right = rank.get(b.instanceId)!;
+      return right.fit - left.fit || right.rolls - left.rolls || effectiveCv(b) - effectiveCv(a);
+    });
+  }
+
   if (sort === 'value') {
     const value = new Map(kept.map(
       (piece) => [piece.instanceId, pieceWorth(withLocked(piece), scaler).value] as const,
@@ -208,6 +232,11 @@ type Comparator = (a: OwnedArtifact, b: OwnedArtifact) => number;
 /** Crit value counting the locked fourth line, which has already rolled. */
 function effectiveCv(piece: OwnedArtifact) {
   return piece.critValueAtFour ?? piece.critValue;
+}
+
+/** Every substat the piece carries, the locked fourth line included. */
+function propsOf(piece: OwnedArtifact) {
+  return new Set([...piece.substats, ...piece.unactivated].map((entry) => entry.prop));
 }
 
 /** The piece with its locked fourth line, for readings of how it rolled. */

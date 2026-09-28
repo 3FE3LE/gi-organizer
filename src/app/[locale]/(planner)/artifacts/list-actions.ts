@@ -8,7 +8,7 @@ import { getDb } from '@/lib/db/client';
 import { getAccountCatalog } from '@/lib/player/traveler';
 
 import { ownedArtifactCardData } from './artifact-card';
-import { loadArtifactFilters } from './filters';
+import { loadArtifactFilters, pricingScaler } from './filters';
 import { PAGE_SIZE, queryArtifacts } from './query';
 
 export type ArtifactCardEntry = { id: string; data: OwnedArtifactCardData };
@@ -39,7 +39,7 @@ export async function loadArtifactPage(input: {
   return Promise.all(
     shown.slice(input.offset, input.offset + PAGE_SIZE).map(async (piece) => ({
       id: piece.instanceId,
-      data: await ownedArtifactCardData(piece, filters.scaler, catalog, input.locale),
+      data: await ownedArtifactCardData(piece, pricingScaler(filters), catalog, input.locale),
     })),
   );
 }

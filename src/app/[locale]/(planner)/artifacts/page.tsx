@@ -12,7 +12,7 @@ import { ownedArtifactCardData } from './artifact-card';
 import { ArtifactList } from './artifact-list';
 import { FilterPanel } from './filter-panel';
 import { StickyDock } from '@/components/sticky-dock';
-import { CLEARED, href, loadArtifactFilters } from './filters';
+import { CLEARED, href, loadArtifactFilters, pricingScaler } from './filters';
 import { PAGE_SIZE, queryArtifacts } from './query';
 
 export const dynamic = 'force-dynamic';
@@ -46,7 +46,7 @@ export default async function ArtifactsPage({
   const { all, shown } = await queryArtifacts(filters, db);
   const first = await Promise.all(shown.slice(0, PAGE_SIZE).map(async (piece) => ({
     id: piece.instanceId,
-    data: await ownedArtifactCardData(piece, filters.scaler, catalog, locale),
+    data: await ownedArtifactCardData(piece, pricingScaler(filters), catalog, locale),
   })));
 
   const base = `/${locale}/artifacts`;

@@ -3,7 +3,7 @@ import 'server-only';
 import type { Db } from '@/lib/db/client';
 import { filterArtifacts, readArtifacts } from '@/lib/player/artifacts';
 
-import type { ArtifactFilters } from './filters';
+import { archetypeOf, type ArtifactFilters } from './filters';
 
 /**
  * The box, and the slice of it the filters in the URL ask for.
@@ -23,7 +23,7 @@ export async function queryArtifacts(filters: ArtifactFilters, db: Db) {
     {
       slot: filters.slot,
       setId: filters.set,
-      substat: filters.sub,
+      archetype: archetypeOf(filters),
       mainProp: filters.main,
       held: filters.held,
       perfectOnly: filters.perfect,

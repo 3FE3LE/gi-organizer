@@ -59,23 +59,73 @@ export function FilterInputs({
     ? t('any')
     : t('cvOrMore', { rating: critRatingLabel(CRIT_STEP_LABELS[step - 1]), value: CRIT_FILTERS[step - 1] }));
 
+  /*
+   * The build's substats, one select per line: two required, two optional,
+   * one wildcard — see `lib/rules/archetype.ts`. Each select offers only what
+   * no other line has taken, so a stat cannot be both required and a bonus.
+   * Choosing any of them retires the scaler and orders by the fit, which is
+   * the answer the choice was asking for.
+   */
+  const lines: { key: string; label: string; value: string | null; set: (value: string | null) => Partial<typeof filters> }[] = [
+    ...[0, 1].map((index) => ({
+      key: `need-${index}`,
+      label: t('requiredLine', { index: index + 1 }),
+      value: filters.need[index] ?? null,
+      set: (value: string | null) => ({ need: place(filters.need, index, value) }),
+    })),
+    ...[0, 1].map((index) => ({
+      key: `want-${index}`,
+      label: t('optionalLine', { index: index + 1 }),
+      value: filters.want[index] ?? null,
+      set: (value: string | null) => ({ want: place(filters.want, index, value) }),
+    })),
+    {
+      key: 'alt',
+      label: t('wildcardLine'),
+      value: filters.alt,
+      set: (value: string | null) => ({ alt: value }),
+    },
+  ];
+  const taken = new Set(lines.map((line) => line.value).filter((value) => value !== null));
+
   return (
     <div
       data-pending={pending || undefined}
-      className={`grid gap-x-4 gap-y-3 transition-opacity data-pending:opacity-50 sm:grid-cols-2 ${
-        ownedMains.length > 0 ? 'lg:grid-cols-5' : 'lg:grid-cols-4'
-      }`}
+      className="space-y-3 transition-opacity data-pending:opacity-50"
     >
-      <Field label={t('substatLabel')}>
-        <FieldSelect
-          label={t('substatAria')}
-          value={filters.sub ?? ''}
-          onValueChange={(value) => setFilters({ sub: value === '' ? null : value })}
-          placeholder={t('any')}
-          groups={[{ options: substats }]}
-          triggerClassName="px-2 py-1 text-xs"
-        />
-      </Field>
+      <fieldset className="min-w-0">
+        <legend className={`flex items-baseline gap-2 ${GROUP_LABEL}`}>
+          {t('substatLabel')}
+          <Hint text={t('archetypeHint')}>
+            <span className="cursor-help normal-case text-muted">?</span>
+          </Hint>
+        </legend>
+        <div className="mt-1.5 grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3 lg:grid-cols-5">
+          {lines.map((line) => (
+            <Field key={line.key} label={line.label}>
+              <FieldSelect
+                label={line.label}
+                value={line.value ?? ''}
+                onValueChange={(value) => setFilters({
+                  ...line.set(value === '' ? null : value),
+                  scaler: null,
+                  sort: 'value',
+                })}
+                placeholder={t('any')}
+                groups={[{ options: substats.filter((option) =>
+                  option.value === line.value || !taken.has(option.value)) }]}
+                triggerClassName="px-2 py-1 text-xs"
+              />
+            </Field>
+          ))}
+        </div>
+      </fieldset>
+
+      <div
+        className={`grid gap-x-4 gap-y-3 sm:grid-cols-2 ${
+          ownedMains.length > 0 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'
+        }`}
+      >
 
       {/* "quality" named nothing in particular. What it cuts on is the average
           tier of a piece's rolls, which is the vocabulary the cards below
@@ -180,8 +230,19 @@ export function FilterInputs({
           />
         </Field>
       )}
+      </div>
     </div>
   );
+}
+
+/**
+ * A line's choice written into its position. Emptied lines close up, so the
+ * URL never carries a hole — the second required line cleared leaves one.
+ */
+function place(list: string[], index: number, value: string | null) {
+  const next = [...list];
+  next[index] = value ?? '';
+  return next.filter((entry) => entry !== '');
 }
 
 function Field({

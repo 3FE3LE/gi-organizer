@@ -1,6 +1,7 @@
 import {
   createLoader,
   createSerializer,
+  parseAsArrayOf,
   parseAsBoolean,
   parseAsInteger,
   parseAsString,
@@ -11,7 +12,10 @@ import {
 import { ARTIFACT_SLOTS } from '@/lib/enka/slots';
 import type { ArtifactSort } from '@/lib/player/artifacts';
 import { CRIT_VALUE_PER_ROLL, TIER_FRACTIONS, TIERS, critRating } from '@/lib/rules/rolls';
-import { SCALERS } from '@/lib/rules/worth';
+import {
+  MAX_OPTIONAL, MAX_REQUIRED, archetypeProps, type Archetype,
+} from '@/lib/rules/archetype';
+import { SCALERS, SCALER_PROPS, type Scaler } from '@/lib/rules/worth';
 
 /**
  * The box, narrowed.
@@ -60,7 +64,12 @@ export function tierAt(fraction: number) {
 export const artifactParsers = {
   slot: parseAsStringLiteral(ARTIFACT_SLOTS),
   set: parseAsInteger,
-  sub: parseAsString,
+  /** The build's substats — see `lib/rules/archetype.ts`. Required ones filter. */
+  need: parseAsArrayOf(parseAsString, ',').withDefault([]),
+  /** Optional: never filters, orders. */
+  want: parseAsArrayOf(parseAsString, ',').withDefault([]),
+  /** Stands in for either optional. */
+  alt: parseAsString,
   /** The piece's main stat. Not scored — see `worth.ts` — but searched for. */
   main: parseAsString,
   held: parseAsStringLiteral(HELD),
@@ -100,7 +109,7 @@ export function href(
 
 /** Everything a reset has to clear. `sort` is a view, not a narrowing. */
 export const CLEARED: Partial<ArtifactFilters> = {
-  slot: null, set: null, sub: null, main: null, held: null, perfect: false,
+  slot: null, set: null, need: [], want: [], alt: null, main: null, held: null, perfect: false,
   quality: null, cv: null, lvl: null,
 };
 
@@ -108,7 +117,52 @@ export const CLEARED: Partial<ArtifactFilters> = {
 export const LEVEL_BANDS = [0, 4, 8, 12, 16, 20] as const;
 
 export function activeCount(filters: ArtifactFilters) {
-  return Object.entries(CLEARED).filter(
-    ([key, empty]) => filters[key as keyof ArtifactFilters] !== empty,
-  ).length;
+  return Object.entries(CLEARED).filter(([key, empty]) => {
+    const value = filters[key as keyof ArtifactFilters];
+    return Array.isArray(value) ? value.length > 0 : value !== empty;
+  }).length;
+}
+
+/**
+ * The URL's substats as an archetype, capped and without repeats: a
+ * hand-edited query must not turn one stat into both a requirement and a
+ * bonus, or a third requirement into a filter the controls cannot show.
+ */
+export function archetypeOf(filters: ArtifactFilters): Archetype {
+  const seen = new Set<string>();
+  const take = (props: string[], cap: number) => {
+    const kept: string[] = [];
+    for (const prop of props) {
+      if (kept.length === cap || seen.has(prop)) continue;
+      seen.add(prop);
+      kept.push(prop);
+    }
+    return kept;
+  };
+
+  const required = take(filters.need, MAX_REQUIRED);
+  const optional = take(filters.want, MAX_OPTIONAL);
+  const wildcard = filters.alt !== null && !seen.has(filters.alt) ? filters.alt : null;
+
+  return { required, optional, wildcard };
+}
+
+/**
+ * The scaler a card is priced on. With the build's substats chosen it is the
+ * first scaler among them, so a DEF% the build asked for is not greyed out as
+ * dead on the very pieces it was required on.
+ */
+export function pricingScaler(filters: ArtifactFilters): Scaler | null {
+  if (!hasArchetype(filters)) return filters.scaler;
+  const props = archetypeProps(archetypeOf(filters));
+  for (const prop of props) {
+    const scaler = SCALERS.find((candidate) => SCALER_PROPS[candidate] === prop);
+    if (scaler) return scaler;
+  }
+  return null;
+}
+
+/** Whether the build's substats are in play, which retires the scaler. */
+export function hasArchetype(filters: ArtifactFilters) {
+  return filters.need.length > 0 || filters.want.length > 0 || filters.alt !== null;
 }
