@@ -23,11 +23,18 @@ export function resolveScope(teams: Team[], filters: Filters) {
   return { team, characterIds };
 }
 
-/** The filter as `farmingPlan` wants it. */
+/**
+ * The filter as `farmingPlan` wants it.
+ *
+ * Characters with no stated target always count, headed for the cap: an
+ * account nobody has written targets for still has a roster to level, and a
+ * switch that narrowed to the goals written down left the plan empty for
+ * exactly the person who needed it most. Leaving somebody out is the roster's
+ * dismissal, one character at a time.
+ */
 export function farmingFilter(filters: Filters, characterIds: Set<number> | undefined) {
   return {
     characterIds,
     reasons: filters.reason.length > 0 ? new Set(filters.reason) : undefined,
-    includeWithoutTarget: filters.assume,
   };
 }

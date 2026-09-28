@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { gameWeekStrip, gameWeekday, nextGameReset } from './game-day';
+import { gameWeekStrip, gameWeekday, nextGameReset, regionForTimeZone } from './game-day';
 
 test('a night in GMT-5 is still the same day it is on the America server', () => {
   // Wednesday 21:00 in GMT-5, which the machine's UTC clock already calls
@@ -52,4 +52,22 @@ test('a minute after the reset, the next one is a day away', () => {
   const now = new Date('2026-09-17T09:01:00Z');
 
   assert.equal(nextGameReset(now, 'america').toISOString(), '2026-09-18T09:00:00.000Z');
+});
+
+test('a timezone lands on the server whose clock it sits nearest', () => {
+  const now = new Date('2026-09-17T12:00:00Z');
+
+  assert.equal(regionForTimeZone('America/Mexico_City', now), 'america');
+  assert.equal(regionForTimeZone('America/Sao_Paulo', now), 'america');
+  assert.equal(regionForTimeZone('Pacific/Honolulu', now), 'america');
+  assert.equal(regionForTimeZone('Europe/Madrid', now), 'europe');
+  assert.equal(regionForTimeZone('Asia/Dubai', now), 'europe');
+  assert.equal(regionForTimeZone('UTC', now), 'europe');
+  assert.equal(regionForTimeZone('Asia/Kolkata', now), 'asia');
+  assert.equal(regionForTimeZone('Asia/Tokyo', now), 'asia');
+  assert.equal(regionForTimeZone('Australia/Sydney', now), 'asia');
+});
+
+test('a timezone the runtime does not know is no guess at all', () => {
+  assert.equal(regionForTimeZone('Mars/Olympus_Mons'), null);
 });

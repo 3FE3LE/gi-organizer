@@ -25,7 +25,6 @@ export function RosterChip({
   dismissed: fromServer,
   picked,
   dimmed,
-  assume,
   filterHref,
   labels,
 }: {
@@ -38,8 +37,6 @@ export function RosterChip({
   picked: boolean;
   /** Another face is picked, so this one steps back. */
   dimmed: boolean;
-  /** Whether characters with no target count, which decides who can be filtered to. */
-  assume: boolean;
   filterHref: string;
   labels: { restore: string; dismiss: string; filter: string; stopFilter: string };
 }) {
@@ -47,7 +44,7 @@ export function RosterChip({
   const dismissed = isDismissed(characterId, fromServer);
   // Somebody the plan is not counting has no demand to filter down to, so
   // their name is a label rather than a control.
-  const filterable = !dismissed && (hasTarget || assume);
+  const filterable = !dismissed;
 
   const content = (
     <>

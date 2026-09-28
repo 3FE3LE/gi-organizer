@@ -12,6 +12,8 @@ import { StickyDock } from '@/components/sticky-dock';
 import { FoldMark } from '@/components/fold-mark';
 import { type Catalog } from '@/lib/data/catalog';
 import { isLocale, type Locale } from '@/lib/data/locales';
+import { NATIONS, type Nation } from '@/lib/data/nations';
+import { getBossNations } from '@/lib/data/registry';
 import { getDb } from '@/lib/db/client';
 import { readRegion } from '@/lib/player/region';
 import { isDraft, readTeams, type Team } from '@/lib/player/teams';
@@ -27,7 +29,7 @@ import {
   type Weekday,
 } from '@/lib/rules/materials';
 
-import { groupAnytime, type AnytimeGroup } from './anytime';
+import { byNation, groupAnytime, type AnytimeGroup } from './anytime';
 import { FilterBar } from './filter-bar';
 import { href, loadFilters, type Filters } from './filters';
 import { MaterialRow } from './material-row';
@@ -205,7 +207,7 @@ async function PlanContent({
   locale: Locale;
   today: Weekday;
 }) {
-  const { schedule, sources, roster } = await plan;
+  const [{ schedule, sources, roster }, nations] = await Promise.all([plan, getBossNations()]);
   // An empty account: the day card is walking them through the first import,
   // and a zero-count heading over "nobody has a target" would argue with it.
   if (roster.length === 0) return null;
@@ -247,17 +249,7 @@ async function PlanContent({
       </div>
 
       {sources === 0 ? (
-        <p className="max-w-prose text-sm text-muted">
-          {t('noTargetsMessage')}{' '}
-          <Link href={`/${locale}/characters`} className="underline hover:text-accent">
-            {t('fixTargetLink')}
-          </Link>
-          , {t('costToLevelAllPrefix')}{' '}
-          <Link href={href(base, filters, { assume: true })} className="underline hover:text-accent">
-            {t('assumeToggle')}
-          </Link>
-          .
-        </p>
+        <p className="max-w-prose text-sm text-muted">{t('nothingToFarmMessage')}</p>
       ) : filters.range === 'day' ? (
         <>
           {/* One route with a `view` parameter, so the strip is told which tab
@@ -312,7 +304,7 @@ async function PlanContent({
           </p>
           <div className="space-y-2">
             {groupAnytime(schedule.anytime, (id) => catalog.materials.get(id), t('unsortedLabel')).map((group) => (
-              <AnytimePile key={group.label} group={group} catalog={catalog} locale={locale} />
+              <AnytimePile key={group.label} group={group} catalog={catalog} locale={locale} nations={nations} />
             ))}
           </div>
         </section>
@@ -496,6 +488,9 @@ async function FullDomainCard({
   );
 }
 
+/** How many of a pile's icons its folded line shows before the count. */
+const PILE_PREVIEW = 5;
+
 /**
  * One pile of ungated materials: what it is, and what it is short.
  *
@@ -509,11 +504,15 @@ async function FullDomainCard({
  * is still the thing you check after the domains — same reason, either way.
  */
 async function AnytimePile({
-  group, catalog, locale,
+  group, catalog, locale, nations,
 }: {
   group: AnytimeGroup; catalog: Catalog; locale: Locale;
+  /** Which nation each boss drop comes from — see `@/lib/data/nations`. */
+  nations: Map<number, Nation>;
 }) {
   const t = await getTranslations('plan');
+  const nationLabel = await getTranslations('common.nation');
+  const sections = byNation(group.needs, (id) => nations.get(id), NATIONS);
 
   return (
     <details className="group/fold card">
@@ -522,9 +521,11 @@ async function AnytimePile({
         <FoldMark />
         <span className="min-w-0 flex-1 truncate">{group.label}</span>
 
-        {/* What is in the pile, without opening it. */}
-        <span className="flex flex-wrap gap-1">
-          {group.needs.slice(0, 8).map((need) => (
+        {/* What is in the pile, without opening it: a taste, not the whole
+            pile. The boss drops run to twenty icons, which wrapped the line
+            into three on a phone; five and a count keep it one. */}
+        <span className="flex shrink-0 items-center gap-1">
+          {group.needs.slice(0, PILE_PREVIEW).map((need) => (
             <GameIcon
               key={need.materialId}
               filename={catalog.materials.get(need.materialId)?.icon}
@@ -534,9 +535,9 @@ async function AnytimePile({
               sizes="24px"
             />
           ))}
-          {group.needs.length > 8 && (
-            <span className="self-center font-mono text-2xs text-muted">
-              +{group.needs.length - 8}
+          {group.needs.length > PILE_PREVIEW && (
+            <span className="font-mono text-2xs text-muted">
+              +{group.needs.length - PILE_PREVIEW}
             </span>
           )}
         </span>
@@ -546,11 +547,28 @@ async function AnytimePile({
         </span>
       </summary>
 
-      <ul className="border-t border-edge">
-        {group.needs.map((need) => (
-          <MaterialRow key={need.materialId} need={need} catalog={catalog} locale={locale} />
-        ))}
-      </ul>
+      {sections ? (
+        <div className="border-t border-edge">
+          {sections.map((section) => (
+            <section key={section.nation ?? 'none'} className="border-b border-edge/60 last:border-b-0">
+              <h3 className="bg-surface-2/50 px-3 py-1.5 font-mono text-2xs uppercase tracking-wide text-muted">
+                {section.nation ? nationLabel(section.nation) : t('unsortedLabel')}
+              </h3>
+              <ul>
+                {section.needs.map((need) => (
+                  <MaterialRow key={need.materialId} need={need} catalog={catalog} locale={locale} />
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
+      ) : (
+        <ul className="border-t border-edge">
+          {group.needs.map((need) => (
+            <MaterialRow key={need.materialId} need={need} catalog={catalog} locale={locale} />
+          ))}
+        </ul>
+      )}
     </details>
   );
 }

@@ -12,12 +12,14 @@ import { LocaleSwitcher } from '@/components/locale-switcher';
 import { LogoMark } from '@/components/logo-mark';
 import { MainNav, type NavItem } from '@/components/main-nav';
 import { SyncLocaleCookie } from '@/components/sync-locale-cookie';
+import { SyncTimeZoneCookie } from '@/components/sync-time-zone-cookie';
 import { ThemeScript } from '@/components/theme-script';
 import { BackToTop } from '@/components/back-to-top';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { clientMessages } from '@/i18n/client-messages';
 import { LOCALE_CODES, isLocale } from '@/lib/data/locales';
 import { getMeta } from '@/lib/data/registry';
+import { TIME_ZONE_COOKIE } from '@/lib/player/region';
 import { siteUrl } from '@/lib/site';
 
 import '../globals.css';
@@ -166,6 +168,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
           {tUi('skipToContent')}
         </a>
         <SyncLocaleCookie locale={uiLocale} />
+        <SyncTimeZoneCookie name={TIME_ZONE_COOKIE} />
         <NextIntlClientProvider locale={uiLocale} messages={messages}>
           <ClerkProvider>
             {/* The filter controls that are inputs rather than links read and

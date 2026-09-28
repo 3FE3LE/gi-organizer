@@ -42,6 +42,43 @@ export function isGameRegion(value: unknown): value is GameRegion {
  */
 export const DEFAULT_REGION: GameRegion = 'america';
 
+/**
+ * The server a player in this timezone most likely plays on.
+ *
+ * Read off the zone's offset from UTC at this instant rather than off its
+ * name: the continents in IANA names do not follow the game's lines — Dubai
+ * is `Asia/` and plays on Europe, Honolulu is `Pacific/` and plays on America
+ * — while the offset lands each zone on the server whose clock it sits
+ * nearest. West of UTC−2 is America; up to UTC+5 is Europe, Africa and the
+ * Middle East; east of that, from India on, is Asia.
+ *
+ * A guess, and only the starting point: the setting overrides it for anybody
+ * who plays on a server away from home. `null` for a zone the runtime does not
+ * know, which falls through to `DEFAULT_REGION`.
+ */
+export function regionForTimeZone(timeZone: string, now: Date = new Date()): GameRegion | null {
+  let name: string | undefined;
+  try {
+    name = new Intl.DateTimeFormat('en-US', { timeZone, timeZoneName: 'longOffset' })
+      .formatToParts(now)
+      .find((part) => part.type === 'timeZoneName')?.value;
+  } catch {
+    return null;
+  }
+  if (!name) return null;
+
+  // "GMT", "GMT-05:00", "GMT+05:30".
+  const match = /^GMT(?:([+-])(\d{2}):(\d{2}))?$/.exec(name);
+  if (!match) return null;
+  const offset = match[1]
+    ? (match[1] === '-' ? -1 : 1) * (Number(match[2]) + Number(match[3]) / 60)
+    : 0;
+
+  if (offset < -2) return 'america';
+  if (offset < 5.5) return 'europe';
+  return 'asia';
+}
+
 /** Daily reset, in the server's own hours. */
 export const RESET_HOUR = 4;
 

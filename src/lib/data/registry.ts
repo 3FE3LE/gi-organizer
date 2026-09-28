@@ -6,6 +6,7 @@ import path from 'node:path';
 import type { GoodCrosswalk } from '@/lib/good/keys';
 
 import type { Locale } from './locales';
+import { isNation, type Nation } from './nations';
 import type { WeaponSourceEntry } from './weapon-sources';
 import type {
   ById,
@@ -83,6 +84,25 @@ export async function getWeaponSources() {
     return new Map(Object.entries(parsed.sources).map(([id, entry]) => [Number(id), entry]));
   } catch {
     return new Map<number, WeaponSourceEntry>();
+  }
+}
+
+/**
+ * The nation each boss drop comes from, curated by hand — see `nations.ts` for
+ * why it cannot be generated. Outside `src/generated` for the same reason as
+ * the weapon sources.
+ */
+export async function getBossNations() {
+  const file = path.join(process.cwd(), 'src', 'data', 'curated', 'boss-nations.json');
+
+  try {
+    const raw = await readFile(file, 'utf8');
+    const parsed = JSON.parse(raw) as { nations: Record<string, { nation: string }> };
+    return new Map(Object.entries(parsed.nations)
+      .filter((entry): entry is [string, { nation: Nation }] => isNation(entry[1].nation))
+      .map(([id, entry]) => [Number(id), entry.nation]));
+  } catch {
+    return new Map<number, Nation>();
   }
 }
 

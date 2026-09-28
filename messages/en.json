@@ -55,6 +55,10 @@
       "Thursday": "TH", "Friday": "FR", "Saturday": "SA"
     },
     "region": { "america": "America", "europe": "Europe", "asia": "Asia" },
+    "nation": {
+      "mondstadt": "Mondstadt", "liyue": "Liyue", "inazuma": "Inazuma", "sumeru": "Sumeru",
+      "fontaine": "Fontaine", "natlan": "Natlan", "nodKrai": "Nod-Krai", "snezhnaya": "Snezhnaya"
+    },
     "cost": {
       "free": "no cost", "displaces": "you take it from someone",
       "needs-levelling": "needs levelling", "breaks-set": "breaks the set",
@@ -294,23 +298,16 @@
     "farmHint": "Today, or the whole backlog",
     "upgradesTab": "What to upgrade",
     "upgradesHint": "The queue of changes",
-    "serverLabel": "server",
-    "serverTitle": "The day rotates on the server's clock and turns over at 04:00, not midnight",
     "teamLabel": "team",
     "allTeams": "all",
     "reasonLabel": "type",
     "allReasons": "all",
-    "assumeTitle": "Counts characters with no target as if headed for level 90, with skill and burst at 9",
-    "assumeToggle": "include without target",
-    "onlyWithTarget": "with a target only",
     "today": "Today",
     "otherDay": "{day}",
     "allBacklogHeading": "All the backlog",
     "sourcesCountDay": "{count} with a target · {domains, plural, one {# domain} other {# domains}} · {anytime} with no schedule",
     "sourcesCountAll": "{count, plural, one {# build} other {# builds}} with a level target · {domains, plural, one {# domain} other {# domains}} · {anytime} with no schedule",
-    "noTargetsMessage": "Nobody has a target yet, so there's nothing to farm. Demand is the gap between where a character is and where they should be.",
-    "fixTargetLink": "Set a level or talent target on a sheet",
-    "costToLevelAllPrefix": "or see what it'd cost to level them all with",
+    "nothingToFarmMessage": "Nothing to farm: every character counted is already at their target, or dismissed from the plan.",
     "talentTab": "Talent materials",
     "weaponTab": "Weapon materials",
     "noDomainsMessage": "No {kind} domain you need rotates {day}.",
@@ -574,7 +571,8 @@
       "importExport": {
         "label": "Import & export",
         "hint": "Import, export, backups and manual entry"
-      }
+      },
+      "settings": { "label": "Settings", "hint": "Server and account preferences" }
     },
     "inventoryPage": {
       "artifactsStat": "Artifacts",
@@ -623,6 +621,13 @@
         "exclusivityConflicts": "{count, plural, one {# exclusivity conflict; nothing was written} other {# exclusivity conflicts; nothing was written}}",
         "showcaseAppliedMessage": "seed from {uid}: artifacts +{artifactsInserted} ~{artifactsUpdated} · weapons +{weaponsInserted} ~{weaponsUpdated} · {characters, plural, one {# character} other {# characters}}"
       }
+    },
+    "settingsPage": {
+      "serverHeading": "Server",
+      "serverHint": "The day rotates on the server's clock and turns over at 04:00, not midnight. It decides which domains open today, the reset countdown and birthdays.",
+      "serverAuto": "Automatic",
+      "serverDetected": "Detected from your timezone: {region}",
+      "serverUndetected": "No timezone detected yet: using {region}"
     },
     "importPage": {
       "importHeading": "Import",

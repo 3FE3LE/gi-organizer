@@ -58,3 +58,32 @@ export function groupAnytime(
     .sort((a, b) => a.rank - b.rank)
     .map(({ label, needs: sorted, short }) => ({ label, needs: sorted, short }));
 }
+
+/**
+ * A pile split by the nation its drops come from, for the boss drops.
+ *
+ * Opened, the character level-up pile was one flat list of every boss on the
+ * map — Hurricane Seed next to a Natlan statue core — when the question it
+ * answers is a route: which bosses to run on this trip to Inazuma. So a pile
+ * whose materials carry a nation is sectioned by it, in the order the journey
+ * reaches them, and whatever the curated table does not name trails as a
+ * section with no nation. `null` for a pile none of whose materials has one,
+ * which is drawn flat as before.
+ */
+export function byNation<N extends string>(
+  needs: Need[],
+  nationOf: (materialId: number) => N | undefined,
+  order: readonly N[],
+): { nation: N | null; needs: Need[] }[] | null {
+  const sections = new Map<N | null, Need[]>();
+  for (const need of needs) {
+    const nation = nationOf(need.materialId) ?? null;
+    sections.set(nation, [...(sections.get(nation) ?? []), need]);
+  }
+  if (!sections.keys().some((nation) => nation !== null)) return null;
+
+  const rank = (nation: N | null) => (nation === null ? order.length : order.indexOf(nation));
+  return [...sections.entries()]
+    .sort(([a], [b]) => rank(a) - rank(b))
+    .map(([nation, sectioned]) => ({ nation, needs: sectioned }));
+}

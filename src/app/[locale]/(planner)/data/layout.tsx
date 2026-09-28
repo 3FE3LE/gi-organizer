@@ -25,6 +25,7 @@ export default async function DataLayout({ children, params }: LayoutProps<'/[lo
             label: t('tabs.importExport.label'),
             hint: t('tabs.importExport.hint'),
           },
+          { href: `/${locale}/data/settings`, label: t('tabs.settings.label'), hint: t('tabs.settings.hint') },
         ]}
       />
       {children}

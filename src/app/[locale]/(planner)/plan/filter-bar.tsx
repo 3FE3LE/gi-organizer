@@ -1,58 +1,21 @@
-import { Check, SlidersHorizontal } from 'lucide-react';
+import { SlidersHorizontal } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
 import { ActiveFilters } from '@/components/active-filters';
 import { DockFold } from '@/components/dock-fold';
-import { Hint, HoverLabel } from '@/components/hint';
-import { FilterGroup } from '@/components/segmented-links';
+import { Segment, Segments } from '@/components/segmented-links';
 import { FoldMark } from '@/components/fold-mark';
 import type { Catalog } from '@/lib/data/catalog';
 import type { Team } from '@/lib/player/teams';
-import {
-  GAME_REGIONS,
-  gameWeekStrip,
-  type GameRegion,
-} from '@/lib/rules/game-day';
+import { gameWeekStrip, type GameRegion } from '@/lib/rules/game-day';
 
-import { chooseRegion } from './region-actions';
 import {
   REASONS,
   type Filters,
   href,
   toggle,
 } from './filters';
-
-/**
- * One filter value, on or off.
- *
- * The explanations these carry — what "todo el backlog" costs, which slots a
- * team declared — used to be `title` attributes: a second of hover, nothing at
- * all on a phone, and unreachable from the keyboard. They are drawn labels now,
- * so the same sentence shows on focus as on hover.
- *
- * A chip is a link, and a link is where a tooltip cannot go: closing the bubble
- * is a React update, and an update landing in the navigation's transition makes
- * React skip it — the page cuts instead of crossfading. See
- * `components/hint.tsx`.
- */
-function Chip({
-  to, active, children, title,
-}: {
-  to: string; active: boolean; children: React.ReactNode; title?: string;
-}) {
-  return (
-    <Link
-      href={to}
-      aria-current={active ? 'true' : undefined}
-      data-active={active}
-      className={`chip${title ? ' group relative' : ''}`}
-    >
-      {children}
-      {title && <HoverLabel text={title} />}
-    </Link>
-  );
-}
 
 /**
  * What the day is being planned against.
@@ -88,13 +51,13 @@ export async function FilterBar({
   const common = await getTranslations('common');
   const reasonLabel = await getTranslations('common.reason');
   const weekdayShort = await getTranslations('common.weekdayShort');
-  const regionLabel = await getTranslations('common.region');
 
-  // Server, team and cost-type narrow the plan; the day strip is what nearly
-  // every visit actually touches. Opened automatically whenever one of the
+  // Team and cost-type narrow the plan; the day strip is what nearly every
+  // visit actually touches. The server is not here: it is a fact about the
+  // account, kept in the settings, not a way of looking at the plan. Opened automatically whenever one of the
   // folded rows is off its default, so a shared link with a team or a reason
   // picked never hides the control that picked it.
-  const folded = (filters.team !== null ? 1 : 0) + filters.reason.length + (filters.assume ? 0 : 1);
+  const folded = (filters.team !== null ? 1 : 0) + filters.reason.length;
   const moreOpen = folded > 0;
   const team = teams.find((entry) => entry.id === filters.team);
 
@@ -150,13 +113,8 @@ export async function FilterBar({
                 label: reasonLabel(reason),
                 to: href(base, filters, { reason: toggle(filters.reason, reason) }),
               })),
-              // Named for what it narrows to, like the others: the plan counts
-              // only characters with a written target.
-              ...(!filters.assume
-                ? [{ key: 'assume', label: t('onlyWithTarget'), to: href(base, filters, { assume: true, chars: [] }) }]
-                : []),
             ]}
-            clear={href(base, filters, { team: null, reason: [], assume: true, chars: [] })}
+            clear={href(base, filters, { team: null, reason: [], chars: [] })}
             labels={{
               title: common('activeFilters'),
               clear: common('clearFilters'),
@@ -184,31 +142,12 @@ export async function FilterBar({
         {/* One question per group, its label above its values, and the
             groups side by side where the card is wide enough. */}
         <div className="flex flex-wrap gap-x-6 gap-y-3 border-t border-edge px-3 py-3">
-          <FilterGroup label={t('serverLabel')}>
-            {GAME_REGIONS.map((entry) => (
-              <form key={entry} action={chooseRegion.bind(null, entry)}>
-                {/* A button, not a link: it stays on the page, so it can carry
-                    a real tooltip. */}
-                <Hint text={t('serverTitle')}>
-                  <button
-                    type="submit"
-                    aria-current={region === entry ? 'true' : undefined}
-                    data-active={region === entry}
-                    className="chip"
-                  >
-                    {regionLabel(entry)}
-                  </button>
-                </Hint>
-              </form>
-            ))}
-          </FilterGroup>
-
-          <FilterGroup label={t('teamLabel')}>
-            <Chip to={href(base, filters, { team: null, chars: [] })} active={!filters.team}>
+          <Segments label={t('teamLabel')}>
+            <Segment to={href(base, filters, { team: null, chars: [] })} active={!filters.team}>
               {t('allTeams')}
-            </Chip>
+            </Segment>
             {teams.map((entry) => (
-              <Chip
+              <Segment
                 key={entry.id}
                 to={href(base, filters, { team: entry.id, chars: [] })}
                 active={filters.team === entry.id}
@@ -217,37 +156,24 @@ export async function FilterBar({
                   .join(' · ')}
               >
                 {entry.name}
-              </Chip>
+              </Segment>
             ))}
-          </FilterGroup>
+          </Segments>
 
-          <FilterGroup label={t('reasonLabel')}>
-            <Chip to={href(base, filters, { reason: [] })} active={filters.reason.length === 0}>
+          <Segments label={t('reasonLabel')}>
+            <Segment to={href(base, filters, { reason: [] })} active={filters.reason.length === 0}>
               {t('allReasons')}
-            </Chip>
+            </Segment>
             {REASONS.map((reason) => (
-              <Chip
+              <Segment
                 key={reason}
                 to={href(base, filters, { reason: toggle(filters.reason, reason) })}
                 active={filters.reason.includes(reason)}
               >
                 {reasonLabel(reason)}
-              </Chip>
+              </Segment>
             ))}
-
-            <span className="ml-2">
-              <Chip
-                to={href(base, filters, {
-                  assume: !filters.assume,
-                  chars: [],
-                })}
-                active={filters.assume}
-                title={t('assumeTitle')}
-              >
-                {filters.assume && <Check size={12} aria-hidden />}{t('assumeToggle')}
-              </Chip>
-            </span>
-          </FilterGroup>
+          </Segments>
         </div>
       </details>
       </DockFold>

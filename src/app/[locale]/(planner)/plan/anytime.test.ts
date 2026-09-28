@@ -3,7 +3,7 @@ import { test } from 'node:test';
 
 import type { Need } from '@/lib/rules/materials';
 
-import { groupAnytime, type MaterialGrouping } from './anytime';
+import { byNation, groupAnytime, type MaterialGrouping } from './anytime';
 
 const CATALOG: Record<number, MaterialGrouping> = {
   202: { typeText: 'Moneda común', sortRank: 10 },
@@ -61,4 +61,22 @@ test('a material the catalog cannot place is still shown, last', () => {
   const groups = groupAnytime([need(999999), need(202)], describe, 'Otros materiales');
 
   assert.deepEqual(groups.map((group) => group.label), ['Moneda común', 'Otros materiales']);
+});
+
+test('boss drops are sectioned by nation, in the order the journey reaches them', () => {
+  const nations: Record<number, 'mondstadt' | 'inazuma'> = { 113001: 'mondstadt', 113022: 'inazuma' };
+  const sections = byNation(
+    [need(113022), need(113999), need(113001)],
+    (id) => nations[id],
+    ['mondstadt', 'inazuma'],
+  );
+
+  assert.deepEqual(
+    sections?.map((section) => [section.nation, section.needs.map((entry) => entry.materialId)]),
+    [['mondstadt', [113001]], ['inazuma', [113022]], [null, [113999]]],
+  );
+});
+
+test('a pile with no nation anywhere is not sectioned', () => {
+  assert.equal(byNation([need(202)], () => undefined, ['mondstadt']), null);
 });

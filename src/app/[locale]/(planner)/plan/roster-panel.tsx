@@ -136,7 +136,6 @@ export async function RosterPanel({
               dismissed={entry.dismissed}
               picked={filters.chars.includes(entry.characterId)}
               dimmed={filters.chars.length > 0}
-              assume={filters.assume}
               filterHref={href(base, filters, { chars: toggle(filters.chars, entry.characterId) })}
               labels={{
                 restore: t('restoreTitle'),

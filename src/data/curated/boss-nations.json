@@ -1,0 +1,368 @@
+{
+  "nations": {
+    "113001": {
+      "nation": "mondstadt",
+      "name": "Hurricane Seed"
+    },
+    "113002": {
+      "nation": "mondstadt",
+      "name": "Lightning Prism"
+    },
+    "113003": {
+      "nation": "mondstadt",
+      "name": "Dvalin's Plume"
+    },
+    "113004": {
+      "nation": "mondstadt",
+      "name": "Dvalin's Claw"
+    },
+    "113005": {
+      "nation": "mondstadt",
+      "name": "Dvalin's Sigh"
+    },
+    "113006": {
+      "nation": "mondstadt",
+      "name": "Tail of Boreas"
+    },
+    "113007": {
+      "nation": "mondstadt",
+      "name": "Ring of Boreas"
+    },
+    "113008": {
+      "nation": "mondstadt",
+      "name": "Spirit Locket of Boreas"
+    },
+    "113009": {
+      "nation": "liyue",
+      "name": "Basalt Pillar"
+    },
+    "113010": {
+      "nation": "mondstadt",
+      "name": "Hoarfrost Core"
+    },
+    "113011": {
+      "nation": "liyue",
+      "name": "Everflame Seed"
+    },
+    "113012": {
+      "nation": "liyue",
+      "name": "Cleansing Heart"
+    },
+    "113013": {
+      "nation": "liyue",
+      "name": "Tusk of Monoceros Caeli"
+    },
+    "113014": {
+      "nation": "liyue",
+      "name": "Shard of a Foul Legacy"
+    },
+    "113015": {
+      "nation": "liyue",
+      "name": "Shadow of the Warrior"
+    },
+    "113016": {
+      "nation": "liyue",
+      "name": "Juvenile Jade"
+    },
+    "113017": {
+      "nation": "liyue",
+      "name": "Dragon Lord's Crown"
+    },
+    "113018": {
+      "nation": "liyue",
+      "name": "Bloodjade Branch"
+    },
+    "113019": {
+      "nation": "liyue",
+      "name": "Gilded Scale"
+    },
+    "113020": {
+      "nation": "mondstadt",
+      "name": "Crystalline Bloom"
+    },
+    "113022": {
+      "nation": "inazuma",
+      "name": "Marionette Core"
+    },
+    "113023": {
+      "nation": "inazuma",
+      "name": "Perpetual Heart"
+    },
+    "113024": {
+      "nation": "inazuma",
+      "name": "Smoldering Pearl"
+    },
+    "113025": {
+      "nation": "inazuma",
+      "name": "Molten Moment"
+    },
+    "113026": {
+      "nation": "inazuma",
+      "name": "Hellfire Butterfly"
+    },
+    "113027": {
+      "nation": "inazuma",
+      "name": "Ashen Heart"
+    },
+    "113028": {
+      "nation": "inazuma",
+      "name": "Dew of Repudiation"
+    },
+    "113029": {
+      "nation": "inazuma",
+      "name": "Storm Beads"
+    },
+    "113030": {
+      "nation": "inazuma",
+      "name": "Riftborn Regalia"
+    },
+    "113031": {
+      "nation": "inazuma",
+      "name": "Dragonheir's False Fin"
+    },
+    "113032": {
+      "nation": "inazuma",
+      "name": "Mudra of the Malefic General"
+    },
+    "113033": {
+      "nation": "inazuma",
+      "name": "Tears of the Calamitous God"
+    },
+    "113034": {
+      "nation": "inazuma",
+      "name": "The Meaning of Aeons"
+    },
+    "113035": {
+      "nation": "liyue",
+      "name": "Runic Fang"
+    },
+    "113036": {
+      "nation": "sumeru",
+      "name": "Majestic Hooked Beak"
+    },
+    "113037": {
+      "nation": "sumeru",
+      "name": "Thunderclap Fruitcore"
+    },
+    "113038": {
+      "nation": "sumeru",
+      "name": "Perpetual Caliber"
+    },
+    "113039": {
+      "nation": "sumeru",
+      "name": "Light Guiding Tetrahedron"
+    },
+    "113040": {
+      "nation": "sumeru",
+      "name": "Quelled Creeper"
+    },
+    "113041": {
+      "nation": "sumeru",
+      "name": "Puppet Strings"
+    },
+    "113042": {
+      "nation": "sumeru",
+      "name": "Mirror of Mushin"
+    },
+    "113043": {
+      "nation": "sumeru",
+      "name": "Daka's Bell"
+    },
+    "113044": {
+      "nation": "sumeru",
+      "name": "Pseudo-Stamens"
+    },
+    "113045": {
+      "nation": "sumeru",
+      "name": "Evergloom Ring"
+    },
+    "113046": {
+      "nation": "sumeru",
+      "name": "Worldspan Fern"
+    },
+    "113047": {
+      "nation": "sumeru",
+      "name": "Primordial Greenbloom"
+    },
+    "113048": {
+      "nation": "sumeru",
+      "name": "Everamber"
+    },
+    "113049": {
+      "nation": "fontaine",
+      "name": "Artificed Spare Clockwork Component — Coppelia"
+    },
+    "113050": {
+      "nation": "fontaine",
+      "name": "Artificed Spare Clockwork Component — Coppelius"
+    },
+    "113051": {
+      "nation": "fontaine",
+      "name": "Emperor's Resolution"
+    },
+    "113052": {
+      "nation": "fontaine",
+      "name": "\"Tourbillon Device\""
+    },
+    "113053": {
+      "nation": "fontaine",
+      "name": "Fontemer Unihorn"
+    },
+    "113054": {
+      "nation": "fontaine",
+      "name": "Lightless Silk String"
+    },
+    "113055": {
+      "nation": "fontaine",
+      "name": "Lightless Eye of the Maelstrom"
+    },
+    "113056": {
+      "nation": "fontaine",
+      "name": "Lightless Mass"
+    },
+    "113057": {
+      "nation": "fontaine",
+      "name": "Water That Failed To Transcend"
+    },
+    "113058": {
+      "nation": "liyue",
+      "name": "Cloudseam Scale"
+    },
+    "113059": {
+      "nation": "fontaine",
+      "name": "Fragment of a Golden Melody"
+    },
+    "113060": {
+      "nation": "fontaine",
+      "name": "Fading Candle"
+    },
+    "113061": {
+      "nation": "fontaine",
+      "name": "Silken Feather"
+    },
+    "113062": {
+      "nation": "fontaine",
+      "name": "Denial and Judgment"
+    },
+    "113063": {
+      "nation": "natlan",
+      "name": "The Cornerstone of Stars and Flames"
+    },
+    "113064": {
+      "nation": "natlan",
+      "name": "Mark of the Binding Blessing"
+    },
+    "113065": {
+      "nation": "natlan",
+      "name": "Overripe Flamegranate"
+    },
+    "113066": {
+      "nation": "natlan",
+      "name": "Gold-Inscribed Secret Source Core"
+    },
+    "113067": {
+      "nation": "natlan",
+      "name": "Ensnaring Gaze"
+    },
+    "113068": {
+      "nation": "natlan",
+      "name": "Eroded Horn"
+    },
+    "113069": {
+      "nation": "natlan",
+      "name": "Eroded Sunfire"
+    },
+    "113070": {
+      "nation": "natlan",
+      "name": "Eroded Scale-Feather"
+    },
+    "113071": {
+      "nation": "natlan",
+      "name": "Talisman of the Enigmatic Land"
+    },
+    "113072": {
+      "nation": "natlan",
+      "name": "Sparkless Statue Core"
+    },
+    "113073": {
+      "nation": "natlan",
+      "name": "Ascended Sample: Knight"
+    },
+    "113074": {
+      "nation": "natlan",
+      "name": "Ascended Sample: Rook"
+    },
+    "113075": {
+      "nation": "natlan",
+      "name": "Ascended Sample: Queen"
+    },
+    "113076": {
+      "nation": "natlan",
+      "name": "Secret Source Airflow Accumulator"
+    },
+    "113077": {
+      "nation": "nodKrai",
+      "name": "Precision Kuuvahki Stamping Die"
+    },
+    "113078": {
+      "nation": "nodKrai",
+      "name": "Lightbearing Scale-Feather"
+    },
+    "113079": {
+      "nation": "nodKrai",
+      "name": "Radiant Antler"
+    },
+    "113080": {
+      "nation": "nodKrai",
+      "name": "Cyclic Military Kuuvahki Core"
+    },
+    "113081": {
+      "nation": "nodKrai",
+      "name": "Mask of the Virtuous Doctor"
+    },
+    "113082": {
+      "nation": "nodKrai",
+      "name": "Madman's Restraint"
+    },
+    "113083": {
+      "nation": "nodKrai",
+      "name": "Elixir of the Heretic"
+    },
+    "113084": {
+      "nation": "nodKrai",
+      "name": "Remnant of the Dreadwing"
+    },
+    "113085": {
+      "nation": "nodKrai",
+      "name": "Prismatic Severed Tail"
+    },
+    "113086": {
+      "nation": "nodKrai",
+      "name": "Plume of the Fallen Watcher"
+    },
+    "113087": {
+      "nation": "nodKrai",
+      "name": "Counterfeit Resin"
+    },
+    "113088": {
+      "nation": "nodKrai",
+      "name": "Twisted Withered Branch"
+    },
+    "113089": {
+      "nation": "nodKrai",
+      "name": "Profaned Sprout"
+    },
+    "113090": {
+      "nation": "snezhnaya",
+      "name": "Unscorched Blossom Branch"
+    },
+    "113091": {
+      "nation": "snezhnaya",
+      "name": "Severed Tail of the Sky-Roamer"
+    },
+    "113092": {
+      "nation": "snezhnaya",
+      "name": "Vagabond's Cracked Armor"
+    }
+  }
+}

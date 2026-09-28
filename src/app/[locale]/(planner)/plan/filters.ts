@@ -2,7 +2,6 @@ import {
   createLoader,
   createSerializer,
   parseAsArrayOf,
-  parseAsBoolean,
   parseAsInteger,
   parseAsString,
   parseAsStringLiteral,
@@ -48,15 +47,6 @@ export const filterParsers = {
   chars: parseAsArrayOf(parseAsInteger, ',').withDefault([]),
   /** Kinds of cost counted. Empty means all three. */
   reason: parseAsArrayOf(parseAsStringLiteral(REASONS), ',').withDefault([]),
-  /**
-   * Count characters with no stated target, headed for the cap.
-   *
-   * On, because that is where the demand is: an account nobody has written
-   * targets for still has a roster to level, and answering "you have not said"
-   * left the plan empty for exactly the person who needed it most. Turning it
-   * off narrows to the goals actually written down.
-   */
-  assume: parseAsBoolean.withDefault(true),
   /** Which of the day's two domain kinds is on screen. */
   view: parseAsStringLiteral(VIEWS).withDefault('talent'),
 };

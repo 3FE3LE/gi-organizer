@@ -55,6 +55,10 @@
       "Thursday": "JU", "Friday": "VI", "Saturday": "SA"
     },
     "region": { "america": "América", "europe": "Europa", "asia": "Asia" },
+    "nation": {
+      "mondstadt": "Mondstadt", "liyue": "Liyue", "inazuma": "Inazuma", "sumeru": "Sumeru",
+      "fontaine": "Fontaine", "natlan": "Natlan", "nodKrai": "Nod-Krai", "snezhnaya": "Snezhnaya"
+    },
     "cost": {
       "free": "sin coste", "displaces": "se lo quitas a alguien",
       "needs-levelling": "hay que subirlo", "breaks-set": "rompe el set",
@@ -294,23 +298,16 @@
     "farmHint": "Hoy, o todo el backlog",
     "upgradesTab": "Qué mejorar",
     "upgradesHint": "La cola de cambios",
-    "serverLabel": "servidor",
-    "serverTitle": "El día rota con el reloj del servidor y cambia a las 04:00, no a medianoche",
     "teamLabel": "equipo",
     "allTeams": "todos",
     "reasonLabel": "tipo",
     "allReasons": "todo",
-    "assumeTitle": "Cuenta a los personajes sin objetivo como si fueran a 90, con habilidad y definitiva a 9",
-    "assumeToggle": "incluir sin objetivo",
-    "onlyWithTarget": "solo con objetivo",
     "today": "Hoy",
     "otherDay": "El {day}",
     "allBacklogHeading": "Todo el backlog",
     "sourcesCountDay": "{count} con objetivo · {domains, plural, one {# dominio} other {# dominios}} · {anytime} sin horario",
     "sourcesCountAll": "{count, plural, one {# build} other {# builds}} con objetivo de nivel · {domains, plural, one {# dominio} other {# dominios}} · {anytime} sin horario",
-    "noTargetsMessage": "Nadie tiene objetivo todavía, así que no hay nada que farmear. La demanda es la diferencia entre dónde está un personaje y dónde debería estar.",
-    "fixTargetLink": "Fija nivel o talentos objetivo en una ficha",
-    "costToLevelAllPrefix": "o mira qué costaría subirlos a todos con",
+    "nothingToFarmMessage": "Nada que farmear: cada personaje que cuenta ya está en su objetivo, o está descartado del plan.",
     "talentTab": "Materiales de talento",
     "weaponTab": "Materiales de arma",
     "noDomainsMessage": "Ningún dominio de {kind} que necesites rota {day}.",
@@ -574,7 +571,8 @@
       "importExport": {
         "label": "Entrada y salida",
         "hint": "Importar, exportar, copias y entrada manual"
-      }
+      },
+      "settings": { "label": "Ajustes", "hint": "Servidor y preferencias de la cuenta" }
     },
     "inventoryPage": {
       "artifactsStat": "Artefactos",
@@ -623,6 +621,13 @@
         "exclusivityConflicts": "{count, plural, one {# conflicto de exclusividad; no se escribió nada} other {# conflictos de exclusividad; no se escribió nada}}",
         "showcaseAppliedMessage": "semilla de {uid}: artefactos +{artifactsInserted} ~{artifactsUpdated} · armas +{weaponsInserted} ~{weaponsUpdated} · {characters, plural, one {# personaje} other {# personajes}}"
       }
+    },
+    "settingsPage": {
+      "serverHeading": "Servidor",
+      "serverHint": "El día rota con el reloj del servidor y cambia a las 04:00, no a medianoche. Decide qué dominios abren hoy, la cuenta atrás del reinicio y los cumpleaños.",
+      "serverAuto": "Automático",
+      "serverDetected": "Detectado por tu zona horaria: {region}",
+      "serverUndetected": "Sin zona horaria detectada todavía: se usa {region}"
     },
     "importPage": {
       "importHeading": "Importar",
