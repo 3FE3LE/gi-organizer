@@ -13,6 +13,7 @@ import { getDb } from '@/lib/db/client';
 import { getBuildPriorities, suggestionsFor } from '@/lib/rules/assemble';
 import { templateFor } from '@/lib/rules/role-templates';
 import { CHOOSABLE_SLOTS } from '@/lib/rules/piece-score';
+import { defaultSetPlan } from '@/lib/rules/set-fit';
 import { refreshEverywhere } from '@/lib/refresh';
 
 export type BuildFormState =
@@ -127,7 +128,9 @@ export async function applyTemplateAction(
   // by feasibility for sets. The weapon is not the role's to choose — a goal's
   // weapon is the one held, which is what `existing` already reads — so a
   // suggestion somebody else is wearing can no longer be written in its place.
-  const set = suggestions.sets.find((entry) => entry.feasible) ?? suggestions.sets[0];
+  // The same default the queue holds an unplanned build to, so filling from
+  // the role writes down exactly what was already being measured.
+  const setPlan = defaultSetPlan(suggestions.sets);
 
   const mainStats: Partial<Record<ArtifactSlot, string[]>> = {};
   for (const [slot, prop] of Object.entries(template.mainStats)) {
@@ -139,7 +142,7 @@ export async function applyTemplateAction(
     id: existing.id,
     weaponId: existing.weaponId,
     weaponRefinement: existing.weaponRefinement,
-    setPlan: set ? [{ setIds: set.setIds, pieces: set.pieces }] : existing.setPlan,
+    setPlan: setPlan.length > 0 ? setPlan : existing.setPlan,
     mainStats,
     substats: template.substats,
     // Thresholds the player already typed are theirs; the template only fills

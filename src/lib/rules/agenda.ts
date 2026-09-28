@@ -1,5 +1,6 @@
 import type { ArtifactSlot } from '@/lib/data/types';
 
+import { DISPLACEMENT_MARGIN } from './cascade';
 import type { Swap } from './compare';
 import type { GoalVerdict } from './stats';
 
@@ -68,6 +69,13 @@ export type AgendaInput = {
   }[];
   /** Who holds a candidate, so the cost of taking it is known. */
   holderOf: Map<string, number | null>;
+  /**
+   * What the character wearing a piece gives up by losing it, once they take
+   * their best free replacement — `costOfGivingUp`, the chain's own pricing.
+   * Null when it would cost them their planned set. Absent means nothing to
+   * price: the wearer has no build, so the plan loses nothing.
+   */
+  takeCost?: Map<string, number | null>;
 };
 
 function costOf(swap: Swap, characterId: number, holderOf: Map<string, number | null>): Cost {
@@ -88,6 +96,55 @@ const fixedBy = (swap: Swap) =>
 const breaksAGoal = (swap: Swap) =>
   swap.goalChanges.some((change) => change.from === 'met' && change.to !== 'met');
 
+/** What a swap is worth before anybody else's loss: now, or once it is fed. */
+const gainOf = (swap: Swap) => (swap.kind === 'prospect' ? swap.potentialDelta : swap.delta);
+
+/**
+ * The swap to name for a slot, out of those that qualify.
+ *
+ * The comparison ranks by what the piece does for this build alone, and the
+ * best piece for a slot is nearly always one somebody is already wearing — so
+ * taking the first of that list turned the queue into a list of thefts. Here a
+ * free piece is the answer unless a taken one beats it, after paying for what
+ * its wearer loses, by `DISPLACEMENT_MARGIN`. A taken piece whose wearer would
+ * lose their set, or more than this build gains, is not a candidate at all.
+ */
+function choose(
+  swaps: Swap[],
+  characterId: number,
+  input: AgendaInput,
+  /** The least a swap has to gain, after the wearer's loss, to be named. */
+  floor = 0,
+): Swap | undefined {
+  let free: Swap | undefined;
+  let taken: { swap: Swap; net: number } | undefined;
+
+  for (const swap of swaps) {
+    const holder = input.holderOf.get(swap.candidate.instanceId) ?? null;
+
+    if (holder === null || holder === characterId) {
+      // The comparison's order already puts the best free one first.
+      if (gainOf(swap) > floor) free ??= swap;
+      continue;
+    }
+
+    const cost = input.takeCost?.has(swap.candidate.instanceId)
+      ? input.takeCost.get(swap.candidate.instanceId)!
+      : 0;
+    if (cost === null) continue;
+
+    // Undressing somebody for less than they lose is never the next step,
+    // whatever the floor for a free piece is.
+    const net = gainOf(swap) - cost;
+    if (net <= Math.max(floor, 0)) continue;
+    if (!taken || net > taken.net) taken = { swap, net };
+  }
+
+  if (!free) return taken?.swap;
+  if (!taken) return free;
+  return taken.net >= gainOf(free) + DISPLACEMENT_MARGIN ? taken.swap : free;
+}
+
 export function buildAgenda(input: AgendaInput): AgendaItem[] {
   const items: AgendaItem[] = [];
 
@@ -101,7 +158,13 @@ export function buildAgenda(input: AgendaInput): AgendaItem[] {
     // A slot with nothing in it is not a marginal decision; it is a hole.
     for (const slot of build.slots) {
       if (!slot.empty) continue;
-      const best = slot.swaps.find((swap) => !breaksAGoal(swap));
+      // A hole is filled from the plan's sets when anything in the box fits,
+      // and only then from whatever else there is: an off-set piece still
+      // beats nothing, and the cost says it is off-set.
+      const fillers = slot.swaps.filter((swap) => !breaksAGoal(swap));
+      const best = choose(
+        fillers.filter((swap) => swap.keepsSetBonus), build.characterId, input, -Infinity,
+      ) ?? choose(fillers, build.characterId, input, -Infinity);
 
       items.push({
         ...base,
@@ -118,10 +181,21 @@ export function buildAgenda(input: AgendaInput): AgendaItem[] {
     for (const slot of build.slots) {
       if (slot.empty) continue;
 
-      const usable = slot.swaps.filter((swap) => !breaksAGoal(swap));
-      const fixer = usable.find((swap) => fixedBy(swap).length > 0);
-      const upgrade = usable.find((swap) => swap.kind === 'upgrade');
-      const prospect = usable.find((swap) => swap.kind === 'prospect');
+      // A worn slot is only ever changed for a piece the set plan has room
+      // for. Its rolls are not a reason: a circlet of a set the build never
+      // named, in a slot the four-piece still needs, is not an upgrade however
+      // it scores. The build's own tab still shows those, marked; this queue
+      // is what to do next, and that is not it.
+      const usable = slot.swaps.filter((swap) => !breaksAGoal(swap) && swap.keepsSetBonus);
+      // Closing a goal is worth a piece that scores no higher; the floor is off.
+      const fixer = choose(
+        usable.filter((swap) => fixedBy(swap).length > 0), build.characterId, input, -Infinity);
+      const upgrade = choose(
+        usable.filter((swap) => swap.kind === 'upgrade'), build.characterId, input, 0.5);
+      // Only worth naming when the payoff is real, or every unfed piece in the
+      // account becomes a to-do.
+      const prospect = choose(
+        usable.filter((swap) => swap.kind === 'prospect'), build.characterId, input, 1);
 
       if (fixer) {
         items.push({
@@ -137,7 +211,7 @@ export function buildAgenda(input: AgendaInput): AgendaItem[] {
         continue;
       }
 
-      if (upgrade && upgrade.delta > 0.5) {
+      if (upgrade) {
         items.push({
           ...base,
           id: `${build.buildId}:swap:${slot.slot}`,
@@ -151,9 +225,7 @@ export function buildAgenda(input: AgendaInput): AgendaItem[] {
         continue;
       }
 
-      // Only worth naming when the payoff is real, or every unfed piece in the
-      // account becomes a to-do.
-      if (prospect && prospect.potentialDelta > 1) {
+      if (prospect) {
         items.push({
           ...base,
           id: `${build.buildId}:level:${slot.slot}`,
@@ -204,7 +276,11 @@ export function buildAgenda(input: AgendaInput): AgendaItem[] {
 
     // A goal nothing in the account can fix is worth stating plainly, so it is
     // not mistaken for something the list forgot.
-    const fixableProps = new Set(build.slots.flatMap((slot) => slot.swaps.flatMap(fixedBy)));
+    // Fixable means fixable by something this queue would propose — a piece
+    // the set plan has room for — not by any piece in the box.
+    const fixableProps = new Set(build.slots.flatMap((slot) => slot.swaps
+      .filter((swap) => slot.empty || swap.keepsSetBonus)
+      .flatMap(fixedBy)));
     for (const goal of build.goals) {
       if (goal.status === 'met' || fixableProps.has(goal.prop)) continue;
 

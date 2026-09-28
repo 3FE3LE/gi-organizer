@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { buildStatsFor, type BuildStats } from './piece-score';
-import { compareSlot, potentialOf, type ComparablePiece, type CompareInput } from './compare';
+import {
+  compareSlot, potentialOf, shortlist, type ComparablePiece, type CompareInput,
+} from './compare';
 
 const CR = 'FIGHT_PROP_CRITICAL';
 const CD = 'FIGHT_PROP_CRITICAL_HURT';
@@ -205,6 +207,55 @@ test('a better piece of the same set keeps the bonus and ranks above one that br
   // The off-set piece scores higher, and still loses: keeping the bonus wins.
   assert.equal(swaps[0].candidate.instanceId, 'same');
   assert.equal(swaps[0].keepsSetBonus, true);
+});
+
+test('an on-set piece keeps an unfinished four-piece: it is what finishes it', () => {
+  const equipped = piece({ instanceId: 'worn', setId: GLADIATOR, substats: [] });
+  const onSet = piece({
+    instanceId: 'on', setId: CRIMSON,
+    substats: [{ prop: CR, value: 7.8 }, { prop: CD, value: 14 }],
+  });
+  const offSet = piece({
+    instanceId: 'off', setId: GLADIATOR,
+    substats: [{ prop: CR, value: 11.7 }, { prop: CD, value: 21 }],
+  });
+
+  // Two of four: the plan does not hold before or after either swap.
+  const others = (['flower', 'plume'] as const).map((slot, index) =>
+    piece({ instanceId: `o${index}`, slot, setId: CRIMSON, mainProp: HP }));
+
+  const swaps = compareSlot(input({
+    equipped,
+    candidates: [offSet, onSet],
+    otherPieces: others,
+    plannedSets: [{ setIds: [CRIMSON], pieces: 4 }],
+  }));
+
+  const byId = new Map(swaps.map((swap) => [swap.candidate.instanceId, swap]));
+  assert.equal(byId.get('on')?.keepsSetBonus, true);
+  assert.equal(byId.get('off')?.keepsSetBonus, false);
+  assert.equal(swaps[0].candidate.instanceId, 'on');
+});
+
+test('the shortlist keeps the best spares, however far down they rank', () => {
+  const worn = Array.from({ length: 10 }, (_, index) =>
+    piece({ instanceId: `worn${index}`, substats: [{ prop: CR, value: 3.9 * (20 - index) }] }));
+  const spares = Array.from({ length: 4 }, (_, index) =>
+    piece({ instanceId: `spare${index}`, substats: [{ prop: CR, value: 3.9 * (4 - index) }] }));
+
+  const swaps = compareSlot(input({ candidates: [...worn, ...spares] }));
+  const isFree = (swap: (typeof swaps)[number]) => swap.candidate.instanceId.startsWith('spare');
+
+  // Cut at the top eight, as the comparison used to be, nothing spare survives.
+  assert.equal(swaps.slice(0, 8).filter(isFree).length, 0);
+
+  const kept = shortlist(swaps, isFree);
+  assert.deepEqual(
+    kept.filter(isFree).map((swap) => swap.candidate.instanceId),
+    ['spare0', 'spare1', 'spare2'],
+  );
+  assert.equal(kept.length, 11, 'the top eight, and three spares');
+  assert.deepEqual(kept.slice(0, 8), swaps.slice(0, 8), 'in the comparison\'s own order');
 });
 
 /* --------------------------------------------------------- the goals --- */

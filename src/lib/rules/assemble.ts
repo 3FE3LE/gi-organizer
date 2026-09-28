@@ -36,8 +36,8 @@ import {
   computeDemand,
   scheduleNeeds,
 } from './materials';
-import { type CascadeBuild, type CascadePlan, planCascade } from './cascade';
-import { type ComparablePiece, type Swap, compareSlot } from './compare';
+import { type CascadeBuild, type CascadePlan, costOfGivingUp, planCascade } from './cascade';
+import { type ComparablePiece, type Swap, compareSlot, shortlist } from './compare';
 import {
   type BuildStats, type PieceFit, type PieceScore, buildStatsFor, fitOf, scorePiece,
 } from './piece-score';
@@ -49,6 +49,7 @@ import {
   suggestSets,
   suggestWeapons,
 } from './suggest';
+import { type SetRequirement, effectiveSetPlan } from './set-fit';
 import type { Rule, TeamRole } from './types';
 import { MIN_ARTIFACT_RARITY, isRecommendableSet, isRecommendableWeapon } from './rarity-floor';
 
@@ -273,6 +274,13 @@ export type Suggestions = {
   /** Every build the character has, for the picker. */
   builds: Build[];
   sets: SetSuggestion[];
+  /**
+   * The sets every swap was measured against: the build's own plan, or the
+   * one "fill from the role" would write when it has none. See
+   * `effectiveSetPlan` — one answer, so the build tab, the queue and the
+   * chain cannot each hold a character to different sets.
+   */
+  setPlan: SetRequirement[];
   weapons: WeaponSuggestion[];
   /** What the build wants per slot, so the UI can say why a piece ranks. */
   stats: BuildStats;
@@ -436,8 +444,36 @@ export async function suggestionsFor(
   // A build's set plan is a statement of intent, so it pins like a pin.
   const planned = build?.setPlan.flatMap((plan) => plan.setIds) ?? [];
 
+  // Pinned is the player's word and survives; see `rarity-floor.ts`.
+  const sets = suggestSets({
+    characterId,
+    teamMembers,
+    declaredRoles,
+    pinnedSetIds: [...new Set([...pinnedSetIds, ...planned])],
+    allSetIds: [...catalog.artifacts.keys()],
+    priorities,
+    gear: await readGearByCharacter(db, profileId),
+    freeSlotsBySet,
+    rules,
+    roles,
+    setRoles: new Map(
+      [...annotations.sets].map(([setId, annotation]) => [setId, annotation.roles ?? []]),
+    ),
+    objective: build?.objective ?? objective,
+    setMechanics: new Map(
+      Object.entries(mechanics.artifactSets).map(([setId, tags]) => [Number(setId), tags]),
+    ),
+  }).filter((suggestion) =>
+    suggestion.reasons.some((reason) => reason.kind === 'pinned')
+    || suggestion.setIds.every((setId) => isRecommendableSet(catalog, setId)));
+
+  // Measured against a plan even when the player has not written one down: a
+  // build with no sets is not a build that accepts every set, and treating it
+  // as one is what put random-set pieces at the top of its swaps.
+  const setPlan = effectiveSetPlan(build?.setPlan, sets);
+
   const { comparisons, goals, holderOf } = await compareEverySlot({
-    db, profileId, characterId, catalog, annotations, build, stats,
+    db, profileId, characterId, catalog, annotations, build, stats, setPlan,
   });
 
   return {
@@ -448,28 +484,8 @@ export async function suggestionsFor(
     goals,
     holderOf,
     pieces: await scoreOwnedPieces(db, profileId, characterId, stats),
-    // Pinned is the player's word and survives; see `rarity-floor.ts`.
-    sets: suggestSets({
-      characterId,
-      teamMembers,
-      declaredRoles,
-      pinnedSetIds: [...new Set([...pinnedSetIds, ...planned])],
-      allSetIds: [...catalog.artifacts.keys()],
-      priorities,
-      gear: await readGearByCharacter(db, profileId),
-      freeSlotsBySet,
-      rules,
-      roles,
-      setRoles: new Map(
-        [...annotations.sets].map(([setId, annotation]) => [setId, annotation.roles ?? []]),
-      ),
-      objective: build?.objective ?? objective,
-      setMechanics: new Map(
-        Object.entries(mechanics.artifactSets).map(([setId, tags]) => [Number(setId), tags]),
-      ),
-    }).filter((suggestion) =>
-      suggestion.reasons.some((reason) => reason.kind === 'pinned')
-      || suggestion.setIds.every((setId) => isRecommendableSet(catalog, setId))),
+    sets,
+    setPlan,
     weapons: suggestWeapons(
       characterId, priorities, stock, claimedByOthers,
       // Only what this character can hold; the catalog knows, the schema cannot.
@@ -518,8 +534,10 @@ async function compareEverySlot(context: {
   annotations: ResolvedAnnotations;
   build: Build | null;
   stats: BuildStats;
+  /** The sets to hold the swaps to. See `Suggestions.setPlan`. */
+  setPlan: SetRequirement[];
 }) {
-  const { db, profileId, characterId, catalog, annotations, build, stats } = context;
+  const { db, profileId, characterId, catalog, annotations, build, stats, setPlan } = context;
 
   const rows = (await db
     .prepare(`SELECT id, set_id, slot, rarity, level, main_prop, substats_json,
@@ -592,9 +610,10 @@ async function compareEverySlot(context: {
   const comparisons = ALL_SLOTS.map((slot) => ({
     slot,
     equipped: equippedBySlot.get(slot) ?? null,
-    swaps: compareSlot({
+    // The best few, and the best few nobody is wearing — see `shortlist`.
+    swaps: shortlist(compareSlot({
       build: stats,
-      plannedSets: build?.setPlan ?? [],
+      plannedSets: setPlan,
       equipped: equippedBySlot.get(slot) ?? null,
       // Below the floor is never a swap worth suggesting; see `rarity-floor.ts`.
       candidates: (bySlot.get(slot) ?? []).filter((piece) => piece.rarity >= MIN_ARTIFACT_RARITY),
@@ -602,7 +621,7 @@ async function compareEverySlot(context: {
       statInput,
       goals: build?.goals ?? [],
       bonusesBySet,
-    }).slice(0, 8),
+    }), (swap) => (holderOf.get(swap.candidate.instanceId) ?? null) === null),
   }));
 
   return { comparisons, goals, holderOf };
@@ -638,6 +657,7 @@ export async function accountAgenda(
 
   return buildAgenda({
     holderOf,
+    takeCost: await takeCosts(db, profileId, byCharacter.values()),
     builds: builds.flatMap((build) => {
       const suggestions = byCharacter.get(build.characterId);
       // Only the build the slot actually resolved to is measured. Scoring a
@@ -678,6 +698,56 @@ export async function accountAgenda(
       }];
     }),
   });
+}
+
+/**
+ * What each planned character would give up by losing each piece they wear.
+ *
+ * The chain's own pricing (`costOfGivingUp`), run once over the snapshot so
+ * the queue can tell a trade from a theft: a piece whose wearer has a spare
+ * that serves them as well costs little to take, and one that holds their
+ * four-piece together costs the set — which the queue never proposes.
+ * Characters with no build are left out: the plan has nothing to lose there.
+ */
+async function takeCosts(
+  db: Db,
+  profileId: string,
+  everyone: Iterable<Suggestions>,
+): Promise<Map<string, number | null>> {
+  const rows = (await db
+    .prepare(`SELECT id, set_id, slot, rarity, level, main_prop, substats_json,
+                     unactivated_json, assigned_character_id
+              FROM artifact_instance
+              WHERE profile_id = ? AND assigned_character_id IS NULL`)
+    .all(profileId)) as unknown as PieceRow[];
+
+  const spareBySlot = new Map<ArtifactSlot, ComparablePiece[]>();
+  for (const row of rows) {
+    if (row.rarity < MIN_ARTIFACT_RARITY) continue;
+    const piece = toComparable(row);
+    spareBySlot.set(piece.slot, [...(spareBySlot.get(piece.slot) ?? []), piece]);
+  }
+
+  const costs = new Map<string, number | null>();
+  for (const suggestions of everyone) {
+    if (!suggestions.build) continue;
+
+    for (const comparison of suggestions.comparisons) {
+      if (!comparison.equipped) continue;
+
+      costs.set(comparison.equipped.instanceId, costOfGivingUp({
+        stats: suggestions.stats,
+        plan: suggestions.setPlan,
+        piece: comparison.equipped,
+        otherSetIds: suggestions.comparisons
+          .filter((other) => other.slot !== comparison.slot && other.equipped)
+          .map((other) => other.equipped!.setId),
+        pool: spareBySlot.get(comparison.slot) ?? [],
+      }));
+    }
+  }
+
+  return costs;
 }
 
 /**
@@ -888,16 +958,16 @@ export async function accountCascade(
   const resolved = await Promise.all(
     [...new Set(builds.map((build) => build.characterId))].map(async (characterId) => {
       const suggestions = await suggestionsFor(characterId, catalog, db);
-      return suggestions.build;
+      return suggestions.build ? { build: suggestions.build, setPlan: suggestions.setPlan } : null;
     }),
   );
 
   const active = new Map(
-    resolved.filter((build) => build !== null).map((build) => [build.id, build]),
+    resolved.filter((entry) => entry !== null).map((entry) => [entry.build.id, entry]),
   );
   if (active.size === 0) return empty;
 
-  const cascadeBuilds: CascadeBuild[] = [...active.values()].map((build) => ({
+  const cascadeBuilds: CascadeBuild[] = [...active.values()].map(({ build, setPlan }) => ({
     buildId: build.id,
     characterId: build.characterId,
     name: goalLabel(build),
@@ -905,7 +975,8 @@ export async function accountCascade(
       mainStatsBySlot: new Map(Object.entries(build.mainStats) as [ArtifactSlot, string[]][]),
       substats: build.substats,
     },
-    plannedSets: build.setPlan,
+    // The same sets the build tab and the queue hold it to, written or not.
+    plannedSets: setPlan,
   }));
 
   const rows = (await db

@@ -77,7 +77,9 @@ export async function loadBuildContext({
 /**
  * The sets this character is actually chasing.
  *
- * In order: what the build plans, then any set already worn two or more times —
+ * In order: what the build is measured against (its own plan, or the default
+ * one when it has none — `Suggestions.setPlan`, the same the account queue
+ * uses), then any set already worn two or more times —
  * a live bonus worth completing — and only if both are empty, the top two
  * suggestions. Every feasible suggestion would be most of the catalogue and
  * would let almost any piece through, which is the same as no rule at all.
@@ -86,7 +88,7 @@ export function plannedSetsOf(
   gear: Awaited<ReturnType<typeof readGear>>,
   suggestions: Suggestions,
 ): Set<number> {
-  const planned = new Set(suggestions.build?.setPlan.flatMap((plan) => plan.setIds) ?? []);
+  const planned = new Set(suggestions.setPlan.flatMap((plan) => plan.setIds));
 
   const worn = new Map<number, number>();
   for (const piece of gear.bySlot.values()) {

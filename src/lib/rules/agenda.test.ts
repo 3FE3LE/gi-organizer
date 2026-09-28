@@ -204,3 +204,99 @@ test('a team narrows the steps to its members, and no team keeps them all', () =
   assert.deepEqual(inTeam(items, team).map((item) => item.characterId), [1, 3]);
   assert.equal(inTeam(items, null).length, 3);
 });
+
+/* ------------------------------------------------ taking vs. spare --- */
+
+test('a spare piece is named over a slightly better one somebody is wearing', () => {
+  // The comparison ranks the worn one first — it scores higher — and taking
+  // the first of that list is what made every step a theft.
+  const items = buildAgenda(input({
+    slots: [{
+      slot: 'goblet', empty: false,
+      swaps: [
+        swap({ instanceId: 'theirs', delta: 3.5 }),
+        swap({ instanceId: 'spare', delta: 3 }),
+      ],
+    }],
+  }, new Map([['theirs', 42], ['spare', null]])));
+
+  assert.equal(items[0].data.candidate, 'spare');
+  assert.equal(items[0].cost, 'free');
+});
+
+test('a worn piece is named when it clearly beats every spare, after its wearer is paid', () => {
+  const items = buildAgenda({
+    ...input({
+      slots: [{
+        slot: 'goblet', empty: false,
+        swaps: [
+          swap({ instanceId: 'theirs', delta: 6 }),
+          swap({ instanceId: 'spare', delta: 2 }),
+        ],
+      }],
+    }, new Map([['theirs', 42], ['spare', null]])),
+    takeCost: new Map([['theirs', 1]]),
+  });
+
+  assert.equal(items[0].data.candidate, 'theirs');
+  assert.equal(items[0].cost, 'displaces');
+});
+
+test('a piece that would cost its wearer more than it gains, or their set, is never named', () => {
+  const holders = new Map([['dear', 42], ['bound', 43]]);
+  const items = buildAgenda({
+    ...input({
+      slots: [
+        { slot: 'goblet', empty: false, swaps: [swap({ instanceId: 'dear', delta: 3 })] },
+        { slot: 'sands', empty: false, swaps: [swap({ instanceId: 'bound', delta: 9 })] },
+      ],
+    }, holders),
+    // Their spare is far worse; and the other holds a four-piece together.
+    takeCost: new Map<string, number | null>([['dear', 4], ['bound', null]]),
+  });
+
+  assert.deepEqual(items, []);
+});
+
+/* ------------------------------------------------------- the sets --- */
+
+test('a worn slot is never changed for a piece the set plan has no room for', () => {
+  // The Gilded Dreams circlet on Yanfei: better rolls, wrong set, in a slot
+  // the four-piece needs.
+  const items = buildAgenda(input({
+    goals: [goal(ER, 'short')],
+    slots: [{
+      slot: 'circlet', empty: false,
+      swaps: [swap({
+        instanceId: 'gilded', delta: 5, keepsSetBonus: false,
+        goalChanges: [{ prop: ER, from: 'short', to: 'met' }],
+      })],
+    }],
+  }));
+
+  assert.equal(items.filter((item) => item.slot === 'circlet').length, 0);
+  // And the goal is not claimed as fixable by a piece the queue will not name.
+  assert.ok(items.some((item) => item.kind === 'goal-unreachable'));
+});
+
+test('a hole takes a piece of the plan first, and an off-set one only when nothing fits', () => {
+  const planned = buildAgenda(input({
+    slots: [{
+      slot: 'circlet', empty: true,
+      swaps: [
+        swap({ instanceId: 'gilded', delta: 9, keepsSetBonus: false }),
+        swap({ instanceId: 'crimson', delta: 4 }),
+      ],
+    }],
+  }));
+  assert.equal(planned[0].data.candidate, 'crimson');
+
+  const onlyOffSet = buildAgenda(input({
+    slots: [{
+      slot: 'circlet', empty: true,
+      swaps: [swap({ instanceId: 'gilded', delta: 9, keepsSetBonus: false })],
+    }],
+  }));
+  assert.equal(onlyOffSet[0].data.candidate, 'gilded');
+  assert.equal(onlyOffSet[0].cost, 'breaks-set');
+});

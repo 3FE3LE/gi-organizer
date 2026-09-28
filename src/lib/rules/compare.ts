@@ -2,6 +2,7 @@ import type { ArtifactSlot } from '@/lib/data/types';
 
 import { type BuildStats, scorePiece, type PieceScore } from './piece-score';
 import { MEAN_TIER, ROLLABLE, rollsOf, TIER_FRACTIONS } from './rolls';
+import { setFitOf } from './set-fit';
 import { computeStats, evaluateGoals, type GoalVerdict, type StatInput } from './stats';
 
 /**
@@ -148,7 +149,12 @@ export type Swap = {
   /** The luckiest version of the same comparison, for the range a row shows. */
   bestCaseDelta: number;
   kind: SwapKind;
-  /** Whether the build's planned set bonuses survive the swap. */
+  /**
+   * Whether the swap respects the build's set plan: the piece is one of the
+   * planned sets and counts toward it, or it goes in the slot the plan leaves
+   * free. See `set-fit.ts` — an on-set piece on a build whose four-piece is
+   * not finished yet keeps the plan, since it is what finishes it.
+   */
   keepsSetBonus: boolean;
   /** Goals that change status, and how. */
   goalChanges: { prop: string; from: GoalVerdict['status']; to: GoalVerdict['status'] }[];
@@ -168,23 +174,6 @@ export type CompareInput = {
   /** Flat two-piece bonuses per set, for the totals after a swap. */
   bonusesBySet: Map<number, { prop: string; value: number }[]>;
 };
-
-/** Does the plan still hold if this slot changes set? */
-function keepsPlan(
-  input: CompareInput,
-  candidateSetId: number,
-): boolean {
-  if (input.plannedSets.length === 0) return true;
-
-  const counts = new Map<number, number>();
-  for (const piece of input.otherPieces) {
-    counts.set(piece.setId, (counts.get(piece.setId) ?? 0) + 1);
-  }
-  counts.set(candidateSetId, (counts.get(candidateSetId) ?? 0) + 1);
-
-  return input.plannedSets.every((plan) =>
-    plan.setIds.every((setId) => (counts.get(setId) ?? 0) >= plan.pieces));
-}
 
 function totalsWith(input: CompareInput, pieces: ComparablePiece[]) {
   const counts = new Map<number, number>();
@@ -248,7 +237,11 @@ export function compareSlot(input: CompareInput): Swap[] {
         potentialDelta,
         bestCaseDelta,
         kind,
-        keepsSetBonus: keepsPlan(input, candidate.setId),
+        keepsSetBonus: setFitOf(
+          input.plannedSets,
+          input.otherPieces.map((piece) => piece.setId),
+          candidate.setId,
+        ) !== 'off-plan',
         goalChanges,
       };
     })
@@ -262,6 +255,37 @@ export function compareSlot(input: CompareInput): Swap[] {
       rankKind(a) - rankKind(b) ||
       b.delta - a.delta ||
       b.potentialDelta - a.potentialDelta);
+}
+
+/**
+ * The swaps worth carrying past the comparison: the best few overall, and
+ * never without the best few free ones.
+ *
+ * The candidates are every piece in the account for the slot, and the best of
+ * those for any build are nearly always pieces somebody is already wearing —
+ * the box's leftovers are leftovers for a reason. Cutting the ranked list at
+ * its top eight therefore cut every spare piece out of it, and whatever read
+ * the list next — the account queue above all — could only ever propose
+ * taking a piece off somebody, because nothing else had survived. The free
+ * ones are kept whatever their rank, in the comparison's own order.
+ */
+export function shortlist(
+  swaps: Swap[],
+  isFree: (swap: Swap) => boolean,
+  size = 8,
+  freeKept = 3,
+): Swap[] {
+  const top = new Set(swaps.slice(0, size));
+  let free = [...top].filter(isFree).length;
+
+  for (const swap of swaps.slice(size)) {
+    if (free >= freeKept) break;
+    if (!isFree(swap)) continue;
+    top.add(swap);
+    free += 1;
+  }
+
+  return swaps.filter((swap) => top.has(swap));
 }
 
 const KIND_ORDER: Record<SwapKind, number> = {

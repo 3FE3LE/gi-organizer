@@ -3,7 +3,9 @@ import { test } from 'node:test';
 
 import type { ArtifactSlot } from '@/lib/data/types';
 
-import { chainsOf, planCascade, type CascadeBuild, type CascadeInput } from './cascade';
+import {
+  chainsOf, costOfGivingUp, planCascade, type CascadeBuild, type CascadeInput,
+} from './cascade';
 import { buildStatsFor } from './piece-score';
 
 const CR = 'FIGHT_PROP_CRITICAL';
@@ -166,14 +168,22 @@ test('the move cap is reported rather than hidden', () => {
   assert.equal(plan.truncated, true);
 });
 
-test('a move that breaks a planned set is marked', () => {
+/** A build holding a four-piece of `SET`, and the four pieces it wears for it. */
+function fourPiece(id: string, characterId: number, wants: string) {
   const planned: CascadeBuild = {
-    ...build('a', 1, CR),
+    ...build(id, characterId, wants),
     plannedSets: [{ setIds: [SET], pieces: 4 }],
   };
-
   const worn = (['flower', 'plume', 'sands'] as const).map((slot, index) =>
-    piece(`w${index}`, junk, 1, slot));
+    piece(`${id}-w${index}`, junk, characterId, slot));
+  return { planned, worn };
+}
+
+test('an off-set piece never replaces one the four-piece needs, however it rolls', () => {
+  // The Gilded Dreams circlet on Yanfei: three on-set pieces and an on-set
+  // goblet, and a far better goblet from a set the plan never named. Taking it
+  // would leave three of four — the rolls are not a reason.
+  const { planned, worn } = fourPiece('a', 1, CR);
 
   const plan = planCascade({
     builds: [planned],
@@ -184,8 +194,97 @@ test('a move that breaks a planned set is marked', () => {
     ],
   });
 
+  assert.deepEqual(plan.moves, []);
+});
+
+test('an off-set piece may fill a hole, and the move says it is off-set', () => {
+  const { planned, worn } = fourPiece('a', 1, CR);
+
+  const plan = planCascade({
+    builds: [planned],
+    pieces: [...worn, { ...piece('offset', crit(30), null), setId: 99999 }],
+  });
+
   assert.equal(plan.moves[0].instanceId, 'offset');
   assert.equal(plan.moves[0].breaksSetFor, 'a');
+});
+
+test('the flex slot of a finished four-piece takes any set', () => {
+  const { planned, worn } = fourPiece('a', 1, CR);
+
+  const plan = planCascade({
+    builds: [planned],
+    pieces: [
+      ...worn,
+      piece('goblet', junk, 1),
+      { ...piece('circlet', junk, 1, 'circlet'), setId: 88888 },
+      { ...piece('offset', crit(30), null, 'circlet'), setId: 99999 },
+    ],
+  });
+
+  assert.equal(plan.moves.length, 1);
+  assert.equal(plan.moves[0].instanceId, 'offset');
+  assert.equal(plan.moves[0].breaksSetFor, null, 'the four-piece is untouched');
+});
+
+test('a free piece is preferred to a slightly better one somebody is wearing', () => {
+  // Character 9 has no build, so their goblet costs the plan nothing — and it
+  // is still not worth undressing them for a fraction of a roll.
+  const plan = planCascade({
+    builds: [build('a', 1, CR)],
+    pieces: [
+      piece('worn', junk, 1),
+      piece('spare', crit(19), null),
+      piece('theirs', crit(20), 9),
+    ],
+  });
+
+  assert.equal(plan.moves[0].instanceId, 'spare');
+  assert.equal(plan.moves[0].fromCharacterId, null);
+});
+
+test('a piece holding somebody else\'s four-piece together is not taken', () => {
+  // B wears the only on-set goblet it has. A wants it more, and every spare —
+  // including the goblet A would free — is a different set, which would leave
+  // B's four-piece at three.
+  const b = fourPiece('b', 2, EM);
+
+  const plan = planCascade({
+    builds: [build('a', 1, CR), b.planned],
+    pieces: [
+      ...b.worn,
+      piece('theirs', crit(30), 2),
+      { ...piece('mine', junk, 1), setId: 99998 },
+      { ...piece('spare', mastery(200), null), setId: 99999 },
+    ],
+  });
+
+  assert.equal(plan.moves.find((move) => move.instanceId === 'theirs'), undefined);
+});
+
+test('what a wearer gives up is priced against spares that keep their plan', () => {
+  const stats = buildStatsFor({ mainStats: [], substats: [CR] });
+  const plan = [{ setIds: [SET], pieces: 4 }];
+  const onSet = piece('held', crit(20), 1);
+  const threeOnSet = [SET, SET, SET];
+
+  // Nothing on-set to stand in: taking it costs the set.
+  assert.equal(costOfGivingUp({
+    stats, plan, piece: onSet, otherSetIds: threeOnSet,
+    pool: [{ ...piece('offSpare', crit(20), null), setId: 99999 }],
+  }), null);
+
+  // An on-set spare as good as the piece: nothing is lost.
+  assert.equal(costOfGivingUp({
+    stats, plan, piece: onSet, otherSetIds: threeOnSet,
+    pool: [piece('onSpare', crit(20), null)],
+  }), 0);
+
+  // A piece the wearer's plan does not use can be covered by anything.
+  assert.equal(costOfGivingUp({
+    stats, plan, piece: { ...onSet, setId: 99999 }, otherSetIds: [SET, SET, SET, SET],
+    pool: [{ ...piece('any', crit(20), null), setId: 77777 }],
+  }), 0);
 });
 
 test('slots do not mix', () => {
