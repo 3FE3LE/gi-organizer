@@ -18,6 +18,7 @@ import { LIMITS } from '@/lib/good/schema';
 import {
   applyImport,
   AssignmentViolation,
+  type ImportSection,
   type Repair,
   type Resolution,
 } from '@/lib/inventory/apply';
@@ -125,8 +126,9 @@ export async function previewStaged(token: string): Promise<PreviewResult> {
   const db = getDb();
   const profileId = await getProfileId(db);
   const normalized = await parseStaged(token);
-  // Preview never prunes: the destructive option is a choice made at apply.
-  const plan = planImport(await readInventory(db, profileId), normalized, { onAbsent: 'keep' });
+  // The plan is the same whichever option is chosen at apply, suspicion
+  // included, so the preview can say which sections will be kept regardless.
+  const plan = planImport(await readInventory(db, profileId), normalized);
 
   return { plan, summary: summarizePlan(plan) };
 }
@@ -143,6 +145,8 @@ export type ApplyResult = {
   persisted: Awaited<ReturnType<typeof persistInventory>>;
   /** Assignments the game cannot hold, dropped rather than obeyed. */
   repairs: Repair[];
+  /** Sections asked to prune and kept, because the file looked partial there. */
+  guarded: ImportSection[];
   charactersUpserted: number;
   materialsUpserted: number;
   snapshotId: string;
@@ -185,16 +189,13 @@ export async function applyNormalized(
 
   const before = await readInventory(db, profileId);
   const onAbsent = options.onAbsent ?? 'keep';
-  const plan = planImport(before, normalized, { onAbsent });
-
-  // The guard is in the planner, but honoring it is the caller's job: a scan
-  // that failed halfway must not be allowed to prune on the user's behalf.
-  const effectiveOnAbsent = plan.suspect ? 'keep' : onAbsent;
+  const plan = planImport(before, normalized);
 
   const onNew = options.onNew ?? 'add';
 
-  const { inventory: after, repairs } = applyImport(before, plan, {
-    onAbsent: effectiveOnAbsent,
+  // A suspect section is kept by `applyImport` itself, and reported back.
+  const { inventory: after, repairs, guarded } = applyImport(before, plan, {
+    onAbsent,
     resolutions: options.resolutions,
     onNew,
     types,
@@ -251,7 +252,7 @@ export async function applyNormalized(
         randomUUID(), profileId, new Date().toISOString(), normalized.source,
         normalized.origin, meta.gameVersion,
         JSON.stringify({
-          ...summarizePlan(plan), persisted, repairs, onAbsent: effectiveOnAbsent,
+          ...summarizePlan(plan), persisted, repairs, onAbsent, guarded,
         }),
       );
 
@@ -262,6 +263,7 @@ export async function applyNormalized(
       summary: summarizePlan(plan),
       persisted,
       repairs,
+      guarded,
       charactersUpserted: normalized.characters.length,
       materialsUpserted: materials,
       snapshotId,

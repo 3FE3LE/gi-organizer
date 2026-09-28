@@ -94,7 +94,7 @@ test('the same file imported twice changes nothing', () => {
   assert.equal(counts.artifacts.absent, 0);
   assert.equal(counts.weapons.added, 0);
   assert.equal(counts.weapons.absent, 0);
-  assert.equal(plan.suspect, null);
+  assert.deepEqual(plan.suspect, { artifacts: null, weapons: null });
 });
 
 test('a levelled piece is recognized, not duplicated', () => {
@@ -190,7 +190,7 @@ test('a partial source never proposes deleting anything', () => {
   );
 
   assert.deepEqual(plan.artifacts.absentIds, []);
-  assert.equal(plan.suspect, null);
+  assert.deepEqual(plan.suspect, { artifacts: null, weapons: null });
 });
 
 test('a full import that lost most of the inventory is marked suspect', () => {
@@ -200,8 +200,47 @@ test('a full import that lost most of the inventory is marked suspect', () => {
   const plan = planImport({ artifacts, weapons: [] }, importOf([artifacts[0]]));
 
   assert.equal(plan.artifacts.absentIds.length, 9);
-  assert.notEqual(plan.suspect, null);
-  assert.equal(plan.suspect?.ownedCount, 10);
+  assert.deepEqual(plan.suspect.artifacts, { kind: 'absent', absent: 9, ownedCount: 10 });
+});
+
+test('a cleanup that leaves the characters dressed is not suspect, and prunes', () => {
+  // Half the collection fed away; the two worn pieces are still worn.
+  const worn = [own(piece({ equippedTo: 10000002 }), 'worn-a'),
+    own(piece({ slot: 'plume', equippedTo: 10000002 }), 'worn-b')];
+  const spare = Array.from({ length: 4 }, (_, index) =>
+    own(piece({ level: index + 1 }), `spare-${index}`));
+  const inventory = { artifacts: [...worn, ...spare], weapons: [] };
+
+  const plan = planImport(inventory, importOf([...worn, spare[0]]));
+  assert.equal(plan.suspect.artifacts, null);
+
+  const { inventory: after, guarded } = applyImport(inventory, plan, { onAbsent: 'remove' });
+  assert.deepEqual(after.artifacts.map((artifact) => artifact.id).sort(),
+    ['spare-0', 'worn-a', 'worn-b']);
+  assert.deepEqual(guarded, []);
+});
+
+test('a scan that shows nothing worn neither prunes nor unequips its section', () => {
+  // A filter left on in the game's inventory: only the spare locked pieces.
+  const worn = own(piece({ equippedTo: 10000002 }), 'worn');
+  const spare = own(piece({ level: 4, lock: true }), 'spare');
+  const sword = { weaponId: 11101, level: 1, ascension: 0, refinement: 1, lock: false,
+    equippedTo: 10000002 };
+  const owned = (id: string, equippedTo: number | null) =>
+    ({ ...sword, equippedTo, id, source: 'good' as const, seenAt: '2026-09-09T00:00:00.000Z' });
+  const inventory = { artifacts: [worn, spare], weapons: [owned('held', 10000002), owned('spare', null)] };
+
+  const plan = planImport(inventory, { ...importOf([spare]), weapons: [sword] });
+  assert.deepEqual(plan.suspect.artifacts, { kind: 'worn', seenWorn: 0, ownedWorn: 1 });
+  assert.equal(plan.suspect.weapons, null);
+
+  const { inventory: after, guarded, repairs } =
+    applyImport(inventory, plan, { onAbsent: 'remove' });
+  assert.equal(after.artifacts.find((artifact) => artifact.id === 'worn')?.equippedTo, 10000002);
+  assert.equal(repairs.length, 0);
+  assert.deepEqual(guarded, ['artifacts']);
+  // The weapons section is judged on its own, and it was fine.
+  assert.deepEqual(after.weapons.map((weapon) => weapon.id), ['held']);
 });
 
 /**
@@ -236,7 +275,7 @@ test('a real export is idempotent', { skip: realExport() === null }, () => {
     { added: counts.weapons.added, absent: counts.weapons.absent },
     { added: 0, absent: 0 },
   );
-  assert.equal(plan.suspect, null);
+  assert.deepEqual(plan.suspect, { artifacts: null, weapons: null });
 });
 
 test('a real export levels cleanly', { skip: realExport() === null }, () => {

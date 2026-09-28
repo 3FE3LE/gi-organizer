@@ -152,8 +152,10 @@ function parseMaterials(
           raw: key, severity: 'warning',
         });
         break;
+      case 'untracked':
+        break;
       default:
-        log.add('unknown-set-key', path, `no material matches "${key}"`, {
+        log.add('unknown-material-key', path, `no material matches "${key}"`, {
           raw: key,
           suggestion: nearestKey(key, resolver.knownKeys('materials')),
           severity: 'warning',

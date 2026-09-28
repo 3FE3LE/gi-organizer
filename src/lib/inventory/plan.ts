@@ -76,17 +76,29 @@ export type ImportPlan = {
   characters: NormalizedCharacter[];
   issues: ImportIssue[];
   /**
-   * Set when a `full` import looks like a partial scan — a run that failed
-   * halfway would otherwise propose deleting most of a collection.
+   * Per section, set when a `full` import looks like a partial scan of it — a
+   * run that failed halfway, or one taken with a filter left on in the game's
+   * inventory, would otherwise propose deleting most of a collection. A
+   * suspect section is read as partial: nothing in it is pruned or unequipped.
    */
-  suspect: { reason: string; ownedCount: number; importCount: number } | null;
+  suspect: { artifacts: Suspicion | null; weapons: Suspicion | null };
 };
 
+/** Numbers rather than a sentence, so the review screen can say it in the user's language. */
+export type Suspicion =
+  /** Fewer items worn in the file than on the account. */
+  | { kind: 'worn'; seenWorn: number; ownedWorn: number }
+  /** More of the account missing than a cleanup removes. */
+  | { kind: 'absent'; absent: number; ownedCount: number };
+
 export type PlanOptions = {
-  /** `remove` is only ever offered for a `full` import, and never by default. */
-  onAbsent?: 'keep' | 'remove';
-  /** Above this share of unexplained absences, the plan is marked suspect. */
-  suspectThreshold?: number;
+  /**
+   * Below this share of the account's worn items still worn in the file, the
+   * section is marked suspect.
+   */
+  wornThreshold?: number;
+  /** Above this share of owned items missing from the file, likewise. */
+  absentThreshold?: number;
 };
 
 export function planImport(
@@ -94,30 +106,16 @@ export function planImport(
   incoming: NormalizedImport,
   options: PlanOptions = {},
 ): ImportPlan {
-  const onAbsent = options.onAbsent ?? (incoming.coverage === 'full' ? 'remove' : 'keep');
-  const threshold = options.suspectThreshold ?? 0.2;
-
   const artifacts = planArtifacts(inventory.artifacts, incoming.artifacts);
   const weapons = planWeapons(inventory.weapons, incoming.weapons, incoming.coverage);
 
-  const ownedCount = inventory.artifacts.length;
-  const absent = artifacts.absentIds.length;
+  // Judged whatever was asked for, so the preview can warn before the choice
+  // is made rather than the apply quietly overruling it afterwards.
+  const judge = (owned: Held[], seen: Held[], absent: number) =>
+    incoming.coverage === 'full' ? suspicion(owned, seen, absent, options) : null;
 
-  // A scan that failed midway looks exactly like a collection that was sold.
-  // The difference is that one of them is recoverable and the other is not.
-  const suspect =
-    incoming.coverage === 'full' &&
-    onAbsent === 'remove' &&
-    ownedCount > 0 &&
-    absent / ownedCount > threshold
-      ? {
-          reason:
-            `${absent} of ${ownedCount} owned pieces are missing from this file, ` +
-            'which is more than a normal session removes',
-          ownedCount,
-          importCount: incoming.artifacts.length,
-        }
-      : null;
+  const weaponsAbsent = weapons.reduce(
+    (total, verdict) => total + (verdict.kind === 'absent' ? verdict.ownedIds.length : 0), 0);
 
   return {
     coverage: incoming.coverage,
@@ -132,8 +130,44 @@ export function planImport(
     weapons: { verdicts: weapons, incoming: incoming.weapons },
     characters: incoming.characters,
     issues: incoming.issues,
-    suspect,
+    suspect: {
+      artifacts: judge(inventory.artifacts, incoming.artifacts, artifacts.absentIds.length),
+      weapons: judge(inventory.weapons, incoming.weapons, weaponsAbsent),
+    },
   };
+}
+
+type Held = { equippedTo: number | null };
+
+/**
+ * A scan that failed midway looks exactly like a collection that was sold. The
+ * difference is that one of them is recoverable and the other is not.
+ *
+ * What tells them apart is what is worn. A cleanup feeds or sells spare pieces
+ * and leaves the characters dressed; a filter left on in the game's inventory
+ * — only locked pieces, only +0 — hides what they wear along with the rest.
+ * The share missing alone cannot tell: a real cleanup had removed 41% of a
+ * collection, and a guard on that share kept every one of those pieces.
+ */
+function suspicion(
+  owned: Held[],
+  seen: Held[],
+  absent: number,
+  options: PlanOptions,
+): Suspicion | null {
+  const wornThreshold = options.wornThreshold ?? 0.8;
+  const absentThreshold = options.absentThreshold ?? 0.8;
+
+  const ownedWorn = owned.filter((item) => item.equippedTo !== null).length;
+  const seenWorn = seen.filter((item) => item.equippedTo !== null).length;
+
+  if (ownedWorn > 0 && seenWorn < ownedWorn * wornThreshold) {
+    return { kind: 'worn', seenWorn, ownedWorn };
+  }
+  if (owned.length > 0 && absent / owned.length > absentThreshold) {
+    return { kind: 'absent', absent, ownedCount: owned.length };
+  }
+  return null;
 }
 
 function planArtifacts(owned: OwnedArtifact[], incoming: NormalizedArtifact[]) {

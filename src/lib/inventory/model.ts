@@ -90,6 +90,7 @@ export type NormalizedImport = {
 export type ImportIssueCode =
   | 'envelope'
   | 'unknown-set-key'
+  | 'unknown-material-key'
   | 'unknown-weapon-key'
   | 'unknown-character-key'
   | 'unknown-stat-key'

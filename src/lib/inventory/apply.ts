@@ -35,8 +35,16 @@ export type Repair =
    */
   | { kind: 'artifact-unequipped'; instanceId: string; characterId: number; slot: ArtifactSlot };
 
+export type ImportSection = 'artifacts' | 'weapons';
+
 export type ApplyResult = {
   inventory: Inventory;
+  /**
+   * Sections the user asked to prune that were kept anyway, because the plan
+   * found them suspect. Said out loud: an option quietly overruled reads as
+   * the option not working.
+   */
+  guarded: ImportSection[];
   /**
    * Assignments the import claimed that the game cannot hold, dropped rather
    * than obeyed. The item is kept; only its holder is discarded.
@@ -45,7 +53,10 @@ export type ApplyResult = {
 };
 
 export type ApplyOptions = {
-  /** Only honored for a `full` import, and only when the user confirmed it. */
+  /**
+   * Only honored for a `full` import, and per section only where the plan did
+   * not find that section suspect.
+   */
   onAbsent?: 'keep' | 'remove';
   /**
    * Whether this source may add items the account did not already have.
@@ -86,6 +97,17 @@ export function applyImport(
   const onAbsent = options.onAbsent ?? 'keep';
   const onNew = options.onNew ?? 'add';
 
+  // The guard is the planner's; honoring it is here, next to the deletes, so
+  // no caller can prune a section the plan does not trust. A suspect section
+  // is read as partial throughout — its silence says nothing about what was
+  // sold or who wears what.
+  const trusted = (section: ImportSection) =>
+    plan.coverage === 'full' && plan.suspect[section] === null;
+  const prune = (section: ImportSection) => onAbsent === 'remove' && trusted(section);
+  const guarded = (['artifacts', 'weapons'] as const).filter((section) =>
+    onAbsent === 'remove' && plan.coverage === 'full' && !trusted(section));
+  const artifactsFull = trusted('artifacts');
+
   const artifacts = new Map(inventory.artifacts.map((piece) => [piece.id, piece]));
   /** Pieces this file described, whose holder is therefore the file's to say. */
   const observed = new Set<string>();
@@ -96,7 +118,7 @@ export function applyImport(
       case 'upgraded': {
         const owned = artifacts.get(verdict.ownedId);
         if (owned) {
-          artifacts.set(owned.id, mergeArtifact(owned, verdict.incoming, plan));
+          artifacts.set(owned.id, mergeArtifact(owned, verdict.incoming, plan, artifactsFull));
           observed.add(owned.id);
         }
         break;
@@ -122,7 +144,7 @@ export function applyImport(
 
         const owned = artifacts.get(resolution.ownedId);
         if (owned) {
-          artifacts.set(owned.id, mergeArtifact(owned, verdict.incoming, plan));
+          artifacts.set(owned.id, mergeArtifact(owned, verdict.incoming, plan, artifactsFull));
           observed.add(owned.id);
         }
         break;
@@ -130,7 +152,7 @@ export function applyImport(
     }
   });
 
-  if (onAbsent === 'remove' && plan.coverage === 'full') {
+  if (prune('artifacts')) {
     for (const id of plan.artifacts.absentIds) artifacts.delete(id);
   }
 
@@ -145,7 +167,9 @@ export function applyImport(
    * flower in the same slot, and the exclusivity check refused the entire
    * import over it. The file is the newer observation, so the slot is its to
    * give. A full export goes further — it lists everything that is worn, so a
-   * piece it does not list is worn by no one.
+   * piece it does not list is worn by no one. Unless the plan found the
+   * section suspect: a scan with a filter on lists nothing worn at all, and
+   * taking its word undressed every character.
    */
   const claimed = new Set<string>();
   for (const id of observed) {
@@ -154,7 +178,7 @@ export function applyImport(
   }
   for (const piece of artifacts.values()) {
     if (observed.has(piece.id) || piece.equippedTo === null) continue;
-    const displaced = plan.coverage === 'full'
+    const displaced = artifactsFull
       || claimed.has(`${bodyOf(piece.equippedTo)}|${piece.slot}`);
     if (!displaced) continue;
 
@@ -167,7 +191,7 @@ export function applyImport(
     artifacts.set(piece.id, { ...piece, equippedTo: null });
   }
 
-  const weapons = applyWeapons(inventory.weapons, plan, newId, onAbsent, onNew);
+  const weapons = applyWeapons(inventory.weapons, plan, newId, prune('weapons'), trusted('weapons'), onNew);
 
   let next: Inventory = { artifacts: [...artifacts.values()], weapons };
 
@@ -203,7 +227,7 @@ export function applyImport(
   const conflicts = findConflicts(next, options.types);
   if (conflicts.length > 0) throw new AssignmentViolation(conflicts);
 
-  return { inventory: next, repairs };
+  return { inventory: next, repairs, guarded };
 }
 
 function adoptArtifact(
@@ -218,6 +242,7 @@ function mergeArtifact(
   owned: OwnedArtifact,
   incoming: NormalizedArtifact,
   plan: ImportPlan,
+  full: boolean,
 ): OwnedArtifact {
   return {
     ...owned,
@@ -231,7 +256,7 @@ function mergeArtifact(
     // every future match.
     rollHistory: incoming.rollHistory ?? owned.rollHistory,
     // Only a source that saw the whole inventory can say a piece was unequipped.
-    equippedTo: plan.coverage === 'full' ? incoming.equippedTo : incoming.equippedTo ?? owned.equippedTo,
+    equippedTo: full ? incoming.equippedTo : incoming.equippedTo ?? owned.equippedTo,
   };
 }
 
@@ -239,7 +264,8 @@ function applyWeapons(
   owned: OwnedWeapon[],
   plan: ImportPlan,
   newId: () => string,
-  onAbsent: 'keep' | 'remove',
+  prune: boolean,
+  full: boolean,
   onNew: 'add' | 'ignore',
 ) {
   const removed = new Set<string>();
@@ -251,7 +277,7 @@ function applyWeapons(
       for (let i = 0; i < verdict.count; i += 1) {
         added.push(adoptWeapon(verdict.incoming, plan, newId()));
       }
-    } else if (verdict.kind === 'absent' && onAbsent === 'remove' && plan.coverage === 'full') {
+    } else if (verdict.kind === 'absent' && prune) {
       for (const id of verdict.ownedIds) removed.add(id);
     }
   }
@@ -259,7 +285,7 @@ function applyWeapons(
   const survivors = owned.filter((weapon) => !removed.has(weapon.id));
   const result = [...survivors, ...added];
 
-  if (plan.coverage !== 'full') return result;
+  if (!full) return result;
 
   // A weapon that simply changed hands produces no verdict, because the counts
   // did not move. So a full import re-derives every holder from the file: per

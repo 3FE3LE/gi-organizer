@@ -5,6 +5,7 @@ import { useActionState, useState, useTransition } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { ActionStatus } from '@/components/action-status';
+import type { Suspicion } from '@/lib/inventory/plan';
 
 import {
   type ActionState,
@@ -26,7 +27,7 @@ type Preview = {
   origin: string;
   coverage: 'full' | 'partial';
   summary: Summary;
-  suspect: { reason: string } | null;
+  suspect: Record<'artifacts' | 'weapons', Suspicion | null>;
   issues: { code: string; count: number; examples: { path: string; message: string; suggestion?: string }[] }[];
 };
 
@@ -114,12 +115,19 @@ export function ImportForm() {
               {t('charactersInFile', { count: preview.summary.characters })}
             </p>
 
-            {preview.suspect && (
-              <p className="notice text-sm">
-                <strong className="text-accent">{t('suspectLabel')}</strong> {preview.suspect.reason}.
-                {t('suspectSuffix')}
-              </p>
-            )}
+            {(['artifacts', 'weapons'] as const).map((section) => {
+              const suspicion = preview.suspect[section];
+              if (!suspicion) return null;
+              return (
+                <p key={section} className="notice text-sm">
+                  <strong className="text-accent">{t('suspectLabel', { section })}</strong>{' '}
+                  {suspicion.kind === 'worn'
+                    ? t('suspectWorn', suspicion)
+                    : t('suspectAbsent', suspicion)}{' '}
+                  {t('suspectSuffix')}
+                </p>
+              );
+            })}
 
             {preview.issues.length > 0 && (
               <ul className="space-y-2 text-xs">
@@ -141,11 +149,12 @@ export function ImportForm() {
 
             <form action={apply} className="flex flex-wrap items-center gap-3">
               <input type="hidden" name="token" value={preview.token} />
-              {/* Only a source that saw the whole inventory may prune, and even
-                  then only because the user asked for it. */}
+              {/* Only a source that saw the whole inventory may prune. On by
+                  default: the export is the account's record of itself, and a
+                  section it looks partial in is kept by the plan regardless. */}
               {preview.coverage === 'full' && (
                 <label className="flex items-center gap-2 text-sm text-muted">
-                  <input type="checkbox" name="onAbsent" value="remove" />
+                  <input type="checkbox" name="onAbsent" value="remove" defaultChecked />
                   {t('removeAbsentLabel')}
                 </label>
               )}

@@ -5,7 +5,7 @@ import { getLocale, getTranslations } from 'next-intl/server';
 import { getCatalog } from '@/lib/data/catalog';
 import { DEFAULT_LOCALE, isLocale } from '@/lib/data/locales';
 import type { AssignmentConflict } from '@/lib/inventory/assignment';
-import type { Repair } from '@/lib/inventory/apply';
+import type { ImportSection, Repair } from '@/lib/inventory/apply';
 import { AssignmentViolation, applyShowcase, applyStaged } from '@/lib/player/import';
 import { refreshEverywhere } from '@/lib/refresh';
 
@@ -37,7 +37,7 @@ export async function applyStagedAction(
     refreshEverywhere();
 
     const { artifacts, weapons } = result.persisted;
-    const repaired = repairSuffix(result.repairs, t);
+    const repaired = repairSuffix(result.repairs, t) + guardedSuffix(result.guarded, t);
 
     return {
       status: 'ok',
@@ -75,6 +75,11 @@ function repairSuffix(repairs: Repair[], t: ActionMessages) {
     impossible > 0 ? t('repairsSuffix', { count: impossible }) : '',
     unequipped > 0 ? t('unequippedSuffix', { count: unequipped }) : '',
   ].join('');
+}
+
+/** A prune the user asked for and did not get is said, not swallowed. */
+function guardedSuffix(guarded: ImportSection[], t: ActionMessages) {
+  return guarded.map((section) => t('guardedSuffix', { section })).join('');
 }
 
 /**

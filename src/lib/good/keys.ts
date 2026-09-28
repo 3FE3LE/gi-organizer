@@ -77,7 +77,7 @@ export type KeyResolver = {
   character: (key: string) => Resolution | TravelerResolution;
   /** GOOD's `location` uses the same vocabulary as `characters[].key`. */
   location: (key: string) => Resolution | TravelerResolution | null;
-  material: (key: string) => Resolution;
+  material: (key: string) => Resolution | { kind: 'untracked' };
   knownKeys: (of: 'artifactSets' | 'weapons' | 'characters' | 'materials') => string[];
 };
 
@@ -92,6 +92,40 @@ const ALIASES: Record<string, string> = {
   Manequin1: 'Manekin',
   Manequin2: 'Manekina',
 };
+
+/**
+ * Materials a scanner reports that the catalog deliberately does not carry.
+ *
+ * Project Amber lists no fishing bait and no fish, so their keys have no id
+ * to resolve to, and nothing a plan bills is either. They are dropped without
+ * a warning: thirteen lines of noise on every import hid the warning that
+ * mattered. A key missing for any other reason still reports.
+ */
+const UNTRACKED_MATERIALS = new Set<string>([
+  // Bait.
+  'FruitPasteBait', 'RedrotBait', 'FalseWormBait', 'FakeFlyBait', 'GlowgrassBait',
+  'SugardewBait', 'SourBait', 'FlashingMaintenanceMekBait', 'SpinelgrainBait',
+  'EmberglowBait', 'BerryBait', 'RefreshingLakkaBait', 'GlimmeringBait',
+  // Fish.
+  'Medaka', 'GlazeMedaka', 'SweetFlowerMedaka', 'AizenMedaka', 'Dawncatcher',
+  'Crystalfish', 'LungedStickleback', 'Betta', 'VenomspineFish', 'AkaiMaou',
+  'Snowstrider', 'GoldenKoi', 'RustyKoi', 'BrownShirakodai', 'PurpleShirakodai',
+  'TeaColoredShirakodai', 'AbidingAngelfish', 'RaimeiAngelfish', 'Pufferfish',
+  'BitterPufferfish', 'DivdaRay', 'FormaloRay', 'TrueFruitAngler',
+  'PeachOfTheDeepWaves', 'SandstormAngler', 'SunsetCloudAngler',
+  'LazuriteAxeMarlin', 'HalcyonJadeAxeMarlin', 'StreamingAxeMarlin',
+  'RipplingHeartfeatherBass', 'BlazingHeartfeatherBass', 'JadeHeartfeatherBass',
+  'MaintenanceMekInitialConfiguration', 'MaintenanceMekWaterBodyCleaner',
+  'MaintenanceMekSituationController', 'MaintenanceMekPlatinumCollection',
+  'MaintenanceMekGoldLeader', 'FloralRapidfightingFish', 'DivingRapidfightingFish',
+  'MagmaRapidfightingFish', 'GreenwaveSunfish', 'DuskSunfish',
+  'PhonyPhlogistonUnihornfish', 'PseudosharkUnihornfish', 'SecretSourceScoutSweeper',
+  'CommonAxeheadFish', 'FrostedAxeheadFish', 'BlazingAxeheadFish',
+  'VeggieMaulerShark', 'NeonMaulerShark', 'AzuregazeCrystalEye',
+  'NightgazeCrystalEye', 'CeruleanDoppeldrake', 'CharcoalSnowfin', 'CreamSnowfin',
+  'MoonlightSnowfin', 'RubyStarbloomFish', 'FrostpetalStarbloomFish',
+  'IridescentStarbloomFish',
+]);
 
 export function createKeyResolver(crosswalk: GoodCrosswalk): KeyResolver {
   const sets = buildTable(crosswalk.artifactSets, crosswalk.excluded.artifactSets);
@@ -120,7 +154,12 @@ export function createKeyResolver(crosswalk: GoodCrosswalk): KeyResolver {
     artifactSet: (key) => resolve(sets, key),
     weapon: (key) => resolve(weapons, key),
     character,
-    material: (key) => resolve(materials, key),
+    material: (key) => {
+      const resolution = resolve(materials, key);
+      return resolution.kind === 'unknown' && UNTRACKED_MATERIALS.has(key)
+        ? { kind: 'untracked' }
+        : resolution;
+    },
     location: (key) => (key === '' ? null : character(key)),
     knownKeys: (of) => Object.keys(crosswalk[of]),
   };
