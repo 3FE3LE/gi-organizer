@@ -43,11 +43,29 @@ const PAD = 8;
  * flickering. At the end, not under the dock: there it held the list where
  * it was, and the list sat a folded filter's height below the bar — a blank
  * band that only closed once it had scrolled away.
+ *
+ * An open disclosure holds the dock in the page until the whole of it has
+ * scrolled past. Docking the moment its top reached the header folded the
+ * open "more filters" away — or capped it at part of the screen — right while
+ * somebody was scrolling down to its last control, the main stat under a
+ * picked slot: on a phone the control they were reaching for vanished under
+ * their thumb. So while one is open the dock scrolls with the page like any
+ * card, and docks only once its bottom has gone under the header, closing the
+ * disclosure as it does so the bar that comes back is the compact one. A
+ * disclosure opened on a bar that is already docked keeps it docked, since
+ * that one is being used where it is.
  */
 export function StickyDock({ children }: { children: React.ReactNode }) {
   const sentinel = useRef<HTMLDivElement>(null);
+  const end = useRef<HTMLDivElement>(null);
   const dock = useRef<HTMLDivElement>(null);
   const [top, setTop] = useState(0);
+  // The line the dock's top docks at has been scrolled past, and so has the
+  // line its bottom sits on.
+  const [passed, setPassed] = useState(false);
+  const [passedEnd, setPassedEnd] = useState(false);
+  // A disclosure inside the dock is open.
+  const [open, setOpen] = useState(false);
   const [stuck, setStuck] = useState(false);
   // The dock's height as last seen undocked, and what docking has taken off
   // it since.
@@ -72,16 +90,44 @@ export function StickyDock({ children }: { children: React.ReactNode }) {
   // header. The dock's box starts `PAD` above its controls, and the sentinel
   // marks where the controls start, so the line it crosses is that far lower.
   useEffect(() => {
-    const node = sentinel.current;
-    if (!node) return;
     const line = top + PAD + 1;
-    const observer = new IntersectionObserver(
-      ([entry]) => setStuck(!entry.isIntersecting && entry.boundingClientRect.top < line),
-      { rootMargin: `-${line}px 0px 0px 0px` },
-    );
-    observer.observe(node);
-    return () => observer.disconnect();
+    const watch = (node: HTMLElement | null, set: (value: boolean) => void) => {
+      if (!node) return null;
+      const observer = new IntersectionObserver(
+        ([entry]) => set(!entry.isIntersecting && entry.boundingClientRect.top < line),
+        { rootMargin: `-${line}px 0px 0px 0px` },
+      );
+      observer.observe(node);
+      return observer;
+    };
+    const observers = [watch(sentinel.current, setPassed), watch(end.current, setPassedEnd)];
+    return () => observers.forEach((observer) => observer?.disconnect());
   }, [top]);
+
+  // `toggle` does not bubble, so it is caught on the way down.
+  useEffect(() => {
+    const node = dock.current;
+    if (!node) return;
+    const read = () => setOpen(node.querySelector('details[open]') !== null);
+    read();
+    node.addEventListener('toggle', read, true);
+    return () => node.removeEventListener('toggle', read, true);
+  }, []);
+
+  // Docked once the top has passed — unless a disclosure is open, which waits
+  // for the bottom. Already docked, it stays docked whatever opens. Adjusted
+  // while rendering, since it depends on its own last value.
+  const docks = passed && (stuck || !open || passedEnd);
+  if (docks !== stuck) setStuck(docks);
+
+  // Docking past an open disclosure closes it, so the bar that comes back is
+  // the compact one rather than the whole panel over the list.
+  useEffect(() => {
+    if (!stuck || !passedEnd) return;
+    dock.current?.querySelectorAll('details[open]').forEach((details) => {
+      (details as HTMLDetailsElement).open = false;
+    });
+  }, [stuck, passedEnd]);
 
   // Followed through the docking transition rather than read once, since the
   // padding eases and an open disclosure can grow the dock back.
@@ -103,15 +149,20 @@ export function StickyDock({ children }: { children: React.ReactNode }) {
     <>
       {/* No margin of its own, so the page's spacing still reads as one gap. */}
       <div ref={sentinel} aria-hidden className="mb-0 h-px" />
+      {/* Held in the page — not sticky — while an open disclosure waits for
+          its bottom to pass, or the browser would pin it at its top anyway. */}
       <div
         ref={dock}
         data-stuck={stuck || undefined}
         style={{ top }}
-        className={`group/dock sticky z-30 -mx-4 -mt-2 px-4 py-2 sm:-mx-6 sm:px-6
+        className={`group/dock ${passed && !stuck ? 'relative' : 'sticky'} z-30 -mx-4 -mt-2 px-4 py-2 sm:-mx-6 sm:px-6
           before:pointer-events-none before:absolute before:inset-0 before:-z-10 before:border-b before:border-edge before:bg-ink/85 before:opacity-0 before:shadow-[var(--shadow-raised)] before:backdrop-blur-md before:transition-opacity before:duration-200
-          data-[stuck]:max-h-[70svh] data-[stuck]:overflow-y-auto data-[stuck]:before:opacity-100`}
+          data-[stuck]:max-h-[70svh] data-[stuck]:overflow-y-auto data-[stuck]:overscroll-contain data-[stuck]:before:opacity-100`}
       >
         {children}
+        {/* The dock's bottom, inside it so it adds nothing to the page's
+            spacing; only read while the dock is held in the page. */}
+        <div ref={end} aria-hidden className="pointer-events-none absolute bottom-0 left-0 h-px w-px" />
       </div>
       {shortfall > 0 && createPortal(<div aria-hidden style={{ height: shortfall }} />, document.body)}
     </>
