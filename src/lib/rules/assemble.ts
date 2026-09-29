@@ -902,7 +902,10 @@ export async function farmingPlan(
   for (const build of builds) {
     if (!counts('weapon')) break;
     if (build.weaponId === null || !weaponsOwned.has(build.weaponId)) continue;
-    if (!wants(build.characterId)) continue;
+    // Only for someone the plan counts. `byCharacter` has already been through
+    // the dismissals, the scope and the target assumption; checking the scope
+    // alone here let a dismissed character's weapon back in by this route.
+    if (!byCharacter.has(build.characterId)) continue;
     if (!plannedWeapons.has(build.weaponId)) {
       plannedWeapons.set(build.weaponId, {
         weaponId: build.weaponId,

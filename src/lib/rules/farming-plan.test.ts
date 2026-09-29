@@ -5,6 +5,7 @@ import { getCatalog } from '@/lib/data/catalog';
 import { createMemoryDb } from '@/lib/db/client';
 import { setDismissed, upsertCharacter } from '@/lib/player/characters';
 import { getProfileId, persistInventory } from '@/lib/player/db';
+import { saveBuild } from '@/lib/player/builds';
 import { setWorldLevel } from '@/lib/player/world-level';
 
 
@@ -183,4 +184,56 @@ test('the plan prices its demand in resin, at the account world level', async ()
   await setWorldLevel(3, db);
   const lower = await farmingPlan(catalog, db);
   assert.ok(lower.resin.total > plan.resin.total, 'worse drops, more resin');
+});
+
+/*
+ * A goal's weapon is the one its character holds, so a character with a goal
+ * brings their weapon into the plan by two routes: the goal, and the fallback
+ * for whatever somebody is holding. The fallback honoured a dismissal; the goal
+ * route did not, and the weapon tab listed people the roster said were out.
+ */
+test('a dismissed character\'s goal weapon costs nothing', async () => {
+  const { db, profileId } = await rosterWith(50);
+  const catalog = await getCatalog('es');
+
+  await persistInventory(db, profileId, { artifacts: [], weapons: [] }, {
+    artifacts: [],
+    weapons: [{
+      id: 'w0',
+      weaponId: SKYWARD_HARP,
+      level: 20,
+      ascension: 1,
+      refinement: 1,
+      lock: true,
+      source: 'good',
+      equippedTo: VENTI,
+      seenAt: '2026-09-16T00:00:00.000Z',
+    }],
+  });
+  await saveBuild({
+    characterId: VENTI,
+    role: null,
+    objective: null,
+    weaponId: SKYWARD_HARP,
+    weaponRefinement: 1,
+    setPlan: [],
+    mainStats: {},
+    substats: [],
+    goals: [],
+    notes: null,
+  }, db);
+
+  const weaponRows = (plan: Awaited<ReturnType<typeof farmingPlan>>) =>
+    [...plan.schedule.anytime, ...plan.schedule.domains.flatMap((domain) => domain.needs)]
+      .flatMap((need) => need.by)
+      .filter((row) => row.reason === 'weapon');
+
+  assert.ok(weaponRows(await farmingPlan(catalog, db)).length > 0, 'the goal weapon is planned');
+
+  await setDismissed(db, profileId, [VENTI], true);
+  assert.equal(
+    weaponRows(await farmingPlan(catalog, db)).length,
+    0,
+    'out of the plan means their weapon is too',
+  );
 });
