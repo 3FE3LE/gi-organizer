@@ -1,4 +1,4 @@
-import { ArrowRight, CornerDownRight, Plus, X } from 'lucide-react';
+import { ArrowRight, CornerDownRight, Dices, Plus, X } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -216,9 +216,20 @@ export default async function AgendaPage({
                           {t('breaksSet')}
                         </span>
                       )}
-                      <span className="tabular text-good">+{move.gain.toFixed(1)}</span>
+                      {/* The die is the card's own mark for useful rolls, so a gain
+                          here and the number on a piece are read as one unit. */}
+                      <span
+                        className="tabular flex items-center gap-1 text-good"
+                        title={t('gainTitle', { gain: move.gain.toFixed(1) })}
+                      >
+                        <Dices size={13} aria-hidden />+{move.gain.toFixed(1)}
+                        <span className="sr-only">{t('gainTitle', { gain: move.gain.toFixed(1) })}</span>
+                      </span>
                       {move.cost > 0 && (
-                        <span className="tabular text-muted">−{move.cost.toFixed(1)}</span>
+                        <span className="tabular text-muted" title={t('costTitle', { cost: move.cost.toFixed(1) })}>
+                          −{move.cost.toFixed(1)}
+                          <span className="sr-only">{t('costTitle', { cost: move.cost.toFixed(1) })}</span>
+                        </span>
                       )}
                     </span>
                   </div>

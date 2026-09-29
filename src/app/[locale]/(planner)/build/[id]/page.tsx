@@ -5,6 +5,7 @@ import { ViewTransition } from 'react';
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
+import { ArtifactLegend } from '@/components/artifact-legend';
 import { GameIcon } from '@/components/game-icon';
 import { HoverLabel } from '@/components/hint';
 import { SectionTabs } from '@/components/section-tabs';
@@ -251,9 +252,10 @@ async function ChangesTab({ context }: { context: BuildContext }) {
 
   return (
     <section className="space-y-6">
-      <div className="mb-3 flex flex-wrap items-baseline gap-3">
-        <h2 className="text-sm font-medium uppercase tracking-wide text-muted">
+      <div className="mb-3 flex flex-wrap items-center gap-3">
+        <h2 className="flex items-center gap-1 text-sm font-medium uppercase tracking-wide text-muted">
           {t('changesHeading')}
+          <ArtifactLegend fit />
         </h2>
         {suggestions.build ? (
           <span className="font-mono text-xs text-muted">

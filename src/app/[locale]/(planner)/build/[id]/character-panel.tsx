@@ -2,6 +2,7 @@ import { Cake, Plus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { ViewTransition } from 'react';
 
+import { ArtifactLegend } from '@/components/artifact-legend';
 import { ArtifactCard } from '@/components/artifact-card';
 import { EffectButton } from '@/components/effect-dialog';
 import { ElementIcon } from '@/components/element-icon';
@@ -542,9 +543,10 @@ export async function CharacterPanel({
         */}
       {loadout.known && (
         <div className="border-t border-edge p-4">
-          <div className="mb-2 flex flex-wrap items-baseline gap-x-3">
-            <h2 className="text-sm font-medium uppercase tracking-wide text-muted">
+          <div className="mb-2 flex flex-wrap items-center gap-x-3">
+            <h2 className="flex items-center gap-1 text-sm font-medium uppercase tracking-wide text-muted">
               {t('artifactsHeading')}
+              <ArtifactLegend fit />
             </h2>
             {loadout.setCounts.map(([setId, count]) => {
               const set = catalog.artifacts.get(setId);

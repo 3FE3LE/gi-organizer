@@ -11,6 +11,7 @@ import { getAccountCatalog } from '@/lib/player/traveler';
 import { ownedArtifactCardData } from './artifact-card';
 import { ArtifactList } from './artifact-list';
 import { FilterPanel } from './filter-panel';
+import { ArtifactLegend } from '@/components/artifact-legend';
 import { StickyDock } from '@/components/sticky-dock';
 import { CLEARED, href, loadArtifactFilters, pricingScaler } from './filters';
 import { PAGE_SIZE, queryArtifacts } from './query';
@@ -75,7 +76,7 @@ export default async function ArtifactsPage({
   return (
     <div className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <h1 className="page-title">{t('title')}</h1>
           <p className="font-mono text-xs text-muted">
             {shown.length === all.length
@@ -84,6 +85,7 @@ export default async function ArtifactsPage({
             {' · '}
             <span className="text-accent">{perfect}</span> {t('perfectSuffix')}
           </p>
+          <ArtifactLegend />
         </div>
       </header>
 

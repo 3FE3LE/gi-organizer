@@ -4,6 +4,7 @@ import { ArrowLeftRight, ArrowUp, Star, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useActionState, useEffect, useRef, useState } from 'react';
 
+import { ArtifactLegend } from '@/components/artifact-legend';
 import { buttonVariants } from '@/components/ui/button';
 import { ActionStatus } from '@/components/action-status';
 import { AssetImage } from '@/components/asset-image';
@@ -256,6 +257,8 @@ function SlotDialog({
               : <span className="text-muted">{t('emptySlotText')}</span>}
           </p>
         </div>
+
+        {view?.kind === 'artifact' && <ArtifactLegend fit />}
 
         {view?.equipped && (
           <MoveButton

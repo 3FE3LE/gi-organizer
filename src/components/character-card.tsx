@@ -1,7 +1,8 @@
 import { EyeOff } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import { ElementIcon } from '@/components/element-icon';
-import { Fold } from '@/components/fold';
+import { HelpRow, HelpSection, HelpTip } from '@/components/help-tip';
 import { Hint } from '@/components/hint';
 import { elementColor } from '@/lib/data/elements';
 
@@ -189,8 +190,8 @@ export function LevelTalents({
  * What the marks on a card mean, drawn as they appear on it.
  *
  * Each of them is explained on hover, which a phone does not have and which
- * nobody finds without being told to look. Folded, so it costs one line to
- * the player who already knows.
+ * nobody finds without being told to look. Behind the app's `?`, written out
+ * beside it, so it costs one line to the player who already knows.
  */
 export function CardLegend({
   labels,
@@ -199,6 +200,7 @@ export function CardLegend({
   labels: { summary: string; ring: string; talents: string; today: string; todayText: string; dismissed: string };
   className?: string;
 }) {
+  const common = useTranslations('common');
   const circumference = 2 * Math.PI * 9.5;
   const items = [
     {
@@ -237,21 +239,15 @@ export function CardLegend({
   ];
 
   return (
-    <Fold
-      look="bare"
-      className={`text-xs sm:max-w-md ${className}`}
-      triggerClassName="gap-1 text-muted hover:text-text sm:justify-end"
-      summary={labels.summary}
-    >
-      <ul className="card mt-2 space-y-2 p-3">
-        {items.map((item) => (
-          <li key={item.key} className="flex items-center gap-3">
-            <span className="flex w-20 shrink-0 justify-center">{item.mark}</span>
-            <span className="text-muted">{item.text}</span>
-          </li>
-        ))}
-      </ul>
-    </Fold>
+    <div className={`text-xs ${className}`}>
+      <HelpTip label={labels.summary} text={labels.summary} title={labels.summary} closeLabel={common('close')} align="end">
+        <HelpSection>
+          {items.map((item) => (
+            <HelpRow key={item.key} mark={item.mark}>{item.text}</HelpRow>
+          ))}
+        </HelpSection>
+      </HelpTip>
+    </div>
   );
 }
 
