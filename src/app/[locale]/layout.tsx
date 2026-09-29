@@ -207,7 +207,12 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
                   <MainNav variant="header" label={t('primaryNavAria')} items={sections} />
 
                   <div className="ml-auto flex items-center gap-2">
-                    <LocaleSwitcher current={locale} />
+                    {/* Beside the theme where there is room for it. On a phone it
+                        took a third of the one bar every screen shares, for a
+                        choice made once; there it lives in Ajustes. */}
+                    <div className="max-sm:hidden">
+                      <LocaleSwitcher current={locale} />
+                    </div>
                     <ThemeToggle />
                     <UserButton />
                   </div>

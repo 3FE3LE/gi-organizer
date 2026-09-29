@@ -118,9 +118,9 @@ async function TodayBody({
         <p className="text-sm text-muted">{t('noneToday')}</p>
       ) : (
         <div className="flex min-w-0 flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
-          <span className="font-mono text-2xs uppercase text-muted">{t('waitingToday')}</span>
+          <span className="font-mono text-2xs uppercase text-info">{t('waitingToday')}</span>
           <div className="flex items-center gap-3">
-            <ul className="flex -space-x-2">
+            <ul className="flex -space-x-1">
               {waiting.slice(0, FACES).map((entry) => {
                 const character = catalog.characters.get(entry.characterId);
 
@@ -128,7 +128,9 @@ async function TodayBody({
                   <li key={entry.characterId}>
                     <Link
                       href={`/${locale}/build/${entry.characterId}`}
-                      className="group relative block rounded-full ring-2 ring-surface transition-transform hover:z-10 hover:-translate-y-0.5 focus-visible:z-10"
+                      // The ring the plan's roster draws on whoever is on today, so
+                      // the faces here and there read as the same mark.
+                      className="group relative block rounded-full ring-2 ring-info ring-offset-2 ring-offset-surface transition-transform hover:z-10 hover:-translate-y-0.5 focus-visible:z-10"
                     >
                       <GameIcon
                         filename={character?.icon}

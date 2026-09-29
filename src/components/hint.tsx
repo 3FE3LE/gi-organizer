@@ -1,5 +1,7 @@
 'use client';
 
+import { isValidElement, useRef, useState } from 'react';
+
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 /**
@@ -39,9 +41,36 @@ export function Hint({
   side?: 'top' | 'bottom' | 'left' | 'right';
   children: React.ReactElement;
 }) {
+  const [open, setOpen] = useState(false);
+  /*
+   * A tooltip opens on hover and focus, and a phone has neither, so a mark
+   * that is only a mark — a threshold, a disc, a face — said nothing there.
+   * Over something that does nothing on its own a tap opens it, and the next
+   * tap closes it. Over a button or a link the tap is that control's, and the
+   * hint stays what it is: the name of what the tap will do.
+   */
+  const tappable = isValidElement(children) && (children.type === 'span' || children.type === 'div');
+  // A touch is followed by the hover events the browser emulates for it, and
+  // their "hover ended" would shut what the tap just opened. After a touch,
+  // only a tap, a press outside or Escape closes it.
+  const touched = useRef(false);
+
   return (
-    <Tooltip>
-      <TooltipTrigger render={children} />
+    <Tooltip
+      open={open}
+      onOpenChange={(next, details) => {
+        if (!next && touched.current && details.reason === 'trigger-hover') return;
+        setOpen(next);
+      }}
+    >
+      <TooltipTrigger
+        render={children}
+        // The primitive closes on a click by default, which would undo the tap
+        // that opened it.
+        closeOnClick={!tappable}
+        onPointerDown={(event) => { touched.current = event.pointerType === 'touch'; }}
+        onClick={tappable ? () => setOpen((current) => !current) : undefined}
+      />
       {/* `role` explicitly: the primitive wires `aria-describedby` on the
           trigger, which is what a screen reader needs, and this is what makes
           the bubble addressable as a tooltip by anything else looking. */}

@@ -684,6 +684,8 @@
       }
     },
     "settingsPage": {
+      "languageHeading": "Idioma",
+      "languageHint": "Cambia los textos de la app y los nombres del juego. En pantallas anchas también está en la barra superior.",
       "serverHeading": "Servidor",
       "serverHint": "El día rota con el reloj del servidor y cambia a las 04:00, no a medianoche. Decide qué dominios abren hoy, la cuenta atrás del reinicio y los cumpleaños.",
       "serverAuto": "Automático",
@@ -691,7 +693,8 @@
       "serverUndetected": "Sin zona horaria detectada todavía: se usa {region}",
       "worldLevelHeading": "Nivel de mundo",
       "worldLevelHint": "Las tasas de drop de dominios y jefes dependen de él. Con él se estima cuánta resina cuesta lo que te falta.",
-      "worldLevelDefault": "Por defecto (8)"
+      "worldLevelDefault": "Por defecto (8)",
+      "worldLevelOption": "Nivel de mundo {level}"
     },
     "importPage": {
       "importHeading": "Importar",

@@ -684,6 +684,8 @@
       }
     },
     "settingsPage": {
+      "languageHeading": "Language",
+      "languageHint": "Changes the app's text and the game's names. On wide screens it is in the top bar too.",
       "serverHeading": "Server",
       "serverHint": "The day rotates on the server's clock and turns over at 04:00, not midnight. It decides which domains open today, the reset countdown and birthdays.",
       "serverAuto": "Automatic",
@@ -691,7 +693,8 @@
       "serverUndetected": "No timezone detected yet: using {region}",
       "worldLevelHeading": "World level",
       "worldLevelHint": "Domain and boss drop rates depend on it. It is what the resin estimate for your plan is priced at.",
-      "worldLevelDefault": "Default (8)"
+      "worldLevelDefault": "Default (8)",
+      "worldLevelOption": "World level {level}"
     },
     "importPage": {
       "importHeading": "Import",

@@ -3,15 +3,20 @@
 import { useTranslations } from 'next-intl';
 import { useOptimistic, useTransition } from 'react';
 
-import { SegmentButton, SegmentStrip } from '@/components/segmented-links';
+import { FieldSelect } from '@/components/field-select';
 import type { WorldLevel } from '@/lib/rules/resin';
 
 import { chooseWorldLevel } from './actions';
 
+const DEFAULT = 'default';
+
 /**
- * The world level, as the default or one of nine. Optimistic for the same
- * reason as the server: one small fact, and a strip that waits on the round
- * trip looks as if the tap had missed.
+ * The world level, as the default or one of nine.
+ *
+ * A menu rather than a strip: ten segments did not fit a phone, and the last
+ * one wrapped onto a line of its own. Optimistic for the same reason as the
+ * server: one small fact, and a control that waits on the round trip looks as
+ * if the choice had missed.
  */
 export function WorldLevelPicker({
   levels,
@@ -24,21 +29,24 @@ export function WorldLevelPicker({
   const [shown, setShown] = useOptimistic(chosen);
   const [, startTransition] = useTransition();
 
-  const pick = (next: WorldLevel | null) => startTransition(async () => {
+  const pick = (value: string) => startTransition(async () => {
+    const next = value === DEFAULT ? null : (Number(value) as WorldLevel);
     setShown(next);
     await chooseWorldLevel(next);
   });
 
   return (
-    <SegmentStrip label={t('worldLevelHeading')}>
-      <SegmentButton active={shown === null} onClick={() => pick(null)}>
-        {t('worldLevelDefault')}
-      </SegmentButton>
-      {levels.map((level) => (
-        <SegmentButton key={level} active={shown === level} onClick={() => pick(level)}>
-          <span className="tabular">{level}</span>
-        </SegmentButton>
-      ))}
-    </SegmentStrip>
+    <FieldSelect
+      label={t('worldLevelHeading')}
+      value={shown === null ? DEFAULT : String(shown)}
+      onValueChange={pick}
+      groups={[{
+        options: [
+          { value: DEFAULT, label: t('worldLevelDefault') },
+          ...levels.map((level) => ({ value: String(level), label: t('worldLevelOption', { level }) })),
+        ],
+      }]}
+      triggerClassName="w-auto py-1.5"
+    />
   );
 }

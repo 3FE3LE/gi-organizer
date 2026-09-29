@@ -24,6 +24,8 @@ const CLIENT_NAMESPACES = [
   'plan',
   'teams',
   'data',
+  // The artifact card's key, which the gear dialog draws on the client.
+  'legend',
 ] as const;
 
 export function clientMessages(messages: AbstractIntlMessages): AbstractIntlMessages {

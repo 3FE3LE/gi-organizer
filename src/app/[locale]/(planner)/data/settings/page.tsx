@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
+import { LocaleSwitcher } from '@/components/locale-switcher';
 import { isLocale } from '@/lib/data/locales';
 import { readRegionSetting } from '@/lib/player/region';
 import { readWorldLevelSetting } from '@/lib/player/world-level';
@@ -32,6 +33,16 @@ export default async function SettingsPage({ params }: PageProps<'/[locale]/data
 
   return (
     <div className="space-y-8">
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-sm font-medium uppercase tracking-wide text-muted">
+            {t('languageHeading')}
+          </h2>
+          <p className="mt-2 max-w-prose text-sm text-muted">{t('languageHint')}</p>
+        </div>
+        <LocaleSwitcher current={locale} />
+      </section>
+
       <section className="space-y-3">
         <div>
           <h2 className="text-sm font-medium uppercase tracking-wide text-muted">
