@@ -5,6 +5,7 @@ import { getCatalog } from '@/lib/data/catalog';
 import { createMemoryDb } from '@/lib/db/client';
 import { setDismissed, upsertCharacter } from '@/lib/player/characters';
 import { getProfileId, persistInventory } from '@/lib/player/db';
+import { setWorldLevel } from '@/lib/player/world-level';
 
 
 import { farmingPlan } from './assemble';
@@ -161,4 +162,25 @@ test('an equipped weapon is planned for without a goal naming it', async () => {
 
   const after = await farmingPlan(catalog, db);
   assert.ok(weaponRows(after).length > 0, 'the weapon it is holding now costs something');
+});
+
+test('the plan prices its demand in resin, at the account world level', async () => {
+  const { db } = await rosterWith(50);
+  const catalog = await getCatalog('es');
+
+  const plan = await farmingPlan(catalog, db);
+  const sources = plan.resin.bySource.map((entry) => entry.source);
+
+  // Ascension to six and talents to nine: books, a world boss, a weekly boss.
+  assert.deepEqual(sources, ['talent', 'world-boss', 'weekly-boss']);
+  assert.equal(
+    plan.resin.total,
+    plan.resin.bySource.reduce((total, entry) => total + entry.resin, 0),
+    'mora stays out of the total',
+  );
+  assert.ok(plan.resin.mora.short > 0);
+
+  await setWorldLevel(3, db);
+  const lower = await farmingPlan(catalog, db);
+  assert.ok(lower.resin.total > plan.resin.total, 'worse drops, more resin');
 });

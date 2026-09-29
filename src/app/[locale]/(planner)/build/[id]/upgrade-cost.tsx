@@ -2,6 +2,8 @@ import { getTranslations } from 'next-intl/server';
 
 import { GameIcon } from '@/components/game-icon';
 import { FoldMark } from '@/components/fold-mark';
+import { ResinSummary } from '@/components/resin-summary';
+import type { Catalog } from '@/lib/data/catalog';
 import type { Locale } from '@/lib/data/locales';
 
 import type { CostRow, CostTier, UpgradeCost } from './cost-view';
@@ -21,9 +23,11 @@ import type { CostRow, CostTier, UpgradeCost } from './cost-view';
  */
 export async function UpgradeCostPanel({
   cost,
+  catalog,
   locale,
 }: {
   cost: UpgradeCost;
+  catalog: Catalog;
   locale: Locale;
 }) {
   const t = await getTranslations('build');
@@ -97,6 +101,10 @@ export async function UpgradeCostPanel({
             </li>
           )}
         </ul>
+      )}
+
+      {!cost.covered && (
+        <ResinSummary estimate={cost.resin} catalog={catalog} locale={locale} />
       )}
     </section>
   );

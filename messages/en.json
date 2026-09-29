@@ -564,6 +564,28 @@
       "targetBelowCurrent": "{name}'s target can't be below their current level or talents"
     }
   },
+  "resin": {
+    "heading": "Minimum resin estimate",
+    "none": "No resin: what is missing comes from playing",
+    "total": "{amount} resin",
+    "span": {
+      "day": "≈ {count, plural, one {# day} other {# days}} of regen",
+      "week": "≈ {count, plural, one {# week} other {# weeks}} of regen",
+      "month": "≈ {count, plural, one {# month} other {# months}} of regen",
+      "year": "≈ {count, plural, one {# year} other {# years}} of regen"
+    },
+    "source": {
+      "talent": "Talent domains",
+      "weapon": "Weapon domains",
+      "world-boss": "World bosses",
+      "weekly-boss": "Weekly bosses"
+    },
+    "runs": "{count, plural, one {# run} other {# runs}}",
+    "weeks": "{count, plural, one {# week} other {# weeks}}",
+    "more": "and {count} more",
+    "mora": "{short} Mora short. Not in the total: playing earns it. Covering it with Blossoms of Wealth would cost {resin} resin.",
+    "method": "Expected average at your world level, counting 3 of a tier as crafting into 1 of the next, and weekly bosses at the discounted price (3 a week). Resin regenerates 1 every 8 minutes: 180 a day, capped at 200. Log in at least every 26 hours to keep it from capping. Gems, local specialties, mob drops and crowns are left out: they cost no resin of their own."
+  },
   "data": {
     "title": "Data",
     "tabs": {
@@ -627,7 +649,10 @@
       "serverHint": "The day rotates on the server's clock and turns over at 04:00, not midnight. It decides which domains open today, the reset countdown and birthdays.",
       "serverAuto": "Automatic",
       "serverDetected": "Detected from your timezone: {region}",
-      "serverUndetected": "No timezone detected yet: using {region}"
+      "serverUndetected": "No timezone detected yet: using {region}",
+      "worldLevelHeading": "World level",
+      "worldLevelHint": "Domain and boss drop rates depend on it. It is what the resin estimate for your plan is priced at.",
+      "worldLevelDefault": "Default (8)"
     },
     "importPage": {
       "importHeading": "Import",

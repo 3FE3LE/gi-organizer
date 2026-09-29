@@ -1,8 +1,10 @@
 'use server';
 
 import { setRegion } from '@/lib/player/region';
+import { setWorldLevel } from '@/lib/player/world-level';
 import { isGameRegion, type GameRegion } from '@/lib/rules/game-day';
 import { refreshEverywhere } from '@/lib/refresh';
+import { isWorldLevel, type WorldLevel } from '@/lib/rules/resin';
 
 /**
  * Which server's clock the plan is read against, or `null` to go back to
@@ -14,5 +16,11 @@ import { refreshEverywhere } from '@/lib/refresh';
  */
 export async function chooseRegion(region: GameRegion | null) {
   await setRegion(region !== null && isGameRegion(region) ? region : null);
+  refreshEverywhere();
+}
+
+/** The world level the resin estimate reads drop rates at, or `null` for eight. */
+export async function chooseWorldLevel(worldLevel: WorldLevel | null) {
+  await setWorldLevel(isWorldLevel(worldLevel) ? worldLevel : null);
   refreshEverywhere();
 }

@@ -564,6 +564,28 @@
       "targetBelowCurrent": "el objetivo de {name} no puede quedar por debajo de su nivel o talentos actuales"
     }
   },
+  "resin": {
+    "heading": "Resina mínima estimada",
+    "none": "Sin resina: lo que falta se consigue jugando",
+    "total": "{amount} resina",
+    "span": {
+      "day": "≈ {count, plural, one {# día} other {# días}} de recarga",
+      "week": "≈ {count, plural, one {# semana} other {# semanas}} de recarga",
+      "month": "≈ {count, plural, one {# mes} other {# meses}} de recarga",
+      "year": "≈ {count, plural, one {# año} other {# años}} de recarga"
+    },
+    "source": {
+      "talent": "Dominios de talento",
+      "weapon": "Dominios de arma",
+      "world-boss": "Jefes de mundo",
+      "weekly-boss": "Jefes semanales"
+    },
+    "runs": "{count, plural, one {# vez} other {# veces}}",
+    "weeks": "{count, plural, one {# semana} other {# semanas}}",
+    "more": "y {count} más",
+    "mora": "Faltan {short} de mora. No suma al total: se genera jugando. Cubrirla con Flores de riqueza costaría {resin} de resina.",
+    "method": "Media esperada con tu nivel de mundo, contando que 3 de un tier se craftean en 1 del siguiente y que los jefes semanales se hacen con descuento (3 por semana). La resina se regenera 1 cada 8 minutos: 180 al día, con tope de 200. Entra al menos cada 26 horas para no perder recarga. No incluye gemas, especialidades, drops de enemigos ni coronas: no cuestan resina propia."
+  },
   "data": {
     "title": "Datos",
     "tabs": {
@@ -627,7 +649,10 @@
       "serverHint": "El día rota con el reloj del servidor y cambia a las 04:00, no a medianoche. Decide qué dominios abren hoy, la cuenta atrás del reinicio y los cumpleaños.",
       "serverAuto": "Automático",
       "serverDetected": "Detectado por tu zona horaria: {region}",
-      "serverUndetected": "Sin zona horaria detectada todavía: se usa {region}"
+      "serverUndetected": "Sin zona horaria detectada todavía: se usa {region}",
+      "worldLevelHeading": "Nivel de mundo",
+      "worldLevelHint": "Las tasas de drop de dominios y jefes dependen de él. Con él se estima cuánta resina cuesta lo que te falta.",
+      "worldLevelDefault": "Por defecto (8)"
     },
     "importPage": {
       "importHeading": "Importar",

@@ -99,6 +99,23 @@ export function computeDemand(
   sources: DemandSource[],
   stock: Map<number, number>,
 ): Need[] {
+  return tallyDemand(sources, stock)
+    .filter((need) => need.short > 0)
+    .sort((a, b) => b.short - a.short);
+}
+
+/**
+ * Every material the sources cost, covered or not.
+ *
+ * `computeDemand` drops what the bag already covers, which is right for a
+ * shopping list and wrong for anything that crafts: forty spare Teachings are
+ * thirteen Guides the list no longer shows, and the resin estimate has to see
+ * them to not charge for farming them again.
+ */
+export function tallyDemand(
+  sources: DemandSource[],
+  stock: Map<number, number>,
+): Need[] {
   const totals = new Map<number, Need>();
 
   const add = (
@@ -157,9 +174,7 @@ export function computeDemand(
   }
 
   return [...totals.values()]
-    .map((need) => ({ ...need, short: Math.max(0, need.needed - need.owned) }))
-    .filter((need) => need.short > 0)
-    .sort((a, b) => b.short - a.short);
+    .map((need) => ({ ...need, short: Math.max(0, need.needed - need.owned) }));
 }
 
 /* ---------------------------------------------------------- schedule --- */

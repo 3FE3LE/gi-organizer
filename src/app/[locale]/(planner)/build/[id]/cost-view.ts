@@ -3,6 +3,7 @@ import 'server-only';
 import type { Catalog } from '@/lib/data/catalog';
 import type { CharacterView } from '@/lib/data/types';
 import { getProfileId, readMaterialStock } from '@/lib/player/db';
+import { resinEstimateFor } from '@/lib/rules/assemble';
 import {
   ASSUMED_TARGET,
   computeDemand,
@@ -11,6 +12,7 @@ import {
   type Progress,
   type Reason,
 } from '@/lib/rules/materials';
+import type { ResinEstimate } from '@/lib/rules/resin';
 
 import type { BuildContext } from './context';
 
@@ -51,6 +53,8 @@ export type UpgradeCost = {
   mora: Pick<CostRow, 'needed' | 'owned' | 'short'>;
   /** True when the bag and the character already cover the target. */
   covered: boolean;
+  /** The least resin the rows cost — the same estimate the plan shows. */
+  resin: ResinEstimate;
 };
 
 /**
@@ -113,6 +117,7 @@ export async function upgradeCostFor(context: BuildContext): Promise<UpgradeCost
 
   const stock = await readMaterialStock(db, await getProfileId(db));
   const needs = computeDemand([source], stock);
+  const resin = await resinEstimateFor(catalog, [source], stock, db);
 
   const families = familiesOf(catalog, character, weapon ? [weapon.costs] : []);
   const rows = new Map<string, CostRow>();
@@ -173,7 +178,9 @@ export async function upgradeCostFor(context: BuildContext): Promise<UpgradeCost
    */
   ordered.sort((a, b) => rankOf(catalog, b) - rankOf(catalog, a) || a.key.localeCompare(b.key));
 
-  return { from, to, rows: ordered, mora, covered: ordered.length === 0 && mora.short === 0 };
+  return {
+    from, to, rows: ordered, mora, covered: ordered.length === 0 && mora.short === 0, resin,
+  };
 }
 
 function rankOf(catalog: Catalog, row: CostRow) {

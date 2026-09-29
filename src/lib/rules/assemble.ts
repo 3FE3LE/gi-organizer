@@ -10,7 +10,7 @@ import type { MechanicIndex } from '@/lib/data/mechanics';
 import { resolveAnnotations } from '@/lib/annotations/resolve';
 import { seedRules } from '@/lib/annotations/seed-rules';
 import type { AnnotationFile, ResolvedAnnotations } from '@/lib/annotations/types';
-import { getWeaponSources } from '@/lib/data/registry';
+import { getBossDrops, getResinRates, getWeaponSources } from '@/lib/data/registry';
 import { getProfileId, readInventory, readMaterialStock } from '@/lib/player/db';
 import { readRoster } from '@/lib/player/characters';
 import {
@@ -24,6 +24,7 @@ import {
 import { readDeployments, readTeams } from '@/lib/player/teams';
 import { readTargets } from '@/lib/player/targets';
 import { refinementResolver } from '@/lib/player/weapon-copies';
+import { readWorldLevel } from '@/lib/player/world-level';
 
 import { evaluate, type CharacterGear, type EvaluationInput } from './evaluate';
 import { type AgendaItem, buildAgenda } from './agenda';
@@ -35,7 +36,9 @@ import {
   type Schedule,
   computeDemand,
   scheduleNeeds,
+  tallyDemand,
 } from './materials';
+import { estimateResin, type ResinEstimate } from './resin';
 import { type CascadeBuild, type CascadePlan, costOfGivingUp, planCascade } from './cascade';
 import { type ComparablePiece, type Swap, compareSlot, shortlist } from './compare';
 import {
@@ -777,6 +780,33 @@ export type FarmingFilter = {
 };
 
 /**
+ * What some demand costs in resin, at the account's world level.
+ *
+ * Shared by the plan and the build's cost panel, so the two cannot price the
+ * same books differently. It reads the unfiltered tally: the covered tiers are
+ * what a surplus crafts from — see `tallyDemand`.
+ */
+export async function resinEstimateFor(
+  catalog: Catalog,
+  sources: DemandSource[],
+  stock: Map<number, number>,
+  db: Db = getDb(),
+): Promise<ResinEstimate> {
+  const [rates, bosses, worldLevel] = await Promise.all([
+    getResinRates(), getBossDrops(), readWorldLevel(db),
+  ]);
+
+  return estimateResin({
+    demand: tallyDemand(sources, stock),
+    stock,
+    materials: catalog.materials,
+    bosses,
+    rates,
+    worldLevel,
+  });
+}
+
+/**
  * The farming plan: what every build still needs, and where it drops.
  *
  * Demand is the gap between where a character is and where their build says
@@ -795,6 +825,8 @@ export async function farmingPlan(
   roster: { characterId: number; hasTarget: boolean; dismissed: boolean }[];
   /** How many the player has said no to, which is the list's own undo. */
   dismissed: number;
+  /** The least resin the same demand costs. */
+  resin: ResinEstimate;
 }> {
   const profileId = await getProfileId(db);
   const builds = await readBuilds(db);
@@ -927,6 +959,7 @@ export async function farmingPlan(
   return {
     schedule: scheduleNeeds(computeDemand(sources, stock), metadata),
     sources: sources.length,
+    resin: await resinEstimateFor(catalog, sources, stock, db),
     roster: [...roster.values()].map((entry) => ({
       characterId: entry.characterId,
       hasTarget: entry.target.level !== null || entry.target.talents !== null,

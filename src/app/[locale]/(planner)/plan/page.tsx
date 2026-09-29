@@ -6,6 +6,7 @@ import { Suspense, ViewTransition } from 'react';
 import { ElementIcon } from '@/components/element-icon';
 import { GameIcon } from '@/components/game-icon';
 import { HoverLabel } from '@/components/hint';
+import { ResinSummary } from '@/components/resin-summary';
 import { SectionTabs } from '@/components/section-tabs';
 import { Skeleton } from '@/components/skeleton';
 import { StickyDock } from '@/components/sticky-dock';
@@ -207,7 +208,7 @@ async function PlanContent({
   locale: Locale;
   today: Weekday;
 }) {
-  const [{ schedule, sources, roster }, nations] = await Promise.all([plan, getBossNations()]);
+  const [{ schedule, sources, roster, resin }, nations] = await Promise.all([plan, getBossNations()]);
   // An empty account: the day card is walking them through the first import,
   // and a zero-count heading over "nobody has a target" would argue with it.
   if (roster.length === 0) return null;
@@ -247,6 +248,11 @@ async function PlanContent({
               })}
         </p>
       </div>
+
+      {/* The whole backlog's price, whichever day is showing: resin is
+          spent across the week, so a day's share of it is not a number
+          anybody budgets by. */}
+      {sources > 0 && <ResinSummary estimate={resin} catalog={catalog} locale={locale} />}
 
       {sources === 0 ? (
         <p className="max-w-prose text-sm text-muted">{t('nothingToFarmMessage')}</p>

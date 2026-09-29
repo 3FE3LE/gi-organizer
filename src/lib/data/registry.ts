@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import type { GoodCrosswalk } from '@/lib/good/keys';
+import type { BossDrop, ResinRates } from '@/lib/rules/resin';
 
 import type { Locale } from './locales';
 import { isNation, type Nation } from './nations';
@@ -104,6 +105,34 @@ export async function getBossNations() {
   } catch {
     return new Map<number, Nation>();
   }
+}
+
+/**
+ * Which boss drops each boss material, world or weekly, from the same curated
+ * file as the nations. The catalog files both under one category, and the
+ * resin they cost differs by the boss.
+ */
+export async function getBossDrops() {
+  const file = path.join(process.cwd(), 'src', 'data', 'curated', 'boss-nations.json');
+
+  try {
+    const raw = await readFile(file, 'utf8');
+    const parsed = JSON.parse(raw) as { nations: Record<string, BossDrop> };
+    return new Map(Object.entries(parsed.nations)
+      .map(([id, entry]) => [Number(id), { kind: entry.kind, boss: entry.boss }]));
+  } catch {
+    return new Map<number, BossDrop>();
+  }
+}
+
+let resinRates: Promise<ResinRates> | undefined;
+
+/** Drop rates and resin prices, curated by hand — see `lib/rules/resin.ts`. */
+export function getResinRates() {
+  resinRates ??= readFile(
+    path.join(process.cwd(), 'src', 'data', 'curated', 'resin.json'), 'utf8',
+  ).then((raw) => JSON.parse(raw) as ResinRates);
+  return resinRates;
 }
 
 const EMPTY_DETAIL: CharacterDetailStrings = { talents: null, constellation: null };

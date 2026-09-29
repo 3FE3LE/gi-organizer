@@ -3,9 +3,12 @@ import { getTranslations } from 'next-intl/server';
 
 import { isLocale } from '@/lib/data/locales';
 import { readRegionSetting } from '@/lib/player/region';
+import { readWorldLevelSetting } from '@/lib/player/world-level';
 import { GAME_REGIONS } from '@/lib/rules/game-day';
+import { WORLD_LEVELS } from '@/lib/rules/resin';
 
 import { RegionPicker } from './region-picker';
+import { WorldLevelPicker } from './world-level-picker';
 
 /**
  * The account's settings: facts about the player the app cannot read out of a
@@ -16,13 +19,16 @@ import { RegionPicker } from './region-picker';
  * flip back and forth — when it is a fact about the account that changes about
  * once a lifetime and decides every day strip, countdown and birthday on the
  * site, not only the plan's.
+ *
+ * The world level is the second: drop rates scale with it, so it is what the
+ * resin estimate is priced at.
  */
 export default async function SettingsPage({ params }: PageProps<'/[locale]/data/settings'>) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   const t = await getTranslations('data.settingsPage');
   const region = await getTranslations('common.region');
-  const setting = await readRegionSetting();
+  const [setting, world] = await Promise.all([readRegionSetting(), readWorldLevelSetting()]);
 
   return (
     <div className="space-y-8">
@@ -39,6 +45,16 @@ export default async function SettingsPage({ params }: PageProps<'/[locale]/data
             ? t('serverDetected', { region: region(setting.detected) })
             : t('serverUndetected', { region: region(setting.region) })}
         </p>
+      </section>
+
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-sm font-medium uppercase tracking-wide text-muted">
+            {t('worldLevelHeading')}
+          </h2>
+          <p className="mt-2 max-w-prose text-sm text-muted">{t('worldLevelHint')}</p>
+        </div>
+        <WorldLevelPicker levels={WORLD_LEVELS} chosen={world.chosen} />
       </section>
     </div>
   );

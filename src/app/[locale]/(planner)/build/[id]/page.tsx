@@ -214,7 +214,7 @@ async function ObjectiveTab({ context }: { context: BuildContext }) {
       {/* Under the form that sets the target, because it is that target's
           price. Editing the level above and reading the cost below is one
           question, and it was previously asked on two screens. */}
-      <UpgradeCostPanel cost={cost} locale={locale} />
+      <UpgradeCostPanel cost={cost} catalog={context.catalog} locale={locale} />
     </div>
   );
 }

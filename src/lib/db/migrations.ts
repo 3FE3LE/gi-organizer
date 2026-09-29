@@ -370,6 +370,14 @@ const MIGRATIONS: string[] = [
                            WHERE w.profile_id = build.profile_id
                              AND w.assigned_character_id = build.character_id);
   `,
+  `
+    -- The world level the account plays at, 0 to 8.
+    --
+    -- Drop rates scale with it, so it is what turns "sixty books short" into
+    -- the resin it costs. Null means nobody has said, which reads as eight —
+    -- see \`DEFAULT_WORLD_LEVEL\`.
+    ALTER TABLE profile ADD COLUMN world_level INTEGER;
+  `,
 ];
 
 /**

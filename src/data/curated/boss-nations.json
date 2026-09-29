@@ -2,367 +2,548 @@
   "nations": {
     "113001": {
       "nation": "mondstadt",
-      "name": "Hurricane Seed"
+      "name": "Hurricane Seed",
+      "kind": "world",
+      "boss": "Anemo Hypostases"
     },
     "113002": {
       "nation": "mondstadt",
-      "name": "Lightning Prism"
+      "name": "Lightning Prism",
+      "kind": "world",
+      "boss": "Electro Hypostases"
     },
     "113003": {
       "nation": "mondstadt",
-      "name": "Dvalin's Plume"
+      "name": "Dvalin's Plume",
+      "kind": "weekly",
+      "boss": "Stormterror"
     },
     "113004": {
       "nation": "mondstadt",
-      "name": "Dvalin's Claw"
+      "name": "Dvalin's Claw",
+      "kind": "weekly",
+      "boss": "Stormterror"
     },
     "113005": {
       "nation": "mondstadt",
-      "name": "Dvalin's Sigh"
+      "name": "Dvalin's Sigh",
+      "kind": "weekly",
+      "boss": "Stormterror"
     },
     "113006": {
       "nation": "mondstadt",
-      "name": "Tail of Boreas"
+      "name": "Tail of Boreas",
+      "kind": "weekly",
+      "boss": "Wolf of the North"
     },
     "113007": {
       "nation": "mondstadt",
-      "name": "Ring of Boreas"
+      "name": "Ring of Boreas",
+      "kind": "weekly",
+      "boss": "Wolf of the North"
     },
     "113008": {
       "nation": "mondstadt",
-      "name": "Spirit Locket of Boreas"
+      "name": "Spirit Locket of Boreas",
+      "kind": "weekly",
+      "boss": "Wolf of the North"
     },
     "113009": {
       "nation": "liyue",
-      "name": "Basalt Pillar"
+      "name": "Basalt Pillar",
+      "kind": "world",
+      "boss": "Geo Hypostases"
     },
     "113010": {
       "nation": "mondstadt",
-      "name": "Hoarfrost Core"
+      "name": "Hoarfrost Core",
+      "kind": "world",
+      "boss": "Cryo Regisvines"
     },
     "113011": {
       "nation": "liyue",
-      "name": "Everflame Seed"
+      "name": "Everflame Seed",
+      "kind": "world",
+      "boss": "Pyro Regisvines"
     },
     "113012": {
       "nation": "liyue",
-      "name": "Cleansing Heart"
+      "name": "Cleansing Heart",
+      "kind": "world",
+      "boss": "Oceanids"
     },
     "113013": {
       "nation": "liyue",
-      "name": "Tusk of Monoceros Caeli"
+      "name": "Tusk of Monoceros Caeli",
+      "kind": "weekly",
+      "boss": "Childe"
     },
     "113014": {
       "nation": "liyue",
-      "name": "Shard of a Foul Legacy"
+      "name": "Shard of a Foul Legacy",
+      "kind": "weekly",
+      "boss": "Childe"
     },
     "113015": {
       "nation": "liyue",
-      "name": "Shadow of the Warrior"
+      "name": "Shadow of the Warrior",
+      "kind": "weekly",
+      "boss": "Childe"
     },
     "113016": {
       "nation": "liyue",
-      "name": "Juvenile Jade"
+      "name": "Juvenile Jade",
+      "kind": "world",
+      "boss": "Primo Geovishaps"
     },
     "113017": {
       "nation": "liyue",
-      "name": "Dragon Lord's Crown"
+      "name": "Dragon Lord's Crown",
+      "kind": "weekly",
+      "boss": "Azhdaha"
     },
     "113018": {
       "nation": "liyue",
-      "name": "Bloodjade Branch"
+      "name": "Bloodjade Branch",
+      "kind": "weekly",
+      "boss": "Azhdaha"
     },
     "113019": {
       "nation": "liyue",
-      "name": "Gilded Scale"
+      "name": "Gilded Scale",
+      "kind": "weekly",
+      "boss": "Azhdaha"
     },
     "113020": {
       "nation": "mondstadt",
-      "name": "Crystalline Bloom"
+      "name": "Crystalline Bloom",
+      "kind": "world",
+      "boss": "Cryo Hypostases"
     },
     "113022": {
       "nation": "inazuma",
-      "name": "Marionette Core"
+      "name": "Marionette Core",
+      "kind": "world",
+      "boss": "Maguu Kenki"
     },
     "113023": {
       "nation": "inazuma",
-      "name": "Perpetual Heart"
+      "name": "Perpetual Heart",
+      "kind": "world",
+      "boss": "Perpetual Mechanical Arrays"
     },
     "113024": {
       "nation": "inazuma",
-      "name": "Smoldering Pearl"
+      "name": "Smoldering Pearl",
+      "kind": "world",
+      "boss": "Pyro Hypostases"
     },
     "113025": {
       "nation": "inazuma",
-      "name": "Molten Moment"
+      "name": "Molten Moment",
+      "kind": "weekly",
+      "boss": "Signora"
     },
     "113026": {
       "nation": "inazuma",
-      "name": "Hellfire Butterfly"
+      "name": "Hellfire Butterfly",
+      "kind": "weekly",
+      "boss": "Signora"
     },
     "113027": {
       "nation": "inazuma",
-      "name": "Ashen Heart"
+      "name": "Ashen Heart",
+      "kind": "weekly",
+      "boss": "Signora"
     },
     "113028": {
       "nation": "inazuma",
-      "name": "Dew of Repudiation"
+      "name": "Dew of Repudiation",
+      "kind": "world",
+      "boss": "Hydro Hypostases"
     },
     "113029": {
       "nation": "inazuma",
-      "name": "Storm Beads"
+      "name": "Storm Beads",
+      "kind": "world",
+      "boss": "Thunder Manifestations"
     },
     "113030": {
       "nation": "inazuma",
-      "name": "Riftborn Regalia"
+      "name": "Riftborn Regalia",
+      "kind": "world",
+      "boss": "Golden Wolflords"
     },
     "113031": {
       "nation": "inazuma",
-      "name": "Dragonheir's False Fin"
+      "name": "Dragonheir's False Fin",
+      "kind": "world",
+      "boss": "Bathysmal Vishap Herds"
     },
     "113032": {
       "nation": "inazuma",
-      "name": "Mudra of the Malefic General"
+      "name": "Mudra of the Malefic General",
+      "kind": "weekly",
+      "boss": "Guardian of Eternity"
     },
     "113033": {
       "nation": "inazuma",
-      "name": "Tears of the Calamitous God"
+      "name": "Tears of the Calamitous God",
+      "kind": "weekly",
+      "boss": "Guardian of Eternity"
     },
     "113034": {
       "nation": "inazuma",
-      "name": "The Meaning of Aeons"
+      "name": "The Meaning of Aeons",
+      "kind": "weekly",
+      "boss": "Guardian of Eternity"
     },
     "113035": {
       "nation": "liyue",
-      "name": "Runic Fang"
+      "name": "Runic Fang",
+      "kind": "world",
+      "boss": "Ruin Serpents"
     },
     "113036": {
       "nation": "sumeru",
-      "name": "Majestic Hooked Beak"
+      "name": "Majestic Hooked Beak",
+      "kind": "world",
+      "boss": "Jadeplume Terrorshroom"
     },
     "113037": {
       "nation": "sumeru",
-      "name": "Thunderclap Fruitcore"
+      "name": "Thunderclap Fruitcore",
+      "kind": "world",
+      "boss": "Electro Regisvines"
     },
     "113038": {
       "nation": "sumeru",
-      "name": "Perpetual Caliber"
+      "name": "Perpetual Caliber",
+      "kind": "world",
+      "boss": "Aeonblight Drakes"
     },
     "113039": {
       "nation": "sumeru",
-      "name": "Light Guiding Tetrahedron"
+      "name": "Light Guiding Tetrahedron",
+      "kind": "world",
+      "boss": "Semi-Intransient Matrices"
     },
     "113040": {
       "nation": "sumeru",
-      "name": "Quelled Creeper"
+      "name": "Quelled Creeper",
+      "kind": "world",
+      "boss": "Dendro Hypostases"
     },
     "113041": {
       "nation": "sumeru",
-      "name": "Puppet Strings"
+      "name": "Puppet Strings",
+      "kind": "weekly",
+      "boss": "Shouki no Kami, the Prodigal"
     },
     "113042": {
       "nation": "sumeru",
-      "name": "Mirror of Mushin"
+      "name": "Mirror of Mushin",
+      "kind": "weekly",
+      "boss": "Shouki no Kami, the Prodigal"
     },
     "113043": {
       "nation": "sumeru",
-      "name": "Daka's Bell"
+      "name": "Daka's Bell",
+      "kind": "weekly",
+      "boss": "Shouki no Kami, the Prodigal"
     },
     "113044": {
       "nation": "sumeru",
-      "name": "Pseudo-Stamens"
+      "name": "Pseudo-Stamens",
+      "kind": "world",
+      "boss": "Setekh Wenut"
     },
     "113045": {
       "nation": "sumeru",
-      "name": "Evergloom Ring"
+      "name": "Evergloom Ring",
+      "kind": "world",
+      "boss": "Iniquitous Baptists"
     },
     "113046": {
       "nation": "sumeru",
-      "name": "Worldspan Fern"
+      "name": "Worldspan Fern",
+      "kind": "weekly",
+      "boss": "Guardian of Apep's Oasis"
     },
     "113047": {
       "nation": "sumeru",
-      "name": "Primordial Greenbloom"
+      "name": "Primordial Greenbloom",
+      "kind": "weekly",
+      "boss": "Guardian of Apep's Oasis"
     },
     "113048": {
       "nation": "sumeru",
-      "name": "Everamber"
+      "name": "Everamber",
+      "kind": "weekly",
+      "boss": "Guardian of Apep's Oasis"
     },
     "113049": {
       "nation": "fontaine",
-      "name": "Artificed Spare Clockwork Component — Coppelia"
+      "name": "Artificed Spare Clockwork Component — Coppelia",
+      "kind": "world",
+      "boss": "Icewind Suite"
     },
     "113050": {
       "nation": "fontaine",
-      "name": "Artificed Spare Clockwork Component — Coppelius"
+      "name": "Artificed Spare Clockwork Component — Coppelius",
+      "kind": "world",
+      "boss": "Icewind Suite"
     },
     "113051": {
       "nation": "fontaine",
-      "name": "Emperor's Resolution"
+      "name": "Emperor's Resolution",
+      "kind": "world",
+      "boss": "Emperor of Fire and Iron"
     },
     "113052": {
       "nation": "fontaine",
-      "name": "\"Tourbillon Device\""
+      "name": "\"Tourbillon Device\"",
+      "kind": "world",
+      "boss": "Experimental Field Generators"
     },
     "113053": {
       "nation": "fontaine",
-      "name": "Fontemer Unihorn"
+      "name": "Fontemer Unihorn",
+      "kind": "world",
+      "boss": "Millennial Pearl Seahorses"
     },
     "113054": {
       "nation": "fontaine",
-      "name": "Lightless Silk String"
+      "name": "Lightless Silk String",
+      "kind": "weekly",
+      "boss": "All-Devouring Narwhal"
     },
     "113055": {
       "nation": "fontaine",
-      "name": "Lightless Eye of the Maelstrom"
+      "name": "Lightless Eye of the Maelstrom",
+      "kind": "weekly",
+      "boss": "All-Devouring Narwhal"
     },
     "113056": {
       "nation": "fontaine",
-      "name": "Lightless Mass"
+      "name": "Lightless Mass",
+      "kind": "weekly",
+      "boss": "All-Devouring Narwhal"
     },
     "113057": {
       "nation": "fontaine",
-      "name": "Water That Failed To Transcend"
+      "name": "Water That Failed To Transcend",
+      "kind": "world",
+      "boss": "Hydro Tulpas"
     },
     "113058": {
       "nation": "liyue",
-      "name": "Cloudseam Scale"
+      "name": "Cloudseam Scale",
+      "kind": "world",
+      "boss": "Solitary Suanni"
     },
     "113059": {
       "nation": "fontaine",
-      "name": "Fragment of a Golden Melody"
+      "name": "Fragment of a Golden Melody",
+      "kind": "world",
+      "boss": "Legatus Golems"
     },
     "113060": {
       "nation": "fontaine",
-      "name": "Fading Candle"
+      "name": "Fading Candle",
+      "kind": "weekly",
+      "boss": "The Knave"
     },
     "113061": {
       "nation": "fontaine",
-      "name": "Silken Feather"
+      "name": "Silken Feather",
+      "kind": "weekly",
+      "boss": "The Knave"
     },
     "113062": {
       "nation": "fontaine",
-      "name": "Denial and Judgment"
+      "name": "Denial and Judgment",
+      "kind": "weekly",
+      "boss": "The Knave"
     },
     "113063": {
       "nation": "natlan",
-      "name": "The Cornerstone of Stars and Flames"
+      "name": "The Cornerstone of Stars and Flames",
+      "kind": "quest"
     },
     "113064": {
       "nation": "natlan",
-      "name": "Mark of the Binding Blessing"
+      "name": "Mark of the Binding Blessing",
+      "kind": "world",
+      "boss": "Goldflame Qucusaur Tyrant"
     },
     "113065": {
       "nation": "natlan",
-      "name": "Overripe Flamegranate"
+      "name": "Overripe Flamegranate",
+      "kind": "world",
+      "boss": "Gluttonous Yumkasaur Mountain King"
     },
     "113066": {
       "nation": "natlan",
-      "name": "Gold-Inscribed Secret Source Core"
+      "name": "Gold-Inscribed Secret Source Core",
+      "kind": "world",
+      "boss": "Secret Source Automaton: Configuration Device"
     },
     "113067": {
       "nation": "natlan",
-      "name": "Ensnaring Gaze"
+      "name": "Ensnaring Gaze",
+      "kind": "world",
+      "boss": "Tenebrous Papilla"
     },
     "113068": {
       "nation": "natlan",
-      "name": "Eroded Horn"
+      "name": "Eroded Horn",
+      "kind": "weekly",
+      "boss": "Lord of Eroded Primal Fire"
     },
     "113069": {
       "nation": "natlan",
-      "name": "Eroded Sunfire"
+      "name": "Eroded Sunfire",
+      "kind": "weekly",
+      "boss": "Lord of Eroded Primal Fire"
     },
     "113070": {
       "nation": "natlan",
-      "name": "Eroded Scale-Feather"
+      "name": "Eroded Scale-Feather",
+      "kind": "weekly",
+      "boss": "Lord of Eroded Primal Fire"
     },
     "113071": {
       "nation": "natlan",
-      "name": "Talisman of the Enigmatic Land"
+      "name": "Talisman of the Enigmatic Land",
+      "kind": "world",
+      "boss": "Wayward Hermetic Spiritspeakers"
     },
     "113072": {
       "nation": "natlan",
-      "name": "Sparkless Statue Core"
+      "name": "Sparkless Statue Core",
+      "kind": "world",
+      "boss": "Lava Dragon Statues"
     },
     "113073": {
       "nation": "natlan",
-      "name": "Ascended Sample: Knight"
+      "name": "Ascended Sample: Knight",
+      "kind": "weekly",
+      "boss": "The Game Before the Gate"
     },
     "113074": {
       "nation": "natlan",
-      "name": "Ascended Sample: Rook"
+      "name": "Ascended Sample: Rook",
+      "kind": "weekly",
+      "boss": "The Game Before the Gate"
     },
     "113075": {
       "nation": "natlan",
-      "name": "Ascended Sample: Queen"
+      "name": "Ascended Sample: Queen",
+      "kind": "weekly",
+      "boss": "The Game Before the Gate"
     },
     "113076": {
       "nation": "natlan",
-      "name": "Secret Source Airflow Accumulator"
+      "name": "Secret Source Airflow Accumulator",
+      "kind": "world",
+      "boss": "Secret Source Automaton: Overseer Device"
     },
     "113077": {
       "nation": "nodKrai",
-      "name": "Precision Kuuvahki Stamping Die"
+      "name": "Precision Kuuvahki Stamping Die",
+      "kind": "world",
+      "boss": "Knuckle Duckles"
     },
     "113078": {
       "nation": "nodKrai",
-      "name": "Lightbearing Scale-Feather"
+      "name": "Lightbearing Scale-Feather",
+      "kind": "world",
+      "boss": "Radiant Moonflies"
     },
     "113079": {
       "nation": "nodKrai",
-      "name": "Radiant Antler"
+      "name": "Radiant Antler",
+      "kind": "world",
+      "boss": "Frostnight Herras"
     },
     "113080": {
       "nation": "nodKrai",
-      "name": "Cyclic Military Kuuvahki Core"
+      "name": "Cyclic Military Kuuvahki Core",
+      "kind": "world",
+      "boss": "Super-Heavy Landrover: Mechanized Fortresses"
     },
     "113081": {
       "nation": "nodKrai",
-      "name": "Mask of the Virtuous Doctor"
+      "name": "Mask of the Virtuous Doctor",
+      "kind": "weekly",
+      "boss": "The Doctor"
     },
     "113082": {
       "nation": "nodKrai",
-      "name": "Madman's Restraint"
+      "name": "Madman's Restraint",
+      "kind": "weekly",
+      "boss": "The Doctor"
     },
     "113083": {
       "nation": "nodKrai",
-      "name": "Elixir of the Heretic"
+      "name": "Elixir of the Heretic",
+      "kind": "weekly",
+      "boss": "The Doctor"
     },
     "113084": {
       "nation": "nodKrai",
-      "name": "Remnant of the Dreadwing"
+      "name": "Remnant of the Dreadwing",
+      "kind": "world",
+      "boss": "Lords of the Hidden Depths: Whisperer of Nightmares"
     },
     "113085": {
       "nation": "nodKrai",
-      "name": "Prismatic Severed Tail"
+      "name": "Prismatic Severed Tail",
+      "kind": "world",
+      "boss": "Radiant Moongeckos"
     },
     "113086": {
       "nation": "nodKrai",
-      "name": "Plume of the Fallen Watcher"
+      "name": "Plume of the Fallen Watcher",
+      "kind": "world",
+      "boss": "Watchers: Fallen Vigil"
     },
     "113087": {
       "nation": "nodKrai",
-      "name": "Counterfeit Resin"
+      "name": "Counterfeit Resin",
+      "kind": "weekly",
+      "boss": "Il Dottore"
     },
     "113088": {
       "nation": "nodKrai",
-      "name": "Twisted Withered Branch"
+      "name": "Twisted Withered Branch",
+      "kind": "weekly",
+      "boss": "Il Dottore"
     },
     "113089": {
       "nation": "nodKrai",
-      "name": "Profaned Sprout"
+      "name": "Profaned Sprout",
+      "kind": "weekly",
+      "boss": "Il Dottore"
     },
     "113090": {
       "nation": "snezhnaya",
-      "name": "Unscorched Blossom Branch"
+      "name": "Unscorched Blossom Branch",
+      "kind": "world",
+      "boss": "Immortal Constructs"
     },
     "113091": {
       "nation": "snezhnaya",
-      "name": "Severed Tail of the Sky-Roamer"
+      "name": "Severed Tail of the Sky-Roamer",
+      "kind": "world",
+      "boss": "Chimeric Winged Lions"
     },
     "113092": {
       "nation": "snezhnaya",
-      "name": "Vagabond's Cracked Armor"
+      "name": "Vagabond's Cracked Armor",
+      "kind": "world",
+      "boss": "Guardian Blade of Drifting Snow"
     }
   }
 }
