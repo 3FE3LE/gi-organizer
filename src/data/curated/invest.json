@@ -1,0 +1,22 @@
+{
+  "sources": [
+    "https://genshin-impact.fandom.com/wiki/Damage#Enemy_Defense",
+    "https://genshin-impact.fandom.com/wiki/Ley_Line_Outcrop"
+  ],
+  "enemyLevel": 100,
+  "roleWeights": {
+    "main-dps": 1,
+    "sub-dps": 0.7,
+    "driver": 0.5,
+    "enabler": 0.5,
+    "buffer": 0.4,
+    "debuffer": 0.4,
+    "battery": 0.3,
+    "healer": 0.25,
+    "shielder": 0.25
+  },
+  "unteamedWeight": 0.5,
+  "acceptable": { "level": 80, "talent": 8, "weaponLevel": 80 },
+  "balanceBoost": 1.5,
+  "revelationExp": [25000, 38500, 52500, 67500, 82500, 102500, 122500, 122500, 122500]
+}

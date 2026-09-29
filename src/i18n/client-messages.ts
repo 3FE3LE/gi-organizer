@@ -26,6 +26,8 @@ const CLIENT_NAMESPACES = [
   'data',
   // The artifact card's key, which the gear dialog draws on the client.
   'legend',
+  // The strategy picker on the plan's "where to invest" tab.
+  'invest',
 ] as const;
 
 export function clientMessages(messages: AbstractIntlMessages): AbstractIntlMessages {

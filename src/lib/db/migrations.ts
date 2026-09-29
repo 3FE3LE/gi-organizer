@@ -378,6 +378,13 @@ const MIGRATIONS: string[] = [
     -- see \`DEFAULT_WORLD_LEVEL\`.
     ALTER TABLE profile ADD COLUMN world_level INTEGER;
   `,
+  `
+    -- How the account wants its resin spent: balanced across the plan, or
+    -- poured into one team or one character. JSON, \`{ mode, teamId?,
+    -- characterId? }\`. Null means nobody has said, which reads as balanced —
+    -- see \`lib/player/invest-strategy.ts\`.
+    ALTER TABLE profile ADD COLUMN invest_strategy TEXT;
+  `,
 ];
 
 /**

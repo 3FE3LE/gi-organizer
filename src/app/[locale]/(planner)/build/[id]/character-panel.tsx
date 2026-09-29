@@ -88,7 +88,12 @@ export async function CharacterPanel({
   const talentBonus = loadout.talentBonus
     ? [loadout.talentBonus.auto, loadout.talentBonus.skill, loadout.talentBonus.burst]
     : [0, 0, 0];
-  const talentNames = detail.talents?.combat.map((talent) => talent.name) ?? [];
+  // Normal attack, skill and burst — the burst is the last combat entry, not
+  // the third: a few kits carry an alternate sprint between the two (Ayaka,
+  // Mona and three more), and by position that sprint showed as the burst.
+  const combat = detail.talents?.combat ?? [];
+  const combatTalents = combat.length >= 3 ? [combat[0], combat[1], combat.at(-1)] : combat;
+  const talentNames = combatTalents.map((talent) => talent?.name);
 
   // Enka's table lags a patch or two, so the newest characters have no art. The
   // levels and names come from elsewhere and are worth showing regardless, so a
@@ -108,8 +113,8 @@ export async function CharacterPanel({
     icon: await resolveIcon(talentIcons[index] ?? null, 'talent'),
     name: talentNames[index] ?? t('talentFallback', { n: index + 1 }),
     // The game's markup, for `GameText`; the plain copy only where there is none.
-    description: detail.talents?.combat[index]?.descriptionRaw || detail.talents?.combat[index]?.description || '',
-    scaling: detail.talents?.combat[index]?.attributes,
+    description: combatTalents[index]?.descriptionRaw || combatTalents[index]?.description || '',
+    scaling: combatTalents[index]?.attributes,
     level: talentLevels[index],
     bonus: talentBonus[index],
   })));

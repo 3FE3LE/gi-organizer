@@ -96,6 +96,12 @@ const INNATE: StatTotals = {
   FIGHT_PROP_CHARGE_EFFICIENCY: 100,
 };
 
+/** The innate crit, which a crit ascension bonus in the stat table includes. */
+const CRIT_INNATE: Record<string, number> = {
+  FIGHT_PROP_CRITICAL: INNATE.FIGHT_PROP_CRITICAL,
+  FIGHT_PROP_CRITICAL_HURT: INNATE.FIGHT_PROP_CRITICAL_HURT,
+};
+
 export type ComputedStats = {
   /** Final values, percentages as percentages. */
   totals: StatTotals;
@@ -125,7 +131,13 @@ export function computeStats(input: StatInput): ComputedStats {
     // The catalog reports the ascension bonus as a ratio; everything here is a
     // percentage, except Elemental Mastery which is a flat number in both.
     const isMastery = input.ascension.prop === 'FIGHT_PROP_ELEMENT_MASTERY';
-    add(input.ascension.prop, isMastery ? input.ascension.value : input.ascension.value * 100);
+    const value = isMastery ? input.ascension.value : input.ascension.value * 100;
+    // The stat table's crit bonus already carries the crit every character
+    // starts with — the character sheet shows it that way, see `BASE_CRIT` in
+    // `scripts/build-data.mts` — and `INNATE` above adds it too. Counted once:
+    // a crit-damage character read 50 points of CRIT DMG high before this.
+    const innate = input.ascension.prop in CRIT_INNATE ? CRIT_INNATE[input.ascension.prop] : 0;
+    add(input.ascension.prop, value - innate);
   }
 
   if (input.weapon?.prop) {

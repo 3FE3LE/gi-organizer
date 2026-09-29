@@ -5,6 +5,7 @@ import path from 'node:path';
 
 import type { GoodCrosswalk } from '@/lib/good/keys';
 import type { LevellingData } from '@/lib/rules/affordable';
+import type { InvestConfig } from '@/lib/rules/invest';
 import type { BossDrop, ResinRates } from '@/lib/rules/resin';
 
 import type { Locale } from './locales';
@@ -144,6 +145,16 @@ export function getLevellingData() {
     path.join(process.cwd(), 'src', 'data', 'curated', 'levelling.json'), 'utf8',
   ).then((raw) => JSON.parse(raw) as LevellingData);
   return levellingData;
+}
+
+let investConfig: Promise<InvestConfig & { revelationExp: number[] }> | undefined;
+
+/** Role weights, the enemy level and "acceptable", curated by hand — see `lib/rules/invest.ts`. */
+export function getInvestConfig() {
+  investConfig ??= readFile(
+    path.join(process.cwd(), 'src', 'data', 'curated', 'invest.json'), 'utf8',
+  ).then((raw) => JSON.parse(raw) as InvestConfig & { revelationExp: number[] });
+  return investConfig;
 }
 
 const EMPTY_DETAIL: CharacterDetailStrings = { talents: null, constellation: null };

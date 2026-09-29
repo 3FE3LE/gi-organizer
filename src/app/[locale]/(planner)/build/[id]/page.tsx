@@ -7,9 +7,11 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { GameIcon } from '@/components/game-icon';
 import { HoverLabel } from '@/components/hint';
+import { InvestHelp, InvestLists } from '@/components/invest-list';
 import { ReadyLists } from '@/components/ready-list';
 import { SectionTabs } from '@/components/section-tabs';
 import { isLocale } from '@/lib/data/locales';
+import { investPlan } from '@/lib/rules/invest-plan';
 import { readyToLevel } from '@/lib/rules/ready';
 import { roleLabel } from '@/lib/rules/role-labels';
 import { getAccountCatalog } from '@/lib/player/traveler';
@@ -185,10 +187,16 @@ export default async function BuildPage({
 
 async function ObjectiveTab({ context }: { context: BuildContext }) {
   const { character, locale } = context;
-  const [view, cost, ready] = await Promise.all([
+  const [view, cost, ready, invest] = await Promise.all([
     objectiveViewFor(context),
     upgradeCostFor(context),
     readyToLevel(context.catalog, context.db, new Set([context.characterId])),
+    // Balanced whatever the account's strategy: on one character's own page
+    // the question is only which of their steps comes first.
+    investPlan(context.catalog, context.db, {
+      characterIds: new Set([context.characterId]),
+      strategy: { mode: 'balance' },
+    }),
   ]);
   const t = await getTranslations('build');
 
@@ -217,6 +225,16 @@ async function ObjectiveTab({ context }: { context: BuildContext }) {
       <section className="space-y-3">
         <h2 className="text-sm font-medium uppercase tracking-wide text-muted">{t('readyHeading')}</h2>
         <ReadyLists ready={ready} catalog={context.catalog} locale={locale} single />
+      </section>
+
+      {/* And where to go next with resin: this character's steps, by what
+          each adds for what it costs, and the whole climb. */}
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-medium uppercase tracking-wide text-muted">{t('investHeading')}</h2>
+          <InvestHelp />
+        </div>
+        <InvestLists plan={invest} catalog={context.catalog} locale={locale} single limit={3} />
       </section>
     </div>
   );

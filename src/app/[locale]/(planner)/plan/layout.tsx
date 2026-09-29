@@ -23,6 +23,7 @@ export default async function PlanLayout({ children, params }: LayoutProps<'/[lo
         tabs={[
           { href: `/${locale}/plan`, label: t('farmTab'), hint: t('farmHint') },
           { href: `/${locale}/plan/ready`, label: t('readyTab'), hint: t('readyHint') },
+          { href: `/${locale}/plan/invest`, label: t('investTab'), hint: t('investHint') },
         ]}
       />
       {children}

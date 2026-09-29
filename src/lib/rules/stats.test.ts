@@ -149,3 +149,19 @@ test('a goal on a stat nothing supplies reads as zero, not as absent', () => {
   assert.equal(verdict.actual, 0);
   assert.equal(verdict.status, 'short');
 });
+
+test('a crit ascension bonus counts the innate crit once', () => {
+  // The stat table carries a crit-damage character's 50% base in its bonus
+  // at level 1: 0.5, and 0.884 at 90 (38.4 from the phases, 50 innate).
+  const at = (value: number) => computeStats({
+    character: { hp: 1000, attack: 100, defense: 100 },
+    ascension: { prop: CD, value },
+    weapon: null,
+    pieces: [],
+    setBonuses: [],
+  }).totals;
+
+  assert.equal(at(0.5)[CD], 50);
+  assert.ok(Math.abs(at(0.884)[CD] - 88.4) < 1e-9);
+  assert.equal(at(0.5)[CR], 5, 'the innate crit rate is untouched');
+});
