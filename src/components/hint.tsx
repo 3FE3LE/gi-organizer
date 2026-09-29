@@ -117,7 +117,7 @@ export function HoverLabel({
   return (
     <span
       aria-hidden
-      className={`pointer-events-none absolute z-50 w-max max-w-56 rounded-md border border-edge bg-surface-2 px-2 py-1 text-xs font-normal normal-case leading-snug text-text opacity-0 shadow-[var(--shadow-raised)] transition-opacity duration-150 ${LABEL_SCOPES[scope]} ${LABEL_SIDES[side]}`}
+      className={`pointer-events-none absolute z-50 w-max max-w-56 whitespace-normal rounded-md border border-edge bg-surface-2 px-2 py-1 text-xs font-normal normal-case leading-snug text-text opacity-0 shadow-[var(--shadow-raised)] transition-opacity duration-150 ${LABEL_SCOPES[scope]} ${LABEL_SIDES[side]}`}
     >
       {text}
     </span>
