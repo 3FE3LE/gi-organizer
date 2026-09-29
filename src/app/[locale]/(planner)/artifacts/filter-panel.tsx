@@ -7,7 +7,7 @@ import { ActiveFilters } from '@/components/active-filters';
 import { Segment, Segments } from '@/components/segmented-links';
 import { SLOT_ICONS } from '@/components/slot-icon';
 import { StatIcon } from '@/components/stat-icon';
-import { FoldMark } from '@/components/fold-mark';
+import { Fold } from '@/components/fold';
 import { formatSetEffect, setEffects, statLabel, type Catalog } from '@/lib/data/catalog';
 import { resolveIcon } from '@/lib/data/icon';
 import { ARTIFACT_SLOTS } from '@/lib/enka/slots';
@@ -127,22 +127,25 @@ export async function FilterPanel({
 
       {/* `open` when something inside it is on, so a shared URL does not hide
           the control that produced it. */}
-      <details
-        open={advanced > 0}
-        className="group/fold border-t border-edge"
+      <Fold
+        key={String(advanced > 0)}
+        look="row"
+        defaultOpen={advanced > 0}
+        mark="end"
+        triggerClassName="text-text"
+        summary={(
+          <>
+            <SlidersHorizontal size={14} aria-hidden className="text-muted" />
+            <span className="font-medium">{t('moreFilters')}</span>
+            {advanced > 0 && (
+              <span className="tabular rounded-full bg-accent px-1.5 font-mono text-2xs leading-4 text-on-accent">
+                {advanced}
+              </span>
+            )}
+          </>
+        )}
       >
-        <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-xs text-text transition-colors hover:bg-surface-2/60">
-          <SlidersHorizontal size={14} aria-hidden className="text-muted" />
-          <span className="font-medium">{t('moreFilters')}</span>
-          {advanced > 0 && (
-            <span className="tabular rounded-full bg-accent px-1.5 font-mono text-2xs leading-4 text-on-accent">
-              {advanced}
-            </span>
-          )}
-          <FoldMark className="ml-auto" />
-        </summary>
-
-        <div className="space-y-3 border-t border-edge px-3 py-2.5">
+        <div className="space-y-3 px-3 py-2.5">
           {/* Piece, what it is valued for, whose, and in what order: one row on
               a desktop, wrapping on a phone, above the finer filters. */}
           <div className="flex flex-wrap items-end gap-x-4 gap-y-2.5">
@@ -241,7 +244,7 @@ export async function FilterPanel({
             ownedMains={ownedMains}
           />
         </div>
-      </details>
+      </Fold>
       </div>
 
       {/* Always here rather than only docked: most of these are set inside

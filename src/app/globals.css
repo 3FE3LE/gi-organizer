@@ -990,9 +990,9 @@ select.field {
  * with nothing measured. Visibility waits out the fold on the way shut, so the
  * content is hidden from focus and screen readers only once it is out of sight.
  *
- * A `<details>` gets the same through `::details-content`, where the browser
- * has it; `interpolate-size` is what lets its height run to `auto`. Where
- * either is missing it opens as it always did, which is the whole fallback.
+ * Every other fold is `Fold`, whose panel is `.fold-panel` below: the same
+ * motion from a measured height, so it runs in every browser. There are no
+ * `<details>` left to animate.
  */
 :root {
   interpolate-size: allow-keywords;
@@ -1082,22 +1082,35 @@ select.field {
       display: none;
     }
   }
+}
 
-  details::details-content {
-    block-size: 0;
-    opacity: 0;
+/**
+ * `Fold`'s panel: the accordion's own measured height, from zero and back.
+ *
+ * Clipped while it moves, so the content never spills over what is below it
+ * as it grows; unclipped once it has finished opening, so a hover label hanging
+ * off a control near its bottom edge is not cut at the fold. The clip comes
+ * back at once on the way shut.
+ */
+@layer components {
+  .fold-panel {
+    height: var(--accordion-panel-height);
     overflow: clip;
     /* Room for a focus ring on the content's edge. */
     overflow-clip-margin: 4px;
-    transition:
-      block-size var(--duration-enter) var(--ease-out-soft),
-      opacity var(--duration-enter) var(--ease-out-soft),
-      content-visibility var(--duration-enter) allow-discrete;
+    transition: height var(--duration-enter) var(--ease-out-soft);
   }
 
-  details[open]::details-content {
-    block-size: auto;
-    opacity: 1;
+  .fold-panel[data-starting-style],
+  .fold-panel[data-ending-style] {
+    height: 0;
+  }
+
+  .fold-panel[data-open]:not([data-starting-style]) {
+    overflow: visible;
+    transition:
+      height var(--duration-enter) var(--ease-out-soft),
+      overflow 0s linear var(--duration-enter) allow-discrete;
   }
 }
 

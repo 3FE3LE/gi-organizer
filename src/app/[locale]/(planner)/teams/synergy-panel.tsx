@@ -6,7 +6,7 @@ import { AssetImage } from '@/components/asset-image';
 import { ElementIcon } from '@/components/element-icon';
 import { Hint } from '@/components/hint';
 import { StatusIcon, statusTone } from '@/components/status-icon';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Fold, FoldGroup } from '@/components/fold';
 
 /**
  * What the team is, beside what is wrong with it.
@@ -70,7 +70,7 @@ export function SynergyPanel({ synergy }: { synergy: SynergyView }) {
         * read it; opening another closes the last, so the panel never grows
         * by more than one paragraph.
         */}
-      <Accordion className="grid gap-3 lg:grid-cols-3">
+      <FoldGroup className="grid gap-3 lg:grid-cols-3">
         <Group title={t('resonanceHeading')}>
           {synergy.resonances.length === 0 ? (
             <Empty>{t('noResonance')}</Empty>
@@ -78,7 +78,6 @@ export function SynergyPanel({ synergy }: { synergy: SynergyView }) {
             synergy.resonances.map((resonance) => (
               <Effect
                 key={resonance.id}
-                value={`resonance-${resonance.id}`}
                 accent={resonance.color}
                 icon={resonance.element ? <ElementIcon element={resonance.element} /> : null}
                 title={resonanceName(resonance.id)}
@@ -109,7 +108,6 @@ export function SynergyPanel({ synergy }: { synergy: SynergyView }) {
             synergy.auras.map((aura) => (
               <Effect
                 key={aura.key}
-                value={`aura-${aura.key}`}
                 title={t('auraPieces', { pieces: aura.pieces, name: aura.setName })}
                 detail={t('auraWearer', { name: aura.wearer })}
                 // The duplicate is already an error under the slot that wears
@@ -126,7 +124,7 @@ export function SynergyPanel({ synergy }: { synergy: SynergyView }) {
             ))
           )}
         </Group>
-      </Accordion>
+      </FoldGroup>
     </section>
   );
 }
@@ -175,7 +173,6 @@ function ObjectiveMechanic({ objective }: { objective: NonNullable<SynergyView['
 
 /** One effect: its name and who brings it on a line, the paragraph behind a tap. */
 function Effect({
-  value,
   title,
   detail,
   accent,
@@ -183,7 +180,6 @@ function Effect({
   warning = null,
   children,
 }: {
-  value: string;
   title: string;
   detail: string;
   accent?: string;
@@ -192,26 +188,40 @@ function Effect({
   warning?: string | null;
   children: React.ReactNode;
 }) {
+  const summary = (
+    <>
+      {icon && <span className="self-start pt-px">{icon}</span>}
+      <span className="min-w-0 flex-1">
+        <span className="block">{title}</span>
+        <span className="block font-mono text-2xs text-muted">{detail}</span>
+        {warning && <span className="block font-mono text-2xs text-warn">{warning}</span>}
+      </span>
+    </>
+  );
+
+  // The plan piles' fold at a smaller size: the same card, mark and rule.
+  const frame = 'rounded border border-edge bg-surface-2';
+  const style = accent ? { borderLeftWidth: 2, borderLeftColor: accent } : undefined;
+
+  if (!children) {
+    return (
+      <div className={`${frame} flex items-center gap-2 px-2 py-1.5 text-xs`} style={style}>
+        {summary}
+      </div>
+    );
+  }
+
   return (
-    <AccordionItem
-      value={value}
-      className="rounded border border-edge bg-surface-2 not-last:border-b"
-      style={accent ? { borderLeftWidth: 2, borderLeftColor: accent } : undefined}
+    <Fold
+      look="bare"
+      className={frame}
+      style={style}
+      triggerClassName="gap-2 px-2 py-1.5 text-xs"
+      panelClassName="border-t border-edge/60 px-2 py-2 text-2xs leading-snug text-muted"
+      summary={summary}
     >
-      <AccordionTrigger className="gap-2 rounded px-2 py-1.5 text-xs font-normal hover:no-underline">
-        {icon && <span className="self-start pt-px">{icon}</span>}
-        <span className="min-w-0 flex-1">
-          <span className="block">{title}</span>
-          <span className="block font-mono text-2xs text-muted">{detail}</span>
-          {warning && <span className="block font-mono text-2xs text-warn">{warning}</span>}
-        </span>
-      </AccordionTrigger>
-      {children && (
-        <AccordionContent className="px-2 pb-2 text-2xs leading-snug text-muted">
-          {children}
-        </AccordionContent>
-      )}
-    </AccordionItem>
+      {children}
+    </Fold>
   );
 }
 

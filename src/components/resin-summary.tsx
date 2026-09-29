@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 
-import { FoldMark } from '@/components/fold-mark';
+import { Fold } from '@/components/fold';
 import { GameIcon } from '@/components/game-icon';
 import type { Catalog } from '@/lib/data/catalog';
 import type { Locale } from '@/lib/data/locales';
@@ -41,75 +41,75 @@ export async function ResinSummary({
   const span = spanOf(estimate.days);
 
   return (
-    <details className="card group/fold">
-      <summary className="flex cursor-pointer list-none items-center gap-3 px-3 py-2">
-        <FoldMark className="-mr-1" />
-        <GameIcon filename={RESIN_ICON} kind="material" className="h-7 w-7 shrink-0" sizes="28px" />
-        <span className="min-w-0 flex-1">
-          <span className="block text-xs">{t('heading')}</span>
-          <span className="font-mono text-2xs uppercase tracking-wide text-muted">
-            {estimate.total > 0 ? t(`span.${span.unit}`, { count: span.count }) : t('none')}
+    <Fold
+      summary={(
+        <>
+          <GameIcon filename={RESIN_ICON} kind="material" className="h-7 w-7 shrink-0" sizes="28px" />
+          <span className="min-w-0 flex-1">
+            <span className="block text-xs">{t('heading')}</span>
+            <span className="font-mono text-2xs uppercase tracking-wide text-muted">
+              {estimate.total > 0 ? t(`span.${span.unit}`, { count: span.count }) : t('none')}
+            </span>
           </span>
-        </span>
-        <span className="tabular shrink-0 font-mono text-sm text-accent">
-          {t('total', { amount: number.format(estimate.total) })}
-        </span>
-      </summary>
-
-      <div className="space-y-3 border-t border-edge/60 px-3 py-3">
-        {estimate.bySource.map((entry) => (
-          <div key={entry.source} className="space-y-1">
-            <div className="flex items-baseline gap-3 font-mono text-2xs uppercase tracking-wide">
-              <span className="flex-1 text-muted">{t(`source.${entry.source}`)}</span>
-              <span className="tabular text-muted">
-                {t('runs', { count: entry.runs })}
-                {entry.source === 'weekly-boss' && ` · ${t('weeks', { count: estimate.weeklyWeeks })}`}
-              </span>
-              <span className="tabular text-text">{number.format(entry.resin)}</span>
-            </div>
-            <ul className="space-y-0.5">
-              {entry.families.slice(0, SHOWN_FAMILIES).map((family) => {
-                const material = catalog.materials.get(family.materialId);
-                return (
-                  <li key={family.materialId} className="flex items-center gap-3 pl-1 font-mono text-2xs">
-                    <GameIcon
-                      filename={material?.icon ?? null}
-                      kind="material"
-                      className="h-5 w-5 shrink-0"
-                      sizes="20px"
-                    />
-                    <span className="min-w-0 flex-1 truncate text-muted">
-                      {material?.name ?? `#${family.materialId}`}
-                    </span>
-                    <span className="tabular shrink-0 text-muted">
-                      {t('runs', { count: family.runs })}
-                    </span>
-                    <span className="tabular w-12 shrink-0 text-right">
-                      {number.format(family.resin)}
-                    </span>
-                  </li>
-                );
-              })}
-              {entry.families.length > SHOWN_FAMILIES && (
-                <li className="pl-9 font-mono text-2xs text-muted">
-                  {t('more', { count: entry.families.length - SHOWN_FAMILIES })}
-                </li>
-              )}
-            </ul>
+          <span className="tabular shrink-0 font-mono text-sm text-accent">
+            {t('total', { amount: number.format(estimate.total) })}
+          </span>
+        </>
+      )}
+      panelClassName="space-y-3 px-3 py-3"
+    >
+      {estimate.bySource.map((entry) => (
+        <div key={entry.source} className="space-y-1">
+          <div className="flex items-baseline gap-3 font-mono text-2xs uppercase tracking-wide">
+            <span className="flex-1 text-muted">{t(`source.${entry.source}`)}</span>
+            <span className="tabular text-muted">
+              {t('runs', { count: entry.runs })}
+              {entry.source === 'weekly-boss' && ` · ${t('weeks', { count: estimate.weeklyWeeks })}`}
+            </span>
+            <span className="tabular text-text">{number.format(entry.resin)}</span>
           </div>
-        ))}
-
-        {estimate.mora.short > 0 && (
-          <p className="border-t border-edge/60 pt-2 text-xs text-muted">
-            {t('mora', {
-              short: number.format(estimate.mora.short),
-              resin: number.format(estimate.mora.resinIfFarmed),
+          <ul className="space-y-0.5">
+            {entry.families.slice(0, SHOWN_FAMILIES).map((family) => {
+              const material = catalog.materials.get(family.materialId);
+              return (
+                <li key={family.materialId} className="flex items-center gap-3 pl-1 font-mono text-2xs">
+                  <GameIcon
+                    filename={material?.icon ?? null}
+                    kind="material"
+                    className="h-5 w-5 shrink-0"
+                    sizes="20px"
+                  />
+                  <span className="min-w-0 flex-1 truncate text-muted">
+                    {material?.name ?? `#${family.materialId}`}
+                  </span>
+                  <span className="tabular shrink-0 text-muted">
+                    {t('runs', { count: family.runs })}
+                  </span>
+                  <span className="tabular w-12 shrink-0 text-right">
+                    {number.format(family.resin)}
+                  </span>
+                </li>
+              );
             })}
-          </p>
-        )}
+            {entry.families.length > SHOWN_FAMILIES && (
+              <li className="pl-9 font-mono text-2xs text-muted">
+                {t('more', { count: entry.families.length - SHOWN_FAMILIES })}
+              </li>
+            )}
+          </ul>
+        </div>
+      ))}
 
-        <p className="max-w-prose text-2xs text-muted">{t('method')}</p>
-      </div>
-    </details>
+      {estimate.mora.short > 0 && (
+        <p className="border-t border-edge/60 pt-2 text-xs text-muted">
+          {t('mora', {
+            short: number.format(estimate.mora.short),
+            resin: number.format(estimate.mora.resinIfFarmed),
+          })}
+        </p>
+      )}
+
+      <p className="max-w-prose text-2xs text-muted">{t('method')}</p>
+    </Fold>
   );
 }

@@ -5,25 +5,25 @@ import { ChevronRight } from 'lucide-react';
  * turning down once it is open. One size, one colour, one motion across the
  * app — it was seven marks before, from a rotating plus to a hand-drawn arrow.
  *
- * Inside a `<details>` it follows the element's own `open` through the group
+ * Inside a `Fold` it follows the trigger's own open state through the group
  * named here, so it needs no state; a fold driven by React passes `open`. The
- * plain fold is `group/fold`, not a bare `group`: a bare one would also light
+ * group is `group/trigger`, not a bare `group`: a bare one would also light
  * every hover label inside the fold whenever the pointer is anywhere on it.
  */
 const GROUPS = {
-  details: 'group-open/fold:rotate-90',
-  legend: 'group-open/legend:rotate-90',
-  missing: 'group-open/missing:rotate-90',
+  /** Inside a `Fold`: its trigger says when its own panel is open, and only
+      its own, so a fold nested in an open one stays shut-looking. */
+  trigger: 'group-data-panel-open/trigger:rotate-90',
 } as const;
 
 export function FoldMark({
-  group = 'details',
+  group = 'trigger',
   open,
   className = '',
 }: {
-  /** Which `group` the surrounding `<details>` is, when there is one. */
+  /** Which `group` the surrounding trigger is, when there is one. */
   group?: keyof typeof GROUPS;
-  /** For a fold with no `<details>`: whether it is open. */
+  /** For a fold with no `Fold`: whether it is open. */
   open?: boolean;
   className?: string;
 }) {

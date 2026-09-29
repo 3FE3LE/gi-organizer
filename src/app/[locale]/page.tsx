@@ -7,6 +7,7 @@ import {
   ArrowRight, CalendarDays, Gem, ListChecks, Repeat2, Swords, Upload,
 } from 'lucide-react';
 
+import { Fold, FoldGroup } from '@/components/fold';
 import { LogoMark } from '@/components/logo-mark';
 import { buttonVariants } from '@/components/ui/button';
 import { isLocale } from '@/lib/data/locales';
@@ -173,17 +174,20 @@ export default async function Landing({ params }: PageProps<'/[locale]'>) {
 
       <section aria-labelledby="faq" className="mx-auto max-w-3xl space-y-4">
         <h2 id="faq" className="text-center text-2xl font-semibold tracking-tight">{t('faqHeading')}</h2>
-        <div className="divide-y divide-edge card">
+        <FoldGroup className="divide-y divide-edge card">
           {FAQ.map((key) => (
-            <details key={key} className="group px-5 py-4">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium">
-                {t(`faq.${key}.q`)}
-                <span aria-hidden className="text-muted transition-transform group-open:rotate-45">+</span>
-              </summary>
-              <p className="mt-2 text-sm leading-relaxed text-muted">{t(`faq.${key}.a`)}</p>
-            </details>
+            <Fold
+              key={key}
+              look="bare"
+              mark="end"
+              className="px-5 py-4"
+              triggerClassName="gap-4 font-medium"
+              summary={t(`faq.${key}.q`)}
+            >
+              <p className="pt-2 text-sm leading-relaxed text-muted">{t(`faq.${key}.a`)}</p>
+            </Fold>
           ))}
-        </div>
+        </FoldGroup>
       </section>
 
       <p className="mx-auto max-w-2xl text-center text-xs text-muted">{t('disclaimer')}</p>

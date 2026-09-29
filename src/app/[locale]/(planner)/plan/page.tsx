@@ -10,7 +10,7 @@ import { ResinSummary } from '@/components/resin-summary';
 import { SectionTabs } from '@/components/section-tabs';
 import { Skeleton } from '@/components/skeleton';
 import { StickyDock } from '@/components/sticky-dock';
-import { FoldMark } from '@/components/fold-mark';
+import { Fold, FoldGroup } from '@/components/fold';
 import { type Catalog } from '@/lib/data/catalog';
 import { isLocale, type Locale } from '@/lib/data/locales';
 import { NATIONS, type Nation } from '@/lib/data/nations';
@@ -308,11 +308,13 @@ async function PlanContent({
           <p className="mb-3 max-w-prose text-xs text-muted">
             {t('collectionHint')}
           </p>
-          <div className="space-y-2">
+          {/* One pile open at a time: each runs to a screen of rows, and two
+              open at once pushed the second's heading out of sight. */}
+          <FoldGroup className="space-y-2">
             {groupAnytime(schedule.anytime, (id) => catalog.materials.get(id), t('unsortedLabel')).map((group) => (
               <AnytimePile key={group.label} group={group} catalog={catalog} locale={locale} nations={nations} />
             ))}
-          </div>
+          </FoldGroup>
         </section>
       )}
     </div>
@@ -521,60 +523,59 @@ async function AnytimePile({
   const sections = byNation(group.needs, (id) => nations.get(id), NATIONS);
 
   return (
-    <details className="group/fold card">
-      <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-xs">
-        {/* The same fold mark as "más filtros": a line that opens says so. */}
-        <FoldMark />
-        <span className="min-w-0 flex-1 truncate">{group.label}</span>
+    <Fold
+      triggerClassName="flex-wrap gap-y-1"
+      summary={(
+        <>
+          <span className="min-w-0 flex-1 truncate">{group.label}</span>
 
-        {/* What is in the pile, without opening it: a taste, not the whole
-            pile. The boss drops run to twenty icons, which wrapped the line
-            into three on a phone; five and a count keep it one. */}
-        <span className="flex shrink-0 items-center gap-1">
-          {group.needs.slice(0, PILE_PREVIEW).map((need) => (
-            <GameIcon
-              key={need.materialId}
-              filename={catalog.materials.get(need.materialId)?.icon}
-              kind="material"
-              alt={catalog.materials.get(need.materialId)?.name ?? ''}
-              className="h-6 w-6"
-              sizes="24px"
-            />
-          ))}
-          {group.needs.length > PILE_PREVIEW && (
-            <span className="font-mono text-2xs text-muted">
-              +{group.needs.length - PILE_PREVIEW}
-            </span>
-          )}
-        </span>
+          {/* What is in the pile, without opening it: a taste, not the whole
+              pile. The boss drops run to twenty icons, which wrapped the line
+              into three on a phone; five and a count keep it one. */}
+          <span className="flex shrink-0 items-center gap-1">
+            {group.needs.slice(0, PILE_PREVIEW).map((need) => (
+              <GameIcon
+                key={need.materialId}
+                filename={catalog.materials.get(need.materialId)?.icon}
+                kind="material"
+                alt={catalog.materials.get(need.materialId)?.name ?? ''}
+                className="h-6 w-6"
+                sizes="24px"
+              />
+            ))}
+            {group.needs.length > PILE_PREVIEW && (
+              <span className="font-mono text-2xs text-muted">
+                +{group.needs.length - PILE_PREVIEW}
+              </span>
+            )}
+          </span>
 
-        <span className="font-mono text-muted">
-          {t('missingLabel')} <span className="text-accent">{group.short.toLocaleString(locale)}</span>
-        </span>
-      </summary>
-
+          <span className="font-mono text-muted">
+            {t('missingLabel')} <span className="text-accent">{group.short.toLocaleString(locale)}</span>
+          </span>
+        </>
+      )}
+    >
       {sections ? (
-        <div className="border-t border-edge">
-          {sections.map((section) => (
-            <section key={section.nation ?? 'none'} className="border-b border-edge/60 last:border-b-0">
-              <h3 className="bg-surface-2/50 px-3 py-1.5 font-mono text-2xs uppercase tracking-wide text-muted">
-                {section.nation ? nationLabel(section.nation) : t('unsortedLabel')}
-              </h3>
-              <ul>
-                {section.needs.map((need) => (
-                  <MaterialRow key={need.materialId} need={need} catalog={catalog} locale={locale} />
-                ))}
-              </ul>
-            </section>
-          ))}
-        </div>
+        sections.map((section) => (
+          <section key={section.nation ?? 'none'} className="border-b border-edge/60 last:border-b-0">
+            <h3 className="bg-surface-2/50 px-3 py-1.5 font-mono text-2xs uppercase tracking-wide text-muted">
+              {section.nation ? nationLabel(section.nation) : t('unsortedLabel')}
+            </h3>
+            <ul>
+              {section.needs.map((need) => (
+                <MaterialRow key={need.materialId} need={need} catalog={catalog} locale={locale} />
+              ))}
+            </ul>
+          </section>
+        ))
       ) : (
-        <ul className="border-t border-edge">
+        <ul>
           {group.needs.map((need) => (
             <MaterialRow key={need.materialId} need={need} catalog={catalog} locale={locale} />
           ))}
         </ul>
       )}
-    </details>
+    </Fold>
   );
 }

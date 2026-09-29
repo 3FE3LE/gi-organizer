@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { ActiveFilters } from '@/components/active-filters';
 import { DockFold } from '@/components/dock-fold';
 import { Segment, Segments } from '@/components/segmented-links';
-import { FoldMark } from '@/components/fold-mark';
+import { Fold } from '@/components/fold';
 import type { Catalog } from '@/lib/data/catalog';
 import type { Team } from '@/lib/player/teams';
 import { gameWeekStrip, type GameRegion } from '@/lib/rules/game-day';
@@ -125,23 +125,29 @@ export async function FilterBar({
       )}
 
       <DockFold when="docked" className="pt-3">
-      <details open={moreOpen} className="group/fold card">
-        {/* The artifacts' "more filters", word for word: an icon, the name, how
-            many of the folded filters are on, and the fold mark. */}
-        <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-xs text-text transition-colors hover:bg-surface-2/60">
-          <SlidersHorizontal size={14} aria-hidden className="text-muted" />
-          <span className="font-medium">{t('moreFilters')}</span>
-          {folded > 0 && (
-            <span className="tabular rounded-full bg-accent px-1.5 font-mono text-2xs leading-4 text-on-accent">
-              {folded}
-            </span>
-          )}
-          <FoldMark className="ml-auto" />
-        </summary>
-
+      {/* The artifacts' "more filters", word for word: an icon, the name, how
+          many of the folded filters are on, and the fold mark. Keyed on
+          whether anything inside is on, so a filter set from a link opens it. */}
+      <Fold
+        key={String(moreOpen)}
+        defaultOpen={moreOpen}
+        mark="end"
+        triggerClassName="gap-2 text-text transition-colors hover:bg-surface-2/60"
+        summary={(
+          <>
+            <SlidersHorizontal size={14} aria-hidden className="text-muted" />
+            <span className="font-medium">{t('moreFilters')}</span>
+            {folded > 0 && (
+              <span className="tabular rounded-full bg-accent px-1.5 font-mono text-2xs leading-4 text-on-accent">
+                {folded}
+              </span>
+            )}
+          </>
+        )}
+      >
         {/* One question per group, its label above its values, and the
             groups side by side where the card is wide enough. */}
-        <div className="flex flex-wrap gap-x-6 gap-y-3 border-t border-edge px-3 py-3">
+        <div className="flex flex-wrap gap-x-6 gap-y-3 px-3 py-3">
           <Segments label={t('teamLabel')}>
             <Segment to={href(base, filters, { team: null, chars: [] })} active={!filters.team}>
               {t('allTeams')}
@@ -175,7 +181,7 @@ export async function FilterBar({
             ))}
           </Segments>
         </div>
-      </details>
+      </Fold>
       </DockFold>
     </div>
   );

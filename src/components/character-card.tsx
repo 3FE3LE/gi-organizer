@@ -1,7 +1,7 @@
 import { EyeOff } from 'lucide-react';
 
 import { ElementIcon } from '@/components/element-icon';
-import { FoldMark } from '@/components/fold-mark';
+import { Fold } from '@/components/fold';
 import { Hint } from '@/components/hint';
 import { elementColor } from '@/lib/data/elements';
 
@@ -237,11 +237,12 @@ export function CardLegend({
   ];
 
   return (
-    <details className={`group/legend text-xs sm:max-w-md ${className}`}>
-      <summary className="flex cursor-pointer list-none items-center gap-1 text-muted hover:text-text sm:justify-end">
-        <FoldMark group="legend" />
-        {labels.summary}
-      </summary>
+    <Fold
+      look="bare"
+      className={`text-xs sm:max-w-md ${className}`}
+      triggerClassName="gap-1 text-muted hover:text-text sm:justify-end"
+      summary={labels.summary}
+    >
       <ul className="card mt-2 space-y-2 p-3">
         {items.map((item) => (
           <li key={item.key} className="flex items-center gap-3">
@@ -250,7 +251,7 @@ export function CardLegend({
           </li>
         ))}
       </ul>
-    </details>
+    </Fold>
   );
 }
 

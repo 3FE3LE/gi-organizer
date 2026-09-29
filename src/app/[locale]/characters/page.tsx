@@ -16,7 +16,7 @@ import { WeaponTypeIcon } from '@/components/weapon-type-icon';
 import { CakeSlice, SlidersHorizontal } from 'lucide-react';
 
 import { HoverLabel } from '@/components/hint';
-import { FoldMark } from '@/components/fold-mark';
+import { Fold } from '@/components/fold';
 import {
   GROUPINGS,
   type Grouping,
@@ -269,12 +269,18 @@ export default async function CharactersPage({
               */
             if (grouping === 'owned' && group.key === 'missing') {
               return (
-                <details key={`${group.key}-${narrowed}`} open={narrowed} className="group/missing">
-                  <summary className="mb-3 flex cursor-pointer list-none items-center gap-1.5 text-sm font-medium uppercase tracking-wide text-muted hover:text-text">
-                    <FoldMark group="missing" />
-                    {heading}{' '}
-                    <span className="font-mono">{group.characters.length}</span>
-                  </summary>
+                <Fold
+                  key={`${group.key}-${narrowed}`}
+                  look="bare"
+                  defaultOpen={narrowed}
+                  triggerClassName="mb-3 text-sm font-medium uppercase tracking-wide text-muted hover:text-text"
+                  summary={(
+                    <>
+                      {heading}{' '}
+                      <span className="font-mono">{group.characters.length}</span>
+                    </>
+                  )}
+                >
                   <Gallery
                     locale={locale}
                     characters={group.characters}
@@ -283,7 +289,7 @@ export default async function CharactersPage({
                     t={t}
                     compact
                   />
-                </details>
+                </Fold>
               );
             }
 
@@ -478,19 +484,25 @@ function RosterControls({
           on inside it. Folded away entirely while docked, where the summary
           above says what it holds. */}
       <DockFold when="docked">
-        <details open={folded > 0} className="group/fold border-t border-edge">
-          <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-xs text-text transition-colors hover:bg-surface-2/60">
-            <SlidersHorizontal size={14} aria-hidden className="text-muted" />
-            <span className="font-medium">{t('moreFilters')}</span>
-            {folded > 0 && (
-              <span className="tabular rounded-full bg-accent px-1.5 font-mono text-2xs leading-4 text-on-accent">
-                {folded}
-              </span>
-            )}
-            <FoldMark className="ml-auto" />
-          </summary>
-
-          <div className="flex flex-wrap items-end gap-x-6 gap-y-3 border-t border-edge px-3 py-2.5">
+        <Fold
+          key={String(folded > 0)}
+          look="row"
+          defaultOpen={folded > 0}
+          mark="end"
+          triggerClassName="text-text"
+          summary={(
+            <>
+              <SlidersHorizontal size={14} aria-hidden className="text-muted" />
+              <span className="font-medium">{t('moreFilters')}</span>
+              {folded > 0 && (
+                <span className="tabular rounded-full bg-accent px-1.5 font-mono text-2xs leading-4 text-on-accent">
+                  {folded}
+                </span>
+              )}
+            </>
+          )}
+        >
+          <div className="flex flex-wrap items-end gap-x-6 gap-y-3 px-3 py-2.5">
             <Segments label={t('sortBy')}>
               {SORTS.map((sort) => (
                 <Segment
@@ -529,7 +541,7 @@ function RosterControls({
               ))}
             </Segments>
           </div>
-        </details>
+        </Fold>
       </DockFold>
     </div>
   );

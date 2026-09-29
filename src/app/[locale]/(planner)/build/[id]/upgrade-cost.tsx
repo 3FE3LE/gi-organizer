@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 
 import { GameIcon } from '@/components/game-icon';
-import { FoldMark } from '@/components/fold-mark';
+import { Fold, FoldGroup } from '@/components/fold';
 import { ResinSummary } from '@/components/resin-summary';
 import type { Catalog } from '@/lib/data/catalog';
 import type { Locale } from '@/lib/data/locales';
@@ -18,8 +18,7 @@ import type { CostRow, CostTier, UpgradeCost } from './cost-view';
  * bag has already been subtracted. Mora is last because it is the only line
  * nobody farms on purpose.
  *
- * A family that spans tiers opens with `<details>`, so the breakdown costs no
- * JavaScript and survives with it turned off.
+ * A family that spans tiers opens as a `Fold`, one at a time.
  */
 export async function UpgradeCostPanel({
   cost,
@@ -57,50 +56,49 @@ export async function UpgradeCostPanel({
       {cost.covered ? (
         <p className="max-w-prose text-sm text-muted">{t('costCovered')}</p>
       ) : (
-        <ul className="space-y-1">
-          {cost.rows.map((row) => (
-            <li key={row.key}>
-              {row.tiers.length > 0 ? (
-                <details className="card group/fold">
-                  <summary className="flex cursor-pointer list-none items-center gap-3 px-3 py-2">
-                    <FoldMark className="-mr-1" />
-                    <Line row={row} t={t} number={number} expandable />
-                  </summary>
-                  <ul className="border-t border-edge/60 px-3 py-1">
-                    {row.tiers.map((tier) => (
-                      <li
-                        key={tier.id}
-                        className="flex items-center gap-3 py-1 pl-6 font-mono text-2xs"
-                      >
-                        <GameIcon
-                          filename={tier.icon}
-                          kind="material"
-                          className="h-5 w-5 shrink-0"
-                          sizes="20px"
-                        />
-                        <span className="min-w-0 flex-1 truncate text-muted">{tier.name}</span>
-                        <Counts tier={tier} t={t} number={number} />
-                      </li>
-                    ))}
-                  </ul>
-                </details>
-              ) : (
-                <div className="card flex items-center gap-3 px-3 py-2">
-                  <Line row={row} t={t} number={number} />
-                </div>
-              )}
-            </li>
-          ))}
+        // One family open at a time, as on the plan.
+        <FoldGroup>
+          <ul className="space-y-1">
+            {cost.rows.map((row) => (
+              <li key={row.key}>
+                {row.tiers.length > 0 ? (
+                  <Fold summary={<Line row={row} t={t} number={number} expandable />}>
+                    <ul className="px-3 py-1">
+                      {row.tiers.map((tier) => (
+                        <li
+                          key={tier.id}
+                          className="flex items-center gap-3 py-1 pl-6 font-mono text-2xs"
+                        >
+                          <GameIcon
+                            filename={tier.icon}
+                            kind="material"
+                            className="h-5 w-5 shrink-0"
+                            sizes="20px"
+                          />
+                          <span className="min-w-0 flex-1 truncate text-muted">{tier.name}</span>
+                          <Counts tier={tier} t={t} number={number} />
+                        </li>
+                      ))}
+                    </ul>
+                  </Fold>
+                ) : (
+                  <div className="card flex items-center gap-3 px-3 py-2">
+                    <Line row={row} t={t} number={number} />
+                  </div>
+                )}
+              </li>
+            ))}
 
-          {cost.mora.short > 0 && (
-            <li className="flex items-center gap-3 border-t border-edge px-3 pt-3">
-              <span className="flex-1 font-mono text-xs uppercase tracking-wide text-muted">
-                {t('costMora')}
-              </span>
-              <Counts tier={cost.mora} t={t} number={number} />
-            </li>
-          )}
-        </ul>
+            {cost.mora.short > 0 && (
+              <li className="flex items-center gap-3 border-t border-edge px-3 pt-3">
+                <span className="flex-1 font-mono text-xs uppercase tracking-wide text-muted">
+                  {t('costMora')}
+                </span>
+                <Counts tier={cost.mora} t={t} number={number} />
+              </li>
+            )}
+          </ul>
+        </FoldGroup>
       )}
 
       {!cost.covered && (
@@ -131,7 +129,7 @@ function Line({
           {/* The marker the tier list is behind, since `list-none` took the
               browser's own away. */}
           {expandable && (
-            <span className="ml-1 text-muted transition-transform group-open/fold:hidden">
+            <span className="ml-1 text-muted group-data-panel-open/trigger:hidden">
               {t('costTiers', { count: row.tiers.length })}
             </span>
           )}
