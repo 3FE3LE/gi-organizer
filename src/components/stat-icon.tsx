@@ -112,7 +112,7 @@ export function StatIcon({
       {/* The one thing the drawing cannot say, and the only reason the pair of
           them is unambiguous. */}
       {showPercent && isPercentProp(prop) && (
-        <span aria-hidden className="font-mono text-[0.7em] leading-none text-muted">%</span>
+        <span aria-hidden className="font-mono text-2xs leading-none text-muted">%</span>
       )}
       <span className="sr-only">{label}</span>
     </span>

@@ -41,7 +41,7 @@ export function ResetCountdown({ at, serverNow }: { at: string; serverNow: strin
 
   return (
     <Hint text={t('resetTitle')}>
-      <span tabIndex={0} className="tabular rounded font-mono text-xs text-muted">
+      <span tabIndex={0} className="tabular inline-flex min-h-6 items-center rounded font-mono text-xs text-muted">
         {hours > 0 ? t('resetInHours', { hours, minutes }) : t('resetInMinutes', { minutes })}
       </span>
     </Hint>

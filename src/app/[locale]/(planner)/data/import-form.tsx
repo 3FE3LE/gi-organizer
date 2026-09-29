@@ -154,7 +154,7 @@ export function ImportForm() {
                   section it looks partial in is kept by the plan regardless. */}
               {preview.coverage === 'full' && (
                 <label className="flex items-center gap-2 text-sm text-muted">
-                  <input type="checkbox" name="onAbsent" value="remove" defaultChecked />
+                  <input className="size-4 accent-accent" type="checkbox" name="onAbsent" value="remove" defaultChecked />
                   {t('removeAbsentLabel')}
                 </label>
               )}

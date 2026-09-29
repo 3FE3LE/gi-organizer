@@ -599,7 +599,7 @@ function RolesMenu({ teamId, characterId, roles }: {
   return (
     <Menu.Root>
       <Menu.Trigger
-        className={`flex max-w-full items-center gap-0.5 rounded font-mono text-2xs lg:mx-auto lg:justify-center underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-accent ${
+        className={`flex min-h-6 max-w-full items-center gap-0.5 rounded font-mono text-2xs lg:mx-auto lg:justify-center underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-accent ${
           shown.length === 0 ? 'text-muted' : 'text-accent'
         }`}
         aria-label={t('rolesLabel')}
@@ -855,7 +855,7 @@ function Mark({
           {children}
         </span>
         {badge && (
-          <span className="tabular absolute -bottom-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-edge bg-surface px-1 font-mono text-[0.6rem] leading-tight text-muted">
+          <span className="tabular absolute -bottom-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-edge bg-surface px-1 font-mono text-2xs leading-tight text-muted">
             {badge}
           </span>
         )}

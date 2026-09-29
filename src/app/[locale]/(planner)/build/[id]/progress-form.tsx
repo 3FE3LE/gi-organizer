@@ -914,7 +914,7 @@ function LevelCell({
             type="checkbox"
             {...ascendedField}
             defaultChecked={ascendedDefault}
-            className="accent-accent"
+            className="size-4 accent-accent"
           />
           {t('ascendedLabel')}
         </label>

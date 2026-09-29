@@ -129,7 +129,7 @@ function Action({
       // mouse hovering it, and dead weight on a screen where it is already
       // always on. `aria-label` keeps the name for anyone who can't see the
       // icon either way.
-      className="pointer-events-auto flex items-center gap-1.5 field/90 px-2 py-1 text-2xs text-muted shadow-sm transition-colors hover:border-accent hover:text-accent max-sm:px-1.5"
+      className="pointer-events-auto flex min-h-6 items-center gap-1.5 field/90 px-2 py-1 text-2xs text-muted shadow-sm transition-colors hover:border-accent hover:text-accent max-sm:px-1.5"
     >
       {icon}
       <span className="max-sm:hidden">{label}</span>

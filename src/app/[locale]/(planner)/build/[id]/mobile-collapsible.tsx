@@ -40,7 +40,7 @@ export function MobileCollapsible({
         aria-expanded={open}
         aria-controls={id}
         onClick={() => setOpen((current) => !current)}
-        className="mb-2 flex w-full items-center justify-between gap-2 text-sm font-medium uppercase tracking-wide text-muted sm:hidden"
+        className="mb-2 flex min-h-6 w-full items-center justify-between gap-2 text-sm font-medium uppercase tracking-wide text-muted sm:hidden"
       >
         {title}
         <FoldMark open={open} />

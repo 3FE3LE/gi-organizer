@@ -565,7 +565,7 @@ export async function CharacterPanel({
                   lines={effects.map(formatSetEffect)}
                   hint={effects.length > 0 ? formatSetEffect(effects[0]) : ''}
                   closeLabel={common('close')}
-                  className={`font-mono text-xs text-muted ${
+                  className={`inline-flex min-h-6 items-center font-mono text-xs text-muted ${
                     effects.length > 0 ? 'underline decoration-edge-strong decoration-dotted underline-offset-2' : ''
                   }`}
                 >

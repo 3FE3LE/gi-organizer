@@ -95,7 +95,7 @@ export function AddToRoster({ entry }: { entry: UnrosteredEntry }) {
           <Number name="skill" label={t('skill')} min={1} max={10} defaultValue={1} />
           <Number name="burst" label={t('burst')} min={1} max={10} defaultValue={1} />
           <label className="flex items-end gap-1.5 pb-2 text-xs text-muted">
-            <input type="checkbox" name="ascended" defaultChecked className="accent-accent" />
+            <input type="checkbox" name="ascended" defaultChecked className="size-4 accent-accent" />
             {t('ascended')}
           </label>
         </div>

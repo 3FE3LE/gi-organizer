@@ -91,12 +91,13 @@
    * The floor of the type scale, and the reason it exists.
    *
    * Eighty-odd labels were set in arbitrary rem fractions down to 8.8px —
-   * legible on the author's monitor and nowhere else. One token at 11.5px
-   * replaces all of them: still quiet, still fits the tables, and readable at
-   * arm's length on a phone.
+   * legible on the author's monitor and nowhere else. One token replaces all
+   * of them, at 12px: the smallest size the common guidelines accept for text
+   * that carries content, and on this app most of it does — a substat's value,
+   * a crit value, a count. Still quiet, still fits the tables.
    */
-  --text-2xs: 0.72rem;
-  --text-2xs--line-height: 1.1rem;
+  --text-2xs: 0.75rem;
+  --text-2xs--line-height: 1.125rem;
 
   --radius-card: 0.875rem;
   --radius-panel: 1.125rem;
@@ -704,7 +705,7 @@ body {
     /* 44px is the smallest target a finger hits reliably; this clears it. */
     min-height: 3.25rem;
     padding: 0.5rem 0.25rem;
-    font-size: 0.6875rem;
+    font-size: var(--text-2xs);
     line-height: 1;
     text-align: center;
   }

@@ -99,7 +99,7 @@ export function Fold({
     >
       <Accordion.Header className="flex">
         <Accordion.Trigger
-          className={`group/trigger flex min-w-0 flex-1 cursor-pointer items-center text-left outline-none focus-visible:ring-2 focus-visible:ring-accent/60 ${dress.trigger} ${triggerClassName}`}
+          className={`group/trigger flex min-h-6 min-w-0 flex-1 cursor-pointer items-center text-left outline-none focus-visible:ring-2 focus-visible:ring-accent/60 ${dress.trigger} ${triggerClassName}`}
         >
           {mark === 'start' && <FoldMark group="trigger" />}
           {summary}
