@@ -27,7 +27,6 @@ import { refinementResolver } from '@/lib/player/weapon-copies';
 import { readWorldLevel } from '@/lib/player/world-level';
 
 import { evaluate, type CharacterGear, type EvaluationInput } from './evaluate';
-import { type AgendaItem, buildAgenda } from './agenda';
 import {
   ASSUMED_TARGET,
   type DemandSource,
@@ -40,12 +39,9 @@ import {
 } from './materials';
 import { cardProgress } from './card-progress';
 import { estimateResin, type ResinEstimate } from './resin';
-import { type CascadeBuild, type CascadePlan, costOfGivingUp, planCascade } from './cascade';
-import { type ComparablePiece, type Swap, compareSlot, shortlist } from './compare';
 import {
   type BuildStats, type PieceFit, type PieceScore, buildStatsFor, fitOf, scorePiece,
 } from './piece-score';
-import { computeStats, evaluateGoals, type GoalVerdict } from './stats';
 import {
   type BuildPriority,
   type SetSuggestion,
@@ -55,7 +51,7 @@ import {
 } from './suggest';
 import { type SetRequirement, effectiveSetPlan } from './set-fit';
 import type { Rule, TeamRole } from './types';
-import { MIN_ARTIFACT_RARITY, isRecommendableSet, isRecommendableWeapon } from './rarity-floor';
+import { isRecommendableSet, isRecommendableWeapon } from './rarity-floor';
 
 /**
  * Assembles everything the engine needs: teams from the database, gear as
@@ -266,12 +262,6 @@ export type ScoredPiece = PieceScore & {
   fit: PieceFit;
 };
 
-export type SlotComparison = {
-  slot: ArtifactSlot;
-  equipped: ComparablePiece | null;
-  swaps: Swap[];
-};
-
 export type Suggestions = {
   /** The target this was measured against, when the player authored one. */
   build: Build | null;
@@ -290,12 +280,6 @@ export type Suggestions = {
   stats: BuildStats;
   /** Owned pieces ranked against the build, best first, per slot. */
   pieces: Map<ArtifactSlot, ScoredPiece[]>;
-  /** What to change, per slot, and what changing it buys. */
-  comparisons: SlotComparison[];
-  /** Where the current gear stands against the build's thresholds. */
-  goals: GoalVerdict[];
-  /** Who holds each candidate, so a swap can say who it displaces. */
-  holderOf: Map<string, number | null>;
 };
 
 /**
@@ -476,17 +460,11 @@ export async function suggestionsFor(
   // as one is what put random-set pieces at the top of its swaps.
   const setPlan = effectiveSetPlan(build?.setPlan, sets);
 
-  const { comparisons, goals, holderOf } = await compareEverySlot({
-    db, profileId, characterId, catalog, annotations, build, stats, setPlan,
-  });
 
   return {
     build,
     builds,
     stats,
-    comparisons,
-    goals,
-    holderOf,
     pieces: await scoreOwnedPieces(db, profileId, characterId, stats),
     sets,
     setPlan,
@@ -499,259 +477,6 @@ export async function suggestionsFor(
       weaponSources,
     ).filter((suggestion) => isRecommendableWeapon(catalog, suggestion.weaponId)),
   };
-}
-
-const ALL_SLOTS: ArtifactSlot[] = ['flower', 'plume', 'sands', 'goblet', 'circlet'];
-
-type PieceRow = {
-  id: string; set_id: number; slot: string; rarity: number; level: number;
-  main_prop: string; substats_json: string; unactivated_json: string | null;
-  assigned_character_id: number | null;
-};
-
-const toComparable = (row: PieceRow): ComparablePiece => ({
-  instanceId: row.id,
-  setId: row.set_id,
-  slot: row.slot as ArtifactSlot,
-  rarity: row.rarity,
-  level: row.level,
-  mainProp: row.main_prop,
-  substats: JSON.parse(row.substats_json) as { prop: string; value: number }[],
-  unactivated: row.unactivated_json
-    ? JSON.parse(row.unactivated_json) as { prop: string; value: number }[]
-    : [],
-});
-
-/**
- * Runs the comparison for all five slots against one build.
- *
- * Candidates include pieces other characters are wearing. A swap that displaces
- * someone is still a real option — the move layer handles the displacement and
- * the row says whose it is — and hiding them would quietly narrow the answer to
- * whatever happens to be spare.
- */
-async function compareEverySlot(context: {
-  db: Db;
-  profileId: string;
-  characterId: number;
-  catalog: Catalog;
-  annotations: ResolvedAnnotations;
-  build: Build | null;
-  stats: BuildStats;
-  /** The sets to hold the swaps to. See `Suggestions.setPlan`. */
-  setPlan: SetRequirement[];
-}) {
-  const { db, profileId, characterId, catalog, annotations, build, stats, setPlan } = context;
-
-  const rows = (await db
-    .prepare(`SELECT id, set_id, slot, rarity, level, main_prop, substats_json,
-                     unactivated_json, assigned_character_id
-              FROM artifact_instance WHERE profile_id = ?`)
-    .all(profileId)) as unknown as PieceRow[];
-
-  const holderOf = new Map(rows.map((row) => [row.id, row.assigned_character_id]));
-  const equippedBySlot = new Map<ArtifactSlot, ComparablePiece>();
-  const bySlot = new Map<ArtifactSlot, ComparablePiece[]>();
-
-  for (const row of rows) {
-    const piece = toComparable(row);
-    bySlot.set(piece.slot, [...(bySlot.get(piece.slot) ?? []), piece]);
-    if (row.assigned_character_id === characterId) equippedBySlot.set(piece.slot, piece);
-  }
-
-  const bonusesBySet = new Map(
-    [...annotations.sets]
-      .filter(([, annotation]) => annotation.bonus2pc)
-      .map(([setId, annotation]) => [setId, annotation.bonus2pc!]),
-  );
-
-  const character = catalog.characters.get(characterId);
-  // Targets are planned at 90, which is where a build is judged. Comparing at
-  // the character's current level would rank pieces by how far along the
-  // levelling is rather than by how good they are.
-  const characterStats = character?.stats['90'] ?? { hp: 0, attack: 0, defense: 0 };
-
-  const weaponId = build?.weaponId ?? null;
-  const weapon = weaponId === null ? null : catalog.weapons.get(weaponId);
-  const weaponStats = weapon?.stats['90'];
-
-  const statInput = {
-    character: {
-      hp: characterStats.hp ?? 0,
-      attack: characterStats.attack ?? 0,
-      defense: characterStats.defense ?? 0,
-    },
-    ascension: character
-      ? { prop: character.substatType, value: characterStats.specialized ?? 0 }
-      : null,
-    weapon: weapon && weaponStats
-      ? {
-          baseAttack: weaponStats.attack ?? 0,
-          prop: weapon.mainStatType ?? null,
-          value: weaponStats.specialized ?? 0,
-        }
-      : null,
-    setBonuses: [],
-  };
-
-  const equipped = [...equippedBySlot.values()];
-  const currentCounts = new Map<number, number>();
-  for (const piece of equipped) {
-    currentCounts.set(piece.setId, (currentCounts.get(piece.setId) ?? 0) + 1);
-  }
-
-  const goals = evaluateGoals(
-    computeStats({
-      ...statInput,
-      pieces: equipped,
-      setBonuses: [...currentCounts]
-        .filter(([, count]) => count >= 2)
-        .flatMap(([setId]) => bonusesBySet.get(setId) ?? []),
-    }).totals,
-    build?.goals ?? [],
-  );
-
-  const comparisons = ALL_SLOTS.map((slot) => ({
-    slot,
-    equipped: equippedBySlot.get(slot) ?? null,
-    // The best few, and the best few nobody is wearing — see `shortlist`.
-    swaps: shortlist(compareSlot({
-      build: stats,
-      plannedSets: setPlan,
-      equipped: equippedBySlot.get(slot) ?? null,
-      // Below the floor is never a swap worth suggesting; see `rarity-floor.ts`.
-      candidates: (bySlot.get(slot) ?? []).filter((piece) => piece.rarity >= MIN_ARTIFACT_RARITY),
-      otherPieces: equipped.filter((piece) => piece.slot !== slot),
-      statInput,
-      goals: build?.goals ?? [],
-      bonusesBySet,
-    }), (swap) => (holderOf.get(swap.candidate.instanceId) ?? null) === null),
-  }));
-
-  return { comparisons, goals, holderOf };
-}
-
-/**
- * The account-wide queue.
- *
- * Runs the per-character comparison over every build that has a role a team
- * declared, plus any build not in a team, and folds the result into one
- * ordering. Sixty per-slot lists are not an answer; this is.
- */
-export async function accountAgenda(
-  catalog: Catalog,
-  db: Db = getDb(),
-): Promise<AgendaItem[]> {
-  const profileId = await getProfileId(db);
-  const builds = await readBuilds(db);
-  if (builds.length === 0) return [];
-
-  const stock = await readWeaponStock(db, profileId);
-  const holderOf = new Map<string, number | null>();
-
-  const entries = await Promise.all(
-    [...new Set(builds.map((build) => build.characterId))].map(async (characterId) => {
-      const suggestions = await suggestionsFor(characterId, catalog, db);
-      for (const [id, holder] of suggestions.holderOf) holderOf.set(id, holder);
-      return [characterId, suggestions] as const;
-    }),
-  );
-
-  const byCharacter = new Map(entries);
-
-  return buildAgenda({
-    holderOf,
-    takeCost: await takeCosts(db, profileId, byCharacter.values()),
-    builds: builds.flatMap((build) => {
-      const suggestions = byCharacter.get(build.characterId);
-      // Only the build the slot actually resolved to is measured. Scoring a
-      // sub-dps target against gear assembled for a support would invent work.
-      if (!suggestions || suggestions.build?.id !== build.id) return [];
-
-      const equippedSets = new Map<number, number>();
-      for (const comparison of suggestions.comparisons) {
-        if (!comparison.equipped) continue;
-        equippedSets.set(
-          comparison.equipped.setId,
-          (equippedSets.get(comparison.equipped.setId) ?? 0) + 1,
-        );
-      }
-
-      const owned = build.weaponId === null
-        ? 0
-        : [1, 2, 3, 4, 5].reduce(
-            (total, refinement) =>
-              total + (stock.get(`${build.weaponId}|${refinement}`)?.count ?? 0),
-            0,
-          );
-
-      return [{
-        buildId: build.id,
-        buildName: goalLabel(build),
-        characterId: build.characterId,
-        goals: suggestions.goals,
-        setPlan: build.setPlan,
-        weaponId: build.weaponId,
-        weaponAvailable: owned > 0,
-        equippedSets,
-        slots: suggestions.comparisons.map((comparison) => ({
-          slot: comparison.slot,
-          empty: comparison.equipped === null,
-          swaps: comparison.swaps,
-        })),
-      }];
-    }),
-  });
-}
-
-/**
- * What each planned character would give up by losing each piece they wear.
- *
- * The chain's own pricing (`costOfGivingUp`), run once over the snapshot so
- * the queue can tell a trade from a theft: a piece whose wearer has a spare
- * that serves them as well costs little to take, and one that holds their
- * four-piece together costs the set — which the queue never proposes.
- * Characters with no build are left out: the plan has nothing to lose there.
- */
-async function takeCosts(
-  db: Db,
-  profileId: string,
-  everyone: Iterable<Suggestions>,
-): Promise<Map<string, number | null>> {
-  const rows = (await db
-    .prepare(`SELECT id, set_id, slot, rarity, level, main_prop, substats_json,
-                     unactivated_json, assigned_character_id
-              FROM artifact_instance
-              WHERE profile_id = ? AND assigned_character_id IS NULL`)
-    .all(profileId)) as unknown as PieceRow[];
-
-  const spareBySlot = new Map<ArtifactSlot, ComparablePiece[]>();
-  for (const row of rows) {
-    if (row.rarity < MIN_ARTIFACT_RARITY) continue;
-    const piece = toComparable(row);
-    spareBySlot.set(piece.slot, [...(spareBySlot.get(piece.slot) ?? []), piece]);
-  }
-
-  const costs = new Map<string, number | null>();
-  for (const suggestions of everyone) {
-    if (!suggestions.build) continue;
-
-    for (const comparison of suggestions.comparisons) {
-      if (!comparison.equipped) continue;
-
-      costs.set(comparison.equipped.instanceId, costOfGivingUp({
-        stats: suggestions.stats,
-        plan: suggestions.setPlan,
-        piece: comparison.equipped,
-        otherSetIds: suggestions.comparisons
-          .filter((other) => other.slot !== comparison.slot && other.equipped)
-          .map((other) => other.equipped!.setId),
-        pool: spareBySlot.get(comparison.slot) ?? [],
-      }));
-    }
-  }
-
-  return costs;
 }
 
 /**
@@ -982,69 +707,3 @@ export async function farmingPlan(
   };
 }
 
-/**
- * The account-wide chain.
- *
- * Runs over every build that resolved, with the whole artifact inventory as
- * the pool. Evaluating builds one at a time cannot find this: the second move
- * only looks worthwhile once the first has freed its piece.
- */
-export async function accountCascade(
-  catalog: Catalog,
-  db: Db = getDb(),
-): Promise<CascadePlan> {
-  const profileId = await getProfileId(db);
-  const builds = await readBuilds(db);
-
-  const empty: CascadePlan = { moves: [], byBuild: [], netGain: 0, truncated: false };
-  if (builds.length === 0) return empty;
-
-  // Only the build a slot actually resolved to, for the same reason the agenda
-  // does it: measuring a support's gear against a sub-dps target invents work.
-  const resolved = await Promise.all(
-    [...new Set(builds.map((build) => build.characterId))].map(async (characterId) => {
-      const suggestions = await suggestionsFor(characterId, catalog, db);
-      return suggestions.build ? { build: suggestions.build, setPlan: suggestions.setPlan } : null;
-    }),
-  );
-
-  const active = new Map(
-    resolved.filter((entry) => entry !== null).map((entry) => [entry.build.id, entry]),
-  );
-  if (active.size === 0) return empty;
-
-  const cascadeBuilds: CascadeBuild[] = [...active.values()].map(({ build, setPlan }) => ({
-    buildId: build.id,
-    characterId: build.characterId,
-    name: goalLabel(build),
-    stats: {
-      mainStatsBySlot: new Map(Object.entries(build.mainStats) as [ArtifactSlot, string[]][]),
-      substats: build.substats,
-    },
-    // The same sets the build tab and the queue hold it to, written or not.
-    plannedSets: setPlan,
-  }));
-
-  const rows = (await db
-    .prepare(`SELECT id, set_id, slot, rarity, level, main_prop, substats_json,
-                     assigned_character_id
-              FROM artifact_instance WHERE profile_id = ?`)
-    .all(profileId)) as unknown as {
-      id: string; set_id: number; slot: string; rarity: number; level: number;
-      main_prop: string; substats_json: string; assigned_character_id: number | null;
-    }[];
-
-  return planCascade({
-    builds: cascadeBuilds,
-    pieces: rows.map((row) => ({
-      instanceId: row.id,
-      setId: row.set_id,
-      slot: row.slot as ArtifactSlot,
-      rarity: row.rarity,
-      level: row.level,
-      mainProp: row.main_prop,
-      substats: JSON.parse(row.substats_json) as { prop: string; value: number }[],
-      equippedTo: row.assigned_character_id,
-    })),
-  });
-}

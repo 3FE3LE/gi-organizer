@@ -120,36 +120,45 @@ export function RosterBulk({
 }
 
 /**
- * Putting a whole team into the plan: the members who are out come back in,
- * and nobody else moves. Disabled once all of them are already in.
+ * A whole team in or out of the plan, as one toggle.
+ *
+ * While any member is out, a press brings the missing ones back and nobody
+ * else moves. Once all of them are in, it is pressed — drawn filled — and the
+ * next press takes the team out again, the way a filter chip switches off.
  */
 export function RosterTeam({
   name,
   members,
+  labels,
 }: {
   name: string;
   /** The team's owned members, as the server last said. */
   members: readonly { characterId: number; dismissed: boolean }[];
+  labels: { include: string; remove: string };
 }) {
   const { apply } = useRosterOptimism();
   const planned = usePlannedCount(members);
   const ids = members.map((member) => member.characterId);
+  const allIn = planned === members.length;
+  const title = `${name} · ${allIn ? labels.remove : labels.include}`;
 
   return (
     <form
       action={async () => {
-        apply({ ids, dismissed: false });
-        await restoreRoster(ids);
+        apply({ ids, dismissed: allIn });
+        await (allIn ? dismissRoster(ids) : restoreRoster(ids));
       }}
     >
       <button
         type="submit"
-        disabled={planned === members.length}
-        className={buttonVariants({ variant: 'outline', size: 'xs', className: 'gap-1.5 text-2xs' })}
+        aria-pressed={allIn}
+        aria-label={title}
+        title={title}
+        className={buttonVariants({ variant: allIn ? 'default' : 'outline', size: 'xs', className: 'gap-1.5 text-2xs' })}
       >
         <Users size={11} aria-hidden />
         {name}
-        <span className="tabular font-mono text-muted">{planned}/{members.length}</span>
+        <span className={`tabular font-mono ${allIn ? '' : 'text-muted'}`}>{planned}/{members.length}</span>
       </button>
     </form>
   );

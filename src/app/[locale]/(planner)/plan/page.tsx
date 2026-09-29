@@ -79,7 +79,7 @@ export default async function PlanPage({ params, searchParams }: PageProps<'/[lo
   const today = gameWeekday(new Date(), region);
   const filters = await loadFilters(searchParams, today);
 
-  const { characterIds, team } = resolveScope(teams, filters);
+  const { characterIds } = resolveScope(teams, filters);
   const base = `/${locale}/plan`;
 
   // Started here and awaited where each piece is drawn: the plan feeds the
@@ -112,7 +112,6 @@ export default async function PlanPage({ params, searchParams }: PageProps<'/[lo
         filters={filters}
         locale={locale}
         region={region}
-        team={team}
         today={today}
       />
 

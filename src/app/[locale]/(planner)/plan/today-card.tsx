@@ -1,22 +1,23 @@
-import { Download, Swords, Target } from 'lucide-react';
+import { ArrowRight, Download, Swords, Target } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { Suspense } from 'react';
 
 import { GameIcon } from '@/components/game-icon';
 import { HoverLabel } from '@/components/hint';
+import { readyCount } from '@/components/ready-list';
 import { Skeleton } from '@/components/skeleton';
 import { buttonVariants } from '@/components/ui/button';
 import type { Catalog } from '@/lib/data/catalog';
 import type { Locale } from '@/lib/data/locales';
-import type { Team } from '@/lib/player/teams';
+import { getDb } from '@/lib/db/client';
 import type { farmingPlan } from '@/lib/rules/assemble';
 import { gameDate, nextGameReset, type GameRegion } from '@/lib/rules/game-day';
 import { charactersIn, domainsOn, type Weekday } from '@/lib/rules/materials';
+import { readyToLevel } from '@/lib/rules/ready';
 
-import { href, scopeHref, type Filters } from './filters';
+import { href, type Filters } from './filters';
 import { ResetCountdown } from './reset-countdown';
-import { UpgradesChip } from './upgrades-chip';
 
 type Plan = Awaited<ReturnType<typeof farmingPlan>>;
 
@@ -30,13 +31,12 @@ const FACES = 10;
  * day every visit starts from, whichever day the list below is showing. It
  * holds only what the rest of the page does not: how long the rotation has
  * left, who is waiting on today's domains across both kinds, and whether
- * there is gear to move before any resin is spent — a count from the other
- * tab, which nobody would otherwise open to find out.
+ * there is levelling the bag already pays for — a count from the other tab,
+ * which nobody would otherwise open to find out.
  *
  * The day and the countdown need nothing but the clock, so they paint with
- * the shell. The faces wait on the plan, behind a boundary of their own; the
- * upgrade count is asked for by the browser once the page has settled — see
- * `upgrades-chip.tsx` for why it is not part of this render.
+ * the shell. The faces wait on the plan, and the count on the bag, each
+ * behind a boundary of its own.
  */
 export async function TodayCard({
   plan,
@@ -45,7 +45,6 @@ export async function TodayCard({
   filters,
   locale,
   region,
-  team,
   today,
 }: {
   plan: Promise<Plan>;
@@ -54,8 +53,6 @@ export async function TodayCard({
   filters: Filters;
   locale: Locale;
   region: GameRegion;
-  /** The team the page is narrowed to, which the upgrade count follows. */
-  team: Team | null;
   today: Weekday;
 }) {
   const t = await getTranslations('plan');
@@ -78,7 +75,6 @@ export async function TodayCard({
           catalog={catalog}
           filters={filters}
           locale={locale}
-          team={team}
           today={today}
         />
       </Suspense>
@@ -92,7 +88,6 @@ async function TodayBody({
   catalog,
   filters,
   locale,
-  team,
   today,
 }: {
   plan: Promise<Plan>;
@@ -100,7 +95,6 @@ async function TodayBody({
   catalog: Catalog;
   filters: Filters;
   locale: Locale;
-  team: Team | null;
   today: Weekday;
 }) {
   const t = await getTranslations('plan');
@@ -162,11 +156,11 @@ async function TodayBody({
             {t('domainsToday', { count: domains.length })}
           </Link>
         )}
-        <UpgradesChip
-          locale={locale}
-          teamId={team?.id ?? null}
-          href={scopeHref(`/${locale}/plan/upgrades`, { team: team?.id ?? null })}
-        />
+        {/* Its own boundary: it reads the bag and the roster, and the day
+            card should not wait on that to paint. */}
+        <Suspense fallback={null}>
+          <ReadyLink catalog={catalog} locale={locale} />
+        </Suspense>
       </div>
     </div>
   );
@@ -211,5 +205,19 @@ async function Onboarding({ locale }: { locale: Locale }) {
         ))}
       </ol>
     </div>
+  );
+}
+
+/** "N things you can level now", to the tab that lists them; nothing when there are none. */
+async function ReadyLink({ catalog, locale }: { catalog: Catalog; locale: string }) {
+  const t = await getTranslations('ready');
+  const count = readyCount(await readyToLevel(catalog, getDb()));
+  if (count === 0) return null;
+
+  return (
+    <Link href={`/${locale}/plan/ready`} className={buttonVariants({ size: 'xs', className: 'gap-1.5' })}>
+      {t('readyLink', { count })}
+      <ArrowRight size={12} aria-hidden />
+    </Link>
   );
 }

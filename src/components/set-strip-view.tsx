@@ -67,9 +67,9 @@ export function SetStripView({
   return (
     <div
       data-pending={pending || undefined}
-      className="min-w-0 space-y-1.5 transition-opacity data-pending:opacity-60"
+      className="min-w-0 transition-opacity data-pending:opacity-60"
     >
-      <p className={GROUP_LABEL}>{t('setLabel')}</p>
+      <p className={`${GROUP_LABEL} mb-0.5`}>{t('setLabel')}</p>
 
       <div className="relative">
       {/* Arrows for a pointer, which has no swipe: a page at a time, and only
@@ -84,7 +84,9 @@ export function SetStripView({
       <ul
         ref={rowRef}
         aria-label={t('setAria')}
-        className="-mx-1 flex snap-x gap-1.5 overflow-x-auto px-1 pb-1.5 pt-1 md:cursor-grab md:active:cursor-grabbing"
+        // Just enough above and below for the chosen set's ring and the count
+        // hanging off each tile, which the scroll box would otherwise clip.
+        className="-mx-1 flex snap-x gap-1.5 overflow-x-auto px-1 py-1 md:cursor-grab md:active:cursor-grabbing"
       >
         {sets.map((set) => {
           const isSelected = set.setId === selected;
@@ -125,7 +127,7 @@ export function SetStripView({
       <DockFold when="docked">
       <div aria-live="polite">
         {showEffects && active && (
-          <div className="flex items-start gap-3 card-2 px-3 py-1.5">
+          <div className="mt-1.5 flex items-start gap-3 card-2 px-3 py-1.5">
             <AssetImage src={active.icon} kind="relic" alt="" className="h-8 w-8 shrink-0" sizes="32px" />
             <div className="min-w-0 flex-1 space-y-1">
               <p className="text-sm">

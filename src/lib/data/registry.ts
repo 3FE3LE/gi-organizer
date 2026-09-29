@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import type { GoodCrosswalk } from '@/lib/good/keys';
+import type { LevellingData } from '@/lib/rules/affordable';
 import type { BossDrop, ResinRates } from '@/lib/rules/resin';
 
 import type { Locale } from './locales';
@@ -133,6 +134,16 @@ export function getResinRates() {
     path.join(process.cwd(), 'src', 'data', 'curated', 'resin.json'), 'utf8',
   ).then((raw) => JSON.parse(raw) as ResinRates);
   return resinRates;
+}
+
+let levellingData: Promise<LevellingData> | undefined;
+
+/** EXP tables, level caps and fate phases, curated by hand — see `lib/rules/affordable.ts`. */
+export function getLevellingData() {
+  levellingData ??= readFile(
+    path.join(process.cwd(), 'src', 'data', 'curated', 'levelling.json'), 'utf8',
+  ).then((raw) => JSON.parse(raw) as LevellingData);
+  return levellingData;
 }
 
 const EMPTY_DETAIL: CharacterDetailStrings = { talents: null, constellation: null };

@@ -821,7 +821,8 @@ body {
     border: 1px solid var(--edge);
     border-radius: var(--radius-card);
     box-shadow: var(--shadow-card), var(--sheen);
-    padding: 0.85rem 1rem;
+    /* 12px all round, the filter cards' padding. */
+    padding: 0.75rem;
   }
 }
 

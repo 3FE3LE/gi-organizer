@@ -43,7 +43,7 @@ export type NavItem = { id: string; href: string; label: string };
  * is `display: none`, which takes it out of the accessibility tree and the tab
  * order too, so a screen reader still meets exactly five links.
  *
- * Active is a prefix match rather than an exact one, because `/plan/upgrades`
+ * Active is a prefix match rather than an exact one, because `/plan/ready`
  * and `/data/import` are inside their section and should light it up.
  */
 export function MainNav({

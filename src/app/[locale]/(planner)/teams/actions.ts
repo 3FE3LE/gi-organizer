@@ -18,6 +18,7 @@ import {
   setRoles,
   setSlot,
 } from '@/lib/player/teams';
+import { followTeamIntoPlan } from '@/lib/player/team-plan';
 import { getBuildPriorities } from '@/lib/rules/assemble';
 import { preferredPositions } from '@/lib/rules/slot-order';
 import { suggestRoles } from '@/lib/rules/suggest-role';
@@ -95,6 +96,7 @@ export async function addSlotAction(
   // Placed by role — see `preferredPositions`; a drag moves them after.
   const result = await setSlot(teamId, characterId, preferredPositions(roles));
   if (result.ok && roles.length > 0) await setRoles(teamId, characterId, roles);
+  if (result.ok) await followTeamIntoPlan(characterId, true);
   refreshEverywhere();
 
   if (result.ok) {
@@ -157,10 +159,13 @@ export async function removeSlotAction(
   form: FormData,
 ): Promise<TeamActionState> {
   const t = await getTranslations('teams.actions');
-  await removeSlot(String(form.get('teamId') ?? ''), Number(form.get('characterId')));
+  const characterId = Number(form.get('characterId'));
+  await removeSlot(String(form.get('teamId') ?? ''), characterId);
+  await followTeamIntoPlan(characterId, false);
   refreshEverywhere();
   return { status: 'ok', message: t('memberRemoved') };
 }
+
 
 export async function setRolesAction(
   _previous: TeamActionState,

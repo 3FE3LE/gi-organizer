@@ -64,7 +64,7 @@ export type SlotView = {
   card: {
     rarity: number;
     elementType: string;
-    marks: { dismissed: string; today: string; todayTitle: string };
+    marks: { planned: string; today: string; todayTitle: string };
     /** Null for somebody not on the roster, which a team slot cannot really hold. */
     progress: {
       level: number;

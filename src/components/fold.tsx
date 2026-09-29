@@ -28,14 +28,21 @@ const InGroup = createContext(false);
 
 export function FoldGroup({
   className,
+  defaultOpen,
   children,
 }: {
   className?: string;
+  /** The `value` of the fold that starts open, when one should. */
+  defaultOpen?: string;
   children: React.ReactNode;
 }) {
   return (
     <InGroup value>
-      <Accordion.Root multiple={false} className={className}>
+      <Accordion.Root
+        multiple={false}
+        defaultValue={defaultOpen === undefined ? undefined : [defaultOpen]}
+        className={className}
+      >
         {children}
       </Accordion.Root>
     </InGroup>
@@ -67,6 +74,7 @@ const LOOKS = {
 export function Fold({
   summary,
   children,
+  value,
   look = 'card',
   defaultOpen = false,
   mark = 'start',
@@ -78,6 +86,8 @@ export function Fold({
   /** The line that stays: what the fold is, and what is worth knowing shut. */
   summary: React.ReactNode;
   children: React.ReactNode;
+  /** Names the fold inside a group, so `FoldGroup` can open it first. */
+  value?: string;
   look?: keyof typeof LOOKS;
   /** Open on first render. Key the fold on it to reopen on a new value. */
   defaultOpen?: boolean;
@@ -93,7 +103,7 @@ export function Fold({
 
   const item = (
     <Accordion.Item
-      value={grouped ? undefined : 'fold'}
+      value={grouped ? value : 'fold'}
       className={`${dress.item} ${className}`}
       style={style}
     >

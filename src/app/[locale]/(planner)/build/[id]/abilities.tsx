@@ -8,6 +8,8 @@ import { buttonVariants } from '@/components/ui/button';
 import { AssetImage } from '@/components/asset-image';
 import { Hint } from '@/components/hint';
 import { Slider } from '@/components/ui/slider';
+import { plainText } from '@/lib/data/game-text';
+import { Fold, FoldGroup } from '@/components/fold';
 import { GameText } from '@/components/game-text';
 import {
   Dialog,
@@ -262,18 +264,34 @@ function AbilityPanel({ ability, closeLabel }: { ability: Ability; closeLabel: s
         </DialogClose>
       </header>
 
-      <div className="flex-1 space-y-4 overflow-y-auto px-4 py-3">
-        {ability.description && (
-          <GameText text={ability.description} className="text-xs leading-relaxed text-muted" />
-        )}
-
-        {scaling && levels > 0 && (
-          <section>
-            <div className="mb-2 flex items-center gap-3">
-              <h3 className="font-mono text-2xs uppercase tracking-wide text-muted">
-                {t('abilityScaling')}
-              </h3>
-              <label className="flex flex-1 items-center gap-2">
+      {/*
+        * Numbers first, prose a tap away.
+        *
+        * What a talent does is read once; what it does at the next level is
+        * the question asked every time the dialog opens — so the table opens
+        * with its slider, and the description is the other fold. One open at
+        * a time: the dialog is a phone's height, and the two stacked put the
+        * table under the fold of the screen.
+        *
+        * Constellations and passives have no table, so they are just the text.
+        */}
+      <div className="flex-1 overflow-y-auto">
+        {scaling && levels > 0 ? (
+          <FoldGroup defaultOpen="effects">
+            <Fold
+              value="effects"
+              look="row"
+              className="border-t-0"
+              triggerClassName="px-4"
+              summary={(
+                <span className="flex min-w-0 flex-1 items-baseline justify-between gap-3">
+                  <span className="font-mono text-2xs uppercase tracking-wide text-muted">{t('abilityScaling')}</span>
+                  <span className="tabular font-mono text-2xs">{t('abilityLevelShort', { level })}</span>
+                </span>
+              )}
+              panelClassName="px-4 py-3"
+            >
+              <label className="mb-2 flex items-center gap-2">
                 <span className="sr-only">{t('abilityLevelSlider')}</span>
                 <Slider
                   min={1}
@@ -283,37 +301,62 @@ function AbilityPanel({ ability, closeLabel }: { ability: Ability; closeLabel: s
                   onValueChange={(next) => setLevel(Number(next))}
                   className="min-w-0 flex-1"
                 />
-                <span className="tabular w-16 shrink-0 text-right font-mono text-2xs">
-                  {t('abilityLevelShort', { level })}
-                </span>
               </label>
+
+              <dl className="divide-y divide-edge/60 border-y border-edge/60">
+                {scaling.labels.map((template) => {
+                  const [label, value] = splitLabel(template);
+
+                  return (
+                    <div key={template} className="flex items-baseline gap-3 py-1.5">
+                      <dt className="min-w-0 flex-1 text-xs text-muted">{label}</dt>
+                      <dd className="tabular shrink-0 font-mono text-xs">
+                        {fill(value, scaling.parameters, level)}
+                      </dd>
+                    </div>
+                  );
+                })}
+              </dl>
+            </Fold>
+
+            {ability.description && (
+              <Fold
+                value="description"
+                look="row"
+                triggerClassName="px-4"
+                summary={(
+                  <span className="font-mono text-2xs uppercase tracking-wide text-muted">{t('abilityDescription')}</span>
+                )}
+                panelClassName="px-4 py-3"
+              >
+                <GameText text={ability.description} className="text-xs leading-relaxed text-muted" />
+              </Fold>
+            )}
+          </FoldGroup>
+        ) : (
+          ability.description && (
+            <div className="px-4 py-3">
+              <GameText text={ability.description} className="text-xs leading-relaxed text-muted" />
             </div>
-
-            <dl className="divide-y divide-edge/60 border-y border-edge/60">
-              {scaling.labels.map((template) => {
-                const [label, value] = splitLabel(template);
-
-                return (
-                  <div key={template} className="flex items-baseline gap-3 py-1.5">
-                    <dt className="min-w-0 flex-1 text-xs text-muted">{label}</dt>
-                    <dd className="tabular shrink-0 font-mono text-xs">
-                      {fill(value, scaling.parameters, level)}
-                    </dd>
-                  </div>
-                );
-              })}
-            </dl>
-          </section>
+          )
         )}
       </div>
     </div>
   );
 }
 
-/** `"Daño al pulsar|{param1:P}"` → the name and the template beside it. */
+/**
+ * `"Daño al pulsar|{param1:P}"` → the name and the template beside it.
+ *
+ * Through the same cleaning as the description first: these strings carry the
+ * game's markup too — a leading `#` on a label that holds a placeholder, and
+ * `{NON_BREAK_SPACE}` inside the unit — and printed raw they read as
+ * `#Bono de ATQ máx.` and `410.0{NON_BREAK_SPACE}pts.`.
+ */
 function splitLabel(template: string): [string, string] {
-  const at = template.indexOf('|');
-  return at === -1 ? [template, ''] : [template.slice(0, at), template.slice(at + 1)];
+  const clean = plainText(template);
+  const at = clean.indexOf('|');
+  return at === -1 ? [clean, ''] : [clean.slice(0, at), clean.slice(at + 1)];
 }
 
 /**

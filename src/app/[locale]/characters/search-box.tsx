@@ -3,6 +3,7 @@
 import { Search } from 'lucide-react';
 import { debounce, useQueryState } from 'nuqs';
 import { useTransition } from 'react';
+import { GROUP_LABEL } from '@/components/segmented-links';
 
 import { rosterParsers } from './filters';
 
@@ -29,9 +30,15 @@ export function SearchBox({ label, placeholder }: { label: string; placeholder: 
   );
 
   return (
+    // Named like its neighbours wherever it sits in a row with them — from
+    // `sm` up, where the grouping and the elements beside it each carry a
+    // heading and a bare box read as the odd one out. On a phone it has the
+    // row to itself, and the icon and the placeholder say what it is.
+    <div className="space-y-0.5">
+      <p aria-hidden className={`${GROUP_LABEL} max-sm:hidden`}>{label}</p>
     <label
       data-pending={pending || undefined}
-      className="field flex h-9 min-w-0 items-center gap-2 rounded-lg px-2.5 transition-opacity data-pending:opacity-60 sm:w-64"
+      className="field flex h-9 min-w-0 items-center gap-2 rounded-lg px-2.5 transition-opacity data-pending:opacity-60"
     >
       <Search size={14} aria-hidden className="shrink-0 text-muted" />
       <span className="sr-only">{label}</span>
@@ -48,5 +55,6 @@ export function SearchBox({ label, placeholder }: { label: string; placeholder: 
         className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted"
       />
     </label>
+    </div>
   );
 }

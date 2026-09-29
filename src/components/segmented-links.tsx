@@ -17,7 +17,9 @@ export const GROUP_LABEL = 'font-mono text-2xs uppercase tracking-wide text-mute
  * through a one-pixel gap, and a translucent segment would let it through.
  */
 function segmentClass(active: boolean) {
-  return `flex min-h-8 grow items-center justify-center gap-1.5 whitespace-nowrap px-2.5 text-xs transition-colors ${
+  // 34px inside a one-pixel border: 36 in all, the height of the app's fields,
+  // so a strip and the search box beside it end on the same line.
+  return `flex min-h-[2.125rem] grow items-center justify-center gap-1.5 whitespace-nowrap px-2.5 text-xs transition-colors ${
     active
       ? 'bg-accent font-medium text-on-accent'
       : 'bg-[color-mix(in_oklab,var(--surface-2)_50%,var(--surface))] text-muted hover:bg-surface-2 hover:text-text'

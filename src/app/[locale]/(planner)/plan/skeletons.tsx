@@ -29,8 +29,8 @@ export function TodayCardSkeleton() {
 
 export function FilterBarSkeleton() {
   return (
-    <div className="card flex flex-col gap-3 p-4">
-      <div className="flex items-center gap-1 sm:gap-3">
+    <div className="card flex flex-col">
+      <div className="flex items-center gap-1 p-3 sm:gap-3">
         <span className="flex flex-1 gap-1">
           {Array.from({ length: 7 }, (_, index) => (
             <Skeleton key={index} className="h-[52px] w-9 rounded-xl sm:w-10" />
@@ -38,7 +38,10 @@ export function FilterBarSkeleton() {
         </span>
         <Skeleton className="h-[52px] w-10 rounded-xl sm:h-8 sm:w-16" />
       </div>
-      <Skeleton className="h-9 rounded-xl" />
+      {/* "More filters", the row across the card's foot. */}
+      <div className="border-t border-edge px-3 py-2">
+        <Skeleton className="h-4 w-28" />
+      </div>
     </div>
   );
 }

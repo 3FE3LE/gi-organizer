@@ -5,26 +5,20 @@ import { ViewTransition } from 'react';
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-import { ArtifactLegend } from '@/components/artifact-legend';
 import { GameIcon } from '@/components/game-icon';
 import { HoverLabel } from '@/components/hint';
+import { ReadyLists } from '@/components/ready-list';
 import { SectionTabs } from '@/components/section-tabs';
-import { propLabel } from '@/lib/data/catalog';
 import { isLocale } from '@/lib/data/locales';
-import { readArtifacts, type OwnedArtifact } from '@/lib/player/artifacts';
+import { readyToLevel } from '@/lib/rules/ready';
 import { roleLabel } from '@/lib/rules/role-labels';
 import { getAccountCatalog } from '@/lib/player/traveler';
 
-import { EmptyArtifactSlot } from '@/components/empty-artifact-slot';
-import { StatusIcon, statusTone } from '@/components/status-icon';
-import type { PieceFit } from '@/lib/rules/piece-score';
-import type { ArtifactSlot } from '@/lib/data/types';
 
-import { OwnedArtifactCard } from '../../artifacts/artifact-card';
 
 import { BuildPicker } from './build-picker';
 import { CharacterPanel } from './character-panel';
-import { EquippedFit, fitsById } from './equipped-fit';
+import { fitsById } from './equipped-fit';
 import { loadBuildContext, type BuildContext } from './context';
 import { upgradeCostFor } from './cost-view';
 import { neighboursOf, type Neighbour as NeighbourEntry } from './neighbours';
@@ -33,8 +27,6 @@ import { SWIPE_TYPE } from './swipe-type';
 import { objectiveViewFor } from './objective-view';
 import { TABS, loadBuildParams, serializeBuildParams, type Tab } from './params';
 import { ProgressPanel } from './progress-form';
-import { SwapVerdict, type SlotPanel } from './swaps';
-import { swapPanelsFor } from './swaps-view';
 import { UpgradeCostPanel } from './upgrade-cost';
 
 /** Reads the player's gear, so it can never be a build artifact. */
@@ -185,7 +177,6 @@ export default async function BuildPage({
       >
         <div>
           {tab === 'objective' && <ObjectiveTab context={context} />}
-          {tab === 'changes' && <ChangesTab context={context} />}
         </div>
       </ViewTransition>
     </div>
@@ -194,7 +185,11 @@ export default async function BuildPage({
 
 async function ObjectiveTab({ context }: { context: BuildContext }) {
   const { character, locale } = context;
-  const [view, cost] = await Promise.all([objectiveViewFor(context), upgradeCostFor(context)]);
+  const [view, cost, ready] = await Promise.all([
+    objectiveViewFor(context),
+    upgradeCostFor(context),
+    readyToLevel(context.catalog, context.db, new Set([context.characterId])),
+  ]);
   const t = await getTranslations('build');
 
   return (
@@ -216,171 +211,14 @@ async function ObjectiveTab({ context }: { context: BuildContext }) {
           price. Editing the level above and reading the cost below is one
           question, and it was previously asked on two screens. */}
       <UpgradeCostPanel cost={cost} catalog={context.catalog} locale={locale} />
+
+      {/* The other side of that price: what the bag already pays for, on
+          this character and the weapon they hold. */}
+      <section className="space-y-3">
+        <h2 className="text-sm font-medium uppercase tracking-wide text-muted">{t('readyHeading')}</h2>
+        <ReadyLists ready={ready} catalog={context.catalog} locale={locale} single />
+      </section>
     </div>
-  );
-}
-
-async function ChangesTab({ context }: { context: BuildContext }) {
-  const { catalog, characterId, locale, suggestions } = context;
-  const t = await getTranslations('build');
-  const roleLabelT = await getTranslations('common.role');
-  const objectiveHref = serializeBuildParams(
-    `/${locale}/build/${characterId}`,
-    { build: suggestions.build?.id ?? null, tab: 'objective' },
-  );
-
-  /*
-   * No wall when the player has not authored a goal.
-   *
-   * This tab used to refuse to render without `suggestions.build`, while the
-   * Objetivo tab beside it opened on a filled-in form — the worn gear for the
-   * stats and `ASSUMED_TARGET` for the level — and the plan costed that same
-   * assumption out in books and mora. Three views, two definitions of "has an
-   * objective", and the two that disagreed sat one click apart.
-   *
-   * The refusal was not even protecting anything: `suggestionsFor` already
-   * falls back to `buildStatsFor(priorities)`, the curated priority list, and
-   * `compareEverySlot` runs on that fallback whether or not a build row
-   * exists. The ranking was computed and then thrown away. So it is shown, and
-   * a line says what it was measured against — which is the honest difference
-   * between a goal the player wrote and one the app assumed.
-   */
-  const [panels, box] = await Promise.all([swapPanelsFor(context), readArtifacts(context.db)]);
-  const byId = new Map(box.map((piece) => [piece.instanceId, piece]));
-  const fits = fitsById(context.suggestions);
-  const swaps = panels.reduce((total, panel) => total + panel.swaps.length, 0);
-
-  return (
-    <section className="space-y-6">
-      <div className="mb-3 flex flex-wrap items-center gap-3">
-        <h2 className="flex items-center gap-1 text-sm font-medium uppercase tracking-wide text-muted">
-          {t('changesHeading')}
-          <ArtifactLegend fit />
-        </h2>
-        {suggestions.build ? (
-          <span className="font-mono text-xs text-muted">
-            {t('objectiveRole', { role: roleLabel(roleLabelT, suggestions.build.role) })}
-          </span>
-        ) : (
-          <span className="font-mono text-xs text-muted">
-            {t('changesAssumed')}{' '}
-            <Link href={objectiveHref} className="underline hover:text-accent">
-              {t('changesAssumedLink')}
-            </Link>
-          </span>
-        )}
-        {suggestions.goals.map((goal) => (
-          <span key={goal.prop} className={`inline-flex items-center gap-1 font-mono text-xs ${statusTone(goal.status)}`}>
-            <StatusIcon status={goal.status} />
-            {propLabel(catalog, goal.prop)} {Math.round(goal.actual)}/{goal.min}
-          </span>
-        ))}
-      </div>
-
-      {swaps === 0 ? (
-        <p className="max-w-prose text-sm text-muted">
-          {t('noSwapsMessage')}{' '}
-          <Link href={`/${locale}/plan`} className="underline hover:text-accent">
-            {t('whatRotatesLink')}
-          </Link>
-          .
-        </p>
-      ) : (
-        <div className="space-y-4">
-          {panels.map((panel) => (
-            <SlotChanges
-              key={panel.slot}
-              panel={panel}
-              byId={byId}
-              fits={fits}
-              characterId={characterId}
-              catalog={catalog}
-              locale={locale}
-            />
-          ))}
-        </div>
-      )}
-    </section>
-  );
-}
-
-/**
- * One slot of the changes tab: the piece worn, then every piece that beats it.
- *
- * Drawn with the box's own card, so a piece reads here exactly as it does on
- * the artifacts page — the same stats, roll marks and holder line — and the
- * worn one sits first in the row, so each candidate is read against it by
- * looking left. What this tab adds goes under each card: the verdict and the
- * button that acts on it.
- */
-async function SlotChanges({
-  panel,
-  byId,
-  fits,
-  characterId,
-  catalog,
-  locale,
-}: {
-  panel: SlotPanel;
-  byId: Map<string, OwnedArtifact>;
-  fits: Map<string, PieceFit>;
-  characterId: number;
-  catalog: BuildContext['catalog'];
-  locale: string;
-}) {
-  const t = await getTranslations('build');
-  const equipped = panel.equippedId ? byId.get(panel.equippedId) : undefined;
-
-  return (
-    <section>
-      <h3 className="mb-2 font-mono text-2xs uppercase tracking-wide text-muted">{panel.title}</h3>
-
-      <ul className="artifact-grid">
-        {equipped ? (
-          <OwnedArtifactCard
-            piece={equipped}
-            scaler={null}
-            catalog={catalog}
-            locale={locale}
-            hideSlot
-            footerExtra={<EquippedFit fit={fits.get(equipped.instanceId)} mainProp={equipped.mainProp} catalog={catalog} />}
-          >
-            <p className="mt-2 border-t border-edge pt-1.5 font-mono text-2xs text-accent">
-              {t('equippedHeader')}
-            </p>
-          </OwnedArtifactCard>
-        ) : (
-          <EmptyArtifactSlot
-            slot={panel.slot as ArtifactSlot}
-            label={panel.title}
-            emptyText={t('emptySlotText')}
-            withFooter
-          />
-        )}
-
-        {panel.swaps.map((swap) => {
-          const piece = byId.get(swap.instanceId);
-          if (!piece) return null;
-
-          return (
-            <OwnedArtifactCard
-              key={swap.instanceId}
-              piece={piece}
-              scaler={null}
-              catalog={catalog}
-              locale={locale}
-              hideSlot
-            >
-              <SwapVerdict swap={swap} characterId={characterId} />
-            </OwnedArtifactCard>
-          );
-        })}
-      </ul>
-
-      {panel.swaps.length === 0 && (
-        <p className="mt-2 text-xs text-muted">{t('noSwapsForSlot')}</p>
-      )}
-    </section>
   );
 }
 

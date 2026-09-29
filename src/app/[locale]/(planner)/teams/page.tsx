@@ -64,7 +64,7 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
   const rosterById = new Map(rosterRows.map((entry) => [entry.characterId, entry]));
   const weekday = gameWeekday(new Date(), region);
   const markLabels = {
-    dismissed: tCharacters('dismissedTitle'),
+    planned: tCharacters('plannedTitle'),
     today: tCharacters('booksToday'),
     todayTitle: tCharacters('booksTodayTitle'),
   };
@@ -501,7 +501,7 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
                 talents: tCharacters('legendTalents'),
                 today: tCharacters('legendToday'),
                 todayText: tCharacters('booksToday'),
-                dismissed: tCharacters('legendDismissed'),
+                planned: tCharacters('legendPlanned'),
               }}
             />
           )}

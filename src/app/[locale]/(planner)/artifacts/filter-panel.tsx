@@ -121,7 +121,7 @@ export async function FilterPanel({
         * — folds away under it, first the row of choices and then the rest.
         */}
       <div className="card">
-      <div className="px-3 pb-1 pt-2.5">
+      <div className="p-3">
         <SetStrip sets={sets} />
       </div>
 

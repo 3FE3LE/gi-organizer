@@ -1,4 +1,4 @@
-import { EyeOff } from 'lucide-react';
+import { CalendarCheck } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { ElementIcon } from '@/components/element-icon';
@@ -38,9 +38,13 @@ export function CardWash({ elementType, rarity }: { elementType: string; rarity:
 }
 
 /**
- * The one mark a card carries in its corner: out of the plan, or a talent
- * book they still need is in rotation today. Out of the plan wins — the plan
- * farms nothing for them.
+ * The one mark a card carries in its corner: whether the plan farms for them.
+ *
+ * A calendar for someone in the plan, and "hoy" instead when a talent book
+ * they still need is in rotation today — which says the same and more. Out of
+ * the plan carries nothing: it used to be a crossed-out eye, the one mark on
+ * the roster that said what a character was not, and on an account trimmed to
+ * a dozen it was on nearly every card.
  *
  * Its explanation depends on what the card is. A card that is itself a link —
  * the roster's — cannot hold a second thing to focus, and a tooltip inside it
@@ -59,7 +63,7 @@ export function CardMark({
 }: {
   dismissed: boolean;
   booksToday: boolean;
-  labels: { dismissed: string; today: string; todayTitle: string };
+  labels: { planned: string; today: string; todayTitle: string };
   /** Whether the mark can take focus and a hint: only on a card that is not a link. */
   focusable?: boolean;
   /** Where in the corner, for a card that keeps something else there. */
@@ -71,20 +75,20 @@ export function CardMark({
     ? ' focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
     : '';
 
-  if (dismissed) {
+  if (dismissed) return null;
+  if (!booksToday) {
     return explain(
-      labels.dismissed,
+      labels.planned,
       <span
-        title={focusable ? undefined : labels.dismissed}
+        title={focusable ? undefined : labels.planned}
         tabIndex={focusable ? 0 : undefined}
-        className={`absolute z-10 rounded-sm text-muted ${className}${ring}`}
+        className={`absolute z-10 rounded-sm text-accent after:absolute after:-inset-1.5 after:content-[''] ${className}${ring}`}
       >
-        <EyeOff size={13} aria-hidden />
-        <span className="sr-only">{labels.dismissed}</span>
+        <CalendarCheck size={14} aria-hidden />
+        <span className="sr-only">{labels.planned}</span>
       </span>,
     );
   }
-  if (!booksToday) return null;
 
   return explain(
     labels.todayTitle,
@@ -197,7 +201,7 @@ export function CardLegend({
   labels,
   className = '',
 }: {
-  labels: { summary: string; ring: string; talents: string; today: string; todayText: string; dismissed: string };
+  labels: { summary: string; ring: string; talents: string; today: string; todayText: string; planned: string };
   className?: string;
 }) {
   const common = useTranslations('common');
@@ -235,7 +239,7 @@ export function CardLegend({
       ),
       text: labels.today,
     },
-    { key: 'dismissed', mark: <EyeOff size={14} aria-hidden className="text-muted" />, text: labels.dismissed },
+    { key: 'planned', mark: <CalendarCheck size={14} aria-hidden className="text-accent" />, text: labels.planned },
   ];
 
   return (

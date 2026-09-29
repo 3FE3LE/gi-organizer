@@ -9,9 +9,14 @@ import { createLoader, createSerializer, parseAsString, parseAsStringLiteral } f
  */
 
 /**
- * The tabs: plan, then decisions.
+ * The tabs: the plan, alone now.
  *
- * There were four. A gear tab listing every slot's candidates repeated what
+ * There were four. The last to go was `Cambios`, a per-slot list of swaps: it
+ * ranked pieces by a score that could barely tell a fresh piece with perfect
+ * rolls from a finished one a few crit points ahead, and the gear dialog opened
+ * from each slot already compares the two side by side.
+ *
+ * Before it, a gear tab listing every slot's candidates repeated what
  * the character panel above it already showed, so editing a piece moved onto
  * the piece. A `Ficha` tab held the reference material — talents,
  * constellations, the stat table, the material costs — under a panel that was
@@ -29,7 +34,6 @@ import { createLoader, createSerializer, parseAsString, parseAsStringLiteral } f
  */
 export const TABS = [
   { key: 'objective', label: 'Objetivo' },
-  { key: 'changes', label: 'Cambios' },
 ] as const;
 
 export type Tab = (typeof TABS)[number]['key'];

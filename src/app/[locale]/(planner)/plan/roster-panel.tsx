@@ -182,7 +182,12 @@ export async function RosterPanel({
             <p className="font-mono text-2xs uppercase text-muted">{t('planTeamLabel')}</p>
             <div className="flex flex-wrap gap-2">
               {squads.map((squad) => (
-                <RosterTeam key={squad.id} name={squad.name} members={squad.members} />
+                <RosterTeam
+                  key={squad.id}
+                  name={squad.name}
+                  members={squad.members}
+                  labels={{ include: t('teamIncludeTitle'), remove: t('teamRemoveTitle') }}
+                />
               ))}
             </div>
           </div>

@@ -62,86 +62,93 @@ export async function FilterBar({
   const team = teams.find((entry) => entry.id === filters.team);
 
   return (
-    <div className="card flex flex-col p-4 transition-[padding] duration-200 group-data-[stuck]/dock:p-2">
-      {/* The day strip is the view toggle: a day is either the one thing this
-          is scoped to, or — tapped again — nothing, which is the whole
-          backlog. A separate "por día"/"todo el backlog" pair said the same
-          thing in a row of its own and doubled the number of controls that
-          answer one question. Horizontal scroll is the fallback for a phone
-          too narrow to fit all seven at once, not the expected way to read
-          it — the strip stays one row rather than wrapping the last day or
-          two beneath the first. */}
-      <div className="flex items-center gap-1 sm:gap-3">
-        <nav className="-mx-1 flex min-w-0 flex-1 gap-1 overflow-x-auto px-1 pb-0.5">
-          {gameWeekStrip(new Date(), region).map(({ day, date }) => {
-            const active = filters.range === 'day' && day === filters.day;
-            // Today keeps its own mark, in the colour for time: once another
-            // day is picked the selection no longer says which one is today.
-            const isToday = day === gameWeekday(new Date(), region);
+    // The padding is on the part above the fold rather than on the card, so
+    // "more filters" is a row across the card's full width — the same row the
+    // artifacts and characters pages end their filter cards with — instead of
+    // a card of its own inside this one.
+    <div className="card flex flex-col">
+      <div className="p-3 transition-[padding] duration-200 group-data-[stuck]/dock:p-2">
+        {/* The day strip is the view toggle: a day is either the one thing this
+            is scoped to, or — tapped again — nothing, which is the whole
+            backlog. A separate "por día"/"todo el backlog" pair said the same
+            thing in a row of its own and doubled the number of controls that
+            answer one question. Horizontal scroll is the fallback for a phone
+            too narrow to fit all seven at once, not the expected way to read
+            it — the strip stays one row rather than wrapping the last day or
+            two beneath the first. */}
+        <div className="flex items-center gap-1 sm:gap-3">
+          <nav className="-mx-1 flex min-w-0 flex-1 gap-1 overflow-x-auto px-1">
+            {gameWeekStrip(new Date(), region).map(({ day, date }) => {
+              const active = filters.range === 'day' && day === filters.day;
+              // Today keeps its own mark, in the colour for time: once another
+              // day is picked the selection no longer says which one is today.
+              const isToday = day === gameWeekday(new Date(), region);
 
-            return (
-              <Link
-                key={day}
-                href={active
-                  ? href(base, filters, { range: 'all' })
-                  : href(base, filters, { range: 'day', day })}
-                aria-current={active ? 'page' : undefined}
-                data-active={active}
-                className="chip w-9 shrink-0 flex-col gap-0 rounded-xl px-1 py-1.5 text-center sm:w-10"
-              >
-                <span className="block font-mono text-2xs uppercase">
-                  {weekdayShort(day)}
-                </span>
-                <span className="relative block font-mono text-sm tabular">
-                  {date}
-                  {isToday && (
-                    <span aria-hidden className="absolute -bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-info" />
-                  )}
-                </span>
-                {isToday && <span className="sr-only">{t('todayMark')}</span>}
-              </Link>
-            );
-          })}
-        </nav>
-        {/* Beside the days rather than under them, so the dock stays one row. */}
-        {roster && <div className="shrink-0">{roster}</div>}
+              return (
+                <Link
+                  key={day}
+                  href={active
+                    ? href(base, filters, { range: 'all' })
+                    : href(base, filters, { range: 'day', day })}
+                  aria-current={active ? 'page' : undefined}
+                  data-active={active}
+                  className="chip w-9 shrink-0 flex-col gap-0 rounded-xl px-1 py-1.5 text-center sm:w-10"
+                >
+                  <span className="block font-mono text-2xs uppercase">
+                    {weekdayShort(day)}
+                  </span>
+                  <span className="relative block font-mono text-sm tabular">
+                    {date}
+                    {isToday && (
+                      <span aria-hidden className="absolute -bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-info" />
+                    )}
+                  </span>
+                  {isToday && <span className="sr-only">{t('todayMark')}</span>}
+                </Link>
+              );
+            })}
+          </nav>
+          {/* Beside the days rather than under them, so the dock stays one row. */}
+          {roster && <div className="shrink-0">{roster}</div>}
+        </div>
+
+        {/* Docked, the folded rows give way to what they have picked: the day
+            strip is what gets touched mid-list, and an open disclosure over the
+            results would cover the thing being filtered. What stays is each
+            choice that is off its default, one tap from undoing it — so the
+            docked bar never hides why the list is narrower than it looks. */}
+        {moreOpen && (
+          <DockFold when="undocked" className="pt-2">
+            <ActiveFilters
+              items={[
+                ...(team ? [{ key: 'team', label: team.name, to: href(base, filters, { team: null, chars: [] }) }] : []),
+                ...filters.reason.map((reason) => ({
+                  key: `reason-${reason}`,
+                  label: reasonLabel(reason),
+                  to: href(base, filters, { reason: toggle(filters.reason, reason) }),
+                })),
+              ]}
+              clear={href(base, filters, { team: null, reason: [], chars: [] })}
+              labels={{
+                title: common('activeFilters'),
+                clear: common('clearFilters'),
+                remove: (name) => common('removeFilter', { name }),
+              }}
+            />
+          </DockFold>
+        )}
       </div>
 
-      {/* Docked, the folded rows give way to what they have picked: the day
-          strip is what gets touched mid-list, and an open disclosure over the
-          results would cover the thing being filtered. What stays is each
-          choice that is off its default, one tap from undoing it — so the
-          docked bar never hides why the list is narrower than it looks. */}
-      {moreOpen && (
-        <DockFold when="undocked" className="pt-2">
-          <ActiveFilters
-            items={[
-              ...(team ? [{ key: 'team', label: team.name, to: href(base, filters, { team: null, chars: [] }) }] : []),
-              ...filters.reason.map((reason) => ({
-                key: `reason-${reason}`,
-                label: reasonLabel(reason),
-                to: href(base, filters, { reason: toggle(filters.reason, reason) }),
-              })),
-            ]}
-            clear={href(base, filters, { team: null, reason: [], chars: [] })}
-            labels={{
-              title: common('activeFilters'),
-              clear: common('clearFilters'),
-              remove: (name) => common('removeFilter', { name }),
-            }}
-          />
-        </DockFold>
-      )}
-
-      <DockFold when="docked" className="pt-3">
+      <DockFold when="docked">
       {/* The artifacts' "more filters", word for word: an icon, the name, how
           many of the folded filters are on, and the fold mark. Keyed on
           whether anything inside is on, so a filter set from a link opens it. */}
       <Fold
         key={String(moreOpen)}
+        look="row"
         defaultOpen={moreOpen}
         mark="end"
-        triggerClassName="gap-2 text-text transition-colors hover:bg-surface-2/60"
+        triggerClassName="text-text"
         summary={(
           <>
             <SlidersHorizontal size={14} aria-hidden className="text-muted" />

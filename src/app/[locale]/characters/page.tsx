@@ -234,7 +234,7 @@ export default async function CharactersPage({
               talents: t('legendTalents'),
               today: t('legendToday'),
               todayText: t('booksToday'),
-              dismissed: t('legendDismissed'),
+              planned: t('legendPlanned'),
             }} />
           </div>
           {/*
@@ -402,15 +402,21 @@ function RosterControls({
 
   return (
     <div className="card transition-[padding] duration-200">
-      <div className="flex flex-col px-3 pb-1 pt-2.5">
-        <div className="flex flex-wrap items-end gap-x-4">
-          <div className="w-full sm:w-auto">
+      <div className="flex flex-col p-3">
+        {/* The same 12px above the first row as below the last, where the
+            fold begins. On a phone the spacing between rows lives inside each
+            fold, so a row folded away while docked leaves no gap behind;
+            from `sm` up nothing folds and the row gap does it. */}
+        <div className="flex flex-wrap items-end gap-x-4 sm:gap-y-2">
+          {/* The search takes whatever the row leaves, so the three end at
+              the card's edge instead of short of it. */}
+          <div className="w-full sm:w-auto sm:min-w-64 sm:flex-1">
             <SearchBox label={t('searchLabel')} placeholder={t('searchPlaceholder')} />
           </div>
           {/* Grouping stays out here: it is changed as often as the search,
               and behind a disclosure it would be two clicks every time.
               Docked on a phone only the search stays. */}
-          <DockFold when="docked-phone" className="min-w-0 pt-2">
+          <DockFold when="docked-phone" className="min-w-0 pt-2 sm:pt-0">
             {/* Six groupings are wider than a phone; the strip wraps to a
                 second row there rather than hiding the last ones off the
                 card. */}
@@ -427,43 +433,50 @@ function RosterControls({
               ))}
             </Segments>
           </DockFold>
+
+          {/* The element, as the set is on the artifacts page: a strip of
+              emblems with how many of yours each one has. In the same row as
+              the search and the grouping, which on a desktop has the room for
+              all three; on a phone it wraps to a line of its own. */}
+          {/* Full width on a phone, so the seven cells share the card's
+              width; `DockFold`'s own box is sized by its content. */}
+          <div className="w-full sm:w-auto">
+          <DockFold when="docked-phone" className="space-y-0.5 pt-2 sm:pt-0">
+            <p className={GROUP_LABEL}>{t('filterElement')}</p>
+            {/* Seven across on a phone as a grid of equal cells, so the row
+                always fits the card rather than scrolling its last emblem off
+                it; fixed tiles from `sm` up, where there is room. */}
+            <ul className="grid grid-cols-7 gap-1 sm:flex sm:gap-1">
+              {ELEMENTS.map((key) => {
+                const active = filters.element.includes(key);
+                const count = elementCounts.get(key) ?? 0;
+                return (
+                  <li key={key} className="min-w-0 sm:shrink-0">
+                    <Link
+                      href={rosterHref(base, filters, { element: toggle(filters.element, key) })}
+                      scroll={false}
+                      aria-current={active ? 'true' : undefined}
+                      aria-label={`${elementText(key)} (${count})`}
+                      className={`group relative flex aspect-square w-full max-w-11 items-center justify-center rounded-lg border transition-colors sm:h-9 sm:w-9 ${
+                        active ? 'border-accent ring-1 ring-accent' : 'border-edge bg-surface hover:border-edge-strong'
+                      } ${count === 0 && !active ? 'opacity-40 grayscale' : ''}`}
+                    >
+                      <ElementIcon element={elementType(key)} className="h-3/5 w-3/5 sm:h-5 sm:w-5" sizes="24px" />
+                      {count > 0 && (
+                        <span className="tabular absolute bottom-0 right-0 rounded-tl rounded-br-[inherit] bg-ink px-1 font-mono text-2xs leading-4 text-muted">
+                          {count}
+                        </span>
+                      )}
+                      <HoverLabel text={`${elementText(key)} · ${count}`} />
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </DockFold>
+          </div>
         </div>
 
-        {/* The element leads, as the set does on the artifacts page: a strip
-            of emblems with how many of yours each one has. */}
-        <DockFold when="docked-phone" className="space-y-1.5 pt-3">
-          <p className={GROUP_LABEL}>{t('filterElement')}</p>
-          {/* Seven across on a phone as a grid of equal cells, so the row
-              always fits the card rather than scrolling its last emblem off
-              it; fixed tiles from `sm` up, where there is room. */}
-          <ul className="grid grid-cols-7 gap-1 pb-1.5 pt-1 sm:flex sm:gap-1.5">
-            {ELEMENTS.map((key) => {
-              const active = filters.element.includes(key);
-              const count = elementCounts.get(key) ?? 0;
-              return (
-                <li key={key} className="min-w-0 sm:shrink-0">
-                  <Link
-                    href={rosterHref(base, filters, { element: toggle(filters.element, key) })}
-                    scroll={false}
-                    aria-current={active ? 'true' : undefined}
-                    aria-label={`${elementText(key)} (${count})`}
-                    className={`group relative flex aspect-square w-full max-w-11 items-center justify-center rounded-lg border transition-colors sm:h-11 sm:w-11 ${
-                      active ? 'border-accent ring-1 ring-accent' : 'border-edge bg-surface hover:border-edge-strong'
-                    } ${count === 0 && !active ? 'opacity-40 grayscale' : ''}`}
-                  >
-                    <ElementIcon element={elementType(key)} className="h-3/5 w-3/5 sm:h-7 sm:w-7" sizes="28px" />
-                    {count > 0 && (
-                      <span className="tabular absolute -bottom-1 -right-1 rounded bg-ink px-1 font-mono text-2xs leading-4 text-muted">
-                        {count}
-                      </span>
-                    )}
-                    <HoverLabel text={`${elementText(key)} · ${count}`} />
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </DockFold>
 
         {picked.length > 0 && (
           <DockFold when="undocked" className="pb-1.5">
@@ -764,7 +777,7 @@ function Gallery({
   if (compact) return <CompactGallery locale={locale} characters={characters} />;
 
   const markLabels = {
-    dismissed: t('dismissedTitle'),
+    planned: t('plannedTitle'),
     today: t('booksToday'),
     todayTitle: t('booksTodayTitle'),
   };
