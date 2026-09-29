@@ -9,8 +9,8 @@ import { useState } from 'react';
  * weapon is even in view — a cost every visit pays whether the visit is to
  * check one substat or to read the whole loadout. The row asks the smaller
  * question first (what's here, at a glance) and only pays for a full card
- * when a slot is actually tapped. `sm:` and up already had room for all five
- * side by side, so nothing here touches that layout.
+ * when a slot is actually tapped. From `md` up the five sit side by side in
+ * one row, so nothing here touches that layout.
  */
 export function ArtifactSlotSwitcher({
   slots,
@@ -21,7 +21,7 @@ export function ArtifactSlotSwitcher({
   const active = slots.find((slot) => slot.key === selected) ?? null;
 
   return (
-    <div className="sm:hidden">
+    <div className="md:hidden">
       <ul className="grid grid-cols-5 gap-1.5">
         {slots.map((slot) => (
           <li key={slot.key}>

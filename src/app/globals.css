@@ -1085,23 +1085,20 @@ select.field {
 }
 
 /**
- * Any list of artifact cards: the box, a build's changes, the equipped five,
- * the gear dialog's candidates.
+ * Any list of artifact cards: the box, a build's changes, the gear dialog's
+ * candidates.
  *
- * A card reads best at up to 180 px; wider, its six short lines float in empty
- * space, and the grids that counted columns per breakpoint stretched a card to
- * 260 px on a laptop and squeezed it to 130 on a phone. So the grid is told the
- * card's size instead of a column count: as many 180 px columns as fit, and on
- * a phone two that share the width, down to 136 px each.
+ * Sized from the card rather than by a column count per breakpoint, which
+ * stretched a card to 260 px on a laptop. A column is at least 150 px, and as
+ * many as fit share the whole width, so a row ends at the edge instead of
+ * leaving a strip of empty space on the right. In practice a card lands near
+ * 160–180 px: two on a 360 px phone, seven across a laptop.
  */
 @layer components {
   .artifact-grid {
     display: grid;
     gap: 0.5rem;
-    /* One size for every column: half the width, held between 136 and 180.
-       `auto-fill` counts columns by a track's largest size, so a `minmax`
-       up to 180 fitted one column on a phone where two of 160 would do. */
-    grid-template-columns: repeat(auto-fill, clamp(8.5rem, (100% - 0.5rem) / 2, 180px));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr));
   }
 }
 

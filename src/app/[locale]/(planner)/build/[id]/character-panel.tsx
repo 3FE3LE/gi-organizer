@@ -595,7 +595,11 @@ export async function CharacterPanel({
             })}
           />
 
-          <ul className="artifact-grid max-sm:hidden">
+          {/* Always one row: the loadout is five pieces read side by side, and a
+              second row put a slot out of line with the rest. Below `md` a
+              fifth of the width is too narrow for a card, and the switcher
+              above takes over. */}
+          <ul className="hidden grid-cols-5 gap-2 md:grid">
             {SLOT_ORDER.map((slot) => (
               <ArtifactSlotCard
                 key={slot}
