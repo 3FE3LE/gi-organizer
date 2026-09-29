@@ -164,7 +164,7 @@ export async function RosterPanel({
             only in each tooltip: a phone has no hover to find them with. */}
         <ul className="flex flex-wrap gap-x-4 gap-y-1.5 font-mono text-2xs text-muted">
           <li className="flex items-center gap-1.5">
-            <span aria-hidden className="h-3 w-3 rounded-full ring-2 ring-good ring-offset-1 ring-offset-surface" />
+            <span aria-hidden className="h-3 w-3 rounded-full ring-2 ring-info ring-offset-1 ring-offset-surface" />
             {t('legendToday')}
           </li>
           <li className="flex items-center gap-1.5">

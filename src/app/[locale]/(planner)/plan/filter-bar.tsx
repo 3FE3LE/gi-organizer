@@ -8,7 +8,7 @@ import { Segment, Segments } from '@/components/segmented-links';
 import { Fold } from '@/components/fold';
 import type { Catalog } from '@/lib/data/catalog';
 import type { Team } from '@/lib/player/teams';
-import { gameWeekStrip, type GameRegion } from '@/lib/rules/game-day';
+import { gameWeekStrip, gameWeekday, type GameRegion } from '@/lib/rules/game-day';
 
 import {
   REASONS,
@@ -75,6 +75,9 @@ export async function FilterBar({
         <nav className="-mx-1 flex min-w-0 flex-1 gap-1 overflow-x-auto px-1 pb-0.5">
           {gameWeekStrip(new Date(), region).map(({ day, date }) => {
             const active = filters.range === 'day' && day === filters.day;
+            // Today keeps its own mark, in the colour for time: once another
+            // day is picked the selection no longer says which one is today.
+            const isToday = day === gameWeekday(new Date(), region);
 
             return (
               <Link
@@ -89,7 +92,13 @@ export async function FilterBar({
                 <span className="block font-mono text-2xs uppercase">
                   {weekdayShort(day)}
                 </span>
-                <span className="block font-mono text-sm tabular">{date}</span>
+                <span className="relative block font-mono text-sm tabular">
+                  {date}
+                  {isToday && (
+                    <span aria-hidden className="absolute -bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-info" />
+                  )}
+                </span>
+                {isToday && <span className="sr-only">{t('todayMark')}</span>}
               </Link>
             );
           })}

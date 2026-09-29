@@ -68,7 +68,7 @@ export function RosterFace({
             aria-pressed={!dismissed}
             className={`relative block rounded-full transition-[filter,opacity] duration-(--duration-enter) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
               dismissed ? 'opacity-40 grayscale hover:opacity-70' : 'hover:brightness-110'
-            } ${today ? 'ring-2 ring-good ring-offset-2 ring-offset-surface' : ''}`}
+            } ${today ? 'ring-2 ring-info ring-offset-2 ring-offset-surface' : ''}`}
           >
             {icon}
             {/* A character with a target of their own was planned for on

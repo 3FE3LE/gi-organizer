@@ -303,6 +303,7 @@
     "reasonLabel": "tipo",
     "allReasons": "todo",
     "today": "Hoy",
+    "todayMark": "hoy",
     "otherDay": "El {day}",
     "allBacklogHeading": "Todo lo pendiente",
     "sourcesCountDay": "{count} en el plan · {domains, plural, one {# dominio abierto} other {# dominios abiertos}} · {anytime, plural, one {# material de cualquier día} other {# materiales de cualquier día}}",

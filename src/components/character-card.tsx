@@ -91,7 +91,7 @@ export function CardMark({
     <span
       title={focusable ? undefined : labels.todayTitle}
       tabIndex={focusable ? 0 : undefined}
-      className={`absolute z-10 rounded-full border border-accent/50 bg-surface px-1.5 font-mono text-2xs leading-4 text-accent ${className}${ring}`}
+      className={`absolute z-10 rounded-full border border-info/50 bg-surface px-1.5 font-mono text-2xs leading-4 text-info ${className}${ring}`}
     >
       {labels.today}
       <span className="sr-only">: {labels.todayTitle}</span>
@@ -229,7 +229,7 @@ export function CardLegend({
     {
       key: 'today',
       mark: (
-        <span className="rounded-full border border-accent/50 bg-surface px-1.5 font-mono text-2xs leading-4 text-accent">
+        <span className="rounded-full border border-info/50 bg-surface px-1.5 font-mono text-2xs leading-4 text-info">
           {labels.todayText}
         </span>
       ),

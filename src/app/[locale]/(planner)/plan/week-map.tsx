@@ -72,7 +72,7 @@ export async function WeekMap({
               <span className="flex flex-col">
                 <span className="font-mono text-xs uppercase">
                   {days}
-                  {isToday && <span className="ml-1.5 text-accent">· {t('todayTag')}</span>}
+                  {isToday && <span className="ml-1.5 text-info">· {t('todayTag')}</span>}
                 </span>
                 <span className="font-mono text-2xs text-muted">
                   {t('waitingCount', { count: rotation.waiting })}

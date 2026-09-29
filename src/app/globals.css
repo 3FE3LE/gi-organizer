@@ -47,6 +47,7 @@
   --color-good: var(--good);
   --color-warn: var(--warn);
   --color-bad: var(--bad);
+  --color-info: var(--info);
 
   /**
    * The names shadcn components are written against, pointed at ours.
@@ -166,9 +167,27 @@
   --rarity-5: #d08a3a;
   --rarity-4: #9a74c8;
 
+  /*
+   * One meaning per colour, everywhere in the app. A colour never carries a
+   * meaning alone — there is always a mark, a word or a shape with it — but
+   * where one appears it means only this:
+   *
+   *   accent  the brand, what is selected or can be pressed, and "the best"
+   *           (an excellent crit value, a perfect roll, the build's first
+   *           choice) — gold, as the game draws five stars — and progress
+   *           still under way, a bar or a ring that turns `good` once met
+   *   good    met, or better: a target reached, a gain, a piece that fits
+   *   warn    a cost to weigh: breaks a set, takes a piece from someone
+   *   bad     short, worse, or destructive: a stat lost, a delete
+   *   info    time, not judgement: what is on today, what resets when
+   *
+   * `info` is what keeps "today" from reading as a verdict: green there said
+   * a character was fine on the one day they needed farming the most.
+   */
   --good: #86c191;
   --warn: #e0b468;
   --bad: #dd8077;
+  --info: #7fb3e6;
 
   /* The wash behind the page, which keeps a long scroll from being a flat
      rectangle. Two lights rather than one: warm from the top, cool from the
@@ -210,6 +229,7 @@
   --good: #2f6f3d;
   --warn: #8a5d16;
   --bad: #a53a30;
+  --info: #2f5f8f;
 
   --page-glow:
     radial-gradient(70rem 30rem at 50% -14rem, color-mix(in oklab, var(--accent) 12%, transparent), transparent 70%),
@@ -256,6 +276,7 @@
     --good: #2f6f3d;
     --warn: #8a5d16;
     --bad: #a53a30;
+    --info: #2f5f8f;
 
     --page-glow:
       radial-gradient(70rem 30rem at 50% -14rem, color-mix(in oklab, var(--accent) 12%, transparent), transparent 70%),
