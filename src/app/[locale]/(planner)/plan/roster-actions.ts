@@ -13,14 +13,18 @@ import { refreshEverywhere } from '@/lib/refresh';
  * on the first screen after an import is every material in the game — true,
  * and unusable. This is the other half of that assumption: the refusal.
  */
-export async function dismissRoster(characterId: number | null) {
-  const db = getDb();
-  await setDismissed(db, await getProfileId(db), characterId === null ? null : [characterId], true);
-  refreshEverywhere();
+export async function dismissRoster(characterIds: number[] | null) {
+  await mark(characterIds, true);
 }
 
-export async function restoreRoster(characterId: number | null) {
+/** `null` is everybody; a list is those characters — one face, or a team. */
+export async function restoreRoster(characterIds: number[] | null) {
+  await mark(characterIds, false);
+}
+
+async function mark(characterIds: number[] | null, dismissed: boolean) {
+  const ids = characterIds?.filter((id) => Number.isInteger(id)) ?? null;
   const db = getDb();
-  await setDismissed(db, await getProfileId(db), characterId === null ? null : [characterId], false);
+  await setDismissed(db, await getProfileId(db), ids, dismissed);
   refreshEverywhere();
 }

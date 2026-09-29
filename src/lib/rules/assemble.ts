@@ -38,6 +38,7 @@ import {
   scheduleNeeds,
   tallyDemand,
 } from './materials';
+import { cardProgress } from './card-progress';
 import { estimateResin, type ResinEstimate } from './resin';
 import { type CascadeBuild, type CascadePlan, costOfGivingUp, planCascade } from './cascade';
 import { type ComparablePiece, type Swap, compareSlot, shortlist } from './compare';
@@ -822,7 +823,13 @@ export async function farmingPlan(
   schedule: Schedule;
   sources: number;
   /** Everyone on the roster, with what the plan is doing about each. */
-  roster: { characterId: number; hasTarget: boolean; dismissed: boolean }[];
+  roster: {
+    characterId: number;
+    hasTarget: boolean;
+    dismissed: boolean;
+    /** A talent is still short of where it is headed — see `cardProgress`. */
+    talentsShort: boolean;
+  }[];
   /** How many the player has said no to, which is the list's own undo. */
   dismissed: number;
   /** The least resin the same demand costs. */
@@ -964,6 +971,9 @@ export async function farmingPlan(
       characterId: entry.characterId,
       hasTarget: entry.target.level !== null || entry.target.talents !== null,
       dismissed: entry.dismissedAt !== null,
+      // No days needed for this half of the reading: whether a book is short
+      // does not depend on which domain is open.
+      talentsShort: cardProgress(entry, new Set(), 'Sunday').talentsShort,
     })),
     dismissed: [...roster.values()].filter((entry) => entry.dismissedAt !== null).length,
   };

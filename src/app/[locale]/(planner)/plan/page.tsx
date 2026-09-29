@@ -129,7 +129,7 @@ export default async function PlanPage({ params, searchParams }: PageProps<'/[lo
             // Not keyed by the filters: a navigation keeps the last count on
             // screen until the new one arrives, rather than blinking it out.
             <Suspense fallback={<Skeleton className="h-8 w-16 rounded-xl" />}>
-              <DockedRoster base={base} catalog={catalog} filters={filters} plan={plan} teams={teams} />
+              <DockedRoster base={base} catalog={catalog} filters={filters} plan={plan} teams={teams} today={today} />
             </Suspense>
           }
         />
@@ -172,9 +172,11 @@ type Plan = Awaited<ReturnType<typeof farmingPlan>>;
  * one face or dismissing somebody is in reach from anywhere down the page.
  */
 async function DockedRoster({
-  base, catalog, filters, plan, teams,
+  base, catalog, filters, plan, teams, today,
 }: {
   base: string; catalog: Catalog; filters: Filters; plan: Promise<Plan>; teams: Team[];
+  /** The server's day, not the one the filters are showing. */
+  today: Weekday;
 }) {
   const { roster } = await plan;
   const summary = summarizeRoster(roster, teams, filters);
@@ -187,7 +189,7 @@ async function DockedRoster({
       charsCount={filters.chars.length}
       clearCharsHref={filters.chars.length > 0 ? href(base, filters, { chars: [] }) : null}
     >
-      <RosterPanel base={base} catalog={catalog} filters={filters} roster={roster} teams={teams} />
+      <RosterPanel base={base} catalog={catalog} filters={filters} roster={roster} teams={teams} today={today} />
     </RosterSheet>
   );
 }

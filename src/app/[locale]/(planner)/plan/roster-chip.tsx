@@ -1,7 +1,6 @@
 'use client';
 
-import { RotateCcw, Target, X } from 'lucide-react';
-import Link from 'next/link';
+import { RotateCcw, Users, X } from 'lucide-react';
 
 import { Hint } from '@/components/hint';
 import { buttonVariants } from '@/components/ui/button';
@@ -10,22 +9,25 @@ import { dismissRoster, restoreRoster } from './roster-actions';
 import { usePlannedCount, useRosterOptimism } from './roster-optimism';
 
 /**
- * One face in the roster list: the name that filters, the button that
- * dismisses or restores. Drawn from the optimistic state, so a click changes
- * it at once — see `roster-optimism.tsx`.
+ * One face in the roster: in the plan at full colour, out of it greyed, and a
+ * click moves it from one to the other.
  *
- * A link and a form button cannot nest, so the two verbs sit side by side
- * inside one chip rather than one inside the other.
+ * It used to be a chip with a name and two verbs — the name narrowed the view,
+ * a × beside it dismissed — which made sixty names a wall of text in which the
+ * state that mattered, in or out, was a strike-through. The faces are the
+ * ones a piece's holder is drawn with, so the roster reads like the rest of
+ * the app, and the one verb left is the one the list is for.
+ *
+ * Drawn from the optimistic state, so a click changes it at once — see
+ * `roster-optimism.tsx`.
  */
-export function RosterChip({
+export function RosterFace({
   characterId,
   name,
   icon,
   hasTarget,
+  booksToday,
   dismissed: fromServer,
-  picked,
-  dimmed,
-  filterHref,
   labels,
 }: {
   characterId: number;
@@ -33,65 +35,50 @@ export function RosterChip({
   /** The face, drawn by the server: the image component resolves assets there. */
   icon: React.ReactNode;
   hasTarget: boolean;
+  /** A talent book they still need drops from a domain open today. */
+  booksToday: boolean;
   dismissed: boolean;
-  picked: boolean;
-  /** Another face is picked, so this one steps back. */
-  dimmed: boolean;
-  filterHref: string;
-  labels: { restore: string; dismiss: string; filter: string; stopFilter: string };
+  labels: { restore: string; dismiss: string; target: string; today: string };
 }) {
   const { isDismissed, apply } = useRosterOptimism();
   const dismissed = isDismissed(characterId, fromServer);
-  // Somebody the plan is not counting has no demand to filter down to, so
-  // their name is a label rather than a control.
-  const filterable = !dismissed;
-
-  const content = (
-    <>
-      {icon}
-      <span className={dismissed ? 'line-through' : ''}>{name}</span>
-      {/* A character with a target of their own was planned for on purpose, so
-          the assumption is not what is driving them. */}
-      {hasTarget && !dismissed && <Target size={10} aria-hidden className="text-accent" />}
-    </>
-  );
-  const faceClass = 'flex items-center gap-1.5 py-0.5 pl-1 pr-2';
+  // Out of the plan is headed nowhere, so today's domain is not theirs to farm.
+  const today = booksToday && !dismissed;
+  // Everything the face shows in colour is also said in words, for the tooltip
+  // and for a screen reader alike.
+  const label = [
+    name,
+    today && labels.today,
+    hasTarget && labels.target,
+    dismissed ? labels.restore : labels.dismiss,
+  ].filter(Boolean).join(' · ');
 
   return (
-    <li
-      className={`flex items-center overflow-hidden rounded border text-2xs transition-opacity ${
-        picked ? 'border-accent ring-1 ring-accent' : 'border-edge'
-      } ${dismissed ? 'opacity-60' : ''} ${dimmed && !picked ? 'opacity-50' : ''}`}
-    >
-      {filterable ? (
-        <Hint text={picked ? labels.stopFilter : labels.filter}>
-          <Link
-            href={filterHref}
-            aria-current={picked ? 'true' : undefined}
-            className={`${faceClass} ${picked ? 'text-accent' : 'hover:text-accent'}`}
-          >
-            {content}
-          </Link>
-        </Hint>
-      ) : (
-        <span className={`${faceClass} text-muted`}>{content}</span>
-      )}
-
+    <li>
       <form
         action={async () => {
           apply({ ids: [characterId], dismissed: !dismissed });
-          await (dismissed ? restoreRoster(characterId) : dismissRoster(characterId));
+          await (dismissed ? restoreRoster([characterId]) : dismissRoster([characterId]));
         }}
       >
-        <Hint text={dismissed ? labels.restore : labels.dismiss}>
+        <Hint text={label}>
           <button
             type="submit"
-            aria-label={dismissed ? labels.restore : labels.dismiss}
-            className={`flex h-7 w-6 items-center justify-center border-l text-muted ${
-              picked ? 'border-accent' : 'border-edge'
-            } ${dismissed ? 'hover:text-accent' : 'hover:text-bad'}`}
+            aria-label={label}
+            aria-pressed={!dismissed}
+            className={`relative block rounded-full transition-[filter,opacity] duration-(--duration-enter) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+              dismissed ? 'opacity-40 grayscale hover:opacity-70' : 'hover:brightness-110'
+            } ${today ? 'ring-2 ring-good ring-offset-2 ring-offset-surface' : ''}`}
           >
-            {dismissed ? <RotateCcw size={11} /> : <X size={11} />}
+            {icon}
+            {/* A character with a target of their own was planned for on
+                purpose, so the assumption is not what is driving them. */}
+            {hasTarget && (
+              <span
+                aria-hidden
+                className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-surface bg-accent"
+              />
+            )}
           </button>
         </Hint>
       </form>
@@ -126,7 +113,43 @@ export function RosterBulk({
         disabled={disabled}
         className={buttonVariants({ variant: dismiss ? 'destructive' : 'outline', size: 'xs', className: 'font-mono text-2xs uppercase' })}
       >
-        {children}
+        {dismiss ? <X size={11} /> : <RotateCcw size={11} />} {children}
+      </button>
+    </form>
+  );
+}
+
+/**
+ * Putting a whole team into the plan: the members who are out come back in,
+ * and nobody else moves. Disabled once all of them are already in.
+ */
+export function RosterTeam({
+  name,
+  members,
+}: {
+  name: string;
+  /** The team's owned members, as the server last said. */
+  members: readonly { characterId: number; dismissed: boolean }[];
+}) {
+  const { apply } = useRosterOptimism();
+  const planned = usePlannedCount(members);
+  const ids = members.map((member) => member.characterId);
+
+  return (
+    <form
+      action={async () => {
+        apply({ ids, dismissed: false });
+        await restoreRoster(ids);
+      }}
+    >
+      <button
+        type="submit"
+        disabled={planned === members.length}
+        className={buttonVariants({ variant: 'outline', size: 'xs', className: 'gap-1.5 text-2xs' })}
+      >
+        <Users size={11} aria-hidden />
+        {name}
+        <span className="tabular font-mono text-muted">{planned}/{members.length}</span>
       </button>
     </form>
   );
