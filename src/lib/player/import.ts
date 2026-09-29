@@ -11,6 +11,7 @@ import { getCatalog } from '@/lib/data/catalog';
 import { DEFAULT_LOCALE } from '@/lib/data/locales';
 import { getEnkaStore, getGoodCrosswalk, getMeta } from '@/lib/data/registry';
 import { fetchShowcase } from '@/lib/enka/fetch';
+import type { EnkaResponse } from '@/lib/enka/schema';
 import { normalizeEnka } from '@/lib/enka/normalize';
 import { createKeyResolver } from '@/lib/good/keys';
 import { parseGood } from '@/lib/good/parse';
@@ -27,6 +28,7 @@ import type { NormalizedImport } from '@/lib/inventory/model';
 import { type ImportPlan, planImport, summarizePlan } from '@/lib/inventory/plan';
 
 import { readOwnedCharacterIds, upsertCharacter } from './characters';
+import { clearAdvanced } from './enka-profile';
 import { readTravelerBody, travelerDepot } from './traveler';
 import { exportNative } from './export';
 import {
@@ -134,6 +136,13 @@ export async function previewStaged(token: string): Promise<PreviewResult> {
 }
 
 export type ApplyOptions = {
+  /**
+   * Keep a copy of the whole inventory first, to restore from. On by default.
+   * The showcase sync turns it off: it runs whenever the app opens, and a
+   * partial source never adds, never removes and only moves progress up, so a
+   * full copy each time would be the database's weight for nothing.
+   */
+  snapshot?: boolean;
   onAbsent?: 'keep' | 'remove';
   resolutions?: Map<number, Resolution>;
   /** Whether this source may add what the account did not already have. */
@@ -163,13 +172,20 @@ export async function applyStaged(
 export async function applyShowcase(uid: string): Promise<ApplyResult> {
   const result = await fetchShowcase(uid);
   if (!result.ok) throw new Error(`${result.code}: ${result.message}`);
+  return applyShowcasePayload(result.payload);
+}
 
-  const normalized = normalizeEnka(result.payload, { store: await getEnkaStore() });
+/** The same, on a showcase already fetched — the automatic sync reads it once. */
+export async function applyShowcasePayload(
+  payload: EnkaResponse,
+  options: Pick<ApplyOptions, 'snapshot'> = {},
+): Promise<ApplyResult> {
+  const normalized = normalizeEnka(payload, { store: await getEnkaStore() });
 
   // A showcase is a window onto eight characters, not the account's record of
   // itself. It refines what the export already listed — the constellation's
   // talent bonus, the order a piece's rolls landed in — and adds nothing.
-  return applyNormalized(normalized, { onAbsent: 'keep', onNew: 'ignore' });
+  return applyNormalized(normalized, { onAbsent: 'keep', onNew: 'ignore', ...options });
 }
 
 /**
@@ -208,17 +224,22 @@ export async function applyNormalized(
     // recoverable even if the plan turns out to have been wrong. It is the
     // native export verbatim — one serializer, two uses, so a snapshot can be
     // restored by the same code path a backup is.
-    await db.prepare('INSERT INTO snapshot (id, profile_id, at, label, data_json) VALUES (?,?,?,?,?)')
-      .run(
-        snapshotId, profileId, new Date().toISOString(),
-        `before ${normalized.source} import`,
-        JSON.stringify(await exportNative(meta.gameVersion, db)),
-      );
+    if (options.snapshot !== false) {
+      await db.prepare('INSERT INTO snapshot (id, profile_id, at, label, data_json) VALUES (?,?,?,?,?)')
+        .run(
+          snapshotId, profileId, new Date().toISOString(),
+          `before ${normalized.source} import`,
+          JSON.stringify(await exportNative(meta.gameVersion, db)),
+        );
+    }
 
     const persisted = await persistInventory(db, profileId, before, after);
     const materials = await persistMaterialStock(
       db, profileId, normalized.materials, normalized.observedAt,
     );
+    // The bag has just been read, so whatever the showcase moved before this
+    // is paid for in it — see `EnkaProfile.advanced`.
+    if (normalized.materials.length > 0) await clearAdvanced(db);
 
     // A source that may not add cannot put somebody in the roster either: the
     // showcase would otherwise be the one place a character appears from, and
@@ -242,6 +263,9 @@ export async function applyNormalized(
       await upsertCharacter(db, profileId, character, {
         source: normalized.source,
         observedAt: normalized.observedAt,
+        // A partial source can be older than the full one before it; see
+        // `UpsertOptions.onlyForward`.
+        onlyForward: normalized.coverage === 'partial',
       });
     }
 

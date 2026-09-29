@@ -636,6 +636,43 @@
       "estimate": "No simula rotaciones, reacciones ni buffs: compara pasos entre sí con las mismas reglas. Equilibrar da un empujón a lo que lleva a alguien hasta nivel 80 o talentos a 8."
     }
   },
+  "enka": {
+    "noUid": "Añade tu UID de Genshin y la app leerá tu perfil y tu escaparate de Enka sola.",
+    "addUid": "Añadir UID",
+    "unknownName": "Sin nombre",
+    "updated": "leído {ago}",
+    "refresh": "Actualizar",
+    "adventureRank": "Rango",
+    "worldLevel": "Nivel de mundo",
+    "achievements": "Logros",
+    "abyss": "Abismo",
+    "showcase": "Escaparate",
+    "notRead": "Todavía no se ha leído el escaparate. Pulsa Actualizar.",
+    "inShowcase": "En el escaparate de Enka: su progreso se actualiza solo",
+    "legendShowcase": "En tu escaparate de Enka: su nivel, talentos, arma y artefactos se actualizan solos.",
+    "staleStock": "Tu inventario es del {date} y desde entonces subieron {names}. Lo que depende de materiales puede estar desfasado: reimporta materiales cuando puedas."
+  },
+  "rating": {
+    "title": "Valoración {score}/100 · sin ranking de Akasha",
+    "titleAkasha": "Valoración {score}/100 · top {top}% en Akasha",
+    "heading": "Valoración",
+    "part": {
+      "level": "Nivel",
+      "talents": "Talentos",
+      "weapon": "Arma",
+      "artifacts": "Artefactos",
+      "akasha": "Ranking de Akasha"
+    },
+    "top": "top {top}%",
+    "noRanking": "sin ranking: el personaje no está en tu escaparate, tu UID no está cargado en akasha.cv o Akasha no respondió. No resta.",
+    "help": {
+      "open": "Cómo se valora",
+      "title": "Cómo se valora",
+      "own": "Noventa puntos son de la propia build: nivel (a 90), talentos (completos a 8), arma (a su nivel máximo) y artefactos (rolls útiles para la build).",
+      "akasha": "Diez puntos son tu puesto en el ranking global de Akasha. Estar en el top 20% ya cuenta como los diez: lo que hay por encima se compra más que se construye.",
+      "missing": "Sin ranking de Akasha, la nota se calcula sobre los noventa propios, así que no tenerlo nunca resta."
+    }
+  },
   "data": {
     "title": "Datos",
     "tabs": {
@@ -704,7 +741,13 @@
       "serverUndetected": "Sin zona horaria detectada todavía: se usa {region}",
       "worldLevelHeading": "Nivel de mundo",
       "worldLevelHint": "Las tasas de drop de dominios y jefes dependen de él. Con él se estima cuánta resina cuesta lo que te falta.",
-      "worldLevelDefault": "Por defecto (8)",
+      "worldLevelDefault": "Automático ({level})",
+      "worldLevelDetected": "Tu escaparate de Enka dice nivel de mundo {level}.",
+      "uidHeading": "UID de Genshin",
+      "uidHint": "Con tu UID la app lee tu escaparate de Enka sola: tu perfil, quién está en el escaparate, su progreso y tu nivel de mundo. Nunca toca tu inventario de materiales. Déjalo vacío y guarda para olvidarlo.",
+      "uidLabel": "UID",
+      "uidSave": "Guardar",
+      "uidStatus": {"idle": "", "saved": "Guardado y leído.", "cleared": "Olvidado.", "invalid": "No es un UID de Genshin.", "unreachable": "Guardado, pero Enka no respondió o el escaparate está oculto."},
       "worldLevelOption": "Nivel de mundo {level}"
     },
     "importPage": {

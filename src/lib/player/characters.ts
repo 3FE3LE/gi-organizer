@@ -104,6 +104,14 @@ export async function readRoster(db: Db, profileId: string): Promise<CharacterBu
 export type UpsertOptions = {
   source: string;
   observedAt: string;
+  /**
+   * Progress only moves up: level, ascension, constellation and talents keep
+   * the higher of what is stored and what arrives. For a source that can be
+   * older than the one before it — a showcase the game has not refreshed
+   * since a newer GOOD scan — so it can correct a character behind the times
+   * and never undo one ahead of them.
+   */
+  onlyForward?: boolean;
 };
 
 /**
@@ -119,6 +127,13 @@ export async function upsertCharacter(
   character: NormalizedCharacter,
   options: UpsertOptions,
 ) {
+  const columns = ['level', 'ascension', 'constellation', 'talent_auto', 'talent_skill', 'talent_burst'];
+  const progress = columns
+    .map((column) => options.onlyForward
+      ? `${column} = MAX(character_build.${column}, excluded.${column}),`
+      : `${column} = excluded.${column},`)
+    .join('\n      ');
+
   await db.prepare(`
     INSERT INTO character_build
       (profile_id, character_id, level, ascension, constellation,
@@ -126,12 +141,7 @@ export async function upsertCharacter(
        skill_depot_id, notes, seen_at, seen_from)
     VALUES (?,?,?,?,?,?,?,?,?,?,NULL,?,?)
     ON CONFLICT (profile_id, character_id) DO UPDATE SET
-      level = excluded.level,
-      ascension = excluded.ascension,
-      constellation = excluded.constellation,
-      talent_auto = excluded.talent_auto,
-      talent_skill = excluded.talent_skill,
-      talent_burst = excluded.talent_burst,
+      ${progress}
       talent_bonus_json = COALESCE(excluded.talent_bonus_json, character_build.talent_bonus_json),
       skill_depot_id = COALESCE(excluded.skill_depot_id, character_build.skill_depot_id),
       seen_at = excluded.seen_at,

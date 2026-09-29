@@ -7,6 +7,7 @@ import { ElementIcon } from '@/components/element-icon';
 import { GameIcon } from '@/components/game-icon';
 import { HoverLabel } from '@/components/hint';
 import { ResinSummary } from '@/components/resin-summary';
+import { StaleStock } from '@/components/stale-stock';
 import { SectionTabs } from '@/components/section-tabs';
 import { Skeleton } from '@/components/skeleton';
 import { StickyDock } from '@/components/sticky-dock';
@@ -253,6 +254,7 @@ async function PlanContent({
       {/* The whole backlog's price, whichever day is showing: resin is
           spent across the week, so a day's share of it is not a number
           anybody budgets by. */}
+      <StaleStock catalog={catalog} locale={locale} />
       {sources > 0 && <ResinSummary estimate={resin} catalog={catalog} locale={locale} />}
 
       {sources === 0 ? (

@@ -458,3 +458,28 @@ test('a source that may not add leaves what it has never seen alone', () => {
   assert.equal(inventory.artifacts.length, 1, 'nothing new was adopted');
   assert.equal(inventory.artifacts[0].id, 'a0');
 });
+
+test('a showcase levels the weapon a character holds, and only upwards', () => {
+  const held = { weaponId: 11501, level: 70, ascension: 4, refinement: 1, lock: false, equippedTo: 10000021 };
+  const spare = { ...held, equippedTo: null };
+  const inventory: Inventory = {
+    artifacts: [],
+    weapons: [
+      { ...held, id: 'held', source: 'good', seenAt: '2026-09-09T00:00:00.000Z' },
+      { ...spare, id: 'spare', source: 'good', seenAt: '2026-09-09T00:00:00.000Z' },
+    ],
+  };
+
+  const shown = { ...importOf([]), source: 'enka' as const, coverage: 'partial' as const,
+    weapons: [{ ...held, level: 90, ascension: 6 }] };
+  const { inventory: applied } = applyImport(inventory, planImport(inventory, shown));
+
+  const byId = new Map(applied.weapons.map((weapon) => [weapon.id, weapon]));
+  assert.equal(byId.get('held')?.level, 90, 'the copy on the character took the showcase level');
+  assert.equal(byId.get('spare')?.level, 70, 'the spare copy is not touched');
+  assert.equal(applied.weapons.length, 2, 'nothing is added');
+
+  const older = { ...shown, weapons: [{ ...held, level: 60, ascension: 3 }] };
+  const { inventory: kept } = applyImport(applied, planImport(applied, older));
+  assert.equal(kept.weapons.find((weapon) => weapon.id === 'held')?.level, 90, 'an older showcase does not undo it');
+});

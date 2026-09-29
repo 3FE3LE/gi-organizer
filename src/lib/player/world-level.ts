@@ -4,19 +4,22 @@ import { getDb, type Db } from '@/lib/db/client';
 import { DEFAULT_WORLD_LEVEL, isWorldLevel, type WorldLevel } from '@/lib/rules/resin';
 
 import { getProfileId } from './db';
+import { readEnkaAccount } from './enka-profile';
 
 /**
  * The world level the account plays at.
  *
  * What turns a shortfall into resin: a domain at world level eight drops about
- * ten Teachings' worth a run, one at world level two about four. No import says
- * it — GOOD carries none, and Enka's is a profile field this app does not keep
- * — so it is asked for once, like the server, and until then read as eight,
- * where nearly everyone planning builds already is.
+ * ten Teachings' worth a run, one at world level two about four. GOOD carries
+ * none; the showcase does, once a UID is known, and until then it is read as
+ * eight, where nearly everyone planning builds already is. A level picked by
+ * hand wins over both.
  */
 export type WorldLevelSetting = {
   /** What the player chose, or `null` for the default. */
   chosen: WorldLevel | null;
+  /** What the showcase last said, when there is a UID. */
+  detected: WorldLevel | null;
   worldLevel: WorldLevel;
 };
 
@@ -26,7 +29,11 @@ export async function readWorldLevelSetting(db: Db = getDb()): Promise<WorldLeve
     .get(await getProfileId(db))) as { world_level: number | null } | undefined;
 
   const chosen = isWorldLevel(row?.world_level) ? row.world_level : null;
-  return { chosen, worldLevel: chosen ?? DEFAULT_WORLD_LEVEL };
+  // The showcase says it once a UID is known, so the default is only for an
+  // account nobody has linked; a choice made by hand still wins.
+  const shown = (await readEnkaAccount(db)).profile?.worldLevel;
+  const detected = isWorldLevel(shown) ? shown : null;
+  return { chosen, detected, worldLevel: chosen ?? detected ?? DEFAULT_WORLD_LEVEL };
 }
 
 export async function readWorldLevel(db: Db = getDb()): Promise<WorldLevel> {

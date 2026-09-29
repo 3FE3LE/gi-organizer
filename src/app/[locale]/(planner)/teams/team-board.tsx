@@ -65,6 +65,8 @@ export type SlotView = {
     rarity: number;
     elementType: string;
     marks: { planned: string; today: string; todayTitle: string };
+    /** In the Enka showcase: what the portrait's badge says on hover. */
+    showcased: string | null;
     /** Null for somebody not on the roster, which a team slot cannot really hold. */
     progress: {
       level: number;
@@ -76,6 +78,8 @@ export type SlotView = {
       dismissed: boolean;
       levelLabel: string;
       talentsLabel: string;
+      /** How well built, 0–100; see `lib/rules/rating.ts`. */
+      rating: { score: number; title: string } | null;
     } | null;
   };
   findings: { id: string; severity: string; message: string }[];
@@ -720,6 +724,7 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
         elementText={slot.element}
         constellation={progress?.constellation ?? null}
         ring={progress?.ring ?? null}
+        showcased={card.showcased}
       >
         <Link href={slot.buildHref} aria-hidden tabIndex={-1} className="block rounded-full">
           <AssetImage
@@ -739,6 +744,7 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
             talent={progress.talent}
             met={progress.talentsMet}
             labels={{ level: progress.levelLabel, talents: progress.talentsLabel }}
+            rating={progress.rating}
           />
         </div>
       )}

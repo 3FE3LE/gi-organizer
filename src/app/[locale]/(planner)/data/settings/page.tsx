@@ -4,11 +4,13 @@ import { getTranslations } from 'next-intl/server';
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { isLocale } from '@/lib/data/locales';
 import { readRegionSetting } from '@/lib/player/region';
+import { readEnkaAccount } from '@/lib/player/enka-profile';
 import { readWorldLevelSetting } from '@/lib/player/world-level';
 import { GAME_REGIONS } from '@/lib/rules/game-day';
 import { WORLD_LEVELS } from '@/lib/rules/resin';
 
 import { RegionPicker } from './region-picker';
+import { UidForm } from './uid-form';
 import { WorldLevelPicker } from './world-level-picker';
 
 /**
@@ -29,10 +31,20 @@ export default async function SettingsPage({ params }: PageProps<'/[locale]/data
   if (!isLocale(locale)) notFound();
   const t = await getTranslations('data.settingsPage');
   const region = await getTranslations('common.region');
-  const [setting, world] = await Promise.all([readRegionSetting(), readWorldLevelSetting()]);
+  const [setting, world, enka] = await Promise.all([readRegionSetting(), readWorldLevelSetting(), readEnkaAccount()]);
 
   return (
     <div className="space-y-8">
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-sm font-medium uppercase tracking-wide text-muted">
+            {t('uidHeading')}
+          </h2>
+          <p className="mt-2 max-w-prose text-sm text-muted">{t('uidHint')}</p>
+        </div>
+        <UidForm uid={enka.uid} />
+      </section>
+
       <section className="space-y-3">
         <div>
           <h2 className="text-sm font-medium uppercase tracking-wide text-muted">
@@ -65,7 +77,10 @@ export default async function SettingsPage({ params }: PageProps<'/[locale]/data
           </h2>
           <p className="mt-2 max-w-prose text-sm text-muted">{t('worldLevelHint')}</p>
         </div>
-        <WorldLevelPicker levels={WORLD_LEVELS} chosen={world.chosen} />
+        <WorldLevelPicker levels={WORLD_LEVELS} chosen={world.chosen} automatic={world.detected ?? 8} />
+        {world.detected !== null && (
+          <p className="font-mono text-2xs text-muted">{t('worldLevelDetected', { level: world.detected })}</p>
+        )}
       </section>
     </div>
   );

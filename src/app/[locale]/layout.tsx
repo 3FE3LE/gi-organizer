@@ -12,6 +12,7 @@ import { LocaleSwitcher } from '@/components/locale-switcher';
 import { LogoMark } from '@/components/logo-mark';
 import { MainNav, type NavItem } from '@/components/main-nav';
 import { SyncLocaleCookie } from '@/components/sync-locale-cookie';
+import { SyncShowcase } from '@/components/sync-showcase';
 import { SyncTimeZoneCookie } from '@/components/sync-time-zone-cookie';
 import { ThemeScript } from '@/components/theme-script';
 import { BackToTop } from '@/components/back-to-top';
@@ -171,6 +172,8 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
         <SyncTimeZoneCookie name={TIME_ZONE_COOKIE} />
         <NextIntlClientProvider locale={uiLocale} messages={messages}>
           <ClerkProvider>
+            {/* The showcase, read once per visit when signed in. */}
+            <SyncShowcase />
             {/* The filter controls that are inputs rather than links read and
                 write the query string through nuqs, which needs the router
                 adapter. */}

@@ -6,6 +6,7 @@ import { getCatalog } from '@/lib/data/catalog';
 import { DEFAULT_LOCALE, isLocale } from '@/lib/data/locales';
 import type { AssignmentConflict } from '@/lib/inventory/assignment';
 import type { ImportSection, Repair } from '@/lib/inventory/apply';
+import { isUid, setUid } from '@/lib/player/enka-profile';
 import { AssignmentViolation, applyShowcase, applyStaged } from '@/lib/player/import';
 import { refreshEverywhere } from '@/lib/refresh';
 
@@ -109,6 +110,8 @@ export async function applyShowcaseAction(
 
   try {
     const result = await applyShowcase(uid);
+    // Remembered, so the app can read this showcase on its own from now on.
+    if (isUid(uid)) await setUid(uid);
     refreshEverywhere();
 
     const { artifacts, weapons } = result.persisted;

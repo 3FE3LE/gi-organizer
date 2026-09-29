@@ -19,6 +19,8 @@ import { synergyOf, type SynergyMember } from '@/lib/rules/synergy';
 import { describe, type Naming } from '@/lib/rules/diagnostics';
 import { targetKey } from '@/lib/rules/types';
 import { getAccountCatalog } from '@/lib/player/traveler';
+import { readEnkaAccount } from '@/lib/player/enka-profile';
+import { readRatings } from '@/lib/rules/rating-plan';
 import { readRegion } from '@/lib/player/region';
 import { cardProgress, talentBookDays } from '@/lib/rules/card-progress';
 import { gameWeekday } from '@/lib/rules/game-day';
@@ -57,10 +59,15 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
   // Where each member is headed, read the way the roster reads it — the same
   // ring, the same talent colours, the same "today" — so a character looks
   // the same on both pages. See `@/components/character-card`.
-  const [rosterRows, region] = await Promise.all([
+  const [rosterRows, region, enka, enkaT, ratingT, ratingMap] = await Promise.all([
     readRoster(db, await getProfileId(db)),
     readRegion(db),
+    readEnkaAccount(db),
+    getTranslations('enka'),
+    getTranslations('rating'),
+    readRatings(catalog, db),
   ]);
+  const showcase = new Set(enka.profile?.showcase ?? []);
   const rosterById = new Map(rosterRows.map((entry) => [entry.characterId, entry]));
   const weekday = gameWeekday(new Date(), region);
   const markLabels = {
@@ -75,6 +82,7 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
       rarity: character?.rarity ?? 4,
       elementType: character?.elementType ?? 'ELEMENT_NONE',
       marks: markLabels,
+      showcased: showcase.has(characterId) ? enkaT('inShowcase') : null,
     };
     if (!entry) return { ...base, progress: null };
 
@@ -96,6 +104,16 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
         },
         booksToday: ahead.booksToday,
         dismissed: entry.dismissedAt !== null,
+        rating: (() => {
+          const rating = ratingMap.get(characterId);
+          if (!rating) return null;
+          return {
+            score: rating.score,
+            title: rating.akashaTop !== null
+              ? ratingT('titleAkasha', { score: rating.score, top: rating.akashaTop })
+              : ratingT('title', { score: rating.score }),
+          };
+        })(),
         levelLabel: tCharacters('levelShort', { level: entry.level }),
         talentsLabel: tCharacters('talentsTitle', entry.talent),
       },
@@ -502,6 +520,7 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
                 today: tCharacters('legendToday'),
                 todayText: tCharacters('booksToday'),
                 planned: tCharacters('legendPlanned'),
+                showcase: enkaT('legendShowcase'),
               }}
             />
           )}

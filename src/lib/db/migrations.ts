@@ -385,6 +385,24 @@ const MIGRATIONS: string[] = [
     -- see \`lib/player/invest-strategy.ts\`.
     ALTER TABLE profile ADD COLUMN invest_strategy TEXT;
   `,
+  `
+    -- The account's Genshin UID, and what Enka last said about it.
+    --
+    -- GOOD carries no UID, so it is asked for once — or remembered from a
+    -- showcase import — and the showcase is then read on its own. The JSON is
+    -- the profile Enka shows (nickname, adventure rank, world level, abyss…),
+    -- the ids in the showcase and when it was read; the characters themselves
+    -- go through the import like any other source. See
+    -- \`lib/player/enka-profile.ts\`.
+    ALTER TABLE profile ADD COLUMN uid TEXT;
+    ALTER TABLE profile ADD COLUMN enka_json TEXT;
+  `,
+  `
+    -- Where the UID's characters stand on Akasha's leaderboards, and when that
+    -- was read. Optional and slow to change, so it is kept for hours rather
+    -- than asked for on every page. See \`lib/akasha/fetch.ts\`.
+    ALTER TABLE profile ADD COLUMN akasha_json TEXT;
+  `,
 ];
 
 /**

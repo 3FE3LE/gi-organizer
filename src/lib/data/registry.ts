@@ -6,6 +6,7 @@ import path from 'node:path';
 import type { GoodCrosswalk } from '@/lib/good/keys';
 import type { LevellingData } from '@/lib/rules/affordable';
 import type { InvestConfig } from '@/lib/rules/invest';
+import type { RatingConfig } from '@/lib/rules/rating';
 import type { BossDrop, ResinRates } from '@/lib/rules/resin';
 
 import type { Locale } from './locales';
@@ -155,6 +156,16 @@ export function getInvestConfig() {
     path.join(process.cwd(), 'src', 'data', 'curated', 'invest.json'), 'utf8',
   ).then((raw) => JSON.parse(raw) as InvestConfig & { revelationExp: number[] });
   return investConfig;
+}
+
+let ratingConfig: Promise<RatingConfig> | undefined;
+
+/** The rating's weights and "complete" marks, curated by hand — see `lib/rules/rating.ts`. */
+export function getRatingConfig() {
+  ratingConfig ??= readFile(
+    path.join(process.cwd(), 'src', 'data', 'curated', 'rating.json'), 'utf8',
+  ).then((raw) => JSON.parse(raw) as RatingConfig);
+  return ratingConfig;
 }
 
 const EMPTY_DETAIL: CharacterDetailStrings = { talents: null, constellation: null };

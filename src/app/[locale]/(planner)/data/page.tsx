@@ -1,10 +1,12 @@
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
+import { EnkaProfileCard } from '@/components/enka-profile-card';
 import { GameIcon } from '@/components/game-icon';
 import { isLocale, type Locale } from '@/lib/data/locales';
 import { getDb } from '@/lib/db/client';
 import { readRoster } from '@/lib/player/characters';
+import { readEnkaAccount } from '@/lib/player/enka-profile';
 import { getProfileId, readInventory } from '@/lib/player/db';
 import {
   TRAVELER_BODIES, elementName, getAccountCatalog, isTravelerId, travelerElements,
@@ -38,6 +40,7 @@ export default async function InventoryPage({ params }: PageProps<'/[locale]/dat
   const profileId = await getProfileId(db);
   const inventory = await readInventory(db, profileId);
   const roster = await readRoster(db, profileId);
+  const enka = await readEnkaAccount(db);
 
   const rostered = new Set(roster.map((entry) => entry.characterId));
   const holders = new Set(
@@ -92,6 +95,8 @@ export default async function InventoryPage({ params }: PageProps<'/[locale]/dat
 
   return (
     <div className="space-y-8">
+      <EnkaProfileCard account={enka} catalog={catalog} locale={locale} />
+
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat locale={locale} label={t('artifactsStat')} value={inventory.artifacts.length}
           note={t('artifactsEquippedNote', { count: assignedArtifacts.length })} />

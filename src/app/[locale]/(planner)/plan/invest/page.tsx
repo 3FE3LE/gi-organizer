@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 
 import { InvestHelp, InvestLists } from '@/components/invest-list';
+import { StaleStock } from '@/components/stale-stock';
 import { isLocale } from '@/lib/data/locales';
 import { getDb } from '@/lib/db/client';
 import { getAccountCatalog } from '@/lib/player/traveler';
@@ -29,6 +30,7 @@ export default async function InvestPage({ params }: PageProps<'/[locale]/plan/i
 
   return (
     <div className="space-y-6">
+      <StaleStock catalog={catalog} locale={locale} />
       <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
         <StrategyPicker
           strategy={plan.strategy}

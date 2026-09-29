@@ -28,6 +28,7 @@ const CLIENT_NAMESPACES = [
   'legend',
   // The strategy picker on the plan's "where to invest" tab.
   'invest',
+  'enka',
 ] as const;
 
 export function clientMessages(messages: AbstractIntlMessages): AbstractIntlMessages {

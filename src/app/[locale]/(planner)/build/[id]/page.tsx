@@ -8,10 +8,12 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { GameIcon } from '@/components/game-icon';
 import { HoverLabel } from '@/components/hint';
 import { InvestHelp, InvestLists } from '@/components/invest-list';
+import { RatingBreakdown } from '@/components/rating-breakdown';
 import { ReadyLists } from '@/components/ready-list';
 import { SectionTabs } from '@/components/section-tabs';
 import { isLocale } from '@/lib/data/locales';
 import { investPlan } from '@/lib/rules/invest-plan';
+import { readRatings } from '@/lib/rules/rating-plan';
 import { readyToLevel } from '@/lib/rules/ready';
 import { roleLabel } from '@/lib/rules/role-labels';
 import { getAccountCatalog } from '@/lib/player/traveler';
@@ -187,7 +189,7 @@ export default async function BuildPage({
 
 async function ObjectiveTab({ context }: { context: BuildContext }) {
   const { character, locale } = context;
-  const [view, cost, ready, invest] = await Promise.all([
+  const [view, cost, ready, invest, ratings] = await Promise.all([
     objectiveViewFor(context),
     upgradeCostFor(context),
     readyToLevel(context.catalog, context.db, new Set([context.characterId])),
@@ -197,7 +199,9 @@ async function ObjectiveTab({ context }: { context: BuildContext }) {
       characterIds: new Set([context.characterId]),
       strategy: { mode: 'balance' },
     }),
+    readRatings(context.catalog, context.db),
   ]);
+  const rating = ratings.get(context.characterId);
   const t = await getTranslations('build');
 
   return (
@@ -214,6 +218,8 @@ async function ObjectiveTab({ context }: { context: BuildContext }) {
           options={view.options}
         />
       </div>
+
+      {rating && <RatingBreakdown rating={rating} />}
 
       {/* Under the form that sets the target, because it is that target's
           price. Editing the level above and reading the cost below is one

@@ -29,6 +29,11 @@ export type EnkaPlayerInfo = {
   towerFloorIndex?: number;
   towerLevelIndex?: number;
   profilePicture?: { id?: number; avatarId?: number; costumeId?: number };
+  /**
+   * Who is in the showcase, and at what level. Sent even when the details are
+   * hidden, so it is the list a "shown in the showcase" mark reads.
+   */
+  showAvatarInfoList?: { avatarId: number; level?: number }[];
 };
 
 export type EnkaAvatarInfo = {

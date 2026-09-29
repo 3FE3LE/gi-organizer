@@ -285,7 +285,7 @@ function applyWeapons(
   const survivors = owned.filter((weapon) => !removed.has(weapon.id));
   const result = [...survivors, ...added];
 
-  if (!full) return result;
+  if (!full) return advanceHeld(result, plan);
 
   // A weapon that simply changed hands produces no verdict, because the counts
   // did not move. So a full import re-derives every holder from the file: per
@@ -330,6 +330,34 @@ function applyWeapons(
     ...weapon,
     equippedTo: holderById.get(weapon.id) ?? null,
   }));
+}
+
+/**
+ * A partial source's weapons, onto the copies they are.
+ *
+ * Counting by fingerprint cannot see a weapon levelled since the last scan —
+ * level is not part of it — so a showcase never moved one. What a showcase
+ * does know is who holds what: the copy a character wears is the copy it
+ * shows on them. So that copy takes the showcase's level, ascension and
+ * refinement, each only upwards, for the same reason character progress only
+ * moves up: the showcase may be older than the scan. Nothing else is touched.
+ */
+function advanceHeld(weapons: OwnedWeapon[], plan: ImportPlan): OwnedWeapon[] {
+  const shown = new Map<string, NormalizedWeapon>();
+  for (const weapon of plan.weapons.incoming) {
+    if (weapon.equippedTo !== null) shown.set(`${weapon.weaponId}|${weapon.equippedTo}`, weapon);
+  }
+  if (shown.size === 0) return weapons;
+
+  return weapons.map((weapon) => {
+    const seen = weapon.equippedTo === null ? undefined : shown.get(`${weapon.weaponId}|${weapon.equippedTo}`);
+    if (!seen) return weapon;
+    const level = Math.max(weapon.level, seen.level);
+    const ascension = Math.max(weapon.ascension, seen.ascension);
+    const refinement = Math.max(weapon.refinement, seen.refinement);
+    if (level === weapon.level && ascension === weapon.ascension && refinement === weapon.refinement) return weapon;
+    return { ...weapon, level, ascension, refinement, source: plan.source, seenAt: plan.observedAt };
+  });
 }
 
 function adoptWeapon(

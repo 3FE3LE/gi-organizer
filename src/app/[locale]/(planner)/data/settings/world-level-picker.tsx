@@ -21,9 +21,12 @@ const DEFAULT = 'default';
 export function WorldLevelPicker({
   levels,
   chosen,
+  automatic,
 }: {
   levels: readonly WorldLevel[];
   chosen: WorldLevel | null;
+  /** What "automatic" resolves to: the showcase's level, or eight. */
+  automatic: WorldLevel;
 }) {
   const t = useTranslations('data.settingsPage');
   const [shown, setShown] = useOptimistic(chosen);
@@ -42,7 +45,7 @@ export function WorldLevelPicker({
       onValueChange={pick}
       groups={[{
         options: [
-          { value: DEFAULT, label: t('worldLevelDefault') },
+          { value: DEFAULT, label: t('worldLevelDefault', { level: automatic }) },
           ...levels.map((level) => ({ value: String(level), label: t('worldLevelOption', { level }) })),
         ],
       }]}

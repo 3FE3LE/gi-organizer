@@ -1,4 +1,4 @@
-import { CalendarCheck } from 'lucide-react';
+import { CalendarCheck, MonitorUp } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { ElementIcon } from '@/components/element-icon';
@@ -107,6 +107,8 @@ export function CardMark({
 const CONSTELLATION_ANGLE = 35;
 /** Upper left, across the portrait from the constellation. */
 const ELEMENT_ANGLE = 215;
+/** Lower left, clear of the constellation opposite it and of the name below. */
+const SHOWCASE_ANGLE = 145;
 /** Just outside the 40px radius, so a badge overlaps the border, not the face. */
 const RIM = 42;
 
@@ -122,12 +124,18 @@ export function CharacterPortrait({
   elementText,
   constellation,
   ring,
+  showcased = null,
   children,
 }: {
   elementType: string;
   elementText: string;
   /** Null for a character the account does not have. */
   constellation: number | null;
+  /**
+   * In the Enka showcase, and what that means on hover. Their progress is
+   * read from it on its own — see `lib/player/showcase-sync.ts`.
+   */
+  showcased?: string | null;
   /** How far the level is towards its target, 0–1, and what it says on hover. */
   ring: { value: number; title: string } | null;
   children: React.ReactNode;
@@ -150,6 +158,14 @@ export function CharacterPortrait({
           C{constellation}
         </RimBadge>
       )}
+      {showcased && (
+        <RimBadge angle={SHOWCASE_ANGLE} className="h-5 w-5 p-0 text-accent">
+          <span title={showcased} className="flex items-center justify-center">
+            <MonitorUp size={11} aria-hidden />
+            <span className="sr-only">{showcased}</span>
+          </span>
+        </RimBadge>
+      )}
     </div>
   );
 }
@@ -164,12 +180,15 @@ export function LevelTalents({
   talent,
   met,
   labels,
+  rating = null,
 }: {
   level: number;
   talent: { auto: number; skill: number; burst: number };
   /** Per talent, whether it reached its target; null when there is none to reach. */
   met: { auto: boolean; skill: boolean; burst: boolean } | null;
   labels: { level: string; talents: string };
+  /** How well built, 0–100, and what it says on hover. */
+  rating?: { score: number; title: string } | null;
 }) {
   return (
     <span className="whitespace-nowrap font-mono text-2xs text-muted">
@@ -186,6 +205,12 @@ export function LevelTalents({
           </span>
         ))}
       </span>
+      {rating && (
+        <>
+          {' · '}
+          <RatingValue score={rating.score} title={rating.title} />
+        </>
+      )}
     </span>
   );
 }
@@ -201,7 +226,7 @@ export function CardLegend({
   labels,
   className = '',
 }: {
-  labels: { summary: string; ring: string; talents: string; today: string; todayText: string; planned: string };
+  labels: { summary: string; ring: string; talents: string; today: string; todayText: string; planned: string; showcase?: string };
   className?: string;
 }) {
   const common = useTranslations('common');
@@ -240,6 +265,9 @@ export function CardLegend({
       text: labels.today,
     },
     { key: 'planned', mark: <CalendarCheck size={14} aria-hidden className="text-accent" />, text: labels.planned },
+    ...(labels.showcase
+      ? [{ key: 'showcase', mark: <MonitorUp size={14} aria-hidden className="text-accent" />, text: labels.showcase }]
+      : []),
   ];
 
   return (
@@ -294,6 +322,20 @@ function RimBadge({ angle, className, children }: { angle: number; className: st
       }}
     >
       {children}
+    </span>
+  );
+}
+
+/**
+ * The rating, as a number on the card's own line — see `lib/rules/rating.ts`.
+ * Green once a build reads as finished, muted while it is well short.
+ */
+export function RatingValue({ score, title }: { score: number; title: string }) {
+  const tone = score >= 80 ? 'text-good' : score >= 50 ? 'text-text' : 'text-muted';
+  return (
+    <span title={title} className={`tabular ${tone}`}>
+      {score}
+      <span className="sr-only"> · {title}</span>
     </span>
   );
 }

@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 
 import { ReadyLists, ReadyTiles } from '@/components/ready-list';
+import { StaleStock } from '@/components/stale-stock';
 import { isLocale } from '@/lib/data/locales';
 import { getDb } from '@/lib/db/client';
 import { getAccountCatalog } from '@/lib/player/traveler';
@@ -28,6 +29,7 @@ export default async function ReadyPage({ params }: PageProps<'/[locale]/plan/re
 
   return (
     <div className="space-y-6">
+      <StaleStock catalog={catalog} locale={locale} />
       <ReadyTiles ready={ready} />
       <ReadyLists ready={ready} catalog={catalog} locale={locale} />
     </div>

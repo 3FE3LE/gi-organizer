@@ -636,6 +636,43 @@
       "estimate": "It does not simulate rotations, reactions or buffs: it compares steps with the same rules. Balance nudges up whatever brings someone to level 80 or talents at 8."
     }
   },
+  "enka": {
+    "noUid": "Add your Genshin UID and the app will read your Enka profile and showcase on its own.",
+    "addUid": "Add UID",
+    "unknownName": "No name",
+    "updated": "read {ago}",
+    "refresh": "Update",
+    "adventureRank": "Rank",
+    "worldLevel": "World level",
+    "achievements": "Achievements",
+    "abyss": "Abyss",
+    "showcase": "Showcase",
+    "notRead": "The showcase has not been read yet. Press Update.",
+    "inShowcase": "In the Enka showcase: their progress updates on its own",
+    "legendShowcase": "In your Enka showcase: their level, talents, weapon and artifacts update on their own.",
+    "staleStock": "Your inventory is from {date} and {names} levelled since. Whatever depends on materials may be behind: reimport materials when you can."
+  },
+  "rating": {
+    "title": "Rating {score}/100 · no Akasha ranking",
+    "titleAkasha": "Rating {score}/100 · top {top}% on Akasha",
+    "heading": "Rating",
+    "part": {
+      "level": "Level",
+      "talents": "Talents",
+      "weapon": "Weapon",
+      "artifacts": "Artifacts",
+      "akasha": "Akasha ranking"
+    },
+    "top": "top {top}%",
+    "noRanking": "no ranking: the character is not in your showcase, your UID is not loaded on akasha.cv, or Akasha did not answer. It costs nothing.",
+    "help": {
+      "open": "How it is rated",
+      "title": "How it is rated",
+      "own": "Ninety points are the build's own: level (to 90), talents (complete at 8), weapon (to its last level) and artifacts (useful rolls for the build).",
+      "akasha": "Ten points are your place on Akasha's global leaderboard. The top 20% already counts as all ten: what is above it is bought more than built.",
+      "missing": "Without an Akasha ranking the score is worked out on our own ninety, so not having one never costs anything."
+    }
+  },
   "data": {
     "title": "Data",
     "tabs": {
@@ -704,7 +741,13 @@
       "serverUndetected": "No timezone detected yet: using {region}",
       "worldLevelHeading": "World level",
       "worldLevelHint": "Domain and boss drop rates depend on it. It is what the resin estimate for your plan is priced at.",
-      "worldLevelDefault": "Default (8)",
+      "worldLevelDefault": "Automatic ({level})",
+      "worldLevelDetected": "Your Enka showcase says world level {level}.",
+      "uidHeading": "Genshin UID",
+      "uidHint": "With your UID the app reads your Enka showcase on its own: your profile, who is in the showcase, their progress and your world level. It never touches your material inventory. Leave it empty and save to forget it.",
+      "uidLabel": "UID",
+      "uidSave": "Save",
+      "uidStatus": {"idle": "", "saved": "Saved and read.", "cleared": "Forgotten.", "invalid": "Not a Genshin UID.", "unreachable": "Saved, but Enka did not answer or the showcase is hidden."},
       "worldLevelOption": "World level {level}"
     },
     "importPage": {

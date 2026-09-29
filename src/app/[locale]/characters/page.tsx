@@ -28,6 +28,8 @@ import { isLocale } from '@/lib/data/locales';
 import { getDb } from '@/lib/db/client';
 import { readRoster, type CharacterBuild } from '@/lib/player/characters';
 import { getProfileId } from '@/lib/player/db';
+import { readEnkaAccount } from '@/lib/player/enka-profile';
+import { readRatings } from '@/lib/rules/rating-plan';
 import { currentProfileId } from '@/lib/player/profile';
 import { holdersWithGear } from '@/lib/player/queries';
 import { readRegion } from '@/lib/player/region';
@@ -87,12 +89,25 @@ export default async function CharactersPage({
   // steps now overlap, so the timing line reads each one's own length and the
   // total is the longest of them rather than their sum.
   const profileId = await timer.step('auth', currentProfileId());
-  const [catalog, rosterRows, gear, region] = await Promise.all([
+  const [catalog, rosterRows, gear, region, enka, enkaT, ratingT] = await Promise.all([
     timer.step('catalog', getAccountCatalog(locale)),
     timer.step('roster', getProfileId(db).then(() => readRoster(db, profileId))),
     timer.step('gear', holdersWithGear(db)),
     timer.step('region', readRegion(db)),
+    timer.step('enka', readEnkaAccount(db)),
+    getTranslations('enka'),
+    getTranslations('rating'),
   ]);
+  // Who the Enka showcase shows, whose progress it keeps current on its own.
+  const showcase = { ids: new Set(enka.profile?.showcase ?? []), label: enkaT('inShowcase') };
+  // After the catalog: a rating reads it for the weapons' rarities.
+  const ratingMap = await timer.step('rating', readRatings(catalog, db));
+  const ratings = new Map([...ratingMap].map(([id, rating]) => [id, {
+    score: rating.score,
+    title: rating.akashaTop !== null
+      ? ratingT('titleAkasha', { score: rating.score, top: rating.akashaTop })
+      : ratingT('title', { score: rating.score }),
+  }]));
   const roster = new Map(rosterRows.map((entry) => [entry.characterId, entry]));
   const owned: ReadonlySet<number> = new Set(roster.keys());
   timer.done();
@@ -235,6 +250,7 @@ export default async function CharactersPage({
               today: t('legendToday'),
               todayText: t('booksToday'),
               planned: t('legendPlanned'),
+              showcase: enkaT('legendShowcase'),
             }} />
           </div>
           {/*
@@ -286,6 +302,8 @@ export default async function CharactersPage({
                     characters={group.characters}
                     roster={roster}
                     progress={progress}
+                    showcase={showcase}
+                    ratings={ratings}
                     t={t}
                     compact
                   />
@@ -311,6 +329,8 @@ export default async function CharactersPage({
                   characters={group.characters}
                   roster={roster}
                   progress={progress}
+                  showcase={showcase}
+                  ratings={ratings}
                   t={t}
                   eager={index === 0}
                 />
@@ -756,6 +776,8 @@ function Gallery({
   characters,
   roster,
   progress,
+  showcase,
+  ratings,
   t,
   eager = false,
   compact = false,
@@ -764,6 +786,8 @@ function Gallery({
   characters: CharacterView[];
   roster: ReadonlyMap<number, CharacterBuild>;
   progress: ReadonlyMap<number, CardProgress>;
+  showcase: { ids: ReadonlySet<number>; label: string };
+  ratings: ReadonlyMap<number, { score: number; title: string }>;
   t: Messages;
   /** The first gallery holds the largest contentful paint; the second is below it. */
   eager?: boolean;
@@ -820,6 +844,7 @@ function Gallery({
                   elementType={character.elementType}
                   elementText={character.elementText}
                   constellation={entry?.constellation ?? null}
+                  showcased={mine && showcase.ids.has(character.id) ? showcase.label : null}
                   ring={entry && ahead?.level != null
                     ? { value: ahead.level, title: t('levelTitle', { level: entry.level, target: entry.target.level ?? 90 }) }
                     : null}
@@ -860,6 +885,7 @@ function Gallery({
                       talent={entry.talent}
                       met={ahead?.talentsMet ?? null}
                       labels={{ level: t('levelShort', { level: entry.level }), talents: t('talentsTitle', entry.talent) }}
+                      rating={ratings.get(character.id) ?? null}
                     />
                   ) : (
                     t('versionLine', { version: character.version })

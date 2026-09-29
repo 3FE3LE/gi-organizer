@@ -84,7 +84,8 @@ export async function fetchShowcase(uid: string): Promise<EnkaFetchResult> {
       cache: 'no-store',
     });
   } catch {
-    inFlight -= 1;
+    // The `finally` below releases the slot; releasing it here as well
+    // undercounted, and let more requests through than the cap allows.
     return { ok: false, status: 502, code: 'upstream', message: 'could not reach Enka' };
   } finally {
     inFlight = Math.max(0, inFlight - 1);
