@@ -333,7 +333,7 @@ async function SlotChanges({
     <section>
       <h3 className="mb-2 font-mono text-2xs uppercase tracking-wide text-muted">{panel.title}</h3>
 
-      <ul className="grid grid-cols-2 gap-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+      <ul className="artifact-grid">
         {equipped ? (
           <OwnedArtifactCard
             piece={equipped}

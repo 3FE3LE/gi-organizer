@@ -29,7 +29,7 @@ export function EmptyArtifactSlot({
 }) {
   return (
     <li
-      className={`group relative flex flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-edge p-3 text-xs text-muted ${
+      className={`group relative flex w-full min-w-0 max-w-[180px] flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-edge p-3 text-center text-xs text-muted ${
         withFooter ? 'min-h-[214px]' : 'min-h-[175px]'
       } ${className ?? ''}`}
     >

@@ -93,7 +93,7 @@ export function ArtifactCardView({
   const common = useTranslations('common');
 
   return (
-    <li className={`group relative isolate flex min-w-0 flex-col overflow-hidden card-glass p-2.5 ${className ?? ''}`}>
+    <li className={`group relative isolate flex w-full min-w-0 max-w-[180px] flex-col overflow-hidden card-glass p-2.5 ${className ?? ''}`}>
       {/* The rarity, rising from the bottom edge as it does on a roster card:
           gold for five stars, violet for four. Behind everything else. */}
       <span

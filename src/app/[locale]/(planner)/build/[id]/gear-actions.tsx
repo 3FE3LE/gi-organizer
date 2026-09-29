@@ -375,10 +375,13 @@ function SlotDialog({
 
           {/* `grid-cols-1` on a phone, not the implicit column: that one sizes to
               its content, and the comparison table's own minimum width pushed
-              the whole dialog wider than the screen. */}
+              the whole dialog wider than the screen. The two cards join the
+              table only from `lg`: beside two 180 px cards a tablet's dialog
+              left the table 300 px, and its last column was cut off. Below
+              that the chosen card is still the highlighted one in the grid. */}
           <Collapse open={previewOpen}>
-          <div className="grid grid-cols-1 gap-3 pt-1.5 sm:grid-cols-[minmax(0,11rem)_minmax(0,11rem)_minmax(0,1fr)]">
-            <ul className="hidden sm:block">
+          <div className="grid grid-cols-1 gap-3 pt-1.5 lg:grid-cols-[180px_180px_minmax(0,1fr)]">
+            <ul className="hidden lg:block">
               {view.equipped?.card ? (
                 <OwnedArtifactCardView
                   data={view.equipped.card}
@@ -404,7 +407,7 @@ function SlotDialog({
                 />
               )}
             </ul>
-            <ul className="hidden sm:block">
+            <ul className="hidden lg:block">
               {selected.card && <OwnedArtifactCardView data={selected.card} className="border-accent" hideSlot />}
             </ul>
 
@@ -455,7 +458,7 @@ function SlotDialog({
         )}
 
         {view?.kind === 'artifact' && (
-          <ul className="grid grid-cols-2 gap-2 p-2 sm:grid-cols-3 lg:grid-cols-4">
+          <ul className="artifact-grid p-2">
             {drawn.map((candidate) => candidate.card && (
               <OwnedArtifactCardView
                 key={candidate.id}

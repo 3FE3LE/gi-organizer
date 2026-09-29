@@ -595,7 +595,7 @@ export async function CharacterPanel({
             })}
           />
 
-          <ul className="hidden gap-2 sm:grid sm:grid-cols-2 lg:grid-cols-5">
+          <ul className="artifact-grid max-sm:hidden">
             {SLOT_ORDER.map((slot) => (
               <ArtifactSlotCard
                 key={slot}
