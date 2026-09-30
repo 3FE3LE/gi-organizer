@@ -269,3 +269,18 @@ test('an assumed target is marked on every row it produced', () => {
 
   assert.ok(need.by.every((entry) => entry.assumed));
 });
+
+test('a talent with its own bill is charged its own books, as a Geo Traveler\'s skill is', () => {
+  const LIYUE_BOOK = 104310;
+  const liyue = {
+    lvl7: [{ id: LIYUE_BOOK, count: 4 }],
+    lvl8: [{ id: LIYUE_BOOK, count: 6 }],
+    lvl9: [{ id: LIYUE_BOOK, count: 9 }],
+  };
+  const needs = computeDemand([source({ talentCostsBy: { skill: liyue, burst: liyue } })], new Map());
+  const books = new Map(needs.map((need) => [need.materialId, need.needed]));
+
+  // The attack keeps the shared bill; the skill and burst pay Liyue's.
+  assert.equal(books.get(BOOK), 4 + 6 + 9);
+  assert.equal(books.get(LIYUE_BOOK), 2 * (4 + 6 + 9));
+});

@@ -22,7 +22,16 @@ export type CoreCharacter = {
   stats: StatTable;
   costs: CostsByPhase;
   talentCosts: CostsByPhase;
+  /** Each combat talent's own bill, where the three differ — a Traveler's form. */
+  talentCostsBy?: TalentCostsBy;
+  /**
+   * The Traveler's forms, keyed `ELEMENT_ANEMO`. The body has no talents of
+   * its own; the account catalog lifts the element's onto it.
+   */
+  forms?: Record<string, { talentCosts: CostsByPhase; talentCostsBy?: TalentCostsBy }>;
 };
+
+export type TalentCostsBy = Partial<Record<'auto' | 'skill' | 'burst', CostsByPhase>>;
 
 export type CoreWeapon = {
   id: number;
@@ -122,6 +131,8 @@ export type TalentEntry = {
 export type CharacterDetailStrings = {
   talents: { combat: TalentEntry[]; passive: TalentEntry[] } | null;
   constellation: { name: string; levels: TalentEntry[] } | null;
+  /** The Traveler's, per element form; the body's own two are null. */
+  forms?: Record<string, Omit<CharacterDetailStrings, 'forms'>>;
 };
 
 /** One entry of Enka's skill-ordering table, pruned by `pnpm data:enka`. */

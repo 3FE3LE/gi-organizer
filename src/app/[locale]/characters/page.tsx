@@ -26,7 +26,7 @@ import {
 } from '@/lib/data/grouping';
 import { isLocale } from '@/lib/data/locales';
 import { levelLabel } from '@/lib/data/stats';
-import { ASSUMED_TARGET } from '@/lib/rules/materials';
+import { ASSUMED_TARGET, talentTables } from '@/lib/rules/materials';
 import { getDb } from '@/lib/db/client';
 import { readRoster, type CharacterBuild } from '@/lib/player/characters';
 import { getProfileId } from '@/lib/player/db';
@@ -142,7 +142,7 @@ export default async function CharactersPage({
     cardProgress(
       entry,
       talentBookDays(
-        catalog.characters.get(entry.characterId)?.talentCosts ?? {},
+        talentTables(catalog.characters.get(entry.characterId)),
         (id) => catalog.materials.get(id)?.days,
       ),
       weekday,

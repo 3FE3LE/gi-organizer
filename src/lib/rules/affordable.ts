@@ -1,4 +1,4 @@
-import type { CostsByPhase, Progress } from './materials';
+import { talentCostsOf, type CostsByPhase, type Progress } from './materials';
 
 /**
  * What the bag already pays for.
@@ -20,6 +20,8 @@ import type { CostsByPhase, Progress } from './materials';
 export type LevellingData = {
   /** The highest level each ascension phase allows, phase 0 first. */
   levelCaps: number[];
+  /** The highest talent level each ascension phase allows, phase 0 first. */
+  talentCaps: number[];
   /** Total EXP to reach each level, level 1 first. */
   characterExp: number[];
   /** The same per weapon rarity, as strings: `"5"`. */
@@ -152,28 +154,78 @@ export function characterReach(input: {
   return { ...result, characterId: input.characterId, fates };
 }
 
+/**
+ * The ascension phase a talent level needs: the game caps talents by phase,
+ * so a character at 60 before ascending tops out at 5, however many books
+ * are in the bag.
+ */
+export function phaseForTalent(level: number, talentCaps: number[]) {
+  const phase = talentCaps.findIndex((cap) => cap >= level);
+  return phase === -1 ? talentCaps.length - 1 : phase;
+}
+
 export type TalentReach = {
   characterId: number;
   from: Progress['talents'];
   to: Progress['talents'];
   levels: number;
+  /** The ascension the talents needed on the way, paid from the same bag; null when none. */
+  ascended: Climb | null;
 };
 
-/** The cheapest next level first — the lowest talent — so the count is the most the bag buys. */
+/**
+ * The cheapest next level first — the lowest talent — so the count is the most the bag buys.
+ *
+ * A level past what the character's phase allows is only bought by paying
+ * for the ascension first — the EXP up to the cap and the ascension
+ * materials — out of the same bag. If the bag cannot pay it, that talent
+ * stops there: a talent the character cannot level yet is not one the bag
+ * pays for.
+ */
 export function talentReach(input: {
   characterId: number;
   current: Progress['talents'];
   target: Progress['talents'];
   talentCosts: CostsByPhase;
+  talentCostsBy?: Partial<Record<keyof Progress['talents'], CostsByPhase>>;
   stock: Stock;
+  /** Where the character is, and what ascending costs them. */
+  character: Pick<Progress, 'level' | 'ascension'>;
+  ascensionCosts: CostsByPhase;
+  data: LevellingData;
 }): TalentReach {
+  const { data } = input;
   const stock = new Map(input.stock);
   const to = { ...input.current };
   const open = new Set((['auto', 'skill', 'burst'] as const).filter((key) => to[key] < input.target[key]));
+  let character = { ...input.character };
 
   while (open.size > 0) {
     const next = [...open].sort((a, b) => to[a] - to[b])[0];
-    if (spend(stock, input.talentCosts[`lvl${to[next] + 1}`])) {
+    const phase = phaseForTalent(to[next] + 1, data.talentCaps);
+
+    // Tried on a copy: the ascension it may need and the level itself are
+    // one purchase, and a bag that pays for the first but not the second
+    // has bought nothing worth spending on.
+    const trial = new Map(stock);
+    let reached = character;
+    if (phase > character.ascension) {
+      // The ascension, and the levels up to the cap it starts from.
+      reached = climb(
+        character,
+        { level: Math.max(character.level, data.levelCaps[phase - 1]), ascension: phase },
+        input.ascensionCosts,
+        data.characterExp,
+        data.characterExpItems,
+        data.moraPerExp.character,
+        data.levelCaps,
+        trial,
+      ).to;
+    }
+
+    if (reached.ascension >= phase && spend(trial, talentCostsOf(input, next)[`lvl${to[next] + 1}`])) {
+      for (const [id, count] of trial) stock.set(id, count);
+      character = reached;
       to[next] += 1;
       if (to[next] >= input.target[next]) open.delete(next);
     } else {
@@ -182,7 +234,10 @@ export function talentReach(input: {
   }
 
   const levels = (to.auto - input.current.auto) + (to.skill - input.current.skill) + (to.burst - input.current.burst);
-  return { characterId: input.characterId, from: input.current, to, levels };
+  const ascended = character.ascension > input.character.ascension
+    ? { from: input.character, to: character }
+    : null;
+  return { characterId: input.characterId, from: input.current, to, levels, ascended };
 }
 
 export type WeaponReach = Climb & {

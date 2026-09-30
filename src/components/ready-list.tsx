@@ -62,6 +62,11 @@ export async function ReadyLists({
             from={talentLine(reach.from)}
             to={talentLine(reach.to)}
             badge={t('talentLevels', { count: reach.levels })}
+            // A talent past what the phase allows is bought with the
+            // ascension first, from the same bag, and the row says so.
+            note={reach.ascended
+              ? t('withAscension', { level: levelLabel(reach.ascended.to.level, reach.ascended.to.ascension) })
+              : null}
           />
         ))}
       </Section>
@@ -139,13 +144,15 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 function Row({
-  face, name, from, to, badge,
+  face, name, from, to, badge, note = null,
 }: {
   face: React.ReactNode;
   name: string | null;
   from: string;
   to: string;
   badge: string | null;
+  /** What else the row pays for on the way, such as an ascension. */
+  note?: string | null;
 }) {
   return (
     <li className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-xs">
@@ -163,6 +170,7 @@ function Row({
           {badge}
         </span>
       )}
+      {note && <span className="basis-full font-mono text-2xs text-muted">{note}</span>}
     </li>
   );
 }

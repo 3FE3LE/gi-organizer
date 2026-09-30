@@ -5,7 +5,7 @@ import { GameIcon } from '@/components/game-icon';
 import type { Catalog } from '@/lib/data/catalog';
 import type { Team } from '@/lib/player/teams';
 import { talentBookDays } from '@/lib/rules/card-progress';
-import type { Weekday } from '@/lib/rules/materials';
+import { talentTables, type Weekday } from '@/lib/rules/materials';
 
 import { type Filters, href } from './filters';
 import { PlannedCount, RosterBulk, RosterFace, RosterTeam } from './roster-chip';
@@ -83,7 +83,7 @@ export async function RosterPanel({
       // Same reading as the "hoy" badge on a roster card: a book they still
       // need drops from a domain open today.
       booksToday: entry.talentsShort && talentBookDays(
-        catalog.characters.get(entry.characterId)?.talentCosts ?? {},
+        talentTables(catalog.characters.get(entry.characterId)),
         (id) => catalog.materials.get(id)?.days,
       ).has(today),
     }))

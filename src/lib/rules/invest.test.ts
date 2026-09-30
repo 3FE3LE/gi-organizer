@@ -5,6 +5,7 @@ import { test } from 'node:test';
 
 import {
   compound,
+  isReady,
   kitScaler,
   levelFactor,
   proxy,
@@ -65,7 +66,7 @@ test('a main DPS outweighs a healer, and a slot without roles is still fielded',
 
 const step = (overrides: Partial<InvestStep>): InvestStep => ({
   characterId: 1, kind: 'talent', talent: 'burst', from: 8, to: 9,
-  gain: 0.05, resin: 100, mora: 0, needsCrown: false, belowAcceptable: false,
+  gain: 0.05, resin: 100, mora: 0, moraCost: 0, needsCrown: false, belowAcceptable: false,
   ...overrides,
 });
 
@@ -74,6 +75,7 @@ const context = (strategy: Parameters<typeof rankSteps>[1]['strategy']) => ({
   weightOf: (id: number) => (id === 1 ? 1 : 0.25),
   membersOf: () => new Set([2]),
   config,
+  mora: 1_000_000,
 });
 
 test('something the bag already pays for comes first, whatever it adds', () => {
@@ -118,4 +120,13 @@ test('the scaler is read off the kit', () => {
   assert.equal(kitScaler([{ labels: ['Skill DMG|{param1:P} Max HP'] }]), 'FIGHT_PROP_HP');
   assert.equal(kitScaler([{ labels: ['Skill DMG|{param1:P} DEF'] }]), 'FIGHT_PROP_DEFENSE');
   assert.equal(kitScaler([{ labels: ['Skill DMG|{param1:P}'] }]), null, 'a bare percentage is ATK');
+});
+
+test('nothing to farm is not ready while the mora is short, and ranks with the rest', () => {
+  const ranked = rankSteps([
+    step({ characterId: 1, resin: 0, moraCost: 2_000_000, gain: 0.2 }),
+    step({ characterId: 1, talent: 'skill', resin: 0, moraCost: 10_000, gain: 0.01 }),
+  ], { ...context({ mode: 'balance' }), mora: 50_000 });
+  assert.deepEqual(ranked.map((entry) => entry.talent), ['skill', 'burst']);
+  assert.equal(isReady(ranked[1], 50_000), false);
 });

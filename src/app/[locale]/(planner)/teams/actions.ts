@@ -19,6 +19,7 @@ import {
   setSlot,
 } from '@/lib/player/teams';
 import { followTeamIntoPlan } from '@/lib/player/team-plan';
+import { getAccountCatalog, isTravelerId } from '@/lib/player/traveler';
 import { getBuildPriorities } from '@/lib/rules/assemble';
 import { preferredPositions } from '@/lib/rules/slot-order';
 import { suggestRoles } from '@/lib/rules/suggest-role';
@@ -130,7 +131,14 @@ async function suggestedRoles(characterId: number): Promise<TeamRole[]> {
     getBuildPriorities(),
     // English, whatever the page's language: the heuristic reads the game's
     // own English wording, and a translation would need a regex per locale.
-    getCharacterDetailStrings('en', characterId),
+    getCharacterDetailStrings(
+      'en',
+      characterId,
+      // A Traveler's kit is its element's: read the account's.
+      isTravelerId(characterId)
+        ? (await getAccountCatalog('en')).characters.get(characterId)?.elementType
+        : undefined,
+    ),
   ]);
 
   return suggestRoles({

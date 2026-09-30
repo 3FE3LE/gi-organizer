@@ -11,6 +11,7 @@ import {
   type DemandSource,
   type Progress,
   type Reason,
+  talentTables,
 } from '@/lib/rules/materials';
 import type { ResinEstimate } from '@/lib/rules/resin';
 
@@ -103,6 +104,7 @@ export async function upgradeCostFor(context: BuildContext): Promise<UpgradeCost
     target: to,
     ascensionCosts: character.costs,
     talentCosts: character.talentCosts,
+    talentCostsBy: character.talentCostsBy,
     // The weapon in hand, to ninety: the goal no longer names a different one,
     // so the one equipped is the one this plan is for. Six is the last phase.
     weapon: gear.weapon && weapon
@@ -213,7 +215,7 @@ export function familiesOf(
 ): Map<number, string> {
   const groups: Set<number>[] = [];
 
-  for (const table of [character.costs, character.talentCosts, ...extra] as CostsByPhase[]) {
+  for (const table of [character.costs, ...talentTables(character), ...extra] as CostsByPhase[]) {
     const byRank = new Map<number, Set<number>>();
 
     for (const items of Object.values(table)) {

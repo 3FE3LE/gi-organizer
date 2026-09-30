@@ -191,10 +191,18 @@ const EMPTY_DETAIL: CharacterDetailStrings = { talents: null, constellation: nul
  * purpose: it is over 1 MB per locale and only ever read for one character at a
  * time, so loading it eagerly would pay for 121 characters nobody asked for.
  */
-export async function getCharacterDetailStrings(locale: Locale, id: number) {
+export async function getCharacterDetailStrings(
+  locale: Locale,
+  id: number,
+  /** The element to read a Traveler's text in; ignored for everybody else. */
+  element?: string,
+): Promise<CharacterDetailStrings> {
   const file = `i18n/${locale}/characters/${id}.json`;
   try {
-    return await load<CharacterDetailStrings>(file);
+    const strings = await load<CharacterDetailStrings>(file);
+    // A Traveler body has no talents of its own; its element's form does.
+    const form = element ? strings.forms?.[element] : undefined;
+    return form ?? strings;
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       cache.delete(file);

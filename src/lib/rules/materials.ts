@@ -54,6 +54,8 @@ export type DemandSource = {
   assumed?: boolean;
   ascensionCosts: CostsByPhase;
   talentCosts: CostsByPhase;
+  /** Each talent's own bill where the three differ, as a Traveler's do. */
+  talentCostsBy?: Partial<Record<keyof Progress['talents'], CostsByPhase>>;
   /** The planned weapon, when the build names one that is owned. */
   weapon: { weaponId: number; costs: CostsByPhase; ascension: number; target: number } | null;
 };
@@ -93,6 +95,21 @@ function talentLevels(from: number, to: number) {
   const levels: string[] = [];
   for (let level = from + 1; level <= to; level += 1) levels.push(`lvl${level}`);
   return levels;
+}
+
+/** What one talent's levels cost: its own bill where it has one, the shared one otherwise. */
+export function talentCostsOf(
+  source: { talentCosts: CostsByPhase; talentCostsBy?: Partial<Record<keyof Progress['talents'], CostsByPhase>> },
+  talent: keyof Progress['talents'],
+): CostsByPhase {
+  return source.talentCostsBy?.[talent] ?? source.talentCosts;
+}
+
+/** Every talent bill a character has, for anything that reads all of them, such as book days. */
+export function talentTables(
+  source: { talentCosts: CostsByPhase; talentCostsBy?: Partial<Record<keyof Progress['talents'], CostsByPhase>> } | undefined,
+): CostsByPhase[] {
+  return source ? [source.talentCosts, ...Object.values(source.talentCostsBy ?? {})] : [];
 }
 
 export function computeDemand(
@@ -156,7 +173,7 @@ export function tallyDemand(
       keyof Progress['talents'], number,
     ][]) {
       for (const level of talentLevels(from, source.target.talents[talent])) {
-        for (const item of source.talentCosts[level] ?? []) {
+        for (const item of talentCostsOf(source, talent)[level] ?? []) {
           add(item.id, item.count, source, 'talent');
         }
       }

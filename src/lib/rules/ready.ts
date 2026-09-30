@@ -15,7 +15,7 @@ import {
   type TalentReach,
   type WeaponReach,
 } from './affordable';
-import { ASSUMED_TARGET } from './materials';
+import { ASSUMED_TARGET, talentCostsOf } from './materials';
 
 const MORA = 202;
 
@@ -87,7 +87,7 @@ export async function readyToLevel(
 
     if (entry.ascension < target.ascension) consider(moraOf(character.costs[`ascend${entry.ascension + 1}`]));
     for (const key of ['auto', 'skill', 'burst'] as const) {
-      if (entry.talent[key] < talentTarget[key]) consider(moraOf(character.talentCosts[`lvl${entry.talent[key] + 1}`]));
+      if (entry.talent[key] < talentTarget[key]) consider(moraOf(talentCostsOf(character, key)[`lvl${entry.talent[key] + 1}`]));
     }
 
     const reach = characterReach({
@@ -105,7 +105,11 @@ export async function readyToLevel(
       current: entry.talent,
       target: talentTarget,
       talentCosts: character.talentCosts,
+      talentCostsBy: character.talentCostsBy,
       stock,
+      character: { level: entry.level, ascension: entry.ascension },
+      ascensionCosts: character.costs,
+      data,
     });
     if (talent.levels > 0) talents.push(talent);
   }

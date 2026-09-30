@@ -6,7 +6,7 @@ import { propLabel } from '@/lib/data/catalog';
 import { ELEMENT_COLORS, elementColor } from '@/lib/data/elements';
 import { isLocale } from '@/lib/data/locales';
 import { levelLabel } from '@/lib/data/stats';
-import { ASSUMED_TARGET } from '@/lib/rules/materials';
+import { ASSUMED_TARGET, talentTables } from '@/lib/rules/materials';
 import { getDb } from '@/lib/db/client';
 import { readRoster } from '@/lib/player/characters';
 import { isDraft } from '@/lib/player/teams';
@@ -90,7 +90,7 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
 
     const ahead = cardProgress(
       entry,
-      talentBookDays(character?.talentCosts ?? {}, (id) => catalog.materials.get(id)?.days),
+      talentBookDays(talentTables(character), (id) => catalog.materials.get(id)?.days),
       weekday,
     );
     return {

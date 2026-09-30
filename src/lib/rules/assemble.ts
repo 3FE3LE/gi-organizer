@@ -10,7 +10,7 @@ import type { MechanicIndex } from '@/lib/data/mechanics';
 import { resolveAnnotations } from '@/lib/annotations/resolve';
 import { seedRules } from '@/lib/annotations/seed-rules';
 import type { AnnotationFile, ResolvedAnnotations } from '@/lib/annotations/types';
-import { getBossDrops, getResinRates, getWeaponSources } from '@/lib/data/registry';
+import { getBossDrops, getLevellingData, getResinRates, getWeaponSources } from '@/lib/data/registry';
 import { getProfileId, readInventory, readMaterialStock } from '@/lib/player/db';
 import { readRoster } from '@/lib/player/characters';
 import {
@@ -26,6 +26,7 @@ import { readTargets } from '@/lib/player/targets';
 import { refinementResolver } from '@/lib/player/weapon-copies';
 import { readWorldLevel } from '@/lib/player/world-level';
 
+import { phaseForTalent } from './affordable';
 import { evaluate, type CharacterGear, type EvaluationInput } from './evaluate';
 import {
   ASSUMED_TARGET,
@@ -566,6 +567,7 @@ export async function farmingPlan(
     (await readRoster(db, profileId)).map((entry) => [entry.characterId, entry]),
   );
   const stock = await readMaterialStock(db, profileId);
+  const { talentCaps } = await getLevellingData();
 
   const wants = (characterId: number) =>
     !filter.characterIds || filter.characterIds.has(characterId);
@@ -604,6 +606,7 @@ export async function farmingPlan(
       level: current.level, ascension: current.ascension, talents: current.talent,
     };
     const fallback = assume ? ASSUMED_TARGET : here;
+    const talents = wanted.talents ?? fallback.talents;
 
     byCharacter.set(current.characterId, {
       characterId: current.characterId,
@@ -612,11 +615,17 @@ export async function farmingPlan(
       current: here,
       target: {
         level: wanted.level ?? fallback.level,
-        ascension: wanted.ascension ?? fallback.ascension,
-        talents: wanted.talents ?? fallback.talents,
+        // The talents' own floor: a skill aimed at 9 needs the fifth phase,
+        // whatever level was written, so its ascension is part of the price.
+        ascension: Math.max(
+          wanted.ascension ?? fallback.ascension,
+          phaseForTalent(Math.max(talents.auto, talents.skill, talents.burst), talentCaps),
+        ),
+        talents,
       },
       ascensionCosts: counts('ascension') ? character.costs : {},
       talentCosts: counts('talent') ? character.talentCosts : {},
+      talentCostsBy: counts('talent') ? character.talentCostsBy : undefined,
       weapon: null,
     });
   }

@@ -10,7 +10,7 @@ import type { Catalog } from '@/lib/data/catalog';
 import { levelLabel } from '@/lib/data/stats';
 import type { Locale } from '@/lib/data/locales';
 import { claimMorph } from '@/lib/morph-claim';
-import type { RankedStep } from '@/lib/rules/invest';
+import { isReady, type RankedStep } from '@/lib/rules/invest';
 import type { InvestPlan } from '@/lib/rules/invest-plan';
 
 /** Under this weight a character is there for others, and their gain is potency. */
@@ -48,7 +48,13 @@ export async function InvestLists({
   });
 
   const what = (step: RankedStep) => {
-    if (step.kind === 'talent') return t(`talent.${step.talent!}`, { from: step.from, to: step.to });
+    if (step.kind === 'talent') {
+      const line = t(`talent.${step.talent!}`, { from: step.from, to: step.to });
+      // Its price has the ascension in it, so the name says it too.
+      return step.ascendFirst
+        ? t('afterAscending', { line, level: levelLabel(step.ascendFirst.level, step.ascendFirst.ascension) })
+        : line;
+    }
     if (step.kind === 'weapon') {
       const weapon = catalog.weapons.get(plan.weaponIds[step.characterId] ?? 0);
       return t('weaponStep', { ...levels(step), name: weapon?.name ?? t('weapon') });
@@ -59,6 +65,8 @@ export async function InvestLists({
   const gainOf = (characterId: number, gain: number) =>
     t((plan.weights[characterId] ?? 0) < SUPPORT_BELOW ? 'potency' : 'damage', { value: number.format(gain * 100) });
   const priceOf = (resin: number) => (resin === 0 ? t('free') : t('resin', { count: number.format(resin) }));
+  // Nothing to farm is not the same as ready: the mora can still be short.
+  const moraShort = (step: RankedStep) => step.resin === 0 && !isReady(step, plan.mora);
 
   const steps = plan.steps.slice(0, limit);
 
@@ -86,9 +94,18 @@ export async function InvestLists({
                   </span>
                 )}
                 <span className="tabular font-mono text-good">{gainOf(step.characterId, step.gain)}</span>
-                <span className={`tabular w-24 text-right font-mono ${step.resin === 0 ? 'text-good' : 'text-muted'}`}>
-                  {priceOf(step.resin)}
-                </span>
+                {moraShort(step) ? (
+                  <span
+                    className="tabular w-24 text-right font-mono text-warn"
+                    title={t('moraShortTitle', { need: number.format(step.moraCost), have: number.format(plan.mora) })}
+                  >
+                    {t('moraShort')}
+                  </span>
+                ) : (
+                  <span className={`tabular w-24 text-right font-mono ${step.resin === 0 ? 'text-good' : 'text-muted'}`}>
+                    {priceOf(step.resin)}
+                  </span>
+                )}
               </li>
             ))}
           </ol>

@@ -19,6 +19,7 @@ import { readLoadout } from '@/lib/player/loadout';
 import { readTeams, type Team } from '@/lib/player/teams';
 import { readWorldLevel } from '@/lib/player/world-level';
 
+import { phaseForTalent } from './affordable';
 import { getAnnotations, getBuildPriorities } from './assemble';
 import {
   compound,
@@ -63,6 +64,8 @@ export type InvestPackage = {
 
 export type InvestPlan = {
   strategy: Strategy;
+  /** The mora in the bag, which a step with nothing to farm still has to be paid in. */
+  mora: number;
   steps: RankedStep[];
   packages: InvestPackage[];
   /** For the strategy picker. */
@@ -123,7 +126,8 @@ export async function investPlan(
     const estimate = estimateResin({
       demand, stock, materials: catalog.materials, bosses, rates, worldLevel,
     });
-    return { resin: estimate.total, mora: demand.find((need) => need.materialId === MORA)?.short ?? 0 };
+    const mora = demand.find((need) => need.materialId === MORA);
+    return { resin: estimate.total, mora: mora?.short ?? 0, moraCost: mora?.needed ?? 0 };
   };
 
   // EXP the books in the bag do not cover, as Blossoms of Revelation.
@@ -151,7 +155,7 @@ export async function investPlan(
 
     const [builds, detail] = await Promise.all([
       readBuildsFor(entry.characterId, db),
-      getCharacterDetailStrings('en', entry.characterId),
+      getCharacterDetailStrings('en', entry.characterId, catalog.characters.get(entry.characterId)?.elementType),
     ]);
     const combat = detail.talents?.combat ?? [];
     // The kit first; a substat priority only when the kit says nothing, and
@@ -190,14 +194,17 @@ export async function investPlan(
     const weaponNow = loadout.weapon ? { level: loadout.weapon.level, ascension: loadout.weapon.ascension } : null;
     const now = outputAt(entry.level, entry.ascension, weaponNow?.level ?? null, weaponNow?.ascension ?? null);
 
-    const target = {
-      level: entry.target.level ?? ASSUMED_TARGET.level,
-      ascension: entry.target.ascension ?? ASSUMED_TARGET.ascension,
-    };
     const talentTarget = entry.target.talents ?? {
       auto: Math.max(entry.talent.auto, ASSUMED_TARGET.talents.auto),
       skill: Math.max(entry.talent.skill, ASSUMED_TARGET.talents.skill),
       burst: Math.max(entry.talent.burst, ASSUMED_TARGET.talents.burst),
+    };
+    // The talents' own floor, so the whole climb prices the ascension they need.
+    const talentPhase = phaseForTalent(
+      Math.max(talentTarget.auto, talentTarget.skill, talentTarget.burst), levelling.talentCaps);
+    const target = {
+      level: Math.max(entry.target.level ?? ASSUMED_TARGET.level, talentPhase > 0 ? levelling.levelCaps[talentPhase - 1] : 1),
+      ascension: Math.max(entry.target.ascension ?? ASSUMED_TARGET.ascension, talentPhase),
     };
 
     const source = (current: Progress, next: Progress, weapon: DemandSource['weapon'] = null): DemandSource => ({
@@ -207,6 +214,7 @@ export async function investPlan(
       target: next,
       ascensionCosts: character.costs,
       talentCosts: character.talentCosts,
+      talentCostsBy: character.talentCostsBy,
       weapon,
     });
     const here: Progress = { level: entry.level, ascension: entry.ascension, talents: entry.talent };
@@ -226,6 +234,7 @@ export async function investPlan(
         gain: relativeGain(now, outputAt(milestone.level, milestone.ascension, weaponNow?.level ?? null, weaponNow?.ascension ?? null)),
         resin: price.resin + expResin(exp),
         mora: price.mora + Math.ceil(exp * levelling.moraPerExp.character),
+        moraCost: price.moraCost + Math.ceil(exp * levelling.moraPerExp.character),
         needsCrown: false,
         belowAcceptable: entry.level < config.acceptable.level,
       });
@@ -248,16 +257,29 @@ export async function investPlan(
     for (const key of ['auto', 'skill', 'burst'] as const) {
       const from = entry.talent[key];
       if (from >= talentTarget[key]) continue;
-      const price = priceOf(source(here, { ...here, talents: { ...here.talents, [key]: from + 1 } }));
+      // A level past what the phase allows is only bought with the ascension
+      // first: its materials, and the EXP up to the cap it starts from. The
+      // step costs all of it, so a character short of the ascension is not
+      // offered a talent the bag cannot actually buy.
+      const phase = phaseForTalent(from + 1, levelling.talentCaps);
+      const ascendFirst = phase > entry.ascension
+        ? { level: Math.max(entry.level, levelling.levelCaps[phase - 1]), ascension: phase }
+        : undefined;
+      const exp = ascendFirst
+        ? levelling.characterExp[ascendFirst.level - 1] - levelling.characterExp[entry.level - 1]
+        : 0;
+      const price = priceOf(source(here, { ...here, ...ascendFirst, talents: { ...here.talents, [key]: from + 1 } }));
       steps.push({
         characterId: entry.characterId,
         kind: 'talent',
         talent: key,
         from,
         to: from + 1,
+        ascendFirst,
         gain: talentGain(key, from, from + 1),
-        resin: price.resin,
-        mora: price.mora,
+        resin: price.resin + expResin(exp),
+        mora: price.mora + Math.ceil(exp * levelling.moraPerExp.character),
+        moraCost: price.moraCost + Math.ceil(exp * levelling.moraPerExp.character),
         needsCrown: from + 1 === 10,
         belowAcceptable: from < config.acceptable.talent,
       });
@@ -286,6 +308,7 @@ export async function investPlan(
           gain: relativeGain(now, outputAt(entry.level, entry.ascension, next.level, next.ascension)),
           resin: price.resin,
           mora: price.mora + Math.ceil(exp * levelling.moraPerExp.weapon),
+          moraCost: price.moraCost + Math.ceil(exp * levelling.moraPerExp.weapon),
           needsCrown: false,
           belowAcceptable: weaponNow.level < config.acceptable.weaponLevel,
         });
@@ -318,11 +341,13 @@ export async function investPlan(
   const weightOf = (characterId: number) => roleWeight(rolesOf(characterId), config);
   const membersOf = (teamId: string) => new Set(teams.find((team) => team.id === teamId)?.slots.map((slot) => slot.characterId) ?? []);
 
-  const ranked = rankSteps(steps, { strategy, weightOf, membersOf, config });
+  const mora = stock.get(MORA) ?? 0;
+  const ranked = rankSteps(steps, { strategy, weightOf, membersOf, config, mora });
   const inScope = new Set(ranked.map((step) => step.characterId));
 
   return {
     strategy,
+    mora,
     steps: ranked,
     packages: packages
       .filter((entry) => strategy.mode === 'balance' || inScope.has(entry.characterId))

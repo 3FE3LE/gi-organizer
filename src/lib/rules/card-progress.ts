@@ -69,14 +69,19 @@ export function cardProgress(
   };
 }
 
-/** Every weekday a character's talent materials drop, from their cost table. */
+/**
+ * Every weekday a character's talent materials drop, from their cost tables:
+ * one for most, three for a Traveler whose talents bill different books.
+ */
 export function talentBookDays(
-  talentCosts: Record<string, { id: number }[]>,
+  talentCosts: Record<string, { id: number }[]> | Record<string, { id: number }[]>[],
   daysOf: (materialId: number) => readonly string[] | undefined,
 ): Set<string> {
   const days = new Set<string>();
-  for (const items of Object.values(talentCosts)) {
-    for (const item of items) for (const day of daysOf(item.id) ?? []) days.add(day);
+  for (const table of Array.isArray(talentCosts) ? talentCosts : [talentCosts]) {
+    for (const items of Object.values(table)) {
+      for (const item of items) for (const day of daysOf(item.id) ?? []) days.add(day);
+    }
   }
   return days;
 }

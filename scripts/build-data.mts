@@ -319,12 +319,30 @@ function ascensionCosts(promote: Promote[]) {
     .map((entry) => [`ascend${entry.promoteLevel}`, costOf(entry.costItems, entry.coinCost)]));
 }
 
-/** Talent levels 2–10, billed the same for every combat talent. */
-function talentCosts(avatar: AmberAvatar) {
-  const first = Object.values(avatar.talent ?? {}).find((talent) => talent.type !== 2);
-  return Object.fromEntries(Object.values(first?.promote ?? {})
+/** One talent's levels 2–10. */
+function costsOfTalent(talent: AmberTalent | undefined) {
+  return Object.fromEntries(Object.values(talent?.promote ?? {})
     .filter((level) => level.level >= 2 && level.level <= 10)
     .map((level) => [`lvl${level.level}`, costOf(level.costItems, level.coinCost)]));
+}
+
+/** Talent levels 2–10, billed the same for every combat talent. */
+function talentCosts(avatar: AmberAvatar) {
+  return costsOfTalent(Object.values(avatar.talent ?? {}).find((talent) => talent.type !== 2));
+}
+
+/**
+ * Each combat talent's own bill, for the one character whose three differ: a
+ * Geo Traveler pays the attack in Mondstadt's books and the skill and burst in
+ * Liyue's. Everyone else bills all three alike, and gets `talentCosts` alone.
+ */
+function talentCostsBy(avatar: AmberAvatar) {
+  const combat = combatOf(avatar);
+  return {
+    auto: costsOfTalent(combat[0]),
+    skill: costsOfTalent(combat[1]),
+    burst: costsOfTalent(combat.length >= 3 ? combat.at(-1) : undefined),
+  };
 }
 
 /** Combat talents in the order the game lists them: attack, skill, sprints, then burst. */
@@ -438,6 +456,26 @@ const FLAT_ALIASES: Record<string, string> = {
 /** A character id Amber lists per element (`10000005-anemo`) is a Traveler's form. */
 const isForm = (id: string) => id.includes('-');
 
+const TRAVELER_IDS = new Set([10000005, 10000007]);
+
+/**
+ * A Traveler body's forms, one per element, keyed `ELEMENT_ANEMO`.
+ *
+ * The body itself has no talents in Amber: its detail is elementless, and the
+ * talents, their costs and the constellation live on each form. Without them
+ * the Traveler had no talent text, no slider and nothing to farm.
+ */
+async function travelerForms(amber: string, id: string) {
+  const forms = new Map<string, AmberAvatar>();
+  for (const file of await idsIn(amber, 'avatar')) {
+    if (!file.startsWith(`${id}-`)) continue;
+    const form = await detail<AmberAvatar>(amber, 'avatar', file);
+    const element = form?.element ? ELEMENTS[form.element] : undefined;
+    if (form && element) forms.set(element, form);
+  }
+  return forms;
+}
+
 /** Amber's weapon list includes event and mode weapons outside the regular game (`3xxxxx`). */
 const isRegularWeapon = (id: string) => /^1\d{4}$/.test(id);
 
@@ -514,6 +552,11 @@ async function main() {
     ?? firstSeen.get(id)
     ?? (release ? earlyVersion(release) : null);
 
+  const englishForms = new Map<string, Map<string, AmberAvatar>>();
+  for (const id of avatars.keys()) {
+    if (TRAVELER_IDS.has(Number(id))) englishForms.set(id, await travelerForms('en', id));
+  }
+
   await writeJson('core/characters.json', Object.fromEntries([...avatars].map(([id, avatar]) => {
     // The Manekins have no element either, but they have art; only the two
     // Traveler bodies are drawn per element.
@@ -535,6 +578,13 @@ async function main() {
       stats: characterStats(avatar, curves.avatar!),
       costs: ascensionCosts(avatar.upgrade.promote),
       talentCosts: talentCosts(avatar),
+      ...(englishForms.has(id)
+        ? {
+            forms: Object.fromEntries([...englishForms.get(id)!].map(([element, form]) => [
+              element, { talentCosts: talentCosts(form), talentCostsBy: talentCostsBy(form) },
+            ])),
+          }
+        : {}),
     }];
   })));
 
@@ -754,13 +804,11 @@ async function main() {
 
     // Talent and constellation text is the bulk of the dataset and is only
     // ever read for one character at a time, so it is sharded per character.
-    // The Traveler's bodies have neither, and still get a shard so a missing
-    // file always means a bad id.
-    for (const [id, avatar] of localAvatars) {
-      const name = TRAVELER_NAMES[locale][Number(id)] ?? avatar.name;
+    // The Traveler's bodies carry theirs per element form, and every
+    // character gets a shard so a missing file always means a bad id.
+    const strings = (avatar: AmberAvatar, name: string) => {
       const hasTalents = Object.keys(avatar.talent ?? {}).length > 0;
-
-      await writeJson(`i18n/${locale}/characters/${id}.json`, {
+      return {
         talents: hasTalents
           ? {
               combat: combatOf(avatar).map((talent) => ({
@@ -786,6 +834,20 @@ async function main() {
                 }),
             }
           : null,
+      };
+    };
+
+    for (const [id, avatar] of localAvatars) {
+      const name = TRAVELER_NAMES[locale][Number(id)] ?? avatar.name;
+      // The Traveler's body has neither, so its text is per form; the reader
+      // picks the account's element (see `getCharacterDetailStrings`).
+      const forms = TRAVELER_IDS.has(Number(id)) ? await travelerForms(amber, id) : null;
+
+      await writeJson(`i18n/${locale}/characters/${id}.json`, {
+        ...strings(avatar, name),
+        ...(forms
+          ? { forms: Object.fromEntries([...forms].map(([element, form]) => [element, strings(form, name)])) }
+          : {}),
       });
     }
   }

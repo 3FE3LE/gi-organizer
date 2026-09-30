@@ -76,7 +76,7 @@ export async function CharacterPanel({
   /** How each worn piece fits that goal, by instance. See `EquippedFit`. */
   fits: Map<string, PieceFit>;
 }) {
-  const detail = await getCharacterDetailStrings(locale, character.id);
+  const detail = await getCharacterDetailStrings(locale, character.id, character.elementType);
   const entry = enkaEntry(catalog, character.id, loadout.skillDepotId);
   const accent = elementColor(character.elementType);
   const t = await getTranslations('build');

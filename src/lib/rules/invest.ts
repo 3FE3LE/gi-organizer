@@ -159,11 +159,19 @@ export type InvestStep = {
   /** Phases the step crosses, for a character or weapon step. */
   fromPhase?: number;
   toPhase?: number;
+  /**
+   * For a talent step past what the character's phase allows: the level and
+   * phase they must ascend to first, whose price is in the step's.
+   */
+  ascendFirst?: { level: number; ascension: number };
   /** The character's output this adds, before the team weight. */
   gain: number;
   /** Resin still to farm for it, after the bag. Mora is not in it. */
   resin: number;
+  /** Mora still short after the bag, EXP feeding included. */
   mora: number;
+  /** All the mora the step costs, what the bag has to hold to take it now. */
+  moraCost: number;
   needsCrown: boolean;
   /** Below "acceptable" before the step, for the balancing strategy. */
   belowAcceptable: boolean;
@@ -190,6 +198,8 @@ export function rankSteps(
     /** Who a team fields, for the team strategy. */
     membersOf: (teamId: string) => ReadonlySet<number>;
     config: InvestConfig;
+    /** The mora in the bag: a step with nothing to farm is only ready when it covers the step's mora too. */
+    mora: number;
   },
 ): RankedStep[] {
   const { strategy, config } = context;
@@ -207,10 +217,17 @@ export function rankSteps(
       const weightedGain = step.gain * weight;
       return { ...step, weightedGain, value: (weightedGain * boost) / Math.max(step.resin, 1) };
     })
-    // Paid already comes first, by what it adds; then gain per resin.
+    // Paid already comes first, by what it adds; then gain per resin. "Paid"
+    // means the mora too: materials in the bag with the mora short is a step
+    // the player still cannot take, and it ranks with the rest.
     .sort((a, b) =>
-      Number(a.resin > 0) - Number(b.resin > 0)
-      || (a.resin === 0 ? b.weightedGain - a.weightedGain : b.value - a.value));
+      Number(!isReady(a, context.mora)) - Number(!isReady(b, context.mora))
+      || (isReady(a, context.mora) ? b.weightedGain - a.weightedGain : b.value - a.value));
+}
+
+/** Whether a step can be taken now: nothing left to farm, and the mora it costs in the bag. */
+export function isReady(step: Pick<InvestStep, 'resin' | 'moraCost'>, mora: number) {
+  return step.resin === 0 && step.moraCost <= mora;
 }
 
 /** Gains compound: two +10% steps are +21%, not +20%. */
