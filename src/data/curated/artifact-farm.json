@@ -1,0 +1,11 @@
+{
+  "sources": [
+    "https://genshin-impact.fandom.com/wiki/Loot_System/Artifact_Drop_Distribution",
+    "https://genshin-impact.fandom.com/wiki/Artifact_Strongbox"
+  ],
+  "_why": "A Domain of Blessing IV run averages about 1.07 five-star pieces, split evenly between its two sets. The strongbox turns three unwanted five-star pieces into one of a set the player picks, slot and main stat at random.",
+  "fiveStarPerRun": 1.07,
+  "strongboxCost": 3,
+  "strongboxThrough": "4.0",
+  "_strongbox": "The strongbox offers every set up to Golden Troupe and Marechaussee Hunter (4.0) as of 2026-09-30; newer sets drop only from their domain. Sets with no version on record predate 3.0 and are all in it. Move the version forward when the game adds sets to it."
+}

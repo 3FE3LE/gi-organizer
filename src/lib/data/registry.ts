@@ -5,6 +5,7 @@ import path from 'node:path';
 
 import type { GoodCrosswalk } from '@/lib/good/keys';
 import type { LevellingData } from '@/lib/rules/affordable';
+import type { ArtifactDomain, ArtifactFarmConfig } from '@/lib/rules/artifact-farm';
 import type { InvestConfig } from '@/lib/rules/invest';
 import type { RatingConfig } from '@/lib/rules/rating';
 import type { BossDrop, ResinRates } from '@/lib/rules/resin';
@@ -166,6 +167,21 @@ export function getRatingConfig() {
     path.join(process.cwd(), 'src', 'data', 'curated', 'rating.json'), 'utf8',
   ).then((raw) => JSON.parse(raw) as RatingConfig);
   return ratingConfig;
+}
+
+let artifactFarm: Promise<ArtifactFarmConfig> | undefined;
+
+/** What a Domain of Blessing run drops, and what the strongbox asks — see `lib/rules/artifact-farm.ts`. */
+export function getArtifactFarmConfig() {
+  artifactFarm ??= readFile(
+    path.join(process.cwd(), 'src', 'data', 'curated', 'artifact-farm.json'), 'utf8',
+  ).then((raw) => JSON.parse(raw) as ArtifactFarmConfig);
+  return artifactFarm;
+}
+
+/** Which two sets each artifact domain drops. Refreshed by `pnpm data:domains`. */
+export function getArtifactDomains() {
+  return load<{ domains: ArtifactDomain[] }>('artifact-domains.json').then((file) => file.domains);
 }
 
 const EMPTY_DETAIL: CharacterDetailStrings = { talents: null, constellation: null };

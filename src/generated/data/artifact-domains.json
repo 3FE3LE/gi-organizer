@@ -1,0 +1,445 @@
+{
+ "source": "genshin-db",
+ "domains": [
+  {
+   "entranceId": 361,
+   "unlockRank": 45,
+   "setIds": [
+    15019,
+    15020
+   ],
+   "entrance": {
+    "es": "Jardín del otoño",
+    "en": "Momiji-Dyed Court",
+    "ja": "紅葉ノ庭",
+    "zh-Hans": "椛染之庭"
+   },
+   "region": {
+    "es": "Inazuma",
+    "en": "Inazuma",
+    "ja": "稲妻",
+    "zh-Hans": "稻妻"
+   }
+  },
+  {
+   "entranceId": 1142,
+   "unlockRank": 45,
+   "setIds": [
+    15033,
+    15034
+   ],
+   "entrance": {
+    "es": "Urbe de las Cascadas",
+    "en": "Waterfall Wen",
+    "ja": "滝を臨む廃都",
+    "zh-Hans": "临瀑之城"
+   },
+   "region": {
+    "es": "Fontaine",
+    "en": "Fontaine",
+    "ja": "フォンテーヌ",
+    "zh-Hans": "枫丹"
+   }
+  },
+  {
+   "entranceId": 27,
+   "unlockRank": 45,
+   "setIds": [
+    15002,
+    14004
+   ],
+   "entrance": {
+    "es": "Valle de los recuerdos",
+    "en": "Valley of Remembrance",
+    "ja": "銘記の谷",
+    "zh-Hans": "铭记之谷"
+   },
+   "region": {
+    "es": "Mondstadt",
+    "en": "Mondstadt",
+    "ja": "モンド",
+    "zh-Hans": "蒙德"
+   }
+  },
+  {
+   "entranceId": 1191,
+   "unlockRank": 45,
+   "setIds": [
+    15039,
+    15040
+   ],
+   "entrance": {
+    "es": "Muelle de Mampostería Abandonado",
+    "en": "Derelict Masonry Dock",
+    "ja": "荒れ果てた創造の地",
+    "zh-Hans": "荒废砌造坞"
+   },
+   "region": {
+    "es": "Natlan",
+    "en": "Natlan",
+    "ja": "ナタ",
+    "zh-Hans": "纳塔"
+   }
+  },
+  {
+   "entranceId": 1692,
+   "unlockRank": 45,
+   "setIds": [
+    15041,
+    15042
+   ],
+   "entrance": {
+    "es": "Maquinaria congelada",
+    "en": "Frostladen Machinery",
+    "ja": "霜つく機軸",
+    "zh-Hans": "霜凝的机枢"
+   },
+   "region": {
+    "es": "Nod Krai",
+    "en": "Nod-Krai",
+    "ja": "ナド・クライ",
+    "zh-Hans": "挪德卡莱"
+   }
+  },
+  {
+   "entranceId": 758,
+   "unlockRank": 45,
+   "setIds": [
+    15027,
+    15028
+   ],
+   "entrance": {
+    "es": "Aureópoli",
+    "en": "City of Gold",
+    "ja": "赤金の廃城",
+    "zh-Hans": "赤金的城墟"
+   },
+   "region": {
+    "es": "Sumeru",
+    "en": "Sumeru",
+    "ja": "スメール",
+    "zh-Hans": "须弥"
+   }
+  },
+  {
+   "entranceId": 221,
+   "unlockRank": 45,
+   "setIds": [
+    14001,
+    15016
+   ],
+   "entrance": {
+    "es": "Pico de Vindagnyr",
+    "en": "Peak of Vindagnyr",
+    "ja": "フィンドニールの頂上",
+    "zh-Hans": "芬德尼尔之顶"
+   },
+   "region": {
+    "es": "Mondstadt",
+    "en": "Mondstadt",
+    "ja": "モンド",
+    "zh-Hans": "蒙德"
+   }
+  },
+  {
+   "entranceId": 35,
+   "unlockRank": 45,
+   "setIds": [
+    15005,
+    14002
+   ],
+   "entrance": {
+    "es": "Jardín estival",
+    "en": "Midsummer Courtyard",
+    "ja": "仲夏の庭園",
+    "zh-Hans": "仲夏庭园"
+   },
+   "region": {
+    "es": "Mondstadt",
+    "en": "Mondstadt",
+    "ja": "モンド",
+    "zh-Hans": "蒙德"
+   }
+  },
+  {
+   "entranceId": 2003,
+   "unlockRank": 45,
+   "setIds": [
+    15045,
+    15046
+   ],
+   "entrance": {
+    "es": "Corona espinosa del viento de las montañas",
+    "en": "Thorny Crown of the Mountain Wind",
+    "ja": "山風の荊冠",
+    "zh-Hans": "山风的荆冕"
+   },
+   "region": {
+    "es": "Mondstadt",
+    "en": "Mondstadt",
+    "ja": "モンド",
+    "zh-Hans": "蒙德"
+   }
+  },
+  {
+   "entranceId": 803,
+   "unlockRank": 45,
+   "setIds": [
+    15029,
+    15030
+   ],
+   "entrance": {
+    "es": "Fortaleza Hierrofundido",
+    "en": "Molten Iron Fortress",
+    "ja": "熔鉄の孤砦",
+    "zh-Hans": "熔铁的孤塞"
+   },
+   "region": {
+    "es": "Sumeru",
+    "en": "Sumeru",
+    "ja": "スメール",
+    "zh-Hans": "须弥"
+   }
+  },
+  {
+   "entranceId": 982,
+   "unlockRank": 45,
+   "setIds": [
+    15031,
+    15032
+   ],
+   "entrance": {
+    "es": "Terminación del pecado",
+    "en": "Denouement of Sin",
+    "ja": "罪禍の終末",
+    "zh-Hans": "罪祸的终末"
+   },
+   "region": {
+    "es": "Fontaine",
+    "en": "Fontaine",
+    "ja": "フォンテーヌ",
+    "zh-Hans": "枫丹"
+   }
+  },
+  {
+   "entranceId": 2075,
+   "unlockRank": 45,
+   "setIds": [
+    15047,
+    15048
+   ],
+   "entrance": {
+    "es": "Glaciar invertido",
+    "en": "Inverted Glacier",
+    "ja": "逆さまの氷河",
+    "zh-Hans": "逆悬的冰河"
+   },
+   "region": {
+    "es": "Snezhnaya",
+    "en": "Snezhnaya",
+    "ja": "スネージナヤ",
+    "zh-Hans": "至冬"
+   }
+  },
+  {
+   "entranceId": 516,
+   "unlockRank": 45,
+   "setIds": [
+    15023,
+    15024
+   ],
+   "entrance": {
+    "es": "Valle entre montañas",
+    "en": "The Lost Valley",
+    "ja": "山間幽谷",
+    "zh-Hans": "岩中幽谷"
+   },
+   "region": {
+    "es": "Liyue",
+    "en": "Liyue",
+    "ja": "璃月",
+    "zh-Hans": "璃月"
+   }
+  },
+  {
+   "entranceId": 433,
+   "unlockRank": 45,
+   "setIds": [
+    15021,
+    15022
+   ],
+   "entrance": {
+    "es": "Corte de la hibernación",
+    "en": "Slumbering Court",
+    "ja": "熟眠ノ庭",
+    "zh-Hans": "沉眠之庭"
+   },
+   "region": {
+    "es": "Inazuma",
+    "en": "Inazuma",
+    "ja": "稲妻",
+    "zh-Hans": "稻妻"
+   }
+  },
+  {
+   "entranceId": 54,
+   "unlockRank": 45,
+   "setIds": [
+    15006,
+    14003
+   ],
+   "entrance": {
+    "es": "Palacio oculto de la fórmula Zhou",
+    "en": "Hidden Palace of Zhou Formula",
+    "ja": "無妄引責密宮",
+    "zh-Hans": "无妄引咎密宫"
+   },
+   "region": {
+    "es": "Liyue",
+    "en": "Liyue",
+    "ja": "璃月",
+    "zh-Hans": "璃月"
+   }
+  },
+  {
+   "entranceId": 1811,
+   "unlockRank": 45,
+   "setIds": [
+    15043,
+    15044
+   ],
+   "entrance": {
+    "es": "Tesoros de los niños de la luna",
+    "en": "Moonchild's Treasures",
+    "ja": "月の子の宝物",
+    "zh-Hans": "月童的库藏"
+   },
+   "region": {
+    "es": "Nod Krai",
+    "en": "Nod-Krai",
+    "ja": "ナド・クライ",
+    "zh-Hans": "挪德卡莱"
+   }
+  },
+  {
+   "entranceId": 507,
+   "unlockRank": 45,
+   "setIds": [
+    15025,
+    15026
+   ],
+   "entrance": {
+    "es": "Estupa Pratyekabuddha",
+    "en": "Spire of Solitary Enlightenment",
+    "ja": "縁覚の塔",
+    "zh-Hans": "缘觉塔"
+   },
+   "region": {
+    "es": "Sumeru",
+    "en": "Sumeru",
+    "ja": "スメール",
+    "zh-Hans": "须弥"
+   }
+  },
+  {
+   "entranceId": 48,
+   "unlockRank": 45,
+   "setIds": [
+    15014,
+    15015
+   ],
+   "entrance": {
+    "es": "Dominio de Guyun",
+    "en": "Domain of Guyun",
+    "ja": "孤雲凌霄の処",
+    "zh-Hans": "孤云凌霄之处"
+   },
+   "region": {
+    "es": "Liyue",
+    "en": "Liyue",
+    "ja": "璃月",
+    "zh-Hans": "璃月"
+   }
+  },
+  {
+   "entranceId": 50,
+   "unlockRank": 45,
+   "setIds": [
+    15008,
+    15007
+   ],
+   "entrance": {
+    "es": "Estanque claro y caverna de la montaña",
+    "en": "Clear Pool and Mountain Cavern",
+    "ja": "華池岩岫",
+    "zh-Hans": "华池岩岫"
+   },
+   "region": {
+    "es": "Liyue",
+    "en": "Liyue",
+    "ja": "璃月",
+    "zh-Hans": "璃月"
+   }
+  },
+  {
+   "entranceId": 1190,
+   "unlockRank": 45,
+   "setIds": [
+    15037,
+    15038
+   ],
+   "entrance": {
+    "es": "Santuario de los Espíritus Iridiscentes",
+    "en": "Sanctum of Rainbow Spirits",
+    "ja": "レインボースピリットの地",
+    "zh-Hans": "虹灵的净土"
+   },
+   "region": {
+    "es": "Natlan",
+    "en": "Natlan",
+    "ja": "ナタ",
+    "zh-Hans": "纳塔"
+   }
+  },
+  {
+   "entranceId": 282,
+   "unlockRank": 45,
+   "setIds": [
+    15017,
+    15018
+   ],
+   "entrance": {
+    "es": "Guardia de la montaña",
+    "en": "Ridge Watch",
+    "ja": "山脊の見守り",
+    "zh-Hans": "山脊守望"
+   },
+   "region": {
+    "es": "Mondstadt",
+    "en": "Mondstadt",
+    "ja": "モンド",
+    "zh-Hans": "蒙德"
+   }
+  },
+  {
+   "entranceId": 1151,
+   "unlockRank": 45,
+   "setIds": [
+    15035,
+    15036
+   ],
+   "entrance": {
+    "es": "Teatro Apagado",
+    "en": "Faded Theater",
+    "ja": "色褪せた劇場",
+    "zh-Hans": "褪色的剧场"
+   },
+   "region": {
+    "es": "Fontaine",
+    "en": "Fontaine",
+    "ja": "フォンテーヌ",
+    "zh-Hans": "枫丹"
+   }
+  }
+ ]
+}

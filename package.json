@@ -8,6 +8,7 @@
     "data:enka": "node scripts/fetch-enka-store.mts",
     "data:yatta": "node scripts/fetch-yatta.mts",
     "data:builds": "node scripts/fetch-builds.mts",
+    "data:domains": "node scripts/fetch-artifact-domains.mts",
     "data:check-assets": "node scripts/check-assets.mts",
     "data:check-good": "node scripts/check-good-keys.mts",
     "data:fixture": "node scripts/make-good-fixture.mts",

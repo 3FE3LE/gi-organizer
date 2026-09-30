@@ -143,10 +143,10 @@ function Line({
 }
 
 /**
- * `pide 46 · tienes 12 · 34`, with the number that matters last.
+ * `pide 46 · tienes 12 · faltan 34`, with the number that matters last.
  *
  * The subtraction only shows when there was one. With an empty bag the two
- * numbers are the same number, and printing `pide 138 · 138` asks the player to
+ * numbers are the same number, and printing `pide 138 · faltan 138` asks the player to
  * compare a value against itself.
  */
 function Counts({
@@ -166,11 +166,12 @@ function Counts({
           </span>
         </>
       )}
-      <span className="text-sm text-accent">{number.format(tier.short)}</span>
+      <span className="text-sm text-accent">{t('costShort', { count: number.format(tier.short) })}</span>
     </span>
   );
 }
 
 function talentLine(talents: { auto: number; skill: number; burst: number }) {
-  return `${talents.auto}/${talents.skill}/${talents.burst}`;
+  // Dots, as every other talent line in the app writes the three.
+  return `${talents.auto}·${talents.skill}·${talents.burst}`;
 }
