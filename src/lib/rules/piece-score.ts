@@ -68,13 +68,19 @@ export function scorePiece(
       ? null
       : wanted.includes(piece.mainProp);
 
+  // A piece never rolls its own main stat as a substat, so on a mastery
+  // sands the mastery at the top of the list is a line it cannot have. Left
+  // in, it held the first weight hostage and every other substat counted a
+  // place lower than on any other piece; out, the list closes up.
+  const priority = build.substats.filter((prop) => prop !== piece.mainProp);
+
   const matched: PieceScore['matched'] = [];
   let score = 0;
   let wastedRolls = 0;
 
   for (const substat of piece.substats) {
     const rolls = rollsOf(substat.prop, substat.value, piece.rarity);
-    const index = build.substats.indexOf(substat.prop);
+    const index = priority.indexOf(substat.prop);
     const weight = index === -1
       ? UNLISTED_WEIGHT
       : SUBSTAT_WEIGHTS[Math.min(index, SUBSTAT_WEIGHTS.length - 1)];

@@ -111,3 +111,18 @@ test('a build with no priorities scores everything as leftovers', () => {
   assert.equal(scored.matched.length, 0);
   assert.ok(scored.score > 0 && scored.score < 0.5);
 });
+
+test('a main stat is not a substat the piece is missing: the priority closes up', () => {
+  const mastery: BuildStats = buildStatsFor({
+    mainStats: [[EM], [EM], [EM]],
+    substats: [EM, CRIT, CRIT_DMG, ATK_PCT],
+  });
+  const crit = { prop: CRIT, value: 3.89 };
+  const onSands = scorePiece({ slot: 'sands', rarity: 5, level: 20, mainProp: EM, substats: [crit] }, mastery);
+  const onFlower = scorePiece({ slot: 'flower', rarity: 5, level: 20, mainProp: 'FIGHT_PROP_HP', substats: [crit] }, mastery);
+
+  // On the mastery sands, CRIT is the best line it can roll, so it weighs 1.
+  assert.ok(Math.abs(onSands.score - 1) < 0.01, `sands ${onSands.score}`);
+  // Elsewhere mastery can still roll, so CRIT stays second.
+  assert.ok(onFlower.score < onSands.score);
+});
