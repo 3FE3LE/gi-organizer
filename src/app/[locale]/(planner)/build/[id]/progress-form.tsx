@@ -296,6 +296,16 @@ function ProgressForm({
   const format = useFormatter();
   const chosenStats = SLOTS.filter((slot) => mainStats?.[slot.key]).length;
   const chosenSubstats = (substats ?? []).filter(Boolean).length;
+  // A substat has one place in the priority. Offered again at another
+  // position it let all four read "CRIT Rate", which the scorer then quietly
+  // collapsed to one; so a stat already placed is shown with where it sits
+  // and cannot be picked twice. Emptying its slot with "—" frees it.
+  const substatOptions = (index: number) => options.substats.map((option) => {
+    const at = (substats ?? []).indexOf(option.value);
+    return at === -1 || at === index
+      ? option
+      : { ...option, label: `${option.label} · ${at + 1}º`, disabled: true };
+  });
   const plannedSet = setName(setIds?.[0] ?? '');
 
   return (
@@ -667,7 +677,7 @@ function ProgressForm({
                           onValueChange={field.onChange}
                           onBlur={field.onBlur}
                           placeholder="—"
-                          groups={[{ options: options.substats }]}
+                          groups={[{ options: substatOptions(position - 1) }]}
                           triggerClassName="px-1.5 py-1.5 text-xs"
                         />
                       )}

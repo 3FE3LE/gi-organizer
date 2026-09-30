@@ -57,8 +57,9 @@ export function FilterInputs({
 
   /*
    * The build's substats, one select per line: two required, two optional —
-   * see `lib/rules/archetype.ts`. Each select offers only what no other line
-   * has taken, so a stat cannot be both required and a bonus. Choosing any
+   * see `lib/rules/archetype.ts`. A stat another line has taken stays in the
+   * list, disabled and marked with that line, so a stat cannot be both
+   * required and a bonus — the same as the build's own priority. Choosing any
    * retires the scaler and orders by the fit, which is the answer the choice
    * was asking for.
    */
@@ -76,7 +77,13 @@ export function FilterInputs({
       set: (value: string | null) => ({ want: place(filters.want, index, value) }),
     })),
   ];
-  const taken = new Set(lines.map((line) => line.value).filter((value) => value !== null));
+  const takenBy = new Map(lines.flatMap((line) => (line.value === null ? [] : [[line.value, line.label] as const])));
+  const optionsFor = (line: (typeof lines)[number]) => substats.map((option) => {
+    const at = takenBy.get(option.value);
+    return at === undefined || option.value === line.value
+      ? option
+      : { ...option, label: `${option.label} · ${at}`, disabled: true };
+  });
 
   // The level cap is part of the potential ordering: "which raw pieces are
   // worth feeding" is that ordering over pieces not yet levelled, and on any
@@ -112,8 +119,7 @@ export function FilterInputs({
                   ...(potential ? {} : { sort: 'value' as const }),
                 })}
                 placeholder={t('any')}
-                groups={[{ options: substats.filter((option) =>
-                  option.value === line.value || !taken.has(option.value)) }]}
+                groups={[{ options: optionsFor(line) }]}
                 triggerClassName="px-2 py-1 text-xs"
               />
             </Field>
