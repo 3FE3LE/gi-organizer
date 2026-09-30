@@ -18,7 +18,7 @@ import type { Locale } from '@/lib/data/locales';
 import { formatPropValue, isPercentProp } from '@/lib/data/props';
 import { resolveIcon } from '@/lib/data/icon';
 import { getCharacterDetailStrings } from '@/lib/data/registry';
-import { STAT_LEVEL_KEYS, statLevelKey } from '@/lib/data/stats';
+import { levelLabel, STAT_LEVEL_KEYS, statLevelKey } from '@/lib/data/stats';
 import type { ArtifactSlot, CharacterView } from '@/lib/data/types';
 import type { Loadout, LoadoutPiece } from '@/lib/player/loadout';
 import type { PieceFit } from '@/lib/rules/piece-score';
@@ -388,13 +388,13 @@ export async function CharacterPanel({
             {/* The phase, not only the level. Level 80 before the sixth
                 ascension and level 80 after it are different characters — the
                 base stats step at the phase, not at the level — and the plan
-                costs the two differently. The panel stated one of the two. */}
+                costs the two differently. Written the way the rest of the app
+                writes it: 80+ once ascended, rather than a phase number. */}
             <Badge
               variant="outline"
               className="h-auto rounded-md border-edge bg-surface-2 font-mono text-xs font-normal"
             >
-              {t('levelPrefix')} {loadout.level}
-              <span className="text-muted">· {t('ascensionPhase', { phase: loadout.ascension })}</span>
+              {t('levelPrefix')} {levelLabel(loadout.level, loadout.ascension)}
             </Badge>
             <span
               className="element-tint font-mono text-xs"

@@ -1,10 +1,13 @@
 import { ArrowRight } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
-import Link from 'next/link';
 
+import { CharacterMorph } from '@/components/character-morph';
 import { GameIcon } from '@/components/game-icon';
+import { PrefetchLink } from '@/components/prefetch-link';
 import type { Catalog } from '@/lib/data/catalog';
 import type { Locale } from '@/lib/data/locales';
+import { levelLabel } from '@/lib/data/stats';
+import { claimMorph } from '@/lib/morph-claim';
 import type { Ready } from '@/lib/rules/ready';
 
 /**
@@ -42,8 +45,8 @@ export async function ReadyLists({
             key={reach.characterId}
             face={single ? null : <Face id={reach.characterId} catalog={catalog} locale={locale} />}
             name={single ? null : nameOf(reach.characterId)}
-            from={t('levelPhase', { level: reach.from.level, phase: reach.from.ascension })}
-            to={t('levelPhase', { level: reach.to.level, phase: reach.to.ascension })}
+            from={t('levelPhase', { level: levelLabel(reach.from.level, reach.from.ascension) })}
+            to={t('levelPhase', { level: levelLabel(reach.to.level, reach.to.ascension) })}
             badge={reach.fates > 0 ? t('fates', { count: reach.fates }) : null}
           />
         ))}
@@ -82,8 +85,8 @@ export async function ReadyLists({
               name={single || reach.holderId === null
                 ? weapon?.name ?? `#${reach.weaponId}`
                 : t('weaponOf', { weapon: weapon?.name ?? `#${reach.weaponId}`, name: nameOf(reach.holderId) })}
-              from={t('levelPhase', { level: reach.from.level, phase: reach.from.ascension })}
-              to={t('levelPhase', { level: reach.to.level, phase: reach.to.ascension })}
+              from={t('levelPhase', { level: levelLabel(reach.from.level, reach.from.ascension) })}
+              to={t('levelPhase', { level: levelLabel(reach.to.level, reach.to.ascension) })}
               badge={reach.maxed ? t('maxed') : null}
             />
           );
@@ -109,10 +112,22 @@ export async function ReadyLists({
   return (
     <div className="space-y-4">
       <p className="max-w-prose text-xs text-muted">{t('separately')}</p>
-      {sections}
+      <div className={`grid items-start gap-4 ${COLUMNS[sections.length] ?? ''}`}>{sections}</div>
     </div>
   );
 }
+
+/**
+ * The lists side by side where there is room, by how many there are.
+ *
+ * Three share a row on a desktop. A tablet fits two, so the third takes the
+ * full row under them rather than sitting next to a hole. A phone keeps one
+ * list under another. Spelled out whole so Tailwind sees every class.
+ */
+const COLUMNS: Record<number, string> = {
+  2: 'md:grid-cols-2',
+  3: 'md:grid-cols-2 lg:grid-cols-3 md:[&>*:last-child]:col-span-2 lg:[&>*:last-child]:col-span-1',
+};
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -135,7 +150,9 @@ function Row({
   return (
     <li className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-xs">
       {face}
-      {name && <span className="min-w-0 flex-1 truncate text-sm">{name}</span>}
+      {/* The name keeps room to be read, and the range wraps under it when
+          the row is short of it — a phone, or one of three columns. */}
+      {name && <span className="min-w-28 flex-1 truncate text-sm">{name}</span>}
       <span className={`tabular flex items-center gap-1.5 font-mono ${name ? '' : 'flex-1'}`}>
         <span className="text-muted">{from}</span>
         <ArrowRight size={12} aria-hidden className="text-muted" />
@@ -153,15 +170,17 @@ function Row({
 function Face({ id, catalog, locale }: { id: number; catalog: Catalog; locale: Locale }) {
   const character = catalog.characters.get(id);
   return (
-    <Link href={`/${locale}/build/${id}`} className="shrink-0 rounded-full hover:ring-2 hover:ring-accent">
-      <GameIcon
-        filename={character?.icon}
-        kind="avatar"
-        alt={character?.name ?? ''}
-        className="h-8 w-8 rounded-full bg-surface-2"
-        sizes="32px"
-      />
-    </Link>
+    <PrefetchLink href={`/${locale}/build/${id}`} className="shrink-0 rounded-full hover:ring-2 hover:ring-accent">
+      <CharacterMorph id={id} morph={claimMorph(id)}>
+        <GameIcon
+          filename={character?.icon}
+          kind="avatar"
+          alt={character?.name ?? ''}
+          className="h-8 w-8 rounded-full bg-surface-2"
+          sizes="32px"
+        />
+      </CharacterMorph>
+    </PrefetchLink>
   );
 }
 

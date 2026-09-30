@@ -881,11 +881,12 @@ function Gallery({
                 <p className="mt-0.5 truncate text-center font-mono text-2xs text-muted">
                   {entry ? (
                     <LevelTalents
-                      level={entry.level}
+                      level={levelLabel(entry.level, entry.ascension)}
                       talent={entry.talent}
                       met={ahead?.talentsMet ?? null}
-                      labels={{ level: t('levelShort', { level: entry.level }), talents: t('talentsTitle', entry.talent) }}
+                      labels={{ level: t('levelShort', { level: levelLabel(entry.level, entry.ascension) }), talents: t('talentsTitle', entry.talent) }}
                       rating={ratings.get(character.id) ?? null}
+                      ratingBelow
                     />
                   ) : (
                     t('versionLine', { version: character.version })

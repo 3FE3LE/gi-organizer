@@ -1,11 +1,12 @@
 import { getTranslations } from 'next-intl/server';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Suspense, ViewTransition } from 'react';
 
+import { CharacterMorph } from '@/components/character-morph';
 import { ElementIcon } from '@/components/element-icon';
 import { GameIcon } from '@/components/game-icon';
 import { HoverLabel } from '@/components/hint';
+import { PrefetchLink } from '@/components/prefetch-link';
 import { ResinSummary } from '@/components/resin-summary';
 import { StaleStock } from '@/components/stale-stock';
 import { SectionTabs } from '@/components/section-tabs';
@@ -17,6 +18,7 @@ import { isLocale, type Locale } from '@/lib/data/locales';
 import { NATIONS, type Nation } from '@/lib/data/nations';
 import { getBossNations } from '@/lib/data/registry';
 import { getDb } from '@/lib/db/client';
+import { claimMorph } from '@/lib/morph-claim';
 import { readRegion } from '@/lib/player/region';
 import { isDraft, readTeams, type Team } from '@/lib/player/teams';
 import { farmingPlan } from '@/lib/rules/assemble';
@@ -426,20 +428,22 @@ async function DomainCard({
                     screen reader hears the count and not only the face. An
                     assumed target dims the face and its badge rather than the
                     link, which would have dimmed the label with them. */}
-                <Link
+                <PrefetchLink
                   href={`/${locale}/build/${entry.characterId}`}
                   aria-label={hint}
                   className={`group relative block rounded border ${
                     assumed ? 'border-dashed border-edge/60' : 'border-edge'
                   } hover:border-accent`}
                 >
-                  <GameIcon
-                    filename={character?.icon}
-                    kind="avatar"
-                    alt={character?.name ?? ''}
-                    className={`h-11 w-11 rounded${assumed ? ' opacity-60' : ''}`}
-                    sizes="44px"
-                  />
+                  <CharacterMorph id={entry.characterId} morph={claimMorph(entry.characterId)}>
+                    <GameIcon
+                      filename={character?.icon}
+                      kind="avatar"
+                      alt={character?.name ?? ''}
+                      className={`h-11 w-11 rounded${assumed ? ' opacity-60' : ''}`}
+                      sizes="44px"
+                    />
+                  </CharacterMorph>
                   {/* The element, the way the roster groups them. */}
                   {character?.elementType && (
                     <span className={`absolute -bottom-1 -right-1 rounded-full bg-surface p-0.5 ring-1 ring-edge${assumed ? ' opacity-60' : ''}`}>
@@ -447,7 +451,7 @@ async function DomainCard({
                     </span>
                   )}
                   <HoverLabel text={hint} />
-                </Link>
+                </PrefetchLink>
               </li>
             );
           })}

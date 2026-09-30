@@ -181,14 +181,21 @@ export function LevelTalents({
   met,
   labels,
   rating = null,
+  ratingBelow = false,
 }: {
-  level: number;
+  /** As the app writes it: `80+` once ascended at the breakpoint. */
+  level: number | string;
   talent: { auto: number; skill: number; burst: number };
   /** Per talent, whether it reached its target; null when there is none to reach. */
   met: { auto: boolean; skill: boolean; burst: boolean } | null;
   labels: { level: string; talents: string };
   /** How well built, 0–100, and what it says on hover. */
   rating?: { score: number; title: string } | null;
+  /**
+   * On a phone, the rating on a line of its own. A roster card is too narrow
+   * for all three, and its line truncates, so the rating was what got cut.
+   */
+  ratingBelow?: boolean;
 }) {
   return (
     <span className="whitespace-nowrap font-mono text-2xs text-muted">
@@ -206,10 +213,10 @@ export function LevelTalents({
         ))}
       </span>
       {rating && (
-        <>
-          {' · '}
+        <span className={ratingBelow ? 'block sm:inline' : ''}>
+          <span className={ratingBelow ? 'hidden sm:inline' : ''}>{' · '}</span>
           <RatingValue score={rating.score} title={rating.title} />
-        </>
+        </span>
       )}
     </span>
   );

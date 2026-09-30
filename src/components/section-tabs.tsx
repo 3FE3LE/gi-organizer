@@ -56,7 +56,11 @@ export function SectionTabs({ tabs }: { tabs: SectionTab[] }) {
     <Tabs value={current ?? null} className="gap-0">
       <TabsList
         variant="line"
-        className="h-auto w-full flex-wrap justify-start gap-x-1 rounded-none border-b border-edge p-0"
+        /* The primitive pins a horizontal strip at `h-8` through a group
+           variant, which outranks a plain `h-auto`; so the reset is spelled
+           the same way. Without it a strip that wraps on a phone overflowed
+           its own height and its last tab sat on whatever came next. */
+        className="h-auto w-full flex-wrap justify-start gap-x-1 rounded-none border-b border-edge p-0 group-data-horizontal/tabs:h-auto"
       >
         {tabs.map((tab) => (
           <TabsTrigger

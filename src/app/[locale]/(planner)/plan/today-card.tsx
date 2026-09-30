@@ -3,14 +3,17 @@ import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { Suspense } from 'react';
 
+import { CharacterMorph } from '@/components/character-morph';
 import { GameIcon } from '@/components/game-icon';
 import { HoverLabel } from '@/components/hint';
+import { PrefetchLink } from '@/components/prefetch-link';
 import { readyCount } from '@/components/ready-list';
 import { Skeleton } from '@/components/skeleton';
 import { buttonVariants } from '@/components/ui/button';
 import type { Catalog } from '@/lib/data/catalog';
 import type { Locale } from '@/lib/data/locales';
 import { getDb } from '@/lib/db/client';
+import { claimMorph } from '@/lib/morph-claim';
 import type { farmingPlan } from '@/lib/rules/assemble';
 import { gameDate, nextGameReset, type GameRegion } from '@/lib/rules/game-day';
 import { charactersIn, domainsOn, type Weekday } from '@/lib/rules/materials';
@@ -120,24 +123,26 @@ async function TodayBody({
 
                 return (
                   <li key={entry.characterId}>
-                    <Link
+                    <PrefetchLink
                       href={`/${locale}/build/${entry.characterId}`}
                       // The ring the plan's roster draws on whoever is on today, so
                       // the faces here and there read as the same mark.
                       className="group relative block rounded-full ring-2 ring-info ring-offset-2 ring-offset-surface transition-transform hover:z-10 hover:-translate-y-0.5 focus-visible:z-10"
                     >
-                      <GameIcon
-                        filename={character?.icon}
-                        kind="avatar"
-                        alt={character?.name ?? ''}
-                        className="h-9 w-9 rounded-full bg-surface-2"
-                        sizes="36px"
-                      />
+                      <CharacterMorph id={entry.characterId} morph={claimMorph(entry.characterId)}>
+                        <GameIcon
+                          filename={character?.icon}
+                          kind="avatar"
+                          alt={character?.name ?? ''}
+                          className="h-9 w-9 rounded-full bg-surface-2"
+                          sizes="36px"
+                        />
+                      </CharacterMorph>
                       {/* A face is a link, so its name is the CSS label — see
                           `components/hint.tsx`. The picture's `alt` stays the
                           link's name. */}
                       {character?.name && <HoverLabel text={character.name} />}
-                    </Link>
+                    </PrefetchLink>
                   </li>
                 );
               })}

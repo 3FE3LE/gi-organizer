@@ -15,14 +15,15 @@ import { CSS } from '@dnd-kit/utilities';
 import { Menu } from '@base-ui/react/menu';
 import { Check, ChevronDown, GripVertical, Plus, Search, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
 import { startTransition, useActionState, useOptimistic, useState } from 'react';
 
 import { Button, buttonVariants } from '@/components/ui/button';
 import { ActionStatus } from '@/components/action-status';
 import { AssetImage } from '@/components/asset-image';
 import { CardMark, CardWash, CharacterPortrait, LevelTalents } from '@/components/character-card';
+import { CharacterMorph } from '@/components/character-morph';
 import { Hint } from '@/components/hint';
+import { PrefetchLink } from '@/components/prefetch-link';
 import { StatIcon } from '@/components/stat-icon';
 import { FieldSelect } from '@/components/field-select';
 import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog';
@@ -69,7 +70,8 @@ export type SlotView = {
     showcased: string | null;
     /** Null for somebody not on the roster, which a team slot cannot really hold. */
     progress: {
-      level: number;
+      /** As the app writes it: `80+` once ascended. */
+      level: string;
       constellation: number;
       talent: { auto: number; skill: number; burst: number };
       talentsMet: { auto: boolean; skill: boolean; burst: boolean } | null;
@@ -709,9 +711,9 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
         */}
       <div className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 [grid-template-areas:'portrait_name_goals'_'portrait_level_goals'_'portrait_marks_marks'] lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:justify-items-center lg:gap-y-3 lg:[grid-template-areas:'name_name_name'_'._portrait_goals'_'level_level_level'_'marks_marks_marks']">
       <div className="min-w-0 [grid-area:name] lg:w-full lg:px-6 lg:text-center">
-        <Link href={slot.buildHref} className="block truncate text-sm hover:text-accent">
+        <PrefetchLink href={slot.buildHref} className="block truncate text-sm hover:text-accent">
           {slot.name}
-        </Link>
+        </PrefetchLink>
         {/* The role reads as a line of text, not a field. It still opens on a
             click, because a suggested role is a guess and a guess has to be
             correctable where it is shown. */}
@@ -726,14 +728,16 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
         ring={progress?.ring ?? null}
         showcased={card.showcased}
       >
-        <Link href={slot.buildHref} aria-hidden tabIndex={-1} className="block rounded-full">
-          <AssetImage
-            src={slot.icon}
-            kind="avatar"
-            className="block h-20 w-20 rounded-full border border-edge bg-surface-2"
-            sizes="80px"
-          />
-        </Link>
+        <PrefetchLink href={slot.buildHref} aria-hidden tabIndex={-1} className="block rounded-full">
+          <CharacterMorph id={slot.characterId}>
+            <AssetImage
+              src={slot.icon}
+              kind="avatar"
+              className="block h-20 w-20 rounded-full border border-edge bg-surface-2"
+              sizes="80px"
+            />
+          </CharacterMorph>
+        </PrefetchLink>
       </CharacterPortrait>
       </div>
 

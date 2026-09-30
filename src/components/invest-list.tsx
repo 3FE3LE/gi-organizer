@@ -1,13 +1,15 @@
 import { Crown } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
-import Link from 'next/link';
 
+import { CharacterMorph } from '@/components/character-morph';
 import { Fold, FoldGroup } from '@/components/fold';
 import { GameIcon } from '@/components/game-icon';
 import { HelpRow, HelpSection, HelpTip } from '@/components/help-tip';
+import { PrefetchLink } from '@/components/prefetch-link';
 import type { Catalog } from '@/lib/data/catalog';
 import { levelLabel } from '@/lib/data/stats';
 import type { Locale } from '@/lib/data/locales';
+import { claimMorph } from '@/lib/morph-claim';
 import type { RankedStep } from '@/lib/rules/invest';
 import type { InvestPlan } from '@/lib/rules/invest-plan';
 
@@ -164,15 +166,17 @@ function PackageFold({
 function Face({ id, catalog, locale }: { id: number; catalog: Catalog; locale: Locale }) {
   const character = catalog.characters.get(id);
   return (
-    <Link href={`/${locale}/build/${id}`} className="shrink-0 rounded-full hover:ring-2 hover:ring-accent">
-      <GameIcon
-        filename={character?.icon}
-        kind="avatar"
-        alt={character?.name ?? ''}
-        className="h-8 w-8 rounded-full bg-surface-2"
-        sizes="32px"
-      />
-    </Link>
+    <PrefetchLink href={`/${locale}/build/${id}`} className="shrink-0 rounded-full hover:ring-2 hover:ring-accent">
+      <CharacterMorph id={id} morph={claimMorph(id)}>
+        <GameIcon
+          filename={character?.icon}
+          kind="avatar"
+          alt={character?.name ?? ''}
+          className="h-8 w-8 rounded-full bg-surface-2"
+          sizes="32px"
+        />
+      </CharacterMorph>
+    </PrefetchLink>
   );
 }
 

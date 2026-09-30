@@ -96,7 +96,7 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
     return {
       ...base,
       progress: {
-        level: entry.level,
+        level: levelLabel(entry.level, entry.ascension),
         constellation: entry.constellation,
         talent: entry.talent,
         talentsMet: ahead.talentsMet,
@@ -114,7 +114,7 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
             title: ratingT('title', { score: rating.score }),
           };
         })(),
-        levelLabel: tCharacters('levelShort', { level: entry.level }),
+        levelLabel: tCharacters('levelShort', { level: levelLabel(entry.level, entry.ascension) }),
         talentsLabel: tCharacters('talentsTitle', entry.talent),
       },
     };

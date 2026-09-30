@@ -5,6 +5,7 @@ import { Fold, FoldGroup } from '@/components/fold';
 import { ResinSummary } from '@/components/resin-summary';
 import type { Catalog } from '@/lib/data/catalog';
 import type { Locale } from '@/lib/data/locales';
+import { levelLabel } from '@/lib/data/stats';
 
 import type { CostRow, CostTier, UpgradeCost } from './cost-view';
 
@@ -40,10 +41,8 @@ export async function UpgradeCostPanel({
         </h2>
         <p className="tabular font-mono text-xs text-muted">
           {t('costRange', {
-            level: cost.from.level,
-            targetLevel: cost.to.level,
-            phase: cost.from.ascension,
-            targetPhase: cost.to.ascension,
+            level: levelLabel(cost.from.level, cost.from.ascension),
+            targetLevel: levelLabel(cost.to.level, cost.to.ascension),
           })}
           {' · '}
           {t('costTalentRange', {
