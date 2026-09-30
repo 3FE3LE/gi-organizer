@@ -5,8 +5,9 @@ import { cardProgress, talentBookDays } from './card-progress';
 
 const entry = {
   level: 80,
+  ascension: 5,
   talent: { auto: 1, skill: 8, burst: 9 },
-  target: { level: null, talents: null },
+  target: { level: null, ascension: null, talents: null },
   dismissedAt: null,
 };
 
@@ -20,7 +21,7 @@ test('with no target written, the ring and the books read against the cap', () =
 
 test('a written target is what the ring fills toward, and it stops at full', () => {
   const done = cardProgress(
-    { ...entry, target: { level: 70, talents: { auto: 1, skill: 8, burst: 8 } } },
+    { ...entry, target: { level: 70, ascension: 4, talents: { auto: 1, skill: 8, burst: 8 } } },
     new Set(['Thursday']),
     'Thursday',
   );
@@ -29,6 +30,15 @@ test('a written target is what the ring fills toward, and it stops at full', () 
   assert.equal(done.talentsShort, false);
   // Nothing short, so no reason to farm today.
   assert.equal(done.booksToday, false);
+});
+
+test('a target of 80+ is not reached at 80 before ascending', () => {
+  const target = { level: 80, ascension: 6, talents: { auto: 1, skill: 8, burst: 9 } };
+  const short = cardProgress({ ...entry, target }, new Set(), 'Thursday');
+  assert.ok(short.level !== null && short.level < 1);
+
+  const done = cardProgress({ ...entry, ascension: 6, target }, new Set(), 'Thursday');
+  assert.equal(done.level, 1);
 });
 
 test('somebody out of the plan has no ring and no day', () => {
@@ -48,7 +58,7 @@ test('book days are gathered from every phase of the talent costs', () => {
 
 test('each talent is judged on its own, so an attack left at its target reads as done', () => {
   const progress = cardProgress(
-    { ...entry, talent: { auto: 1, skill: 6, burst: 9 }, target: { level: 90, talents: { auto: 1, skill: 9, burst: 9 } } },
+    { ...entry, talent: { auto: 1, skill: 6, burst: 9 }, target: { level: 90, ascension: 6, talents: { auto: 1, skill: 9, burst: 9 } } },
     new Set(),
     'Thursday',
   );

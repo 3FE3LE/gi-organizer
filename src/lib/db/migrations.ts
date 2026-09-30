@@ -403,6 +403,11 @@ const MIGRATIONS: string[] = [
     -- than asked for on every page. See \`lib/akasha/fetch.ts\`.
     ALTER TABLE profile ADD COLUMN akasha_json TEXT;
   `,
+  `
+    -- The Akasha ranking left the rating: it was missing more often than not
+    -- and measured other players, not the build. Nothing reads it any more.
+    ALTER TABLE profile DROP COLUMN akasha_json;
+  `,
 ];
 
 /**

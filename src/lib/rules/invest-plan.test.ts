@@ -3,7 +3,7 @@ import { test } from 'node:test';
 
 import { getCatalog } from '@/lib/data/catalog';
 import { createMemoryDb } from '@/lib/db/client';
-import { upsertCharacter } from '@/lib/player/characters';
+import { setCharacterTarget, upsertCharacter } from '@/lib/player/characters';
 import { getProfileId } from '@/lib/player/db';
 
 import { investPlan } from './invest-plan';
@@ -37,4 +37,20 @@ test('a character at 80 is offered 90 and their talents, each with a gain and a 
 
   assert.equal(plan.packages.length, 1);
   assert.ok(plan.packages[0].gain > level.gain, 'the whole climb is worth more than one step');
+});
+
+test('a character at 80 aimed at 80+ is offered the ascension, not nothing', async () => {
+  const db = await ventiAt80();
+  await setCharacterTarget(db, await getProfileId(db), VENTI, {
+    level: 80, ascension: 6, talents: { auto: 1, skill: 8, burst: 8 },
+  });
+  const plan = await investPlan(await getCatalog('es'), db);
+
+  const level = plan.steps.find((step) => step.kind === 'character');
+  assert.ok(level, 'the ascension is still a step');
+  assert.equal(level.from, 80);
+  assert.equal(level.to, 80);
+  assert.equal(level.fromPhase, 5);
+  assert.equal(level.toPhase, 6);
+  assert.ok(level.resin > 0, 'the ascension materials are farmed for');
 });

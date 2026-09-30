@@ -5,6 +5,8 @@ import { resolveIcon } from '@/lib/data/icon';
 import { propLabel } from '@/lib/data/catalog';
 import { ELEMENT_COLORS, elementColor } from '@/lib/data/elements';
 import { isLocale } from '@/lib/data/locales';
+import { levelLabel } from '@/lib/data/stats';
+import { ASSUMED_TARGET } from '@/lib/rules/materials';
 import { getDb } from '@/lib/db/client';
 import { readRoster } from '@/lib/player/characters';
 import { isDraft } from '@/lib/player/teams';
@@ -100,7 +102,7 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
         talentsMet: ahead.talentsMet,
         ring: ahead.level === null ? null : {
           value: ahead.level,
-          title: tCharacters('levelTitle', { level: entry.level, target: entry.target.level ?? 90 }),
+          title: tCharacters('levelTitle', { level: levelLabel(entry.level, entry.ascension), target: levelLabel(entry.target.level ?? ASSUMED_TARGET.level, entry.target.ascension ?? ASSUMED_TARGET.ascension) }),
         },
         booksToday: ahead.booksToday,
         dismissed: entry.dismissedAt !== null,
@@ -109,9 +111,7 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
           if (!rating) return null;
           return {
             score: rating.score,
-            title: rating.akashaTop !== null
-              ? ratingT('titleAkasha', { score: rating.score, top: rating.akashaTop })
-              : ratingT('title', { score: rating.score }),
+            title: ratingT('title', { score: rating.score }),
           };
         })(),
         levelLabel: tCharacters('levelShort', { level: entry.level }),

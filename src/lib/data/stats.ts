@@ -84,3 +84,25 @@ export function ascensionForLevel(level: number, ascended = false) {
 export function isAscended(level: number, ascension: number) {
   return ascension > ascensionForLevel(level, false);
 }
+
+/**
+ * A level and its ascension as one number, so "how far along" can be read
+ * without dropping the ascension.
+ *
+ * Level alone calls 80 and 80+ the same place, and they are not: the ascension
+ * between them costs a boss's drops and a stack of local specialties. So past
+ * the first phase, the ascension that opens a phase earns half of it and the
+ * levels inside it the other half: 80+ reads as 85, 85 as 87.5, 90 as 90. The
+ * scale only ever climbs, it ends at the level cap, and a ring aimed at 80+ is
+ * not full at 80.
+ */
+export function progressLevel(level: number, ascension: number) {
+  if (ascension <= 0) return level;
+  const phase = PHASES[Math.min(ascension, PHASES.length - 1)];
+  return (phase.low + phase.high) / 2 + (level - phase.low) / 2;
+}
+
+/** A level as the game writes it: `80+` once ascended at the breakpoint. */
+export function levelLabel(level: number, ascension: number) {
+  return isAscended(level, ascension) ? `${level}+` : String(level);
+}

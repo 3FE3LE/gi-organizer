@@ -25,6 +25,8 @@ import {
   parseBirthday,
 } from '@/lib/data/grouping';
 import { isLocale } from '@/lib/data/locales';
+import { levelLabel } from '@/lib/data/stats';
+import { ASSUMED_TARGET } from '@/lib/rules/materials';
 import { getDb } from '@/lib/db/client';
 import { readRoster, type CharacterBuild } from '@/lib/player/characters';
 import { getProfileId } from '@/lib/player/db';
@@ -104,9 +106,7 @@ export default async function CharactersPage({
   const ratingMap = await timer.step('rating', readRatings(catalog, db));
   const ratings = new Map([...ratingMap].map(([id, rating]) => [id, {
     score: rating.score,
-    title: rating.akashaTop !== null
-      ? ratingT('titleAkasha', { score: rating.score, top: rating.akashaTop })
-      : ratingT('title', { score: rating.score }),
+    title: ratingT('title', { score: rating.score }),
   }]));
   const roster = new Map(rosterRows.map((entry) => [entry.characterId, entry]));
   const owned: ReadonlySet<number> = new Set(roster.keys());
@@ -846,7 +846,7 @@ function Gallery({
                   constellation={entry?.constellation ?? null}
                   showcased={mine && showcase.ids.has(character.id) ? showcase.label : null}
                   ring={entry && ahead?.level != null
-                    ? { value: ahead.level, title: t('levelTitle', { level: entry.level, target: entry.target.level ?? 90 }) }
+                    ? { value: ahead.level, title: t('levelTitle', { level: levelLabel(entry.level, entry.ascension), target: levelLabel(entry.target.level ?? ASSUMED_TARGET.level, entry.target.ascension ?? ASSUMED_TARGET.ascension) }) }
                     : null}
                 >
                   {/*

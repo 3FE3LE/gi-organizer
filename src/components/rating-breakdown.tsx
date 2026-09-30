@@ -6,8 +6,7 @@ import type { CharacterRating } from '@/lib/rules/rating-plan';
 
 /**
  * A character's rating, part by part: each bar is how much of its own weight
- * the part has earned, and the Akasha line says where it came from or why it
- * is missing. See `lib/rules/rating.ts` for what each part measures.
+ * the part has earned. See `lib/rules/rating.ts` for what each part measures.
  */
 export async function RatingBreakdown({ rating }: { rating: CharacterRating }) {
   const t = await getTranslations('rating');
@@ -33,9 +32,9 @@ export async function RatingBreakdown({ rating }: { rating: CharacterRating }) {
         </h2>
         <HelpTip label={t('help.open')} text={t('help.open')} title={t('help.title')} closeLabel={common('close')} align="end">
           <HelpSection>
-            <HelpRow mark={<span className="font-mono text-2xs">90</span>}>{t('help.own')}</HelpRow>
-            <HelpRow mark={<span className="font-mono text-2xs">10</span>}>{t('help.akasha')}</HelpRow>
-            <HelpRow mark={<span className="font-mono text-2xs">—</span>}>{t('help.missing')}</HelpRow>
+            {rows.map((row) => (
+              <HelpRow key={row.key} mark={<span className="font-mono text-2xs">{row.weight}</span>}>{t(`help.${row.key}`)}</HelpRow>
+            ))}
           </HelpSection>
         </HelpTip>
       </div>
@@ -44,21 +43,6 @@ export async function RatingBreakdown({ rating }: { rating: CharacterRating }) {
         {rows.map((row) => (
           <Row key={row.key} label={t(`part.${row.key}`)} weight={row.weight} share={row.share} />
         ))}
-        <li className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-xs">
-          <span className="w-28 shrink-0">{t('part.akasha')}</span>
-          {rating.parts.akasha !== null && rating.akashaTop !== null ? (
-            <>
-              <Bar share={rating.parts.akasha} />
-              <span className="tabular font-mono text-2xs text-muted">
-                {rating.akashaUrl
-                  ? <a href={rating.akashaUrl} target="_blank" rel="noreferrer" className="underline hover:text-accent">{t('top', { top: rating.akashaTop })}</a>
-                  : t('top', { top: rating.akashaTop })}
-              </span>
-            </>
-          ) : (
-            <span className="flex-1 font-mono text-2xs text-muted">{t('noRanking')}</span>
-          )}
-        </li>
       </ul>
     </section>
   );

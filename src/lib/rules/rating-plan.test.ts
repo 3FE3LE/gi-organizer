@@ -22,7 +22,6 @@ test('a levelled character with nothing equipped is rated on level and talents a
   assert.equal(rating.parts.talents, 1);
   assert.equal(rating.parts.weapon, 0, 'no weapon held');
   assert.equal(rating.parts.artifacts, 0, 'nothing worn');
-  assert.equal(rating.parts.akasha, null, 'no UID, no Akasha');
-  // Level 20 and talents 30 of the 90, scaled to a hundred.
-  assert.equal(rating.score, Math.round((50 / 90) * 100));
+  // Level 20 and talents 35 of the hundred.
+  assert.equal(rating.score, 55);
 });

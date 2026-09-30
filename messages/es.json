@@ -653,24 +653,21 @@
     "staleStock": "Tu inventario es del {date} y desde entonces subieron {names}. Lo que depende de materiales puede estar desfasado: reimporta materiales cuando puedas."
   },
   "rating": {
-    "title": "Valoración {score}/100 · sin ranking de Akasha",
-    "titleAkasha": "Valoración {score}/100 · top {top}% en Akasha",
+    "title": "Valoración {score}/100",
     "heading": "Valoración",
     "part": {
       "level": "Nivel",
       "talents": "Talentos",
       "weapon": "Arma",
-      "artifacts": "Artefactos",
-      "akasha": "Ranking de Akasha"
+      "artifacts": "Artefactos"
     },
-    "top": "top {top}%",
-    "noRanking": "sin ranking: el personaje no está en tu escaparate, tu UID no está cargado en akasha.cv o Akasha no respondió. No resta.",
     "help": {
       "open": "Cómo se valora",
       "title": "Cómo se valora",
-      "own": "Noventa puntos son de la propia build: nivel (a 90), talentos (completos a 8), arma (a su nivel máximo) y artefactos (rolls útiles para la build).",
-      "akasha": "Diez puntos son tu puesto en el ranking global de Akasha. Estar en el top 20% ya cuenta como los diez: lo que hay por encima se compra más que se construye.",
-      "missing": "Sin ranking de Akasha, la nota se calcula sobre los noventa propios, así que no tenerlo nunca resta."
+      "level": "Nivel, contando la ascensión: 80+ vale más que 80. Completo a 90.",
+      "talents": "Talentos que subes, completos a 8.",
+      "weapon": "El arma equipada, completa a su nivel máximo.",
+      "artifacts": "Rolls útiles para la build en lo que lleva puesto."
     }
   },
   "data": {

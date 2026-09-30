@@ -653,24 +653,21 @@
     "staleStock": "Your inventory is from {date} and {names} levelled since. Whatever depends on materials may be behind: reimport materials when you can."
   },
   "rating": {
-    "title": "Rating {score}/100 · no Akasha ranking",
-    "titleAkasha": "Rating {score}/100 · top {top}% on Akasha",
+    "title": "Rating {score}/100",
     "heading": "Rating",
     "part": {
       "level": "Level",
       "talents": "Talents",
       "weapon": "Weapon",
-      "artifacts": "Artifacts",
-      "akasha": "Akasha ranking"
+      "artifacts": "Artifacts"
     },
-    "top": "top {top}%",
-    "noRanking": "no ranking: the character is not in your showcase, your UID is not loaded on akasha.cv, or Akasha did not answer. It costs nothing.",
     "help": {
       "open": "How it is rated",
       "title": "How it is rated",
-      "own": "Ninety points are the build's own: level (to 90), talents (complete at 8), weapon (to its last level) and artifacts (useful rolls for the build).",
-      "akasha": "Ten points are your place on Akasha's global leaderboard. The top 20% already counts as all ten: what is above it is bought more than built.",
-      "missing": "Without an Akasha ranking the score is worked out on our own ninety, so not having one never costs anything."
+      "level": "Level, counting the ascension: 80+ is worth more than 80. Complete at 90.",
+      "talents": "The talents you level, complete at 8.",
+      "weapon": "The weapon held, complete at its last level.",
+      "artifacts": "Useful rolls for the build in what they wear."
     }
   },
   "data": {

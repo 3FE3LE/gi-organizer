@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { ascensionForLevel, isAscended, statLevelKey, statsAtLevel } from './stats';
+import { ascensionForLevel, isAscended, levelLabel, progressLevel, statLevelKey, statsAtLevel } from './stats';
 import type { StatTable } from './types';
 
 /** Lisa's table, trimmed to the rows the cases below touch. */
@@ -57,4 +57,29 @@ test('a stored ascension says which side of the breakpoint it is', () => {
   assert.equal(isAscended(80, 5), false);
   assert.equal(isAscended(80, 6), true);
   assert.equal(isAscended(45, 2), false);
+});
+
+test('an ascension at a breakpoint counts as progress past the level', () => {
+  assert.equal(progressLevel(80, 5), 80);
+  assert.equal(progressLevel(80, 6), 85);
+  assert.equal(progressLevel(90, 6), 90);
+  assert.equal(progressLevel(20, 0), 20);
+
+  // Every step up — a level or an ascension — reads as higher.
+  let previous = 0;
+  for (let ascension = 0; ascension <= 6; ascension += 1) {
+    const low = ascension === 0 ? 1 : [20, 40, 50, 60, 70, 80][ascension - 1];
+    const high = [20, 40, 50, 60, 70, 80, 90][ascension];
+    for (let level = low; level <= high; level += 1) {
+      const value = progressLevel(level, ascension);
+      assert.ok(value > previous, `${level}/${ascension}`);
+      previous = value;
+    }
+  }
+});
+
+test('a level label marks the ascended side of a breakpoint', () => {
+  assert.equal(levelLabel(80, 5), '80');
+  assert.equal(levelLabel(80, 6), '80+');
+  assert.equal(levelLabel(90, 6), '90');
 });

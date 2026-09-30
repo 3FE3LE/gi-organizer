@@ -11,14 +11,14 @@ const config = JSON.parse(
 
 const finished: RatingInput = {
   level: 90,
+  ascension: 6,
   talents: { auto: 1, skill: 8, burst: 8 },
   talentTarget: { auto: 1, skill: 9, burst: 9 },
   weapon: { level: 90, maxLevel: 90 },
   pieces: Array.from({ length: 5 }, () => ({ usefulRolls: 6, mainStatWanted: true })),
-  akasha: null,
 };
 
-test('a finished build with no ranking is a hundred', () => {
+test('a finished build is a hundred', () => {
   assert.equal(rateCharacter(finished, config).score, 100);
 });
 
@@ -28,21 +28,17 @@ test('talents are complete at 8, and a talent nobody levels does not count', () 
   assert.equal(rateCharacter({ ...finished, talents: { auto: 1, skill: 10, burst: 10 } }, config).parts.talents, 1);
 });
 
-test('the top 20% on Akasha is the whole of its part', () => {
-  const top = rateCharacter({ ...finished, akasha: { ranking: 150, outOf: 1000 } }, config);
-  assert.equal(top.parts.akasha, 1);
-  assert.equal(top.score, 100);
-  assert.equal(top.akashaTop, 15);
-
-  const middle = rateCharacter({ ...finished, akasha: { ranking: 600, outOf: 1000 } }, config);
-  assert.equal(middle.score, 95, 'ninety of our own and half of the ten');
+test('the weights add up to a hundred, so a part shows the points it gives', () => {
+  const w = config.weights;
+  assert.equal(w.level + w.talents + w.weapon + w.artifacts, 100);
 });
 
-test('without Akasha the ninety scale to a hundred, so a missing ranking costs nothing', () => {
-  const half = { ...finished, level: 45, pieces: [] };
-  const alone = rateCharacter(half, config);
-  const withBottom = rateCharacter({ ...half, akasha: { ranking: 1000, outOf: 1000 } }, config);
-  assert.ok(alone.score > withBottom.score);
+test('80+ counts the ascension: above 80, below 90', () => {
+  const before = rateCharacter({ ...finished, level: 80, ascension: 5 }, config);
+  const after = rateCharacter({ ...finished, level: 80, ascension: 6 }, config);
+  assert.equal(Math.round(before.parts.level * config.weights.level), 18);
+  assert.equal(Math.round(after.parts.level * config.weights.level), 19);
+  assert.ok(after.parts.level < 1);
 });
 
 test('a wrong main stat halves what a piece counts for', () => {

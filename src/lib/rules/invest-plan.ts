@@ -78,13 +78,17 @@ export type InvestPlan = {
   weaponIds: Record<number, number>;
 };
 
-/** The next level a character or weapon reaches: the next cap, ascending first when at one. */
-function nextMilestone(level: number, ascension: number, caps: number[], targetLevel: number) {
-  if (level >= targetLevel) return null;
-  const cap = caps[ascension] ?? targetLevel;
-  if (level < cap) return { level: Math.min(cap, targetLevel), ascension };
+/**
+ * The next level a character or weapon reaches: the next cap, ascending first
+ * when at one. The target is a level *and* an ascension, so a character at 80
+ * aimed at 80+ still has a step — the ascension — rather than reading as done.
+ */
+function nextMilestone(level: number, ascension: number, caps: number[], target: { level: number; ascension: number }) {
+  if (level >= target.level && ascension >= target.ascension) return null;
+  const cap = caps[ascension] ?? target.level;
+  if (level < cap && level < target.level) return { level: Math.min(cap, target.level), ascension };
   if (ascension + 1 >= caps.length) return null;
-  return { level: Math.min(caps[ascension + 1], targetLevel), ascension: ascension + 1 };
+  return { level: Math.min(caps[ascension + 1], Math.max(target.level, level)), ascension: ascension + 1 };
 }
 
 export async function investPlan(
@@ -208,7 +212,7 @@ export async function investPlan(
     const here: Progress = { level: entry.level, ascension: entry.ascension, talents: entry.talent };
 
     // The character: to the next cap, ascending first if at one.
-    const milestone = nextMilestone(entry.level, entry.ascension, levelling.levelCaps, target.level);
+    const milestone = nextMilestone(entry.level, entry.ascension, levelling.levelCaps, target);
     if (milestone) {
       const exp = levelling.characterExp[milestone.level - 1] - levelling.characterExp[entry.level - 1];
       const price = priceOf(source(here, { ...here, ...milestone }));
@@ -267,7 +271,7 @@ export async function investPlan(
       const table = levelling.weaponExp[String(weaponDef.rarity)] ?? levelling.weaponExp['5'];
       const top = table.length;
       weaponTargetStep = { level: top, ascension: levelling.levelCaps.indexOf(top) };
-      const next = nextMilestone(weaponNow.level, weaponNow.ascension, levelling.levelCaps, top);
+      const next = nextMilestone(weaponNow.level, weaponNow.ascension, levelling.levelCaps, weaponTargetStep);
       if (next) {
         const exp = table[next.level - 1] - table[weaponNow.level - 1];
         const weaponSource = { weaponId: weaponDef.id, costs: weaponDef.costs as CostsByPhase, ascension: weaponNow.ascension, target: next.ascension };

@@ -6,6 +6,7 @@ import { Fold, FoldGroup } from '@/components/fold';
 import { GameIcon } from '@/components/game-icon';
 import { HelpRow, HelpSection, HelpTip } from '@/components/help-tip';
 import type { Catalog } from '@/lib/data/catalog';
+import { levelLabel } from '@/lib/data/stats';
 import type { Locale } from '@/lib/data/locales';
 import type { RankedStep } from '@/lib/rules/invest';
 import type { InvestPlan } from '@/lib/rules/invest-plan';
@@ -37,15 +38,20 @@ export async function InvestLists({
   const number = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 });
   const nameOf = (id: number) => catalog.characters.get(id)?.name ?? `#${id}`;
 
+  // 80 and 80+ are different places, and a step that only ascends reads
+  // "80 → 80+" rather than "80 → 80".
+  const levels = (step: RankedStep) => ({
+    from: step.fromPhase == null ? String(step.from) : levelLabel(step.from, step.fromPhase),
+    to: step.toPhase == null ? String(step.to) : levelLabel(step.to, step.toPhase),
+  });
+
   const what = (step: RankedStep) => {
     if (step.kind === 'talent') return t(`talent.${step.talent!}`, { from: step.from, to: step.to });
     if (step.kind === 'weapon') {
       const weapon = catalog.weapons.get(plan.weaponIds[step.characterId] ?? 0);
-      return t('weaponStep', { from: step.from, to: step.to, name: weapon?.name ?? t('weapon') });
+      return t('weaponStep', { ...levels(step), name: weapon?.name ?? t('weapon') });
     }
-    return step.toPhase !== step.fromPhase
-      ? t('levelAscend', { from: step.from, to: step.to })
-      : t('level', { from: step.from, to: step.to });
+    return step.toPhase !== step.fromPhase ? t('levelAscend', levels(step)) : t('level', levels(step));
   };
 
   const gainOf = (characterId: number, gain: number) =>

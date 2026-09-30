@@ -1,8 +1,7 @@
 {
-  "weights": { "level": 20, "talents": 30, "weapon": 15, "artifacts": 25, "akasha": 10 },
+  "weights": { "level": 20, "talents": 35, "weapon": 15, "artifacts": 30 },
   "talentComplete": 8,
   "levelComplete": 90,
   "artifactRollsComplete": 30,
-  "wrongMainStatFactor": 0.5,
-  "akashaTopShare": 0.2
+  "wrongMainStatFactor": 0.5
 }
