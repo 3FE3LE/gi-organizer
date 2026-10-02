@@ -343,7 +343,6 @@ export default async function CharactersPage({
                     roster={roster}
                     progress={progress}
                     showcase={showcase}
-                    ratings={ratings}
                     t={t}
                     compact
                   />
@@ -370,7 +369,9 @@ export default async function CharactersPage({
                   roster={roster}
                   progress={progress}
                   showcase={showcase}
-                  ratings={ratings}
+                  // No rating here: at seven to a row on a desktop the card's
+                  // line has no room for it, and it was cut to "…". The
+                  // showcase, at six, has; the build page always does.
                   t={t}
                   eager={index === 0 && showcased.length === 0}
                 />
@@ -811,13 +812,15 @@ function BirthdayCalendar({
   );
 }
 
+const NO_RATINGS: ReadonlyMap<number, { score: number; title: string }> = new Map();
+
 function Gallery({
   locale,
   characters,
   roster,
   progress,
   showcase,
-  ratings,
+  ratings = NO_RATINGS,
   t,
   eager = false,
   compact = false,
@@ -828,7 +831,8 @@ function Gallery({
   roster: ReadonlyMap<number, CharacterBuild>;
   progress: ReadonlyMap<number, CardProgress>;
   showcase: { ids: ReadonlySet<number>; label: string };
-  ratings: ReadonlyMap<number, { score: number; title: string }>;
+  /** Each card's rating, where the card has room for it. */
+  ratings?: ReadonlyMap<number, { score: number; title: string }>;
   t: Messages;
   /** The first gallery holds the largest contentful paint; the second is below it. */
   eager?: boolean;
