@@ -122,6 +122,22 @@ export default async function CharactersPage({
   const shown = narrowRoster(byRelease, filters, roster, locale);
   const narrowed = isNarrowed(filters);
 
+  // The showcase, in the order the game shows it, as its own row above the
+  // rest: the characters the player chose to show are the ones they reach
+  // for first. Only over the default grouping — in a partition by nation or
+  // element they belong to their partition — and moved rather than copied,
+  // since a portrait names its view transition by the character, and two of
+  // the same name abort it.
+  const shownById = new Map(shown.map((character) => [character.id, character]));
+  const showcased = grouping === 'owned'
+    ? (enka.profile?.showcase ?? [])
+      .filter((id) => owned.has(id))
+      .map((id) => shownById.get(id))
+      .filter((character) => character !== undefined)
+    : [];
+  const inShowcase = new Set(showcased.map((character) => character.id));
+  const rest = inShowcase.size > 0 ? shown.filter((character) => !inShowcase.has(character.id)) : shown;
+
   // Birthdays among the characters you have, on the game server's date: the
   // gift is claimable on the day only, so today's is worth a line above the
   // gallery rather than a trip to the calendar.
@@ -268,12 +284,35 @@ export default async function CharactersPage({
           {narrowed && shown.length === 0 && (
             <p className="text-sm text-muted">{t('noMatch')}</p>
           )}
-          {groupCharacters(shown, grouping, owned).map((group, index) => {
+          {showcased.length > 0 && (
+            <section>
+              <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-muted">
+                {t('showcaseHeading')}{' '}
+                <span className="font-mono">{showcased.length}</span>
+              </h2>
+              <Gallery
+                locale={locale}
+                characters={showcased}
+                roster={roster}
+                progress={progress}
+                showcase={showcase}
+                ratings={ratings}
+                t={t}
+                eager
+                // Twelve, so a count that divides it: four rows of three on a
+                // phone, three of four on a tablet, two of six on a desktop.
+                // The gallery's own fill left seven and five on a desktop.
+                columns="grid-cols-3 sm:grid-cols-4 lg:grid-cols-6"
+              />
+            </section>
+          )}
+          {groupCharacters(rest, grouping, owned).map((group, index) => {
             const count = group.characters.filter((character) => owned.has(character.id)).length;
             // "Yours" needs no heading: it is the page's own title. Every
             // other group is one partition among several, and says which.
+            // Under the showcase it is the rest of them, and says so.
             const heading = grouping === 'owned' && group.key === 'owned'
-              ? null
+              ? (showcased.length > 0 ? t('restHeading') : null)
               : groupLabel(grouping, group.key, group.characters[0], t);
 
             /*
@@ -332,7 +371,7 @@ export default async function CharactersPage({
                   showcase={showcase}
                   ratings={ratings}
                   t={t}
-                  eager={index === 0}
+                  eager={index === 0 && showcased.length === 0}
                 />
               </section>
             );
@@ -781,6 +820,7 @@ function Gallery({
   t,
   eager = false,
   compact = false,
+  columns = 'grid-cols-3 sm:grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))]',
 }: {
   locale: string;
   characters: CharacterView[];
@@ -793,6 +833,8 @@ function Gallery({
   eager?: boolean;
   /** Smaller cards, for the characters you do not have: a face and a name. */
   compact?: boolean;
+  /** The grid's columns, when a fixed count reads better than filling the row. */
+  columns?: string;
 }) {
   if (characters.length === 0) {
     return <p className="text-sm text-muted">{t('empty')}</p>;
@@ -809,7 +851,7 @@ function Gallery({
   return (
     // Three to a row on a phone, where two left a column of cards a screen
     // tall per six characters; the portrait still fits a third of the width.
-    <ul className="rise-stagger grid grid-cols-3 gap-2 sm:grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))] sm:gap-4">
+    <ul className={`rise-stagger grid gap-2 sm:gap-4 ${columns}`}>
       {characters.map((character, index) => {
         const entry = roster.get(character.id) ?? null;
         const mine = entry !== null;

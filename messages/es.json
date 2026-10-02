@@ -123,6 +123,8 @@
     "orphanedLink": "Añádelos",
     "orphanedHint": "o vuelve a escanear con la pantalla de personajes activada.",
     "missingHeading": "Sin conseguir",
+    "showcaseHeading": "En tu escaparate",
+    "restHeading": "El resto",
     "empty": "Nada aquí todavía.",
     "levelShort": "Nv. {level}",
     "talentsTitle": "Talentos: ataque {auto}, habilidad {skill}, definitiva {burst}",

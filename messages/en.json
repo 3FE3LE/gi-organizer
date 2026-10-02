@@ -123,6 +123,8 @@
     "orphanedLink": "Add them",
     "orphanedHint": "or scan again with the character screen turned on.",
     "missingHeading": "Not obtained",
+    "showcaseHeading": "In your showcase",
+    "restHeading": "Everyone else",
     "empty": "Nothing here yet.",
     "levelShort": "Lv. {level}",
     "talentsTitle": "Talents: attack {auto}, skill {skill}, burst {burst}",
