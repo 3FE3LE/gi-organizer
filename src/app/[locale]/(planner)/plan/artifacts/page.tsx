@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { CharacterMorph } from '@/components/character-morph';
 import { GameIcon } from '@/components/game-icon';
 import { HelpRow, HelpSection, HelpTip } from '@/components/help-tip';
+import { ListRow } from '@/components/list-row';
 import { PrefetchLink } from '@/components/prefetch-link';
 import { StaleStock } from '@/components/stale-stock';
 import { propLabel, type Catalog } from '@/lib/data/catalog';
@@ -188,36 +189,41 @@ function CharacterRow({
   const share = Math.round(character.artifacts * 100);
 
   return (
-    <li className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-3 py-2 text-xs">
-      <Face id={character.characterId} catalog={catalog} locale={locale} label={name} />
-      <span className="min-w-28 flex-1 truncate text-sm">{name}</span>
-      <span className="tabular font-mono text-2xs text-muted">{t('artifactsPart', { value: share })}</span>
-      <span className="flex basis-full flex-wrap gap-x-3 gap-y-1 font-mono text-2xs sm:basis-auto">
-        {character.sets.map((set) => (
-          <span key={set.setId} className={set.worn >= set.pieces ? 'text-good' : 'text-muted'}>
-            {t('setWorn', {
-              name: catalog.artifacts.get(set.setId)?.name ?? `#${set.setId}`,
-              worn: set.worn,
-              pieces: set.pieces,
-            })}
+    // The name and its share on one line; its sets, its goals and where to
+    // farm under it, each one whole: see `ListRow`.
+    <ListRow
+      className="px-3 py-2 text-xs"
+      lead={<Face id={character.characterId} catalog={catalog} locale={locale} label={name} />}
+      title={<span className="text-sm">{name}</span>}
+      value={<span className="text-2xs text-muted">{t('artifactsPart', { value: share })}</span>}
+      detail={(
+        <span className="flex flex-wrap gap-x-3 gap-y-1 pt-0.5">
+          {character.sets.map((set) => (
+            <span key={set.setId} className={set.worn >= set.pieces ? 'text-good' : 'text-muted'}>
+              {t('setWorn', {
+                name: catalog.artifacts.get(set.setId)?.name ?? `#${set.setId}`,
+                worn: set.worn,
+                pieces: set.pieces,
+              })}
+            </span>
+          ))}
+          {character.goals.map((goal) => (
+            <span key={goal.prop} className={`flex items-center gap-1 ${goal.status === 'close' ? 'text-warn' : 'text-bad'}`}>
+              {goal.status === 'close' ? <CircleAlert size={11} aria-hidden /> : <X size={11} aria-hidden />}
+              {t('goal', {
+                label: propLabel(catalog, goal.prop),
+                actual: formatPropValue(goal.prop, goal.actual, 'percent', locale),
+                min: formatPropValue(goal.prop, goal.min, 'percent', locale),
+              })}
+            </span>
+          ))}
+          <span className={`flex basis-full items-center gap-1 ${domain ? 'text-accent' : 'text-muted'}`}>
+            {domain ? <Check size={11} aria-hidden /> : <Gift size={11} aria-hidden />}
+            {domain ? t('goTo', { domain }) : t('noDomain')}
           </span>
-        ))}
-        {character.goals.map((goal) => (
-          <span key={goal.prop} className={`flex items-center gap-1 ${goal.status === 'close' ? 'text-warn' : 'text-bad'}`}>
-            {goal.status === 'close' ? <CircleAlert size={11} aria-hidden /> : <X size={11} aria-hidden />}
-            {t('goal', {
-              label: propLabel(catalog, goal.prop),
-              actual: formatPropValue(goal.prop, goal.actual, 'percent', locale),
-              min: formatPropValue(goal.prop, goal.min, 'percent', locale),
-            })}
-          </span>
-        ))}
-      </span>
-      <span className={`flex items-center gap-1 font-mono text-2xs ${domain ? 'text-accent' : 'text-muted'}`}>
-        {domain ? <Check size={11} aria-hidden /> : <Gift size={11} aria-hidden />}
-        {domain ? t('goTo', { domain }) : t('noDomain')}
-      </span>
-    </li>
+        </span>
+      )}
+    />
   );
 }
 

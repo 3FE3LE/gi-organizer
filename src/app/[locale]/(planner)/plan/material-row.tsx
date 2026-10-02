@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 
 import { GameIcon } from '@/components/game-icon';
+import { ListRow } from '@/components/list-row';
 import type { Catalog } from '@/lib/data/catalog';
 import type { Locale } from '@/lib/data/locales';
 import type { Need } from '@/lib/rules/materials';
@@ -8,8 +9,8 @@ import type { Need } from '@/lib/rules/materials';
 /**
  * One material's shortfall, and who is waiting on it.
  *
- * Two lines rather than one flex-wrapped row: the header — icon, name, how
- * much is short — reads at a glance, and who is waiting is its own wrapped
+ * Two parts rather than one flex-wrapped row: the header — icon, name, how
+ * much is short — is a `ListRow` and reads at a glance, and who is waiting is its own wrapped
  * list, one pill per character, instead of a single string joined with `·`.
  * A joined string has nowhere clean to break when several people are waiting
  * on the same material, so it reads as one dense line instead of several
@@ -26,27 +27,28 @@ export async function MaterialRow({
 
   return (
     <li className="border-b border-edge/40 px-3 py-2 text-xs last:border-b-0">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <GameIcon
-          filename={material?.icon}
-          kind="material"
-          alt={material?.name ?? ''}
-          className="h-6 w-6"
-          sizes="24px"
-        />
-        <span className="min-w-0 flex-1 truncate">
-          {material?.name ?? `#${need.materialId}`}
-        </span>
-        <span className="font-mono">
-          {t('missingLabel')} <span className="text-accent">{need.short.toLocaleString(locale)}</span>
-        </span>
-        <span className="font-mono text-muted">
-          {t('haveOf', {
-            owned: need.owned.toLocaleString(locale),
-            needed: need.needed.toLocaleString(locale),
-          })}
-        </span>
-      </div>
+      <ListRow
+        as="div"
+        lead={(
+          <GameIcon
+            filename={material?.icon}
+            kind="material"
+            alt={material?.name ?? ''}
+            className="h-6 w-6"
+            sizes="24px"
+          />
+        )}
+        title={material?.name ?? `#${need.materialId}`}
+        value={<>{t('missingLabel')} <span className="text-accent">{need.short.toLocaleString(locale)}</span></>}
+        detailValue={(
+          <span className="text-2xs text-muted">
+            {t('haveOf', {
+              owned: need.owned.toLocaleString(locale),
+              needed: need.needed.toLocaleString(locale),
+            })}
+          </span>
+        )}
+      />
 
       <ul className="mt-1.5 flex flex-wrap gap-1.5 pl-9">
         {need.by.map((entry) => (

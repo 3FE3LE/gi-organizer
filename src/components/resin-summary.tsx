@@ -2,6 +2,7 @@ import { getTranslations } from 'next-intl/server';
 
 import { Fold } from '@/components/fold';
 import { GameIcon } from '@/components/game-icon';
+import { ListRow } from '@/components/list-row';
 import type { Catalog } from '@/lib/data/catalog';
 import type { Locale } from '@/lib/data/locales';
 import { spanOf, type ResinEstimate } from '@/lib/rules/resin';
@@ -43,18 +44,18 @@ export async function ResinSummary({
   return (
     <Fold
       summary={(
-        <>
-          <GameIcon filename={RESIN_ICON} kind="material" className="h-7 w-7 shrink-0" sizes="28px" />
-          <span className="min-w-0 flex-1">
-            <span className="block text-xs">{t('heading')}</span>
-            <span className="font-mono text-2xs uppercase tracking-wide text-muted">
+        <ListRow
+          as="span"
+          className="min-w-0 flex-1"
+          lead={<GameIcon filename={RESIN_ICON} kind="material" className="h-7 w-7 shrink-0" sizes="28px" />}
+          title={<span className="text-xs">{t('heading')}</span>}
+          value={<span className="text-sm text-accent">{t('total', { amount: number.format(estimate.total) })}</span>}
+          detail={(
+            <span className="uppercase tracking-wide">
               {estimate.total > 0 ? t(`span.${span.unit}`, { count: span.count }) : t('none')}
             </span>
-          </span>
-          <span className="tabular shrink-0 font-mono text-sm text-accent">
-            {t('total', { amount: number.format(estimate.total) })}
-          </span>
-        </>
+          )}
+        />
       )}
       panelClassName="space-y-3 px-3 py-3"
     >

@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server';
 
 import { CharacterMorph } from '@/components/character-morph';
 import { GameIcon } from '@/components/game-icon';
+import { ListRow } from '@/components/list-row';
 import { PrefetchLink } from '@/components/prefetch-link';
 import type { Catalog } from '@/lib/data/catalog';
 import type { Locale } from '@/lib/data/locales';
@@ -154,24 +155,29 @@ function Row({
   /** What else the row pays for on the way, such as an ascension. */
   note?: string | null;
 }) {
+  const range = (
+    <span className="inline-flex items-center gap-1.5 font-mono">
+      <span className="text-muted">{from}</span>
+      <ArrowRight size={12} aria-hidden className="text-muted" />
+      <span className="text-good">{to}</span>
+    </span>
+  );
+  const pill = badge && (
+    <span className="rounded-full border border-accent/50 px-1.5 text-2xs leading-4 text-accent">{badge}</span>
+  );
+
+  // The name and its range on one line, the count and what else it pays for
+  // on the next: see `ListRow`. A build's own list has no name, so the range
+  // takes its place and the count sits beside it.
   return (
-    <li className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-xs">
-      {face}
-      {/* The name keeps room to be read, and the range wraps under it when
-          the row is short of it — a phone, or one of three columns. */}
-      {name && <span className="min-w-28 flex-1 truncate text-sm">{name}</span>}
-      <span className={`tabular flex items-center gap-1.5 font-mono ${name ? '' : 'flex-1'}`}>
-        <span className="text-muted">{from}</span>
-        <ArrowRight size={12} aria-hidden className="text-muted" />
-        <span className="text-good">{to}</span>
-      </span>
-      {badge && (
-        <span className="rounded-full border border-accent/50 px-1.5 font-mono text-2xs leading-4 text-accent">
-          {badge}
-        </span>
-      )}
-      {note && <span className="basis-full font-mono text-2xs text-muted">{note}</span>}
-    </li>
+    <ListRow
+      className="px-3 py-2 text-xs"
+      lead={face}
+      title={name ? <span className="text-sm">{name}</span> : range}
+      value={name ? range : pill}
+      detail={note}
+      detailValue={name ? pill : null}
+    />
   );
 }
 

@@ -2,6 +2,7 @@ import { getTranslations } from 'next-intl/server';
 
 import { GameIcon } from '@/components/game-icon';
 import { Fold, FoldGroup } from '@/components/fold';
+import { ListRow } from '@/components/list-row';
 import { ResinSummary } from '@/components/resin-summary';
 import type { Catalog } from '@/lib/data/catalog';
 import type { Locale } from '@/lib/data/locales';
@@ -64,24 +65,26 @@ export async function UpgradeCostPanel({
                   <Fold summary={<Line row={row} t={t} number={number} expandable />}>
                     <ul className="px-3 py-1">
                       {row.tiers.map((tier) => (
-                        <li
+                        <ListRow
                           key={tier.id}
-                          className="flex items-center gap-3 py-1 pl-6 font-mono text-2xs"
-                        >
-                          <GameIcon
-                            filename={tier.icon}
-                            kind="material"
-                            className="h-5 w-5 shrink-0"
-                            sizes="20px"
-                          />
-                          <span className="min-w-0 flex-1 truncate text-muted">{tier.name}</span>
-                          <Counts tier={tier} t={t} number={number} />
-                        </li>
+                          className="py-1 pl-6 text-2xs"
+                          lead={(
+                            <GameIcon
+                              filename={tier.icon}
+                              kind="material"
+                              className="h-5 w-5 shrink-0"
+                              sizes="20px"
+                            />
+                          )}
+                          title={<span className="font-mono text-muted">{tier.name}</span>}
+                          value={<Short tier={tier} t={t} number={number} />}
+                          detailValue={<Held tier={tier} t={t} number={number} />}
+                        />
                       ))}
                     </ul>
                   </Fold>
                 ) : (
-                  <div className="card flex items-center gap-3 px-3 py-2">
+                  <div className="card px-3 py-2">
                     <Line row={row} t={t} number={number} />
                   </div>
                 )}
@@ -89,12 +92,12 @@ export async function UpgradeCostPanel({
             ))}
 
             {cost.mora.short > 0 && (
-              <li className="flex items-center gap-3 border-t border-edge px-3 pt-3">
-                <span className="flex-1 font-mono text-xs uppercase tracking-wide text-muted">
-                  {t('costMora')}
-                </span>
-                <Counts tier={cost.mora} t={t} number={number} />
-              </li>
+              <ListRow
+                className="border-t border-edge px-3 pt-3"
+                title={<span className="font-mono text-xs uppercase tracking-wide text-muted">{t('costMora')}</span>}
+                value={<Short tier={cost.mora} t={t} number={number} />}
+                detailValue={<Held tier={cost.mora} t={t} number={number} />}
+              />
             )}
           </ul>
         </FoldGroup>
@@ -114,16 +117,22 @@ function Line({
 }: {
   row: CostRow; t: T; number: Intl.NumberFormat; expandable?: boolean;
 }) {
+  // What is short on the name's line, what is asked and held under it: see
+  // `ListRow`. Inside a fold it is drawn in the trigger, which is a button.
   return (
-    <>
-      <GameIcon
-        filename={row.icon}
-        kind="material"
-        className="h-7 w-7 shrink-0"
-        sizes="28px"
-      />
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-xs">
+    <ListRow
+      as="span"
+      className="min-w-0 flex-1"
+      lead={(
+        <GameIcon
+          filename={row.icon}
+          kind="material"
+          className="h-7 w-7 shrink-0"
+          sizes="28px"
+        />
+      )}
+      title={(
+        <span className="text-xs">
           {row.name}
           {/* The marker the tier list is behind, since `list-none` took the
               browser's own away. */}
@@ -133,40 +142,44 @@ function Line({
             </span>
           )}
         </span>
-        <span className="font-mono text-2xs uppercase tracking-wide text-muted">
+      )}
+      value={<Short tier={row} t={t} number={number} />}
+      detail={(
+        <span className="uppercase tracking-wide">
           {row.reasons.map((reason) => t(`costReason.${reason}`)).join(' · ')}
         </span>
-      </span>
-      <Counts tier={row} t={t} number={number} />
-    </>
+      )}
+      detailValue={<Held tier={row} t={t} number={number} />}
+    />
   );
 }
 
 /**
- * `pide 46 · tienes 12 · faltan 34`, with the number that matters last.
+ * `faltan 34`, and under it `pide 46 · tienes 12`.
  *
- * The subtraction only shows when there was one. With an empty bag the two
- * numbers are the same number, and printing `pide 138 · faltan 138` asks the player to
- * compare a value against itself.
+ * What is asked and held only shows when something is held. With an empty bag
+ * the two numbers are the same number, and printing `pide 138 · faltan 138`
+ * asks the player to compare a value against itself.
  */
-function Counts({
+function Short({
   tier, t, number,
 }: {
-  tier: Pick<CostTier, 'needed' | 'owned' | 'short'>; t: T; number: Intl.NumberFormat;
+  tier: Pick<CostTier, 'short'>; t: T; number: Intl.NumberFormat;
 }) {
+  return <span className="text-sm text-accent">{t('costShort', { count: number.format(tier.short) })}</span>;
+}
+
+function Held({
+  tier, t, number,
+}: {
+  tier: Pick<CostTier, 'needed' | 'owned'>; t: T; number: Intl.NumberFormat;
+}) {
+  if (tier.owned === 0) return null;
   return (
-    <span className="tabular shrink-0 space-x-2 font-mono text-2xs">
-      {tier.owned > 0 && (
-        <>
-          <span className="text-muted">
-            {t('costNeeded', { count: number.format(tier.needed) })}
-          </span>
-          <span className="text-muted">
-            {t('costOwned', { count: number.format(tier.owned) })}
-          </span>
-        </>
-      )}
-      <span className="text-sm text-accent">{t('costShort', { count: number.format(tier.short) })}</span>
+    <span className="text-2xs text-muted">
+      {t('costNeeded', { count: number.format(tier.needed) })}
+      {' · '}
+      {t('costOwned', { count: number.format(tier.owned) })}
     </span>
   );
 }

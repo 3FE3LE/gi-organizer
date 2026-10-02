@@ -5,6 +5,7 @@ import { CharacterMorph } from '@/components/character-morph';
 import { Fold, FoldGroup } from '@/components/fold';
 import { GameIcon } from '@/components/game-icon';
 import { HelpRow, HelpSection, HelpTip } from '@/components/help-tip';
+import { ListRow } from '@/components/list-row';
 import { PrefetchLink } from '@/components/prefetch-link';
 import type { Catalog } from '@/lib/data/catalog';
 import { levelLabel } from '@/lib/data/stats';
@@ -80,34 +81,46 @@ export async function InvestLists({
         <section className="space-y-2">
           {!single && <h3 className="font-mono text-2xs uppercase tracking-wide text-muted">{t('stepsHeading')}</h3>}
           <ol className="card divide-y divide-edge/60">
-            {steps.map((step, index) => (
-              <li key={`${step.characterId}-${step.kind}-${step.talent ?? ''}`} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-xs">
-                <span className="tabular w-5 shrink-0 font-mono text-muted">{index + 1}.</span>
-                {!single && <Face id={step.characterId} catalog={catalog} locale={locale} />}
-                <span className="min-w-0 flex-1">
-                  {!single && <span className="block truncate text-sm">{nameOf(step.characterId)}</span>}
-                  <span className="block font-mono text-2xs text-muted">{what(step)}</span>
+            {steps.map((step, index) => {
+              const crown = step.needsCrown && (
+                <span className="inline-flex items-center gap-1 whitespace-nowrap text-warn" title={t('crownTitle')}>
+                  <Crown size={12} aria-hidden />{t('crown')}
                 </span>
-                {step.needsCrown && (
-                  <span className="flex items-center gap-1 font-mono text-2xs text-warn" title={t('crownTitle')}>
-                    <Crown size={12} aria-hidden />{t('crown')}
-                  </span>
-                )}
-                <span className="tabular font-mono text-good">{gainOf(step.characterId, step.gain)}</span>
-                {moraShort(step) ? (
-                  <span
-                    className="tabular w-24 text-right font-mono text-warn"
-                    title={t('moraShortTitle', { need: number.format(step.moraCost), have: number.format(plan.mora) })}
-                  >
-                    {t('moraShort')}
-                  </span>
-                ) : (
-                  <span className={`tabular w-24 text-right font-mono ${step.resin === 0 ? 'text-good' : 'text-muted'}`}>
-                    {priceOf(step.resin)}
-                  </span>
-                )}
-              </li>
-            ))}
+              );
+              const price = moraShort(step) ? (
+                <span
+                  className="text-warn"
+                  title={t('moraShortTitle', { need: number.format(step.moraCost), have: number.format(plan.mora) })}
+                >
+                  {t('moraShort')}
+                </span>
+              ) : (
+                <span className={step.resin === 0 ? 'text-good' : 'text-muted'}>{priceOf(step.resin)}</span>
+              );
+              return (
+                // The name and its gain on one line, what the step is and its
+                // price on the next: see `ListRow`. A build's own list has no
+                // name, so the step takes its place.
+                <ListRow
+                  key={`${step.characterId}-${step.kind}-${step.talent ?? ''}`}
+                  className="px-3 py-2 text-xs"
+                  lead={(
+                    <>
+                      <span className="tabular w-5 font-mono text-muted">{index + 1}.</span>
+                      {!single && <Face id={step.characterId} catalog={catalog} locale={locale} />}
+                    </>
+                  )}
+                  title={single
+                    // Without a name beside it, the step is the row: it wraps
+                    // rather than lose its level to an ellipsis.
+                    ? <span className="whitespace-normal font-mono text-2xs">{what(step)}</span>
+                    : <span className="text-sm">{nameOf(step.characterId)}</span>}
+                  value={<span className="text-good">{gainOf(step.characterId, step.gain)}</span>}
+                  detail={single ? crown : <>{what(step)}{crown && <> · {crown}</>}</>}
+                  detailValue={price}
+                />
+              );
+            })}
           </ol>
         </section>
       )}

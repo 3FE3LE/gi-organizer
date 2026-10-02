@@ -6,6 +6,7 @@ import { CharacterMorph } from '@/components/character-morph';
 import { ElementIcon } from '@/components/element-icon';
 import { GameIcon } from '@/components/game-icon';
 import { HoverLabel } from '@/components/hint';
+import { ListRow } from '@/components/list-row';
 import { PrefetchLink } from '@/components/prefetch-link';
 import { ResinSummary } from '@/components/resin-summary';
 import { StaleStock } from '@/components/stale-stock';
@@ -531,36 +532,40 @@ async function AnytimePile({
 
   return (
     <Fold
-      triggerClassName="flex-wrap gap-y-1"
       summary={(
-        <>
-          <span className="min-w-0 flex-1 truncate">{group.label}</span>
-
-          {/* What is in the pile, without opening it: a taste, not the whole
-              pile. The boss drops run to twenty icons, which wrapped the line
-              into three on a phone; five and a count keep it one. */}
-          <span className="flex shrink-0 items-center gap-1">
-            {group.needs.slice(0, PILE_PREVIEW).map((need) => (
-              <GameIcon
-                key={need.materialId}
-                filename={catalog.materials.get(need.materialId)?.icon}
-                kind="material"
-                alt={catalog.materials.get(need.materialId)?.name ?? ''}
-                className="h-6 w-6"
-                sizes="24px"
-              />
-            ))}
-            {group.needs.length > PILE_PREVIEW && (
-              <span className="font-mono text-2xs text-muted">
-                +{group.needs.length - PILE_PREVIEW}
-              </span>
-            )}
-          </span>
-
-          <span className="font-mono text-muted">
-            {t('missingLabel')} <span className="text-accent">{group.short.toLocaleString(locale)}</span>
-          </span>
-        </>
+        // The name and what is missing on one line, a taste of the pile under
+        // it: see `ListRow`. The icons beside the name left it four letters.
+        <ListRow
+          as="span"
+          className="min-w-0 flex-1"
+          title={group.label}
+          value={(
+            <>
+              <span className="text-muted">{t('missingLabel')}</span>{' '}
+              <span className="text-accent">{group.short.toLocaleString(locale)}</span>
+            </>
+          )}
+          detail={(
+            // What is in the pile, without opening it: a taste, not the
+            // whole pile. The boss drops run to twenty icons; five and a
+            // count keep it one line.
+            <span className="flex items-center gap-1 pt-1">
+              {group.needs.slice(0, PILE_PREVIEW).map((need) => (
+                <GameIcon
+                  key={need.materialId}
+                  filename={catalog.materials.get(need.materialId)?.icon}
+                  kind="material"
+                  alt={catalog.materials.get(need.materialId)?.name ?? ''}
+                  className="h-6 w-6"
+                  sizes="24px"
+                />
+              ))}
+              {group.needs.length > PILE_PREVIEW && (
+                <span>+{group.needs.length - PILE_PREVIEW}</span>
+              )}
+            </span>
+          )}
+        />
       )}
     >
       {sections ? (
