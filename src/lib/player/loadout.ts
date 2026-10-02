@@ -5,6 +5,7 @@ import type { Db } from '@/lib/db/client';
 
 import type { Catalog } from '@/lib/data/catalog';
 import { STAT_LEVEL_KEYS, type StatLevelKey, statsAtLevel } from '@/lib/data/stats';
+import { talentBonusAt } from '@/lib/data/talent-bonus';
 import type { ArtifactSlot } from '@/lib/data/types';
 import type { NormalizedStat } from '@/lib/inventory/model';
 import { getAnnotations } from '@/lib/rules/assemble';
@@ -60,7 +61,8 @@ export type Loadout = {
   ascension: number;
   constellation: number;
   talent: { auto: number; skill: number; burst: number };
-  talentBonus: { auto: number; skill: number; burst: number } | null;
+  /** What the constellation adds to each talent — see `talentBonusAt`. */
+  talentBonus: { auto: number; skill: number; burst: number };
   skillDepotId: number | null;
   /** Whether the roster knows this character at all. Gear can exist without it. */
   known: boolean;
@@ -168,7 +170,7 @@ export async function readLoadout(
     ascension,
     constellation: entry?.constellation ?? UNKNOWN.constellation,
     talent: entry?.talent ?? UNKNOWN.talent,
-    talentBonus: entry?.talentBonus ?? null,
+    talentBonus: talentBonusAt(character.talentBoosts, entry?.constellation ?? UNKNOWN.constellation),
     skillDepotId: entry?.skillDepotId ?? null,
     known: entry !== null,
     target: entry?.target ?? { level: null, ascension: null, talents: null },

@@ -24,14 +24,19 @@ export type CoreCharacter = {
   talentCosts: CostsByPhase;
   /** Each combat talent's own bill, where the three differ — a Traveler's form. */
   talentCostsBy?: TalentCostsBy;
+  /** Which constellation raises which combat talent. See `talentBonusAt`. */
+  talentBoosts?: TalentBoosts;
   /**
    * The Traveler's forms, keyed `ELEMENT_ANEMO`. The body has no talents of
    * its own; the account catalog lifts the element's onto it.
    */
-  forms?: Record<string, { talentCosts: CostsByPhase; talentCostsBy?: TalentCostsBy }>;
+  forms?: Record<string, { talentCosts: CostsByPhase; talentCostsBy?: TalentCostsBy; talentBoosts?: TalentBoosts }>;
 };
 
 export type TalentCostsBy = Partial<Record<'auto' | 'skill' | 'burst', CostsByPhase>>;
+
+/** Venti's: `{ burst: { constellation: 3, levels: 3 }, skill: { constellation: 5, levels: 3 } }`. */
+export type TalentBoosts = Partial<Record<'auto' | 'skill' | 'burst', { constellation: number; levels: number }>>;
 
 export type CoreWeapon = {
   id: number;

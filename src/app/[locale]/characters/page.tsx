@@ -26,6 +26,7 @@ import {
 } from '@/lib/data/grouping';
 import { isLocale } from '@/lib/data/locales';
 import { levelLabel } from '@/lib/data/stats';
+import { boostedTitle, talentBonusAt } from '@/lib/data/talent-bonus';
 import { ASSUMED_TARGET, talentTables } from '@/lib/rules/materials';
 import { getDb } from '@/lib/db/client';
 import { readRoster, type CharacterBuild } from '@/lib/player/characters';
@@ -925,8 +926,16 @@ function Gallery({
                     <LevelTalents
                       level={levelLabel(entry.level, entry.ascension)}
                       talent={entry.talent}
+                      bonus={talentBonusAt(character.talentBoosts, entry.constellation)}
                       met={ahead?.talentsMet ?? null}
-                      labels={{ level: t('levelShort', { level: levelLabel(entry.level, entry.ascension) }), talents: t('talentsTitle', entry.talent) }}
+                      labels={{
+                        level: t('levelShort', { level: levelLabel(entry.level, entry.ascension) }),
+                        talents: boostedTitle(
+                          t('talentsTitle', entry.talent),
+                          talentBonusAt(character.talentBoosts, entry.constellation),
+                          (talents) => t('talentsBoostedTitle', { talents }),
+                        ),
+                      }}
                       rating={ratings.get(character.id) ?? null}
                       ratingBelow
                     />

@@ -85,9 +85,7 @@ export async function CharacterPanel({
   const slotLabel = await getTranslations('common.slot');
 
   const talentLevels = [loadout.talent.auto, loadout.talent.skill, loadout.talent.burst];
-  const talentBonus = loadout.talentBonus
-    ? [loadout.talentBonus.auto, loadout.talentBonus.skill, loadout.talentBonus.burst]
-    : [0, 0, 0];
+  const talentBonus = [loadout.talentBonus.auto, loadout.talentBonus.skill, loadout.talentBonus.burst];
   // Normal attack, skill and burst — the burst is the last combat entry, not
   // the third: a few kits carry an alternate sprint between the two (Ayaka,
   // Mona and three more), and by position that sprint showed as the burst.

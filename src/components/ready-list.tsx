@@ -1,6 +1,7 @@
 import { ArrowRight } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
+import { TalentTriple } from '@/components/character-card';
 import { CharacterMorph } from '@/components/character-morph';
 import { GameIcon } from '@/components/game-icon';
 import { ListRow } from '@/components/list-row';
@@ -35,8 +36,6 @@ export async function ReadyLists({
   const t = await getTranslations('ready');
   const nameOf = (id: number) => catalog.characters.get(id)?.name ?? `#${id}`;
 
-  const talentLine = (talents: { auto: number; skill: number; burst: number }) =>
-    `${talents.auto}·${talents.skill}·${talents.burst}`;
 
   const sections = [
     ready.characters.length > 0 && (
@@ -60,8 +59,8 @@ export async function ReadyLists({
             key={reach.characterId}
             face={single ? null : <Face id={reach.characterId} catalog={catalog} locale={locale} />}
             name={single ? null : nameOf(reach.characterId)}
-            from={talentLine(reach.from)}
-            to={talentLine(reach.to)}
+            from={<TalentTriple talent={reach.from} bonus={reach.bonus} />}
+            to={<TalentTriple talent={reach.to} bonus={reach.bonus} />}
             badge={t('talentLevels', { count: reach.levels })}
             // A talent past what the phase allows is bought with the
             // ascension first, from the same bag, and the row says so.
@@ -149,8 +148,8 @@ function Row({
 }: {
   face: React.ReactNode;
   name: string | null;
-  from: string;
-  to: string;
+  from: React.ReactNode;
+  to: React.ReactNode;
   badge: string | null;
   /** What else the row pays for on the way, such as an ascension. */
   note?: string | null;

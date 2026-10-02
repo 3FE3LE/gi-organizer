@@ -45,6 +45,8 @@ export type CostRow = {
 export type UpgradeCost = {
   from: Progress;
   to: Progress;
+  /** What the constellation adds to each talent, for drawing. See `talentBonusAt`. */
+  talentBonus: { auto: number; skill: number; burst: number };
   rows: CostRow[];
   /**
    * Needed, held and missing, like every other row. It used to be the missing
@@ -181,7 +183,7 @@ export async function upgradeCostFor(context: BuildContext): Promise<UpgradeCost
   ordered.sort((a, b) => rankOf(catalog, b) - rankOf(catalog, a) || a.key.localeCompare(b.key));
 
   return {
-    from, to, rows: ordered, mora, covered: ordered.length === 0 && mora.short === 0, resin,
+    from, to, talentBonus: loadout?.talentBonus ?? { auto: 0, skill: 0, burst: 0 }, rows: ordered, mora, covered: ordered.length === 0 && mora.short === 0, resin,
   };
 }
 

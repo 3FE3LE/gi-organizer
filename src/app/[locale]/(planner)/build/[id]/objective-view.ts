@@ -69,6 +69,7 @@ export async function objectiveViewFor(context: BuildContext): Promise<Objective
       ascended: isAscended(loadout?.level ?? 1, loadout?.ascension ?? 0),
       constellation: loadout?.constellation ?? 0,
       talents: loadout?.talent ?? { auto: 1, skill: 1, burst: 1 },
+      talentBonus: loadout?.talentBonus ?? { auto: 0, skill: 0, burst: 0 },
     },
     target: {
       // The same assumption the planner makes, and for the same reason: a

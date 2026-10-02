@@ -1,5 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 
+import { TalentTriple } from '@/components/character-card';
 import { GameIcon } from '@/components/game-icon';
 import { Fold, FoldGroup } from '@/components/fold';
 import { ListRow } from '@/components/list-row';
@@ -46,10 +47,12 @@ export async function UpgradeCostPanel({
             targetLevel: levelLabel(cost.to.level, cost.to.ascension),
           })}
           {' · '}
-          {t('costTalentRange', {
-            talents: talentLine(cost.from.talents),
-            targetTalents: talentLine(cost.to.talents),
-          })}
+          {/* The talents through the shared triple, so the constellation's
+              levels are in them here as everywhere. */}
+          {t('costTalents')}{'\u00a0'}
+          <TalentTriple talent={cost.from.talents} bonus={cost.talentBonus} />
+          {'\u00a0→\u00a0'}
+          <TalentTriple talent={cost.to.talents} bonus={cost.talentBonus} />
         </p>
       </div>
 
@@ -182,9 +185,4 @@ function Held({
       {t('costOwned', { count: number.format(tier.owned) })}
     </span>
   );
-}
-
-function talentLine(talents: { auto: number; skill: number; burst: number }) {
-  // Dots, as every other talent line in the app writes the three.
-  return `${talents.auto}·${talents.skill}·${talents.burst}`;
 }

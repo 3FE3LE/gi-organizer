@@ -175,9 +175,47 @@ export function CharacterPortrait({
  * has reached its own target. One colour for all three hid which one was
  * short.
  */
+/**
+ * Three talent levels as the app writes them, `9·12·12`, with what the
+ * constellation adds already in the number — as the game draws it — and the
+ * boosted ones in the accent, since the books only paid for the rest. Every
+ * place that shows a character's talents draws them through this.
+ */
+export function TalentTriple({
+  talent,
+  bonus = null,
+  met = null,
+  title,
+  className = '',
+}: {
+  talent: { auto: number; skill: number; burst: number };
+  /** What the constellation adds — see `talentBonusAt`. */
+  bonus?: { auto: number; skill: number; burst: number } | null;
+  /** Per talent, whether it reached its target. */
+  met?: { auto: boolean; skill: boolean; burst: boolean } | null;
+  title?: string;
+  className?: string;
+}) {
+  return (
+    <span title={title} className={`tabular ${className}`}>
+      {(['auto', 'skill', 'burst'] as const).map((key, at) => (
+        <span key={key}>
+          {at > 0 && '·'}
+          {/* Boosted reads in the accent, as the build's `+3` does; a talent
+              at its target stays green. */}
+          <span className={met?.[key] ? 'text-good' : bonus?.[key] ? 'text-accent' : ''}>
+            {talent[key] + (bonus?.[key] ?? 0)}
+          </span>
+        </span>
+      ))}
+    </span>
+  );
+}
+
 export function LevelTalents({
   level,
   talent,
+  bonus = null,
   met,
   labels,
   rating = null,
@@ -186,6 +224,11 @@ export function LevelTalents({
   /** As the app writes it: `80+` once ascended at the breakpoint. */
   level: number | string;
   talent: { auto: number; skill: number; burst: number };
+  /**
+   * What the constellation adds — see `talentBonusAt`. Drawn into the number,
+   * as the game draws it, in the accent, since the books only paid for the rest.
+   */
+  bonus?: { auto: number; skill: number; burst: number } | null;
   /** Per talent, whether it reached its target; null when there is none to reach. */
   met: { auto: boolean; skill: boolean; burst: boolean } | null;
   labels: { level: string; talents: string };
@@ -204,14 +247,7 @@ export function LevelTalents({
       <span className="sm:hidden">{level}</span>
       <span className="hidden sm:inline">{labels.level}</span>
       {' · '}
-      <span title={labels.talents} className="tabular">
-        {(['auto', 'skill', 'burst'] as const).map((key, at) => (
-          <span key={key}>
-            {at > 0 && '·'}
-            <span className={met?.[key] ? 'text-good' : ''}>{talent[key]}</span>
-          </span>
-        ))}
-      </span>
+      <TalentTriple talent={talent} bonus={bonus} met={met} title={labels.talents} />
       {rating && (
         <span className={ratingBelow ? 'block sm:inline' : ''}>
           <span className={ratingBelow ? 'hidden sm:inline' : ''}>{' · '}</span>

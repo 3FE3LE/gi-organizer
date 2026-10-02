@@ -50,7 +50,10 @@ export async function InvestLists({
 
   const what = (step: RankedStep) => {
     if (step.kind === 'talent') {
-      const line = t(`talent.${step.talent!}`, { from: step.from, to: step.to });
+      // The levels the talent hits at, the constellation's in them, as the
+      // game and every other list here write them.
+      const bonus = plan.talentBonus[step.characterId]?.[step.talent!] ?? 0;
+      const line = t(`talent.${step.talent!}`, { from: step.from + bonus, to: step.to + bonus });
       // Its price has the ascension in it, so the name says it too.
       return step.ascendFirst
         ? t('afterAscending', { line, level: levelLabel(step.ascendFirst.level, step.ascendFirst.ascension) })

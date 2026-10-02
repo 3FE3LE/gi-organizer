@@ -71,6 +71,7 @@ type Promote = {
 };
 
 type AmberTalent = {
+  skillId?: number;
   type: number;
   name: string;
   description: string;
@@ -99,7 +100,12 @@ type AmberAvatar = {
   fetter: { title: string; detail: string; constellation: string; native: string };
   upgrade: { prop: Prop[]; promote: Promote[] };
   talent?: Record<string, AmberTalent> | null;
-  constellation?: Record<string, { name: string; description: string; icon: string }> | null;
+  constellation?: Record<string, {
+    name: string;
+    description: string;
+    icon: string;
+    extraData?: { addTalentExtraLevel?: { talentIndex: number; extraLevel: number } } | null;
+  }> | null;
 };
 
 type AmberWeapon = {
@@ -353,6 +359,55 @@ function combatOf(avatar: AmberAvatar) {
     .map(([, talent]) => talent);
 }
 
+/** The game's own talent index in `addTalentExtraLevel`: 1 the attack, 2 the skill, 9 the burst. */
+const BOOSTED_INDEX: Record<number, 'auto' | 'skill' | 'burst'> = { 1: 'auto', 2: 'skill', 9: 'burst' };
+
+/**
+ * Which constellation raises which combat talent, and by how much: Venti's
+ * third adds 3 to his burst and his fifth 3 to his skill.
+ *
+ * Amber carries it as data on most characters and only as text on the rest —
+ * Jean, Diluc and every character since 5.6 — so the data is read first and
+ * the English line second. The line always ends "Maximum upgrade level is 15"
+ * and links the talent it raises by skill id; a line without the link names
+ * it, or says which kind of talent it is.
+ */
+function talentBoostsOf(avatar: AmberAvatar) {
+  const combat = combatOf(avatar);
+  const slots = [
+    ['auto', combat[0]],
+    ['skill', combat[1]],
+    ['burst', combat.length >= 3 ? combat.at(-1) : undefined],
+  ] as const;
+  const bare = (value: string) => value
+    .replace(/\{\/?LINK[^}]*\}/g, '')
+    .replace(/<[^>]*>/g, '')
+    .replace(/^(the )?(Normal Attack|Elemental Skill|Elemental Burst):? /, '')
+    .trim();
+
+  const boosts: Partial<Record<'auto' | 'skill' | 'burst', { constellation: number; levels: number }>> = {};
+  for (const [key, entry] of Object.entries(avatar.constellation ?? {})) {
+    const constellation = Number(key) + 1;
+    const data = entry.extraData?.addTalentExtraLevel;
+    if (data && BOOSTED_INDEX[data.talentIndex]) {
+      boosts[BOOSTED_INDEX[data.talentIndex]] = { constellation, levels: data.extraLevel };
+      continue;
+    }
+    if (!/Maximum upgrade level is 15/.test(entry.description)) continue;
+    // Amber writes the break as the two characters `\n`, not a newline.
+    const line = entry.description.split(/\\n|\n/)[0];
+    const link = line.match(/\{LINK#S(\d+)\}/)?.[1];
+    // "Increases the Level of X by 3", "Increases X Level by 3", "X increases by 3 Levels".
+    const named = (line.match(/Level of (.+?) by/) ?? line.match(/Increases (.+?) Level/) ?? line.match(/^(.+?) increases by/))?.[1] ?? '';
+    const slot = slots.find(([, talent]) => talent && link && String(talent.skillId) === link)?.[0]
+      ?? slots.find(([, talent]) => talent && named && bare(talent.name) === bare(named))?.[0]
+      ?? (/Elemental Skill/.test(line) ? 'skill' : /Elemental Burst/.test(line) ? 'burst' : /Normal Attack/.test(line) ? 'auto' : null);
+    if (!slot) throw new Error(`data: ${avatar.name} C${constellation} raises a talent nothing here names`);
+    boosts[slot] = { constellation, levels: Number(line.match(/(\d+) Levels?|by (\d+)/)?.slice(1).find(Boolean) ?? 3) };
+  }
+  return boosts;
+}
+
 /**
  * The passives, with the ascension phase that unlocks each.
  *
@@ -578,10 +633,11 @@ async function main() {
       stats: characterStats(avatar, curves.avatar!),
       costs: ascensionCosts(avatar.upgrade.promote),
       talentCosts: talentCosts(avatar),
+      talentBoosts: talentBoostsOf(avatar),
       ...(englishForms.has(id)
         ? {
             forms: Object.fromEntries([...englishForms.get(id)!].map(([element, form]) => [
-              element, { talentCosts: talentCosts(form), talentCostsBy: talentCostsBy(form) },
+              element, { talentCosts: talentCosts(form), talentCostsBy: talentCostsBy(form), talentBoosts: talentBoostsOf(form) },
             ])),
           }
         : {}),

@@ -74,6 +74,7 @@ export type SlotView = {
       level: string;
       constellation: number;
       talent: { auto: number; skill: number; burst: number };
+      talentBonus: { auto: number; skill: number; burst: number };
       talentsMet: { auto: boolean; skill: boolean; burst: boolean } | null;
       ring: { value: number; title: string } | null;
       booksToday: boolean;
@@ -746,6 +747,7 @@ function Slot({ teamId, slot }: { teamId: string; slot: SlotView }) {
           <LevelTalents
             level={progress.level}
             talent={progress.talent}
+            bonus={progress.talentBonus}
             met={progress.talentsMet}
             labels={{ level: progress.levelLabel, talents: progress.talentsLabel }}
             rating={progress.rating}

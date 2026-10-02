@@ -2,6 +2,7 @@ import 'server-only';
 
 import type { Catalog } from '@/lib/data/catalog';
 import { getLevellingData } from '@/lib/data/registry';
+import { talentBonusAt } from '@/lib/data/talent-bonus';
 import { getDb, type Db } from '@/lib/db/client';
 import { readRoster } from '@/lib/player/characters';
 import { getProfileId, readInventory, readMaterialStock } from '@/lib/player/db';
@@ -21,7 +22,8 @@ const MORA = 202;
 
 export type Ready = {
   characters: CharacterReach[];
-  talents: TalentReach[];
+  /** With what the constellation adds to each, for drawing. See `talentBonusAt`. */
+  talents: (TalentReach & { bonus: { auto: number; skill: number; burst: number } })[];
   weapons: WeaponReach[];
   /** Acquaint Fates the character rows would grant, all told. */
   fates: number;
@@ -61,7 +63,7 @@ export async function readyToLevel(
     characterIds ? characterIds.has(entry.characterId) : entry.dismissedAt === null);
 
   const characters: CharacterReach[] = [];
-  const talents: TalentReach[] = [];
+  const talents: Ready['talents'] = [];
   const moraOf = (items: readonly { id: number; count: number }[] | undefined) =>
     items?.find((item) => item.id === MORA)?.count ?? null;
   let cheapestStep: number | null = null;
@@ -111,7 +113,7 @@ export async function readyToLevel(
       ascensionCosts: character.costs,
       data,
     });
-    if (talent.levels > 0) talents.push(talent);
+    if (talent.levels > 0) talents.push({ ...talent, bonus: talentBonusAt(character.talentBoosts, entry.constellation) });
   }
 
   const plannedIds = new Set(planned.map((entry) => entry.characterId));

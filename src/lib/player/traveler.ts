@@ -166,14 +166,14 @@ export const getAccountCatalog = cache(async (locale: Locale): Promise<Catalog> 
     ? { ...found, gachaSplash: `UI_Gacha_AvatarImg_${found.icon.slice('UI_AvatarIcon_'.length)}` }
     : found;
   const element = elementOfDepot(catalog, traveler.id, traveler.depot);
-  // The element's form carries the talents' bills; the body has none.
+  // The element's form carries the talents' bills and constellation; the body has none.
   const form = element ? base?.forms?.[element] : undefined;
   const own: CharacterView | undefined = base && element
     ? {
         ...base,
         elementType: element,
         elementText: elementName(catalog, element),
-        ...(form ? { talentCosts: form.talentCosts, talentCostsBy: form.talentCostsBy } : {}),
+        ...(form ? { talentCosts: form.talentCosts, talentCostsBy: form.talentCostsBy, talentBoosts: form.talentBoosts } : {}),
       }
     : base;
 

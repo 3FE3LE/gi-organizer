@@ -6,6 +6,7 @@ import { propLabel } from '@/lib/data/catalog';
 import { ELEMENT_COLORS, elementColor } from '@/lib/data/elements';
 import { isLocale } from '@/lib/data/locales';
 import { levelLabel } from '@/lib/data/stats';
+import { boostedTitle, talentBonusAt } from '@/lib/data/talent-bonus';
 import { ASSUMED_TARGET, talentTables } from '@/lib/rules/materials';
 import { getDb } from '@/lib/db/client';
 import { readRoster } from '@/lib/player/characters';
@@ -99,6 +100,7 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
         level: levelLabel(entry.level, entry.ascension),
         constellation: entry.constellation,
         talent: entry.talent,
+        talentBonus: talentBonusAt(character?.talentBoosts, entry.constellation),
         talentsMet: ahead.talentsMet,
         ring: ahead.level === null ? null : {
           value: ahead.level,
@@ -115,7 +117,11 @@ export default async function TeamsPage({ params, searchParams }: PageProps<'/[l
           };
         })(),
         levelLabel: tCharacters('levelShort', { level: levelLabel(entry.level, entry.ascension) }),
-        talentsLabel: tCharacters('talentsTitle', entry.talent),
+        talentsLabel: boostedTitle(
+          tCharacters('talentsTitle', entry.talent),
+          talentBonusAt(character?.talentBoosts, entry.constellation),
+          (talents) => tCharacters('talentsBoostedTitle', { talents }),
+        ),
       },
     };
   };

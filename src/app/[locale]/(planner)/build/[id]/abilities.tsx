@@ -234,8 +234,10 @@ function AbilityPanel({ ability, closeLabel }: { ability: Ability; closeLabel: s
   const scaling = ability.scaling;
   const levels = scaling ? Object.values(scaling.parameters)[0]?.length ?? 0 : 0;
   // Opens on where the character actually is, so the first thing read is the
-  // row they own rather than row one.
-  const [level, setLevel] = useState(Math.min(Math.max(ability.level ?? 1, 1), levels || 1));
+  // row they own rather than row one — with the constellation's levels in it,
+  // since those are the numbers the talent hits with.
+  const bonus = ability.bonus ?? 0;
+  const [level, setLevel] = useState(Math.min(Math.max((ability.level ?? 1) + bonus, 1), levels || 1));
 
   return (
     <div className="flex max-h-[85vh] flex-col">
@@ -253,7 +255,9 @@ function AbilityPanel({ ability, closeLabel }: { ability: Ability; closeLabel: s
                   ? t('passiveUnlocked', { phase: ability.unlockAscension })
                   : t('passiveLocked', { phase: ability.unlockAscension })
               : ability.unlocked === undefined
-              ? t('abilityLevelNow', { level: ability.level ?? 1 })
+              ? bonus > 0
+                ? t('abilityLevelBoosted', { level: (ability.level ?? 1) + bonus, bonus })
+                : t('abilityLevelNow', { level: ability.level ?? 1 })
               : ability.unlocked
                 ? ability.fallback
                 : `${ability.fallback} · ${t('constellationLocked')}`}

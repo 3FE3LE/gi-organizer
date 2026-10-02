@@ -79,6 +79,8 @@ export type InvestPlan = {
   weights: Record<number, number>;
   /** The weapon each character holds, for naming a weapon step. */
   weaponIds: Record<number, number>;
+  /** What each character's constellation adds to their talents, for drawing. See `talentBonusAt`. */
+  talentBonus: Record<number, { auto: number; skill: number; burst: number }>;
 };
 
 /**
@@ -143,6 +145,7 @@ export async function investPlan(
 
   const steps: InvestStep[] = [];
   const weaponIds: Record<number, number> = {};
+  const talentBonus: InvestPlan['talentBonus'] = {};
   const packages: Omit<InvestPackage, 'weightedGain'>[] = [];
 
   for (const entry of planned) {
@@ -246,7 +249,8 @@ export async function investPlan(
       skill: talentMultipliers(combat[1]?.attributes),
       burst: talentMultipliers(combat.length >= 3 ? combat.at(-1)?.attributes : undefined),
     };
-    const bonus = loadout.talentBonus ?? { auto: 0, skill: 0, burst: 0 };
+    const bonus = loadout.talentBonus;
+    talentBonus[entry.characterId] = bonus;
     const talentGain = (key: TalentKey, from: number, to: number) => {
       const table = tables[key];
       const at = (level: number) => table[Math.min(level + bonus[key], table.length) - 1];
@@ -356,6 +360,7 @@ export async function investPlan(
     teams: teams.filter((team: Team) => team.slots.length > 0).map((team) => ({ id: team.id, name: team.name })),
     characters: planned.map((entry) => entry.characterId),
     weaponIds,
+    talentBonus,
     weights: Object.fromEntries(planned.map((entry) => [entry.characterId, weightOf(entry.characterId)])),
   };
 }

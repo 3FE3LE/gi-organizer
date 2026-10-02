@@ -95,6 +95,8 @@ export type ProgressValues = {
     ascended: boolean;
     constellation: number;
     talents: { auto: number; skill: number; burst: number };
+    /** What the constellation adds, drawn beside today's level. See `talentBonusAt`. */
+    talentBonus: { auto: number; skill: number; burst: number };
   };
   target: {
     level: number;
@@ -373,6 +375,7 @@ function ProgressForm({
                 talent={talent}
                 label={talentLabel(talent)}
                 today={values.current.talents[talent]}
+                bonus={values.current.talentBonus[talent]}
                 control={form.control}
                 // A talent may go to 10 while a crown is left for it: one it
                 // already targets keeps its own, a new one needs a spare.
@@ -937,12 +940,15 @@ function TalentCell({
   talent,
   label,
   today,
+  bonus,
   control,
   canReachTen,
 }: {
   talent: (typeof TALENTS)[number];
   label: string;
   today: number;
+  /** The constellation's levels, which the target leaves out: it counts books. */
+  bonus: number;
   control: ProgressControl;
   /** Whether a Crown of Insight is left for this talent's last level. */
   canReachTen: boolean;
@@ -970,6 +976,7 @@ function TalentCell({
           crowded "Habilidad" into "Habili…" on a phone. */}
       <p className="tabular text-center font-mono text-2xs text-muted">
         {t('todayColumn')} {today}
+        {bonus > 0 && <span className="text-accent">+{bonus}</span>}
       </p>
     </div>
   );
