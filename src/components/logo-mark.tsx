@@ -1,14 +1,14 @@
+import { LOGO_FILLS, LOGO_SCALE, LOGO_STROKE_WIDTH, LOGO_STROKES, logoTransform } from '@/lib/logo';
+
 /**
- * The app's icon, inline: "GI" in the accent gold on the dark ink.
+ * The app's icon, inline: the "GIO" mark in the accent gold on the dark ink.
  *
  * The same drawing `scripts/make-icons.mts` renders to the installed app's
- * PNGs — the paths are copied from there, keep the two in step — as an SVG so
- * the header gets it sharp at any size without another request. The square
- * stays dark in both themes, as the installed icon does: it is the app's mark,
- * not a piece of the page's chrome.
+ * PNGs — both read it from `lib/logo.ts` — as an SVG so the header gets it
+ * sharp at any size without another request. The square stays dark in both
+ * themes, as the installed icon does: it is the app's mark, not a piece of the
+ * page's chrome.
  */
-const MARK = 'M 277.8 178.2 A 110 110 0 1 0 310 256 L 232 256 M 350 146 H 420 M 385 146 V 366 M 350 366 H 420';
-
 export function LogoMark({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 512 512" aria-hidden className={className}>
@@ -19,15 +19,17 @@ export function LogoMark({ className }: { className?: string }) {
         </linearGradient>
       </defs>
       <rect width="512" height="512" rx="112" fill="#0c0f17" />
-      <path
-        d={MARK}
-        transform="translate(256 256) scale(0.8) translate(-252 -256)"
-        fill="none"
-        stroke="url(#logo-gold)"
-        strokeWidth="48"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      <g transform={logoTransform(LOGO_SCALE)}>
+        <path
+          d={LOGO_STROKES}
+          fill="none"
+          stroke="url(#logo-gold)"
+          strokeWidth={LOGO_STROKE_WIDTH}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path d={LOGO_FILLS} fill="url(#logo-gold)" />
+      </g>
     </svg>
   );
 }
