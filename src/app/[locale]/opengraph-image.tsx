@@ -1,17 +1,17 @@
 import { ImageResponse } from 'next/og';
 
-import { LOGO_FILLS, LOGO_SCALE, LOGO_STROKE_WIDTH, LOGO_STROKES, logoTransform } from '@/lib/logo';
-
 /**
  * The card a link to the site unfurls into, on chat apps and social feeds.
  *
  * The app's mark, its name and what it does, on the app's own ink — drawn
  * here rather than exported from a design file so it cannot fall out of step
- * with the icon, whose paths it shares (see `lib/logo.ts`).
+ * with the icon, whose paths it shares (see `components/logo-mark.tsx`).
  */
 export const alt = 'GI Organizer — Genshin Impact planner';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
+
+const MARK = 'M 277.8 178.2 A 110 110 0 1 0 310 256 L 232 256 M 350 146 H 420 M 385 146 V 366 M 350 366 H 420';
 
 export default async function Image({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -34,17 +34,15 @@ export default async function Image({ params }: { params: Promise<{ locale: stri
       >
         <svg width="140" height="140" viewBox="0 0 512 512">
           <rect width="512" height="512" rx="112" fill="#0c0f17" stroke="#3d4660" strokeWidth="6" />
-          <g transform={logoTransform(LOGO_SCALE)}>
-            <path
-              d={LOGO_STROKES}
-              fill="none"
-              stroke="#e3c68f"
-              strokeWidth={LOGO_STROKE_WIDTH}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path d={LOGO_FILLS} fill="#e3c68f" />
-          </g>
+          <path
+            d={MARK}
+            transform="translate(256 256) scale(0.8) translate(-252 -256)"
+            fill="none"
+            stroke="#e3c68f"
+            strokeWidth="48"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         </svg>
         <div style={{ marginTop: 48, fontSize: 76, fontWeight: 700, letterSpacing: -2 }}>
           GI Organizer
