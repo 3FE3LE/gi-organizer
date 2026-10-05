@@ -12,7 +12,7 @@ import { siteUrl } from '@/lib/site';
  * `app/[locale]/layout.tsx` — in case a link reaches them some other way.
  */
 export default function robots(): MetadataRoute.Robots {
-  const sections = ['characters', 'build', 'teams', 'artifacts', 'plan', 'data'];
+  const sections = ['characters', 'build', 'teams', 'equipment', 'artifacts', 'plan', 'data'];
 
   return {
     rules: {

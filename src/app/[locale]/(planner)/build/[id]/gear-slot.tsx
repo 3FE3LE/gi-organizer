@@ -13,7 +13,7 @@ import type { OwnedArtifactCardData } from '@/components/owned-artifact-card-vie
 import type { SetChoice } from '@/components/set-strip-view';
 
 import { PieceComparison, type PieceStats } from './piece-stats';
-import { WeaponPassive, type WeaponPassiveText } from './weapon-passive';
+import { WeaponPassive, type WeaponPassiveText } from '@/components/weapon-passive';
 
 export type CandidateView = {
   id: string;

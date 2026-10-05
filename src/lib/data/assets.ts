@@ -40,6 +40,11 @@ const ASSETS = {
   weapon: { host: 'enka', width: 256, height: 256 },
   /** Refined weapon art. Enka only. */
   weaponAwaken: { host: 'enka', width: 256, height: 256 },
+  /**
+   * A weapon's wish art (`UI_Gacha_EquipIcon_Sword_Narukami`), portrait.
+   * Large — only in the weapon's own dialog, never in a list.
+   */
+  weaponGacha: { host: 'enka', width: 512, height: 1024 },
   relic: { host: 'enka', width: 256, height: 256 },
   /** Amber, which has the names Enka is missing. */
   material: { host: 'amber', width: 256, height: 256 },
@@ -68,6 +73,16 @@ const ASSETS = {
 >;
 
 export type AssetKind = keyof typeof ASSETS;
+
+/**
+ * A weapon's wish art, named after its inventory icon — `UI_EquipIcon_X` →
+ * `UI_Gacha_EquipIcon_X` — since the catalog does not store it.
+ */
+export function weaponGachaIcon(icon: string | null | undefined) {
+  return icon?.startsWith('UI_EquipIcon_')
+    ? `UI_Gacha_EquipIcon_${icon.slice('UI_EquipIcon_'.length)}`
+    : null;
+}
 
 export function assetSize(kind: AssetKind) {
   const { width, height } = ASSETS[kind];

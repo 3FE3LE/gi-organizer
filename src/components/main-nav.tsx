@@ -15,7 +15,7 @@ import { PrefetchLink } from '@/components/prefetch-link';
 const ICONS: Record<string, LucideIcon> = {
   characters: Users,
   teams: Swords,
-  artifacts: Gem,
+  equipment: Gem,
   plan: ListChecks,
   data: Database,
 };

@@ -24,7 +24,8 @@ const UNOWNED_CHARACTER = 10000002;
 const PAGES = [
   { name: 'roster', path: '/es/characters' },
   { name: 'plan', path: '/es/plan' },
-  { name: 'artifacts', path: '/es/artifacts' },
+  { name: 'artifacts', path: '/es/equipment' },
+  { name: 'weapons', path: '/es/equipment/weapons' },
   { name: 'teams', path: '/es/teams' },
   { name: 'data', path: '/es/data' },
   { name: 'build', path: `/es/build/${SEEDED_CHARACTER}?tab=objective` },

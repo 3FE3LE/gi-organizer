@@ -31,7 +31,7 @@ import { Attributes, type AttributeLevel, type AttributeRow } from './attributes
 import { GearActions } from './gear-actions';
 import { MobileCollapsible } from './mobile-collapsible';
 import { SWIPE_TYPE } from './swipe-type';
-import { WeaponPassive, type WeaponPassiveText } from './weapon-passive';
+import { WeaponPassive, type WeaponPassiveText } from '@/components/weapon-passive';
 
 /**
  * The character screen: what is equipped right now and what it adds up to.

@@ -14,7 +14,7 @@ import {
 import { readArtifacts } from '@/lib/player/artifacts';
 import { MIN_ARTIFACT_RARITY, isRecommendableWeapon } from '@/lib/rules/rarity-floor';
 
-import { ownedArtifactCardData } from '../../artifacts/artifact-card';
+import { ownedArtifactCardData } from '../../equipment/artifact-card';
 
 import type { BuildContext } from './context';
 import type { CandidateView, SlotView } from './gear-slot';

@@ -29,6 +29,8 @@ const CLIENT_NAMESPACES = [
   // The strategy picker on the plan's "where to invest" tab.
   'invest',
   'enka',
+  // The weapon dialog on the equipment's weapons tab.
+  'weapons',
 ] as const;
 
 export function clientMessages(messages: AbstractIntlMessages): AbstractIntlMessages {

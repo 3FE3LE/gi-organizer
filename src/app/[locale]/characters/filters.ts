@@ -9,6 +9,10 @@ import {
 } from 'nuqs/server';
 
 import { GROUPINGS } from '@/lib/data/grouping';
+import { WEAPONS } from '@/lib/data/weapon-types';
+
+// Shared with the weapons tab, which filters by the same five keys.
+export { WEAPONS, weaponKey, type WeaponKey } from '@/lib/data/weapon-types';
 
 /**
  * The roster's view, as it lives in the URL.
@@ -25,8 +29,6 @@ export const VIEWS = ['gallery', 'calendar'] as const;
 export const ELEMENTS = ['pyro', 'hydro', 'anemo', 'electro', 'dendro', 'cryo', 'geo'] as const;
 export type ElementKey = (typeof ELEMENTS)[number];
 
-export const WEAPONS = ['sword', 'claymore', 'polearm', 'catalyst', 'bow'] as const;
-export type WeaponKey = (typeof WEAPONS)[number];
 
 export const RARITIES = [5, 4] as const;
 
@@ -64,19 +66,6 @@ export function toggle<T>(values: readonly T[], value: T): T[] {
 /** `ELEMENT_PYRO` → `pyro`. */
 export function elementKey(elementType: string) {
   return elementType.replace(/^ELEMENT_/, '').toLowerCase();
-}
-
-const WEAPON_KEYS: Record<string, WeaponKey> = {
-  WEAPON_SWORD_ONE_HAND: 'sword',
-  WEAPON_CLAYMORE: 'claymore',
-  WEAPON_POLE: 'polearm',
-  WEAPON_CATALYST: 'catalyst',
-  WEAPON_BOW: 'bow',
-};
-
-/** `WEAPON_POLE` → `polearm`. */
-export function weaponKey(weaponType: string): WeaponKey | undefined {
-  return WEAPON_KEYS[weaponType];
 }
 
 /** Whether any narrowing is on, so the page can offer to clear it. */

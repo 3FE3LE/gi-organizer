@@ -35,7 +35,7 @@ export const dynamic = 'force-dynamic';
  */
 export default async function ArtifactsPage({
   params, searchParams,
-}: PageProps<'/[locale]/artifacts'>) {
+}: PageProps<'/[locale]/equipment'>) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
 
@@ -50,7 +50,7 @@ export default async function ArtifactsPage({
     data: await ownedArtifactCardData(piece, pricingScaler(filters), catalog, locale),
   })));
 
-  const base = `/${locale}/artifacts`;
+  const base = `/${locale}/equipment`;
   const perfect = all.filter((piece) => piece.quality.hasPerfect).length;
 
   const setCounts = new Map<number, number>();
@@ -75,9 +75,10 @@ export default async function ArtifactsPage({
 
   return (
     <div className="space-y-6">
+      {/* The section's title and tabs are the layout's; the counts are this
+          tab's own. */}
       <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <h1 className="page-title">{t('title')}</h1>
           <p className="font-mono text-xs text-muted">
             {shown.length === all.length
               ? t('countAll', { count: all.length })

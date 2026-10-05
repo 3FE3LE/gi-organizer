@@ -1,16 +1,15 @@
 'use client';
 
 import { Search } from 'lucide-react';
-import { debounce, useQueryState } from 'nuqs';
+import { debounce, parseAsString, useQueryState } from 'nuqs';
 import { useTransition } from 'react';
 import { GROUP_LABEL } from '@/components/segmented-links';
-
-import { rosterParsers } from './filters';
 
 /**
  * The name search, written to the URL as it is typed.
  *
- * The one control on the roster that is an input rather than a link. The box
+ * The one control on the roster and the weapons tab that is an input rather
+ * than a link — both read it as `q`, an empty string by default. The box
  * answers at once — nuqs holds the typed value — while the address and the
  * server's answer follow a quarter of a second behind, so a name is one
  * request rather than one per letter. `shallow: false` because the gallery is
@@ -21,7 +20,7 @@ export function SearchBox({ label, placeholder }: { label: string; placeholder: 
   const [pending, startTransition] = useTransition();
   const [query, setQuery] = useQueryState(
     'q',
-    rosterParsers.q.withOptions({
+    parseAsString.withDefault('').withOptions({
       shallow: false,
       scroll: false,
       startTransition,

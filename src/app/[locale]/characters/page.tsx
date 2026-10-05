@@ -55,7 +55,7 @@ import {
 } from './filters';
 import { narrowRoster } from './narrow';
 import { cardProgress, talentBookDays, type CardProgress } from '@/lib/rules/card-progress';
-import { SearchBox } from './search-box';
+import { SearchBox } from '@/components/search-box';
 
 /**
  * The roster, shown the way the game shows it: what you have first, what you do

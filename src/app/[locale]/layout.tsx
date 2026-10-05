@@ -133,7 +133,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
     { id: 'plan', href: `/${locale}/plan`, label: t('plan') },
     { id: 'characters', href: `/${locale}/characters`, label: t('characters') },
     { id: 'teams', href: `/${locale}/teams`, label: t('teams') },
-    { id: 'artifacts', href: `/${locale}/artifacts`, label: t('artifacts') },
+    { id: 'equipment', href: `/${locale}/equipment`, label: t('equipment') },
     { id: 'data', href: `/${locale}/data`, label: t('data') },
   ];
 

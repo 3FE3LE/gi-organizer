@@ -149,6 +149,15 @@ export async function artifactCandidates(
   return rows.map(toPiece);
 }
 
+/** Every weapon the account holds, worn or not, for the weapons tab. */
+export async function readWeapons(db: Db = getDb()): Promise<GearWeapon[]> {
+  const rows = (await db
+    .prepare(`SELECT ${WEAPON_FIELDS} FROM weapon_instance WHERE profile_id = ?`)
+    .all(await getProfileId(db))) as unknown as WeaponRow[];
+
+  return rows.map(toWeapon);
+}
+
 /**
  * Weapon candidates are restricted to the ids the character can hold — the
  * catalog fact the schema cannot express, so the caller supplies it.

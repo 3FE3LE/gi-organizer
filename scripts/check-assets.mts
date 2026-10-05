@@ -18,7 +18,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import { type AssetKind, iconUrl } from '../src/lib/data/assets.ts';
+import { type AssetKind, iconUrl, weaponGachaIcon } from '../src/lib/data/assets.ts';
 import { ELEMENT_COLORS, elementIcon } from '../src/lib/data/elements.ts';
 import { WEAPON_TYPE_ICONS } from '../src/lib/data/weapon-types.ts';
 import type {
@@ -77,6 +77,8 @@ async function collect(): Promise<Target[]> {
       .filter(nonNull),
     weapon: Object.values(weapons).map((w) => w.icon).filter(nonNull),
     weaponAwaken: Object.values(weapons).map((w) => w.awakenIcon).filter(nonNull),
+    // Derived from the icon, like the namecard — see `weaponGachaIcon`.
+    weaponGacha: Object.values(weapons).map((w) => weaponGachaIcon(w.icon)).filter(nonNull),
     relic: Object.values(artifacts)
       .flatMap((a) => Object.values(a.pieces).map((piece) => piece?.icon))
       .filter(nonNull),

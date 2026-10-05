@@ -77,6 +77,8 @@ const nextConfig: NextConfig = {
       { source: '/:locale/import', destination: '/:locale/data/import', permanent: false },
       { source: '/:locale/history', destination: '/:locale/data', permanent: false },
       { source: '/:locale/data/history', destination: '/:locale/data', permanent: false },
+      // The box became a tab of the equipment, beside the weapons.
+      { source: '/:locale/artifacts', destination: '/:locale/equipment', permanent: false },
     ];
   },
 };
