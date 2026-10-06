@@ -75,6 +75,7 @@ type AmberTalent = {
   type: number;
   name: string;
   description: string;
+  descriptionBuff?: string | null;
   icon: string;
   promote?: Record<string, {
     level: number;
@@ -103,10 +104,22 @@ type AmberAvatar = {
   constellation?: Record<string, {
     name: string;
     description: string;
+    descriptionBuff?: string | null;
     icon: string;
     extraData?: { addTalentExtraLevel?: { talentIndex: number; extraLevel: number } } | null;
   }> | null;
 };
+
+/**
+ * The text the game shows today. A rework does not rewrite `description`:
+ * Amber carries the reworked text beside it as `descriptionBuff` — the whole
+ * text, the old effect and the Hexerei or Radiance section added to it — so
+ * Wriothesley's and Beidou's constellations only show their Stellar-Conduct
+ * clauses when it is read.
+ */
+function currentText(entry: { description: string; descriptionBuff?: string | null }) {
+  return entry.descriptionBuff || entry.description;
+}
 
 type AmberWeapon = {
   id: number;
@@ -738,8 +751,8 @@ async function main() {
 
   for (const [id, avatar] of avatars) {
     const texts = [
-      ...Object.values(avatar.talent ?? {}).map((talent) => talent.description),
-      ...Object.values(avatar.constellation ?? {}).map((level) => level.description),
+      ...Object.values(avatar.talent ?? {}).map(currentText),
+      ...Object.values(avatar.constellation ?? {}).map(currentText),
     ];
     const tags = tagsIn(texts.map((raw) => plainText(raw)).join(' '));
     if (tags.length > 0) mechanics.characters[Number(id)] = tags;
@@ -869,12 +882,12 @@ async function main() {
           ? {
               combat: combatOf(avatar).map((talent) => ({
                 name: talent.name,
-                ...text(talent.description),
+                ...text(currentText(talent)),
                 attributes: attributesOf(talent),
               })),
               passive: passivesOf(avatar).map(({ talent, unlockAscension }) => ({
                 name: talent.name,
-                ...text(talent.description),
+                ...text(currentText(talent)),
                 icon: talent.icon,
                 unlockAscension,
               })),
@@ -886,7 +899,7 @@ async function main() {
               levels: Object.keys(avatar.constellation).sort((a, b) => Number(a) - Number(b))
                 .map((key) => {
                   const level = avatar.constellation![key];
-                  return { name: level.name, ...text(level.description) };
+                  return { name: level.name, ...text(currentText(level)) };
                 }),
             }
           : null,
