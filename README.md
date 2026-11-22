@@ -538,8 +538,8 @@ reported with a count rather than dropped.
 The weekly catalog update runs it too. It writes nothing when the priorities
 have not changed, and refuses to write when a character would lose theirs or a
 field comes back empty for more than a tenth of them. The Traveler has an entry
-per element, but the app reads one per character: the Pyro one, named in
-`getBuildPriorities`.
+per element, listed under Aether: `getBuildPriorities` gives both bodies the
+one of the account's element, and Anemo to an account that has not stated one.
 
 **The list is a weak signal, not the spine.** It ranks in a vacuum, which is
 precisely how both Venti and Sucrose end up told to wear Viridescent Venerer —

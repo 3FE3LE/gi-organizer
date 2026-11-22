@@ -25,7 +25,7 @@ export async function readRatings(catalog: Catalog, db: Db = getDb()): Promise<M
     readRoster(db, profileId),
     readInventory(db, profileId),
     readBuilds(db),
-    getBuildPriorities(),
+    getBuildPriorities(catalog, db),
     getRatingConfig(),
   ]);
 

@@ -10,6 +10,7 @@ import type { ArtifactSlot } from '@/lib/data/types';
 import { firstIssue, templateSchema } from '@/lib/forms/build';
 import { deleteBuild, readBuild, readBuildsFor, saveBuild } from '@/lib/player/builds';
 import { getDb } from '@/lib/db/client';
+import { getAccountCatalog } from '@/lib/player/traveler';
 import { getBuildPriorities, suggestionsFor } from '@/lib/rules/assemble';
 import { templateFor } from '@/lib/rules/role-templates';
 import { CHOOSABLE_SLOTS } from '@/lib/rules/piece-score';
@@ -105,7 +106,9 @@ export async function applyTemplateAction(
   }
 
   const { characterId, buildId, role } = parsed.data;
-  const catalog = await getCatalog(DEFAULT_LOCALE);
+  // The account's: a Traveler's damage goblet is their element's, and the
+  // shared catalogue's Traveler has none.
+  const catalog = await getAccountCatalog(DEFAULT_LOCALE);
   const character = catalog.characters.get(characterId);
   if (!character) return { status: 'error', message: t('characterNotFound') };
 
@@ -114,7 +117,7 @@ export async function applyTemplateAction(
 
   // The role on screen wins over the one on disk, so picking a role and
   // filling from it is one gesture rather than two saves.
-  const priority = (await getBuildPriorities()).get(characterId);
+  const priority = (await getBuildPriorities(catalog)).get(characterId);
   const template = templateFor(
     (role || existing.role) as typeof existing.role,
     character.elementType,

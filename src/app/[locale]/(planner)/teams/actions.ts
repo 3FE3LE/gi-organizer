@@ -3,7 +3,7 @@
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
-import { getCatalog } from '@/lib/data/catalog';
+import { type Catalog, getCatalog } from '@/lib/data/catalog';
 import { DEFAULT_LOCALE, isLocale } from '@/lib/data/locales';
 import { getCharacterDetailStrings } from '@/lib/data/registry';
 import { readBuildsFor } from '@/lib/player/builds';
@@ -92,7 +92,7 @@ export async function addSlotAction(
   const character = catalog.characters.get(characterId);
   if (!character) return { status: 'error', message: t('characterNotFound') };
 
-  const roles = requested.length > 0 ? requested : await suggestedRoles(characterId);
+  const roles = requested.length > 0 ? requested : await suggestedRoles(characterId, catalog);
 
   // Placed by role — see `preferredPositions`; a drag moves them after.
   const result = await setSlot(teamId, characterId, preferredPositions(roles));
@@ -125,10 +125,10 @@ export async function addSlotAction(
   };
 }
 
-async function suggestedRoles(characterId: number): Promise<TeamRole[]> {
+async function suggestedRoles(characterId: number, catalog: Catalog): Promise<TeamRole[]> {
   const [own, community, detail] = await Promise.all([
     readBuildsFor(characterId),
-    getBuildPriorities(),
+    getBuildPriorities(catalog),
     // English, whatever the page's language: the heuristic reads the game's
     // own English wording, and a translation would need a regex per locale.
     getCharacterDetailStrings(

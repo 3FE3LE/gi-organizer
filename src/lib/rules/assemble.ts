@@ -23,6 +23,7 @@ import {
 } from '@/lib/player/builds';
 import { readDeployments, readTeams } from '@/lib/player/teams';
 import { readTargets } from '@/lib/player/targets';
+import { TRAVELER_BODIES, readTravelerElement } from '@/lib/player/traveler';
 import { refinementResolver } from '@/lib/player/weapon-copies';
 import { readWorldLevel } from '@/lib/player/world-level';
 
@@ -102,24 +103,50 @@ export function getAnnotations(catalog: Catalog): Promise<ResolvedAnnotations> {
   return pending;
 }
 
-let buildFile: Promise<Map<number, BuildPriority>> | undefined;
+type BuildFile = {
+  byCharacter: Map<number, BuildPriority>;
+  /** The Traveler's, which upstream lists per element and under one body. */
+  byElement: Map<string, BuildPriority>;
+};
 
-/**
- * The list has a Traveler build per element and the map has room for one per
- * character, so one is named. Left to the file's order it was whichever came
- * last, and each new element upstream would replace everybody's.
- */
-const TRAVELER_BUILD = 'ELEMENT_PYRO';
+let buildFile: Promise<BuildFile> | undefined;
 
-/** Candidate priorities, ids only. Refreshed by `pnpm data:builds`. */
-export function getBuildPriorities() {
+function loadBuildFile() {
   buildFile ??= readFile(BUILDS, 'utf8')
     .then((raw) => JSON.parse(raw) as { entries: (BuildPriority & { travelerElement: string | null })[] })
-    .then((file) => new Map(file.entries
-      .filter((entry) => !entry.travelerElement || entry.travelerElement === TRAVELER_BUILD)
-      .map((entry) => [entry.characterId, entry])))
-    .catch(() => new Map<number, BuildPriority>());
+    .then(({ entries }) => ({
+      byCharacter: new Map(entries.flatMap((entry) =>
+        (entry.travelerElement ? [] : [[entry.characterId, entry] as const]))),
+      byElement: new Map(entries.flatMap((entry) =>
+        (entry.travelerElement ? [[entry.travelerElement, entry] as const] : []))),
+    }))
+    .catch(() => ({ byCharacter: new Map(), byElement: new Map() }));
   return buildFile;
+}
+
+/**
+ * Candidate priorities as this account reads them, ids only. Refreshed by
+ * `pnpm data:builds`.
+ *
+ * The file is shared and the Traveler is not: both bodies get the build of the
+ * account's element, on a copy, so one account's never reaches another. The
+ * element is read here rather than taken off the catalog, which is only
+ * account-aware when the caller fetched it that way.
+ */
+export async function getBuildPriorities(catalog: Catalog, db: Db = getDb()) {
+  const [{ byCharacter, byElement }, element] = await Promise.all([
+    loadBuildFile(),
+    readTravelerElement(catalog, db),
+  ]);
+
+  const priorities = new Map(byCharacter);
+  const build = element ? byElement.get(element) : undefined;
+  if (build) {
+    for (const characterId of Object.values(TRAVELER_BODIES)) {
+      priorities.set(characterId, { ...build, characterId });
+    }
+  }
+  return priorities;
 }
 
 export async function readUserRules(db: Db): Promise<{ rules: Rule[]; disabledSeeds: Set<string> }> {
@@ -361,7 +388,7 @@ export async function suggestionsFor(
   const profileId = await getProfileId(db);
   const [annotations, priorities, weaponSources] = await Promise.all([
     getAnnotations(catalog),
-    getBuildPriorities(),
+    getBuildPriorities(catalog, db),
     getWeaponSources(),
   ]);
 
