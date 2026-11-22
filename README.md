@@ -533,7 +533,13 @@ be undone before the blob is JSON: `\\`, `\'`, and `\xNN` — the last shows up 
 soft hyphens inside weapon names. Names resolve through the same GOOD crosswalk
 the importer uses, plus small alias tables for nicknames (`Childe` →
 `Tartaglia`) and upstream typos (`Prototype Archiac`). Anything unresolved is
-reported with a count rather than dropped; the current run resolves 124 of 124.
+reported with a count rather than dropped.
+
+The weekly catalog update runs it too. It writes nothing when the priorities
+have not changed, and refuses to write when a character would lose theirs or a
+field comes back empty for more than a tenth of them. The Traveler has an entry
+per element, but the app reads one per character: the Pyro one, named in
+`getBuildPriorities`.
 
 **The list is a weak signal, not the spine.** It ranks in a vacuum, which is
 precisely how both Venti and Sucrose end up told to wear Viridescent Venerer —

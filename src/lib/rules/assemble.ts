@@ -104,11 +104,20 @@ export function getAnnotations(catalog: Catalog): Promise<ResolvedAnnotations> {
 
 let buildFile: Promise<Map<number, BuildPriority>> | undefined;
 
+/**
+ * The list has a Traveler build per element and the map has room for one per
+ * character, so one is named. Left to the file's order it was whichever came
+ * last, and each new element upstream would replace everybody's.
+ */
+const TRAVELER_BUILD = 'ELEMENT_PYRO';
+
 /** Candidate priorities, ids only. Refreshed by `pnpm data:builds`. */
 export function getBuildPriorities() {
   buildFile ??= readFile(BUILDS, 'utf8')
-    .then((raw) => JSON.parse(raw) as { entries: BuildPriority[] })
-    .then((file) => new Map(file.entries.map((entry) => [entry.characterId, entry])))
+    .then((raw) => JSON.parse(raw) as { entries: (BuildPriority & { travelerElement: string | null })[] })
+    .then((file) => new Map(file.entries
+      .filter((entry) => !entry.travelerElement || entry.travelerElement === TRAVELER_BUILD)
+      .map((entry) => [entry.characterId, entry])))
     .catch(() => new Map<number, BuildPriority>());
   return buildFile;
 }

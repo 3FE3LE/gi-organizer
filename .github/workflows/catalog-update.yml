@@ -53,6 +53,14 @@ jobs:
 
       - run: pnpm data:build
 
+      # After the build, whose crosswalk resolves the new names. It scrapes a
+      # site with no API, so a failure must not hold the catalog back: the pull
+      # request opens with last week's priorities and the final step fails the
+      # run, so that somebody hears of it.
+      - id: builds
+        continue-on-error: true
+        run: pnpm data:builds
+
       # Nothing downstream should run when the catalogue has not moved. There
       # is no version to compare, so the output itself is compared, without
       # `meta.json`: it carries a timestamp, and would otherwise open an empty
@@ -106,12 +114,15 @@ jobs:
             chore: regenerate the catalog from Project Amber (game ${{ steps.diff.outputs.game }})
 
             Characters, weapons, artifacts and materials as Amber has them
-            this week, reworks of existing characters included. The generated
-            output is committed so that `next build` never touches the network.
+            this week, reworks of existing characters included, and the build
+            priorities from genshin.gg. The generated output is committed so
+            that `next build` never touches the network.
           title: 'chore: catalog from Project Amber (game ${{ steps.diff.outputs.game }})'
           body: |
             `src/generated/data` rebuilt from Project Amber and Enka's store,
             game ${{ steps.diff.outputs.game }}.
+
+            Build priorities from genshin.gg: **${{ steps.builds.outcome == 'success' && 'up to date' || 'refresh failed, left as they were; see the run log' }}**.
 
             Green here means the GOOD crosswalk still agrees with upstream and
             every id the curated build priorities name still exists. Icon names
@@ -125,3 +136,9 @@ jobs:
             patch adds ids rather than repointing them.
           labels: catalog
           delete-branch: true
+
+      - if: ${{ !cancelled() && steps.builds.outcome == 'failure' }}
+        name: The build priorities could not be refreshed
+        run: |
+          echo "::error::pnpm data:builds failed; see that step's log. The catalog itself was not held back."
+          exit 1
