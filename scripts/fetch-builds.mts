@@ -23,6 +23,10 @@ const DATA = path.join(import.meta.dirname, '..', 'src', 'generated', 'data');
 const OUT = path.join(DATA, 'builds.json');
 
 const USER_AGENT = 'gi-organizer/0.1 (build priorities)';
+const TIMEOUT_MS = 30_000;
+
+/** A field empty in more entries than this means upstream renamed it. */
+const MAX_EMPTY_SHARE = 0.1;
 
 type Crosswalk = {
   artifactSets: Record<string, number>;
@@ -48,7 +52,10 @@ type UpstreamCharacter = {
 };
 
 async function fetchText(url: string) {
-  const response = await fetch(url, { headers: { 'user-agent': USER_AGENT } });
+  const response = await fetch(url, {
+    headers: { 'user-agent': USER_AGENT },
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+  });
   if (!response.ok) throw new Error(`${url}: HTTP ${response.status} ${response.statusText}`);
   return response.text();
 }
@@ -165,6 +172,37 @@ function makeResolver(table: Record<string, number>) {
   };
 }
 
+type Entry = {
+  characterId: number;
+  travelerElement: string | null;
+  mainStats: string[][];
+  substats: string[];
+  weapons: unknown[];
+  artifacts: unknown[];
+};
+
+/**
+ * This runs unattended, over a page that promises nothing. A layout change
+ * that still parses must not replace good priorities with holes.
+ */
+function assertUsable(entries: Entry[], previous: Entry[]) {
+  const keyOf = (entry: Entry) =>
+    [entry.characterId, entry.travelerElement].filter(Boolean).join(':');
+
+  const found = new Set(entries.map(keyOf));
+  const lost = previous.map(keyOf).filter((key) => !found.has(key));
+  if (lost.length > 0) {
+    throw new Error(`builds: ${lost.join(', ')} would lose their priorities; nothing written`);
+  }
+
+  for (const field of ['mainStats', 'substats', 'weapons', 'artifacts'] as const) {
+    const empty = entries.filter((entry) => entry[field].flat().length === 0).length;
+    if (empty > entries.length * MAX_EMPTY_SHARE) {
+      throw new Error(`builds: ${field} is empty in ${empty} of ${entries.length}; nothing written`);
+    }
+  }
+}
+
 type Report = { unresolved: Map<string, number>; unknownStats: Map<string, number> };
 
 const note = (map: Map<string, number>, value: string) =>
@@ -245,13 +283,20 @@ async function main() {
     }];
   });
 
-  await mkdir(path.dirname(OUT), { recursive: true });
-  await writeFile(OUT, `${JSON.stringify({
-    version: 1,
-    fetchedAt: new Date().toISOString(),
-    source: `${ORIGIN}${chunk}`,
-    entries,
-  })}\n`);
+  const previous = JSON.parse(await readFile(OUT, 'utf8')) as { entries: Entry[] };
+  assertUsable(entries, previous.entries);
+
+  // The date and the chunk's hash move on their own. Written only with the
+  // entries, they cannot open a pull request in a week where nothing changed.
+  if (JSON.stringify(entries) !== JSON.stringify(previous.entries)) {
+    await mkdir(path.dirname(OUT), { recursive: true });
+    await writeFile(OUT, `${JSON.stringify({
+      version: 1,
+      fetchedAt: new Date().toISOString(),
+      source: `${ORIGIN}${chunk}`,
+      entries,
+    })}\n`);
+  }
 
   console.log(
     `builds: ${entries.length} of ${upstream.length} characters → ` +
