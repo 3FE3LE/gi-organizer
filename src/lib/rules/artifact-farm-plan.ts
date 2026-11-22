@@ -43,7 +43,7 @@ export async function artifactFarmPlan(catalog: Catalog, db: Db = getDb()): Prom
     readRoster(db, profileId),
     readInventory(db, profileId),
     readBuilds(db),
-    getBuildPriorities(),
+    getBuildPriorities(catalog, db),
     readRatings(catalog, db),
     getArtifactDomains(),
     getArtifactFarmConfig(),

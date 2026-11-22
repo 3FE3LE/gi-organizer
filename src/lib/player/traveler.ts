@@ -139,6 +139,16 @@ async function accountTraveler(db: Db, profileId: string) {
 }
 
 /**
+ * The element whose build the account's Traveler is measured against: their
+ * depot's, else the bare body's in Enka's table — Anemo, the form every
+ * account starts in and the one their skills already fall back to.
+ */
+export async function readTravelerElement(catalog: Catalog, db: Db) {
+  const { id, depot } = await accountTraveler(db, await getProfileId(db));
+  return elementOfDepot(catalog, id, depot) ?? asElement(catalog.enka[String(id)]?.element ?? '');
+}
+
+/**
  * The catalogue as this account sees it.
  *
  * The same object `getCatalog` returns, except that the account's Traveler

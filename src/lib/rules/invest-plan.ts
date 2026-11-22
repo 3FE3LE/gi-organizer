@@ -112,7 +112,7 @@ export async function investPlan(
       getResinRates(),
       getBossDrops(),
       readWorldLevel(db),
-      getBuildPriorities(),
+      getBuildPriorities(catalog, db),
       getAnnotations(catalog),
       readInvestStrategy(db),
     ]);
