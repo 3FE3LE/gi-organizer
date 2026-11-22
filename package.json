@@ -18,7 +18,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "test": "GI_TEST_PROFILE=local node --import ./scripts/test-loader.mjs --test \"src/**/*.test.ts\"",
     "e2e": "playwright test"
   },

@@ -31,11 +31,25 @@ const ENKA = path.join(import.meta.dirname, '..', 'src', 'generated', 'data', 'e
 /** Requests in flight at once: quick, and polite to a volunteer-run API. */
 const CONCURRENCY = 8;
 
+/** One stalled socket should cost a retry, not hang the run. */
+const TIMEOUT_MS = 30_000;
+
+/**
+ * A dropped connection, a timeout or a body cut short is retried like a bad
+ * status: over five thousand requests, one of them is to be expected.
+ */
 async function get(url: string, attempt = 1): Promise<unknown> {
-  const response = await fetch(url, { headers: { 'user-agent': 'gi-organizer data build' } });
-  if (response.ok) return response.json();
-  if (response.status === 404) return null;
-  if (attempt >= 4) throw new Error(`${response.status} ${url}`);
+  try {
+    const response = await fetch(url, {
+      headers: { 'user-agent': 'gi-organizer data build' },
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+    if (response.status === 404) return null;
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return await response.json();
+  } catch (error) {
+    if (attempt >= 4) throw new Error(`${url}: ${error}`, { cause: error });
+  }
   await new Promise((resolve) => setTimeout(resolve, 500 * 2 ** attempt));
   return get(url, attempt + 1);
 }

@@ -389,7 +389,7 @@ pnpm data:check-good         # cross-check GOOD keys against Genshin Optimizer
 pnpm data:fixture            # regenerate the synthetic GOOD fixture
 pnpm test                    # node:test over the pure layers
 pnpm build                   # data:build + next build
-pnpm typecheck
+pnpm typecheck               # generates Next's route types, then runs tsc
 pnpm lint
 ```
 

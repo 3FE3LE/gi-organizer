@@ -10,13 +10,21 @@ on:
     - cron: '0 6 * * 1'
   workflow_dispatch:
 
+# `pull-requests: write` is not enough by itself: the repository also has to
+# allow it, under Settings > Actions > General > "Allow GitHub Actions to
+# create and approve pull requests".
 permissions:
   contents: write
   pull-requests: write
 
+# A run by hand and the scheduled one would push to the same branch.
+concurrency:
+  group: catalog-update
+
 jobs:
   update:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - uses: actions/checkout@v4
@@ -29,6 +37,13 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
+
+      # Before the download, and every week. Neither reads the catalog, so
+      # there is no reason to wait two minutes for them, and run only on a
+      # change they would hide a broken main until the week a patch lands.
+      - run: pnpm typecheck
+
+      - run: pnpm lint
 
       # Enka first: `data:yatta` discovers new characters from its store,
       # since Amber's list trails a release by a few days.
@@ -71,13 +86,9 @@ jobs:
       # build got wrong. Read it in the run log before merging.
       - if: steps.diff.outputs.changed == 'true'
         name: Do the icon names resolve on the asset host?
+        # A missing icon already exits 0; this covers the host being down.
+        continue-on-error: true
         run: pnpm data:check-assets
-
-      - if: steps.diff.outputs.changed == 'true'
-        run: pnpm typecheck
-
-      - if: steps.diff.outputs.changed == 'true'
-        run: pnpm lint
 
       # Includes the check that every id in the generated build priorities
       # still exists in the catalogue.
@@ -102,9 +113,10 @@ jobs:
             `src/generated/data` rebuilt from Project Amber and Enka's store,
             game ${{ steps.diff.outputs.game }}.
 
-            Green here means the GOOD crosswalk still agrees with upstream, the
-            icon names still resolve, and every id the curated build priorities
-            name still exists. What it cannot tell you is whether a new
+            Green here means the GOOD crosswalk still agrees with upstream and
+            every id the curated build priorities name still exists. Icon names
+            are only sampled and reported in the run log, so read it before
+            merging. What none of it can tell you is whether a new
             mechanic needs an annotation — the diff below is the place to look
             for characters and sets this app has no opinion about yet, and for
             reworked text on characters it already knows.
