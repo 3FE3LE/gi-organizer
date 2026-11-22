@@ -80,14 +80,16 @@ test('the chosen set shows what its bonus does', async ({ page }) => {
   await (await openSetPicker(page)).nth(1).click();
 
   // Hovering the picker is what asks for the effects; a 4-piece plan activates both lines.
-  await page.getByRole('button', { expanded: false }).first().hover();
+  // By its label: the page has other collapsed buttons, and the first is not this one.
+  const picker = page.getByRole('button', { name: 'primer set del plan' });
+  await picker.hover();
   const tooltip = page.getByRole('tooltip');
   await expect(tooltip).toBeVisible();
   await expect(tooltip).toContainText('2pc');
 
   // Switching to 2+2 marks the four-piece line as one this plan never buys.
   await page.getByRole('button', { name: '2 + 2' }).click();
-  await page.getByRole('button', { expanded: false }).first().hover();
+  await picker.hover();
   await expect(page.getByRole('tooltip')).toContainText('sólo cuenta el bono de 2 piezas');
 });
 
@@ -122,7 +124,7 @@ test('the substat priority survives its own save', async ({ page }) => {
 test('a stat goal round-trips with its threshold', async ({ page }) => {
   await page.goto(BUILD);
 
-  const label = 'Estadística de la meta 1';
+  const label = 'Estadística del objetivo 1';
   const { text } = await choose(page, label, 1);
   await page.locator('input[name="goals.0.min"]').fill('200');
   await page.getByRole('button', { name: 'Guardar objetivo' }).click();
@@ -133,7 +135,23 @@ test('a stat goal round-trips with its threshold', async ({ page }) => {
   await expect(page.locator('input[name="goals.0.min"]')).toHaveValue('200');
 });
 
+/** What the plan's week still asks for in talent books, over every rotation. */
+async function talentBooksMissing(page: import('@playwright/test').Page) {
+  await page.goto('/es/plan?range=all');
+  const rows = page.getByRole('link', { name: /faltan \d+ de talento/ });
+  await expect(rows).toHaveCount(3);
+
+  let total = 0;
+  for (const row of await rows.all()) {
+    total += Number((await row.getAttribute('aria-label'))?.match(/faltan (\d+) de talento/)?.[1]);
+  }
+  return total;
+}
+
 test('the levelling target reaches the farming plan', async ({ page }) => {
+  // Compared rather than looked for: the plan lists the seeded character
+  // whether or not this target was saved.
+  const before = await talentBooksMissing(page);
   await page.goto(BUILD);
 
   // The talent steppers are `Controller`-driven and carry no field name, so
@@ -142,14 +160,13 @@ test('the levelling target reaches the farming plan', async ({ page }) => {
   await page.getByRole('button', { name: 'Guardar objetivo' }).click();
   await expect(page.getByText(/guardado/)).toBeVisible();
 
-  await page.goto('/es/plan?range=all');
-  await expect(page.getByText(/builds? con objetivo de nivel/)).toBeVisible();
+  expect(await talentBooksMissing(page)).toBeGreaterThan(before);
 });
 
 test('the goal rows start at one and grow on request', async ({ page }) => {
   await page.goto(BUILD);
 
-  const rows = page.getByRole('combobox', { name: /Estadística de la meta/ });
+  const rows = page.getByRole('combobox', { name: /Estadística del objetivo/ });
   await expect(rows).toHaveCount(1);
 
   await page.getByRole('button', { name: 'otro objetivo' }).click();
